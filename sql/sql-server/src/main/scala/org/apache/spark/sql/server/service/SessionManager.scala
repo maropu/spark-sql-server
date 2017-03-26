@@ -29,7 +29,7 @@ private[server] class SessionManager(pgServer: SQLServer, sqlContext: SQLContext
   private var getSession: () => SQLContext = _
 
   override def init(sqlContext: SQLContext): Unit = {
-    getSession = if (sqlContext.conf.getConf(SQLServerConf.SQLSERVER_SINGLE_SESSION)) {
+    getSession = if (sqlContext.conf.getConf(SQLServerConf.SQLSERVER_SINGLE_SESSION_ENABLED)) {
       () => sqlContext
     } else {
       () => {

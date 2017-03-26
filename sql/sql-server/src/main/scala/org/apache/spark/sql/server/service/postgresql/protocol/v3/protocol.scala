@@ -41,7 +41,7 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.json.JacksonGenerator
 import org.apache.spark.sql.catalyst.util.{ArrayData, DateTimeUtils, MapData}
 import org.apache.spark.sql.internal.SQLConf
-import org.apache.spark.sql.server.SQLServerConf
+import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.service.CLI
 import org.apache.spark.sql.server.service.ExecuteStatementOperation
 import org.apache.spark.sql.server.service.postgresql.{Metadata => PgMetadata}
@@ -591,7 +591,7 @@ private[service] class PostgreSQLV3MessageInitializer(cli: CLI, conf: SQLConf)
 
   override def initChannel(ch: SocketChannel): Unit = {
     val pipeline = ch.pipeline()
-    if (conf.getConfString(SQLServerConf.SSL_ENABLED, "false").toBoolean) {
+    if (conf.sqlServerSslEnabled) {
       // If an SSL-encrypted connection enabled, the server first needs to handle the `SSLRequest`
       // message from the frontend. Then, the frontend starts an SSL start up handshake
       // with the server. Therefore, `SSLRequestHandler` processes the first message

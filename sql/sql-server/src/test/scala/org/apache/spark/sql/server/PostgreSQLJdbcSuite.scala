@@ -558,6 +558,7 @@ class PostgreSQLJdbcSuite extends PostgreSQLJdbcTestBase(ssl = false) {
         // Start a very-long-running query that will take hours to finish, then cancel it in order
         // to demonstrate that cancellation works.
         val f = Future {
+          statement.executeQuery("SET spark.sql.crossJoin.enabled=true")
           statement.executeQuery(
             "SELECT COUNT(*) FROM test_map " +
             List.fill(10)("join test_map").mkString(" "))
@@ -672,8 +673,8 @@ abstract class SQLServerTest(ssl: Boolean)
        |  --driver-class-path $driverClassPath
        |  --driver-java-options -Dlog4j.debug
        |  --conf spark.ui.enabled=false
-       |  --conf ${SQLServerConf.PORT}=${port}
-       |  --conf ${SQLServerConf.SSL_ENABLED}=${ssl}
+       |  --conf ${SQLServerConf.SQLSERVER_PORT.key}=$port
+       |  --conf ${SQLServerConf.SQLSERVER_SSL_ENABLED.key}=$ssl
      """.stripMargin.split("\\s+").toSeq
   }
 

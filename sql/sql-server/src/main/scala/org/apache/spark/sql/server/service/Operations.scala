@@ -26,6 +26,7 @@ import org.apache.spark.sql.execution.command.SetCommand
 import org.apache.spark.sql.execution.datasources.CreateTable
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.server.SQLServerConf
+import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.server.SQLServer
@@ -46,7 +47,7 @@ private[server] case object PENDING extends OperationState
 
 private[server] abstract class Operation(conf: SQLConf) {
 
-  private val timeout = conf.getConf(SQLServerConf.SQLSERVER_IDLE_OPERATION_TIMEOUT)
+  private val timeout = conf.sqlServerIdleOperationTimeout
 
   protected[this] var state: OperationState = INITIALIZED
   private var lastAccessTime: Long = System.currentTimeMillis()
@@ -138,8 +139,7 @@ private[server] case class ExecuteStatementOperation(
 
       SQLServer.listener.onStatementParsed(statementId, resultSet.queryExecution.toString())
       rowIter = {
-        val useIncrementalCollect =
-          sqlContext.getConf(SQLServerConf.INCREMENTAL_COLLECT, "false").toBoolean
+        val useIncrementalCollect = sqlContext.conf.sqlServerIncrementalCollectEnabled
         if (useIncrementalCollect) {
           // resultSet.toLocalIterator.asScala
           throw new UnsupportedOperationException("`useIncrementalCollect` not supported yet")

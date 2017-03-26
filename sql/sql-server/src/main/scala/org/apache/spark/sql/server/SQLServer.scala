@@ -27,6 +27,7 @@ import org.apache.spark.sql.SQLContext
 import org.apache.spark.SparkContext
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd, SparkListenerJobStart}
 import org.apache.spark.sql.internal.SQLConf
+import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.service.{CompositeService, SparkSQLCLIService}
 import org.apache.spark.sql.server.service.postgresql.PostgreSQLService
 import org.apache.spark.sql.server.ui.SQLServerTab
@@ -153,8 +154,8 @@ object SQLServer extends Logging {
     private var onlineSessionNum: Int = 0
     private val sessionList = new mutable.LinkedHashMap[Int, SessionInfo]
     private val executionList = new mutable.LinkedHashMap[String, ExecutionInfo]
-    private val retainedStatements = conf.getConf(SQLServerConf.SQLSERVER_UI_STATEMENT_LIMIT)
-    private val retainedSessions = conf.getConf(SQLServerConf.SQLSERVER_UI_SESSION_LIMIT)
+    private val retainedStatements = conf.sqlServerUiStatementLimit
+    private val retainedSessions = conf.sqlServerUiSessionLimit
     private var totalRunning = 0
 
     def getOnlineSessionNum: Int = synchronized { onlineSessionNum }

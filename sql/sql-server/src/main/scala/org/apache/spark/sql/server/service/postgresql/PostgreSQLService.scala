@@ -25,7 +25,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel
 import io.netty.handler.logging.{LoggingHandler, LogLevel}
 
 import org.apache.spark.sql.SQLContext
-import org.apache.spark.sql.server.SQLServerConf
+import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.service.CLI
 import org.apache.spark.sql.server.service.CompositeService
 import org.apache.spark.sql.server.service.postgresql.protocol.v3.PostgreSQLV3MessageInitializer
@@ -37,13 +37,13 @@ private[server] class PostgreSQLService(cli: CLI) extends CompositeService {
   var msgHandlerInitializer: ChannelInitializer[SocketChannel] = _
 
   override def init(sqlContext: SQLContext): Unit = {
-    port = sqlContext.conf.getConfString(SQLServerConf.PORT, "5432").toInt
-    workerThreads = sqlContext.conf.getConfString(SQLServerConf.WORKER_THREADS, "4").toInt
+    port = sqlContext.conf.sqlServerPort
+    workerThreads = sqlContext.conf.sqlServerWorkerThreads
     msgHandlerInitializer = new PostgreSQLV3MessageInitializer(cli, sqlContext.conf)
 
     // Load system catalogs for the PostgreSQL v3 protocol
     Metadata.initCatalogTables(sqlContext)
-    if (sqlContext.conf.getConf(SQLServerConf.SQLSERVER_SINGLE_SESSION)) {
+    if (sqlContext.conf.sqlServerSingleSessionEnabled) {
       Metadata.initSystemFunctions(sqlContext)
     }
   }
