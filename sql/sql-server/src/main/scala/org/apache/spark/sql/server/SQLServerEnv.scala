@@ -19,8 +19,6 @@ package org.apache.spark.sql.server
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import scala.collection.JavaConverters._
-
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.{SparkSession, SQLContext}
@@ -40,15 +38,14 @@ private[server] object SQLServerEnv extends Logging {
   def init() {
     if (sqlContext == null) {
       val sparkConf = new SparkConf(loadDefaults = true)
-      val maybeSerializer = sparkConf.getOption("spark.serializer")
-      val maybeKryoReferenceTracking = sparkConf.getOption("spark.kryo.referenceTracking")
-      val maybeAppName = sparkConf.getOption("spark.app.name")
-      sparkConf
-        .setAppName(maybeAppName.getOrElse(s"SparkSQL::${Utils.localHostName()}"))
-        .set("spark.serializer",
-          maybeSerializer.getOrElse("org.apache.spark.serializer.KryoSerializer"))
-        .set("spark.kryo.referenceTracking",
-          maybeKryoReferenceTracking.getOrElse("false"))
+      // If user doesn't specify the appName, we want to get [SparkSQL::localHostName]
+      // instead of the default appName [SQLServer].
+      val maybeAppName = sparkConf
+        .getOption("spark.app.name")
+        .filterNot(_ == classOf[SQLServer].getName)
+
+      sparkConf.setAppName(
+        maybeAppName.getOrElse(s"SparkSQL::${Utils.localHostName()}"))
 
       val sparkSession = SparkSession.builder.config(sparkConf).enableHiveSupport().getOrCreate()
       sparkContext = sparkSession.sparkContext
