@@ -20,20 +20,17 @@ package org.apache.spark.sql.server.service
 import java.sql.SQLException
 import java.util.UUID
 
-import org.apache.spark.sql.execution.datasources.CreateTable
-import org.apache.spark.sql.types.StructType
-
-import scala.collection.JavaConverters._
-
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.execution.command.SetCommand
+import org.apache.spark.sql.execution.datasources.CreateTable
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.server.SQLServerConf
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.server.SQLServer
 import org.apache.spark.sql.server.service.postgresql.{Metadata => PgMetadata}
+import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.{Utils => SparkUtils}
 
 /** The states of an [[ExecuteStatementOperation]]. */

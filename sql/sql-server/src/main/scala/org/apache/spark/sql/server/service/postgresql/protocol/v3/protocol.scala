@@ -28,11 +28,11 @@ import scala.collection.mutable
 import io.netty.buffer.{ByteBuf, Unpooled}
 import io.netty.channel.{ChannelHandler, ChannelInboundHandlerAdapter, ChannelInitializer}
 import io.netty.channel.socket.SocketChannel
-import io.netty.handler.ssl.SslContext
-import io.netty.handler.ssl.util.SelfSignedCertificate
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
 import io.netty.handler.codec.bytes.{ByteArrayDecoder, ByteArrayEncoder}
+import io.netty.handler.ssl.SslContext
+import io.netty.handler.ssl.util.SelfSignedCertificate
 import org.apache.hadoop.security.UserGroupInformation
 import org.ietf.jgss.{GSSContext, GSSCredential, GSSException, GSSManager, Oid}
 
@@ -259,7 +259,7 @@ private object PostgreSQLWireProtocol {
    * If any command request (e.g., [[Query]] and [[Execute]]) is finished successfully,
    * we send this message to the client.
    */
-  def CommandComplete(tag: String) = {
+  def CommandComplete(tag: String): Array[Byte] = {
     val buf = ByteBuffer.allocate(6 + tag.length)
     buf.put('C'.toByte).putInt(5 + tag.length).put(tag.getBytes("US-ASCII")).put(0.toByte)
     buf.array()
@@ -270,7 +270,7 @@ private object PostgreSQLWireProtocol {
    * If any command request (e.g., [[Query]] and [[Execute]]) is finished successfully and we have
    * result rows, we send the results as the [[DataRow]]s.
    */
-  def DataRow(internalRow: InternalRow, state: PortalState) = {
+  def DataRow(internalRow: InternalRow, state: PortalState): Array[Byte] = {
     val schema = state.execState.schema
     val row = internalRow.toSeq(schema)
     val rowBytes = row.zipWithIndex.map { case (data, index) =>
@@ -367,7 +367,7 @@ private object PostgreSQLWireProtocol {
    * An ASCII code 'E' is an identifier of this [[ErrorResponse]] message.
    * If we have any failure, we send this message to the client.
    */
-  def ErrorResponse(msg: String) = {
+  def ErrorResponse(msg: String): Array[Byte] = {
     val buf = ByteBuffer.allocate(8 + msg.length)
     buf.put('E'.toByte).putInt(7 + msg.length)
       // 'M' indicates a human-readable message
@@ -382,7 +382,7 @@ private object PostgreSQLWireProtocol {
    * If we receive the `FunctionCall` message from a client and we have no failure,
    * we send this message to the client.
    */
-  def FunctionCallResponse(result: Array[Byte]) = {
+  def FunctionCallResponse(result: Array[Byte]): Array[Byte] = {
     val buf = ByteBuffer.allocate(9 + result.size)
     buf.put('V'.toByte).putInt(8 + result.size).putInt(result.size).put(result)
     buf.array()
@@ -392,7 +392,7 @@ private object PostgreSQLWireProtocol {
    * TODO: Support `NoticeResponse`, `NotificationResponse`, and `ParameterDescription`.
    */
 
-  def ParameterStatus(key: String, value: String) = {
+  def ParameterStatus(key: String, value: String): Array[Byte] = {
     val paramLen = key.length + value.length
     val buf = ByteBuffer.allocate(7 + paramLen)
     buf.put('S'.toByte)
@@ -407,7 +407,7 @@ private object PostgreSQLWireProtocol {
    * If we receive the [[Describe]] message from a client and we have no failure,
    * we send this message to the client.
    */
-  def RowDescription(schema: StructType) = {
+  def RowDescription(schema: StructType): Array[Byte] = {
     if (schema.size == 0) {
       val buf = ByteBuffer.allocate(7)
       buf.put('T'.toByte).putInt(6).putShort(0)
@@ -570,12 +570,14 @@ private object PostgreSQLWireProtocol {
   }
 }
 
+// scalastyle:off
 /**
  * This is a special class to avoid a following exception;
  * "ByteArrayDecoder is not @Sharable handler, so can't be added or removed multiple times"
  *
  * http://stackoverflow.com/questions/34068315/bytearraydecoder-is-not-sharable-handler-so-cant-be-added-or-removed-multiple
  */
+// scalastyle:on
 @ChannelHandler.Sharable
 private[v3] class SharableByteArrayDecode extends ByteArrayDecoder {}
 
@@ -760,7 +762,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SQLConf)
           if (gssContext != null) {
             try {
               gssContext.dispose()
-            } catch  {
+            } catch {
               case _: Throwable => // No-op
             }
           }

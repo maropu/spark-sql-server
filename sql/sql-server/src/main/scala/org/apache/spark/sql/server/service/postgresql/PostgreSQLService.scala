@@ -19,11 +19,10 @@ package org.apache.spark.sql.server.service.postgresql
 
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.channel.ChannelInitializer
+import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioServerSocketChannel
-import io.netty.channel.nio.NioEventLoopGroup
-import io.netty.handler.logging.LogLevel
-import io.netty.handler.logging.LoggingHandler
+import io.netty.handler.logging.{LoggingHandler, LogLevel}
 
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.server.SQLServerConf

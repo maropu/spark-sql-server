@@ -25,8 +25,8 @@ import java.sql._
 import java.util.Properties
 
 import scala.collection.mutable
-import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.duration._
 import scala.util.Random
 import scala.util.Try
 
@@ -147,7 +147,7 @@ class PostgreSQLJdbcSuite extends PostgreSQLJdbcTestBase(ssl = false) {
         assert(!mdTable.next())
       }
 
-      def getTableSchema(tableName: String) = new Iterator[(String, String)] {
+      val getTableSchema = (tableName: String) => new Iterator[(String, String)] {
         val schemaInfo = databaseMetaData.getColumns(null, null, tableName, "%")
         def hasNext = schemaInfo.next()
         def next() = (schemaInfo.getString("COLUMN_NAME"), schemaInfo.getString("TYPE_NAME"))
@@ -189,7 +189,7 @@ class PostgreSQLJdbcSuite extends PostgreSQLJdbcTestBase(ssl = false) {
       val expectedRow = Seq(false, 25, 32, 15, 3.2f, 8.9, "test", Date.valueOf("2016-08-04"),
         Timestamp.valueOf("2016-08-04 00:17:13"), BigDecimal.valueOf(32))
 
-      def getTypedValue(offset: Int) = {
+      def getTypedValue(offset: Int): Any = {
         val (typeName, value) = resultSetMetaData.getColumnType(offset) match {
           case java.sql.Types.BIT =>
             ("bool", resultSet.getBoolean(offset))
@@ -283,7 +283,7 @@ class PostgreSQLJdbcSuite extends PostgreSQLJdbcTestBase(ssl = false) {
         Seq(BigDecimal.valueOf(12), BigDecimal.valueOf(86), BigDecimal.valueOf(35))
       )
 
-      def getTypedArray(offset: Int) = {
+      def getTypedArray(offset: Int): Seq[Any] = {
         assert(java.sql.Types.ARRAY === resultSetMetaData.getColumnType(offset))
         val resultArray = resultSet.getArray(offset)
         val elementTypeName = resultArray.getBaseType match {
@@ -358,7 +358,7 @@ class PostgreSQLJdbcSuite extends PostgreSQLJdbcTestBase(ssl = false) {
       val expectedRow = Seq(-1, """{"val0":0,"val1":{"val11":0.1,"val12":"test"}}""",
         """{0:"value0",1:"value1"}""")
 
-      def getCustomTypedValue(offset: Int) = {
+      def getCustomTypedValue(offset: Int): Any = {
         assert("PGobject" === resultSet.getObject(offset).getClass.getSimpleName)
         resultSetMetaData.getColumnType(offset) match {
           case java.sql.Types.OTHER =>
@@ -568,7 +568,7 @@ class PostgreSQLJdbcSuite extends PostgreSQLJdbcTestBase(ssl = false) {
         Thread.sleep(1000)
         statement.cancel()
         val e = intercept[SparkException] {
-          ThreadUtils.awaitResult(f, 3.minute)
+          ThreadUtils.awaitResult(f, 1.minute)
         }.getCause
         assert(e.isInstanceOf[SQLException])
         assert(e.getMessage.contains("cancelled"))

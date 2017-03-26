@@ -91,7 +91,8 @@ private[service] object Metadata {
     sqlContext.udf.register("ANY", (arg: String) => arg)
     sqlContext.udf.register("current_schemas", (arg: Boolean) => defaultSparkNamespace._2)
     // sqlContext.udf.register("array_in", () => "array_in")
-    sqlContext.udf.register(s"${catalogDbName}.obj_description", (oid: Int, tableName: String) => "")
+    sqlContext.udf.register(
+      s"${catalogDbName}.obj_description", (oid: Int, tableName: String) => "")
   }
 
   def initCatalogTables(sqlContext: SQLContext): Unit = {
