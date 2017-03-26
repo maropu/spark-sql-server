@@ -568,7 +568,7 @@ class PostgreSQLJdbcSuite extends PostgreSQLJdbcTestBase(ssl = false) {
         Thread.sleep(1000)
         statement.cancel()
         val e = intercept[SparkException] {
-          ThreadUtils.awaitResult(f, 1.minute)
+          ThreadUtils.awaitResult(f, 3.minute)
         }.getCause
         assert(e.isInstanceOf[SQLException])
         assert(e.getMessage.contains("cancelled"))
@@ -677,7 +677,7 @@ abstract class SQLServerTest(ssl: Boolean)
      """.stripMargin.split("\\s+").toSeq
   }
 
-  val SERVER_STARTUP_TIMEOUT = 3.minutes
+  val SERVER_STARTUP_TIMEOUT = 1.minutes
 
   private def startSQLServer(port: Int, attempt: Int) = {
     operationLogPath = Utils.createTempDir()
@@ -722,7 +722,7 @@ abstract class SQLServerTest(ssl: Boolean)
 
     // ThreadUtils.awaitResult(serverStarted.future, SERVER_STARTUP_TIMEOUT)
     // TODO: Stupid waiting here, so this needs to be fixed ASAP
-    Thread.sleep(240 * 1000)
+    Thread.sleep(SERVER_STARTUP_TIMEOUT.toMillis)
   }
 
   private def stopSQLServer(): Unit = {
