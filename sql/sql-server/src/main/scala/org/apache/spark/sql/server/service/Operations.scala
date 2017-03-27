@@ -144,8 +144,7 @@ private[server] case class ExecuteStatementOperation(
       rowIter = {
         val useIncrementalCollect = sqlContext.conf.sqlServerIncrementalCollectEnabled
         if (useIncrementalCollect) {
-          // resultSet.toLocalIterator.asScala
-          throw new UnsupportedOperationException("`useIncrementalCollect` not supported yet")
+          resultSet.queryExecution.executedPlan.executeToIterator()
         } else {
           resultSet.queryExecution.executedPlan.executeCollect().iterator
         }

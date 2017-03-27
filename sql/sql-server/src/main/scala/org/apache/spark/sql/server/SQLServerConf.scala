@@ -48,7 +48,7 @@ object SQLServerConf {
      buildConf("spark.sql.server.incrementalCollect.enabled")
     .doc("When set to true, Spark collects result rows partition-by-partition.")
     .booleanConf
-    .createWithDefault(false)
+    .createWithDefault(true)
 
    val SQLSERVER_SSL_ENABLED = buildConf("spark.sql.server.ssl.enabled")
     .doc("When set to true, SQLServer enables SSL encryption.")

@@ -860,17 +860,15 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SQLConf)
     val props = keys.zip(values).toMap
     logDebug("Received properties from a client: "
       + props.map { case (key, value) => s"${key}=${value}" }.mkString(", "))
-    /**
-     * props.get("application_name").map { appName =>
-     *   if (appName == "psql") {
-     *     ctx.write(ErrorResponse("`psql` not supported in Spark SQL server"))
-     *     logWarning("Close the connection from `psql` because of unsupported client")
-     *     ctx.flush()
-     *     ctx.close()
-     *     return
-     *   }
-     * }
-     */
+    // props.get("application_name").map { appName =>
+    //   if (appName == "psql") {
+    //     ctx.write(ErrorResponse("`psql` not supported in Spark SQL server"))
+    //     logWarning("Close the connection from `psql` because of unsupported client")
+    //     ctx.flush()
+    //     ctx.close()
+    //     return
+    //   }
+    // }
     val userName = props.getOrElse("user", "UNKNOWN")
     val passwd = props.getOrElse("passwd", "")
     val hostAddr = ctx.channel().localAddress().asInstanceOf[InetSocketAddress].getHostName()
@@ -989,8 +987,8 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SQLConf)
             query = query.replace(target, s"'${param}'")
           }
           logInfo(s"Bound query: ${query}")
-          portalState.execState = cli.executeStatement(portalState.sessionId, query)
           try {
+            portalState.execState = cli.executeStatement(portalState.sessionId, query)
             portalState.execState.run()
           } catch {
             case NonFatal(e) =>
