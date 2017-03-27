@@ -802,7 +802,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SQLConf)
     //  DESC LIMIT 1
     //
     // However, it is difficult to handle this query in spark because of PostgreSQL dialects.
-    // When the value is set at an empty string, the interaction is more simple,
+    // When the value is set at an empty string, the interaction is the simplest,
     // so the value is fixed at "" for now.
     ctx.write(ParameterStatus("server_version", ""))
     ctx.write(ParameterStatus("TimeZone", java.util.TimeZone.getDefault().getID()))

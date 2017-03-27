@@ -48,9 +48,12 @@ object TestData {
 
 class PostgreSQLJdbcSuite extends PostgreSQLJdbcTestBase(ssl = false) {
 
-  test("protocol version") {
+  test("server version") {
     withJdbcStatement { statement =>
       val protoInfo = statement.getConnection.asInstanceOf[org.postgresql.jdbc.PgConnection]
+      // A server version decides how to handle metadata between jdbc clients and servers.
+      // Since it is hard to handle PostgreSQL dialects, we use the simplest settings;
+      // when the value is set at an empty string, the interaction is the simplest.
       assert("" === protoInfo.getDBVersionNumber)
     }
   }
