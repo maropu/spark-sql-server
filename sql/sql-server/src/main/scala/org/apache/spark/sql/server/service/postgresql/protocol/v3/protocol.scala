@@ -24,6 +24,7 @@ import java.security.PrivilegedExceptionAction
 import java.sql.SQLException
 
 import scala.collection.mutable
+import scala.util.control.NonFatal
 
 import io.netty.buffer.{ByteBuf, Unpooled}
 import io.netty.channel.{ChannelHandler, ChannelInboundHandlerAdapter, ChannelInitializer}
@@ -46,6 +47,7 @@ import org.apache.spark.sql.server.service.CLI
 import org.apache.spark.sql.server.service.ExecuteStatementOperation
 import org.apache.spark.sql.server.service.postgresql.{Metadata => PgMetadata}
 import org.apache.spark.sql.types._
+
 
 /**
  * This is the implementation of the PostgreSQL V3 client/server protocol.
@@ -763,7 +765,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SQLConf)
             try {
               gssContext.dispose()
             } catch {
-              case _: Throwable => // No-op
+              case NonFatal(_) => // No-op
             }
           }
         }
@@ -991,7 +993,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SQLConf)
           try {
             portalState.execState.run()
           } catch {
-            case e: Throwable =>
+            case NonFatal(e) =>
               handleException(ctx, s"Exception detected during message `Bind`: ${e}")
               return
           }
@@ -1029,7 +1031,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SQLConf)
             }
             ctx.write(CommandComplete(s"SELECT ${numRows}"))
           } catch {
-            case e: Throwable =>
+            case NonFatal(e) =>
               handleException(ctx, s"Exception detected during message `Execute`: ${e}")
               return
           }
@@ -1071,7 +1073,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SQLConf)
               }
               ctx.write(CommandComplete(s"SELECT ${numRows}"))
             } catch {
-              case e: Throwable =>
+              case NonFatal(e) =>
                 handleException(ctx, s"Exception detected during message `Query`: ${e}")
                 return
             }

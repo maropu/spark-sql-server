@@ -20,6 +20,8 @@ package org.apache.spark.sql.server.service
 import java.sql.SQLException
 import java.util.UUID
 
+import scala.util.control.NonFatal
+
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.execution.command.SetCommand
@@ -33,6 +35,7 @@ import org.apache.spark.sql.server.SQLServer
 import org.apache.spark.sql.server.service.postgresql.{Metadata => PgMetadata}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.{Utils => SparkUtils}
+
 
 /** The states of an [[ExecuteStatementOperation]]. */
 private[server] sealed trait OperationState
@@ -148,7 +151,7 @@ private[server] case class ExecuteStatementOperation(
         }
       }
     } catch {
-      case e: Throwable =>
+      case NonFatal(e) =>
         if (state != CANCELED) {
           logError(s"Error executing query, currentState $state, ", e)
           setState(ERROR)
