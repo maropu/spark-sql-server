@@ -32,7 +32,7 @@ build/zinc*
 cache
 checkpoint
 conf/*.cmd
-conf/*.conf
+# conf/*.conf
 conf/*.properties
 conf/*.sh
 conf/*.xml
