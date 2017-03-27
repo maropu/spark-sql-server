@@ -646,17 +646,18 @@ private[v3] class SslRequestHandler() extends ChannelInboundHandlerAdapter with 
 private case class JsonState(writer: CharArrayWriter, generator: JacksonGenerator)
 
 /**
- * Manage a cursor state in a session. Since APIs in PostgreSQL JDBC drivers are thread-safe and
- * they make sure that a single thread sends a query and get the result, it is okay to have
- * a single execution state for each session. See 'Chapter 10. Using the Driver in a Multithreaded
- * or a Servlet Environment' in a document below;
- *  - https://jdbc.postgresql.org/documentation/92/thread.html
+ * Manage a cursor state in a session.
+ *
+ * TODO: We need to recheck threading policies in PostgreSQL JDBC drivers and related documents:
+ * - Chapter 10. Using the Driver in a Multithreaded or a Servlet Environment
+ *  https://jdbc.postgresql.org/documentation/92/thread.html
  */
 private case class PortalState(sessionId: Int, secretKey: Int) {
   var pendingBytes: Array[Byte] = Array.empty
-  var queries: mutable.Map[String, String] = mutable.Map.empty
-  var execState: ExecuteStatementOperation = _
-  var jsonStates: mutable.Map[String, JsonState] = mutable.Map.empty
+  // `execState` possibly accessed by asynchronous JDBC cancellation requests
+  @volatile var execState: ExecuteStatementOperation = _
+  val queries: mutable.Map[String, String] = mutable.Map.empty
+  val jsonStates: mutable.Map[String, JsonState] = mutable.Map.empty
 }
 
 @ChannelHandler.Sharable
@@ -926,6 +927,10 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SQLConf)
   private def handleV3Messages(ctx: ChannelHandlerContext, msgBuffer: ByteBuffer): Unit = {
     val channelId = getUniqueChannelId(ctx)
     val portalState = channelIdToPortalState.get(channelId)
+
+    // Since a message possible spans over multiple in-coming data in `channelRead0` calls,
+    // we need to check enough data to process. We put complete messages in `procBuffer` for message
+    // processing; otherwise it puts left data in `pendingBytes` for a next call.
     val len = portalState.pendingBytes.size + msgBuffer.remaining()
     val uncheckedBuffer = ByteBuffer.allocate(len)
     val procBuffer = ByteBuffer.allocate(len)
@@ -956,9 +961,10 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SQLConf)
         portalState.pendingBytes = pendingBytes
       }
     }
+
     procBuffer.flip()
-    logDebug(s"#bytesToProcess=${procBuffer.remaining} "
-      + s"#pendingBytes=${portalState.pendingBytes.size}")
+    logDebug(s"#processed=${procBuffer.remaining} #pending=${portalState.pendingBytes.size}")
+
     while (procBuffer.remaining() > 0) {
       extractClientMessageType(procBuffer) match {
         case PasswordMessage(token) =>
