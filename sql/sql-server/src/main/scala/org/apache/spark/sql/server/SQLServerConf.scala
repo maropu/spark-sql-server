@@ -19,6 +19,7 @@ package org.apache.spark.sql.server
 
 import org.apache.spark.internal.config.ConfigBuilder
 import org.apache.spark.sql.internal.SQLConf
+import org.apache.spark.sql.internal.SQLConf.SQLConfigBuilder
 
 
 /**
@@ -31,7 +32,7 @@ object SQLServerConf {
    */
   implicit def SQLConfToSQLServerConf(conf: SQLConf): SQLServerConf = new SQLServerConf(conf)
 
-  def buildConf(key: String): ConfigBuilder = ConfigBuilder(key)
+  def buildConf(key: String): ConfigBuilder = SQLConfigBuilder(key)
 
   val SQLSERVER_PORT = buildConf("spark.sql.server.port")
     .doc("Port number of SQLServer interface.")
