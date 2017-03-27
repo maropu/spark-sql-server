@@ -85,7 +85,7 @@ private[server] case class ExecuteStatementOperation(
   private[service] var rowIter: Iterator[InternalRow] = _
 
   override def cancel(): Unit = {
-    logInfo(s"Cancel '$statement' with $statementId")
+    logInfo(s"Cancelling '$statement' with $statementId")
     if (statementId != null) {
       sqlContext.sparkContext.cancelJobGroup(statementId)
     }
@@ -156,7 +156,8 @@ private[server] case class ExecuteStatementOperation(
             statementId, e.getMessage, SparkUtils.exceptionString(e))
           throw new SQLException(e.toString)
         } else {
-          return
+          logWarning(s"Cancelled query '$statement' with $statementId")
+          throw new SQLException(e.toString)
         }
     }
     setState(FINISHED)

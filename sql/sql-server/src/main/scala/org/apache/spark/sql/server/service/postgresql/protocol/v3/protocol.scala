@@ -835,7 +835,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SQLConf)
       if (portal.secretKey != secretKey) {
         throw new SQLException(s"Illegal secretKey: channelId=${channelId}")
       }
-      logInfo(s"Canceling the running query: channelId=${channelId}")
+      logWarning(s"Canceling the running query: channelId=${channelId}")
       portal.execState.cancel()
       ctx.close()
       return
@@ -856,7 +856,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SQLConf)
       case (a, b) => (a.map(_._1), b.map(_._1))
     }
     val props = keys.zip(values).toMap
-    logInfo("Received properties from a client: "
+    logDebug("Received properties from a client: "
       + props.map { case (key, value) => s"${key}=${value}" }.mkString(", "))
     /**
      * props.get("application_name").map { appName =>
@@ -957,7 +957,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SQLConf)
       }
     }
     procBuffer.flip()
-    logWarning(s"#bytesToProcess=${procBuffer.remaining} "
+    logDebug(s"#bytesToProcess=${procBuffer.remaining} "
       + s"#pendingBytes=${portalState.pendingBytes.size}")
     while (procBuffer.remaining() > 0) {
       extractClientMessageType(procBuffer) match {
@@ -967,7 +967,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SQLConf)
           }
           return
         case Bind(portalName, queryName, formats, params, resultFormats) =>
-          logWarning(s"Bind: portalName=${portalName},queryName=${queryName},formats=${formats},"
+          logInfo(s"Bind: portalName=${portalName},queryName=${queryName},formats=${formats},"
             + s"params=${params},resultFormats=${resultFormats}")
           var query = portalState.queries.getOrElse(queryName, {
             throw new SQLException(s"Unknown query specified: ${queryName}")
@@ -983,10 +983,10 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SQLConf)
                   case 4 => s"${ByteBuffer.wrap(params(index)).getInt}"
                 }
             }
-            logWarning(s"binds param: ${target}->${param}")
+            logDebug(s"binds param: ${target}->${param}")
             query = query.replace(target, s"'${param}'")
           }
-          logWarning(s"Bound query:${query}")
+          logInfo(s"Bound query: ${query}")
           portalState.execState = cli.executeStatement(portalState.sessionId, query)
           try {
             portalState.execState.run()
@@ -1042,7 +1042,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SQLConf)
           return
         case Parse(name, query, objIds) =>
           portalState.queries(name) = replaceUnsupportedSyntax(query)
-          logWarning(s"Parse: name=${portalState.queries(name)},query=${query},objIds=${objIds}")
+          logInfo(s"Parse: name=${portalState.queries(name)},query=${query},objIds=${objIds}")
           ctx.write(ParseComplete)
           ctx.flush()
         case Query(queries) =>

@@ -547,12 +547,12 @@ class PostgreSQLJdbcSuite extends PostgreSQLJdbcTestBase(ssl = false) {
     )
   }
 
-  ignore("jdbc cancellation") {
+  test("jdbc cancellation") {
     withJdbcStatement { statement =>
       Seq(
-        "DROP TABLE IF EXISTS test_map",
-        "CREATE TABLE test_map(key INT, value STRING)",
-        s"LOAD DATA LOCAL INPATH '${TestData.smallKv}' OVERWRITE INTO TABLE test_map"
+        "DROP TABLE IF EXISTS t",
+        "CREATE TABLE t(key INT, value STRING)",
+        s"LOAD DATA LOCAL INPATH '${TestData.smallKv}' OVERWRITE INTO TABLE t"
       ).foreach(statement.execute)
 
       implicit val ec = ExecutionContext.fromExecutorService(
@@ -562,14 +562,15 @@ class PostgreSQLJdbcSuite extends PostgreSQLJdbcTestBase(ssl = false) {
         // to demonstrate that cancellation works.
         val f = Future {
           statement.executeQuery("SET spark.sql.crossJoin.enabled=true")
-          statement.executeQuery(
-            "SELECT COUNT(*) FROM test_map " +
-            List.fill(10)("join test_map").mkString(" "))
+          val query = "SELECT COUNT(*) FROM t " + (0 until 10).map(_ => "join t").mkString(" ")
+          val rs = statement.executeQuery(query)
+          // Try to fetch a first line of results
+          rs.next()
         }
         // Note that this is slightly race-prone: if the cancel is issued before the statement
         // begins executing then we'll fail with a timeout. As a result, this fixed delay is set
         // slightly more conservatively than may be strictly necessary.
-        Thread.sleep(1000)
+        Thread.sleep(3000)
         statement.cancel()
         val e = intercept[SparkException] {
           ThreadUtils.awaitResult(f, 3.minute)
@@ -659,7 +660,7 @@ abstract class SQLServerTest(ssl: Boolean)
       val tempLog4jConf = Utils.createTempDir().getCanonicalPath
 
       Files.write(
-        """log4j.rootCategory=WARN, console
+        """log4j.rootCategory=INFO, console
           |log4j.appender.console=org.apache.log4j.ConsoleAppender
           |log4j.appender.console.target=System.err
           |log4j.appender.console.layout=org.apache.log4j.PatternLayout
