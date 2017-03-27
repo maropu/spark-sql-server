@@ -65,7 +65,7 @@ class ProcessOutputCapturer(stream: InputStream, capture: String => Unit) extend
 class PostgreSQLJdbcSuite extends PostgreSQLJdbcTestBase(ssl = false) {
 
   test("server version") {
-    withJdbcStatement { statement =>
+    testJdbcStatement { statement =>
       val protoInfo = statement.getConnection.asInstanceOf[org.postgresql.jdbc.PgConnection]
       // A server version decides how to handle metadata between jdbc clients and servers.
       // Since it is hard to handle PostgreSQL dialects, we use the simplest settings;
@@ -75,7 +75,7 @@ class PostgreSQLJdbcSuite extends PostgreSQLJdbcTestBase(ssl = false) {
   }
 
   test("DatabaseMetaData tests") {
-    withJdbcStatement { statement =>
+    testJdbcStatement { statement =>
       val databaseMetaData = statement.getConnection.getMetaData
       val supportedTypeInfo = new Iterator[(String, String)] {
         val typeInfo = databaseMetaData.getTypeInfo
@@ -179,7 +179,7 @@ class PostgreSQLJdbcSuite extends PostgreSQLJdbcTestBase(ssl = false) {
   }
 
   test("primitive types") {
-    withJdbcStatement { statement =>
+    testJdbcStatement { statement =>
       Seq(
         "DROP TABLE IF EXISTS test",
         """
@@ -251,7 +251,7 @@ class PostgreSQLJdbcSuite extends PostgreSQLJdbcTestBase(ssl = false) {
   }
 
   test("array types") {
-    withJdbcStatement { statement =>
+    testJdbcStatement { statement =>
       Seq(
         "DROP TABLE IF EXISTS test",
         """
@@ -338,7 +338,7 @@ class PostgreSQLJdbcSuite extends PostgreSQLJdbcTestBase(ssl = false) {
   }
 
   test("binary types") {
-    withJdbcStatement { statement =>
+    testJdbcStatement { statement =>
       Seq(
         "DROP TABLE IF EXISTS test",
         "CREATE TABLE test(val STRING)",
@@ -356,7 +356,7 @@ class PostgreSQLJdbcSuite extends PostgreSQLJdbcTestBase(ssl = false) {
   }
 
   test("custom types (BYTE, STRUCT, MAP)") {
-    withJdbcStatement { statement =>
+    testJdbcStatement { statement =>
       Seq(
         "DROP TABLE IF EXISTS test",
         """
@@ -406,7 +406,7 @@ class PostgreSQLJdbcSuite extends PostgreSQLJdbcTestBase(ssl = false) {
   }
 
   test("simple query execution") {
-    withJdbcStatement { statement =>
+    testJdbcStatement { statement =>
       Seq(
         "SET spark.sql.shuffle.partitions=3",
         "DROP TABLE IF EXISTS test",
@@ -424,7 +424,7 @@ class PostgreSQLJdbcSuite extends PostgreSQLJdbcTestBase(ssl = false) {
   }
 
   test("result set containing NULL") {
-    withJdbcStatement { statement =>
+    testJdbcStatement { statement =>
       Seq(
         "DROP TABLE IF EXISTS test_null",
         "CREATE TABLE test_null(key INT, val STRING)",
@@ -449,7 +449,7 @@ class PostgreSQLJdbcSuite extends PostgreSQLJdbcTestBase(ssl = false) {
     var defaultV2: String = null
     var data: mutable.ArrayBuffer[Int] = null
 
-    withMultipleConnectionJdbcStatement(
+    testMultipleConnectionJdbcStatement(
       // create table, insert data, and fetch them
       { statement =>
 
@@ -563,8 +563,28 @@ class PostgreSQLJdbcSuite extends PostgreSQLJdbcTestBase(ssl = false) {
     )
   }
 
+  test("collect mode") {
+    Set("true", "false").map { mode =>
+      testJdbcStatementWitConf("spark.sql.server.incrementalCollect.enabled" -> mode) { statement =>
+        // Create a table with many rows
+        assert(statement.execute(
+          """
+            |CREATE TEMPORARY VIEW t AS
+            |  SELECT id, 1 AS value FROM range(0, 1000000, 1)
+          """.stripMargin))
+        val rs = statement.executeQuery("SELECT id, COUNT(value) FROM t GROUP BY id")
+        (0 until 1000000).foreach { i =>
+          assert(rs.next())
+          assert(rs.getInt(2) == 1)
+        }
+        assert(!rs.next())
+        rs.close()
+      }
+    }
+  }
+
   test("jdbc cancellation") {
-    withJdbcStatement { statement =>
+    testJdbcStatement { statement =>
       Seq(
         "DROP TABLE IF EXISTS t",
         "CREATE TABLE t(key INT, value STRING)",
@@ -618,7 +638,7 @@ class PostgreSQLJdbcWithSslSuite extends PostgreSQLJdbcTestBase(ssl = true) {
         resultSet.getInt(1)
       }
     }
-    withJdbcStatement(testFunc)
+    testJdbcStatement(testFunc)
   }
 }
 
@@ -627,7 +647,7 @@ abstract class PostgreSQLJdbcTestBase(ssl: Boolean = false) extends SQLServerTes
 
   private lazy val jdbcUri = s"jdbc:postgresql://localhost:${listeningPort}/default"
 
-  def withMultipleConnectionJdbcStatement(fs: (Statement => Unit)*) {
+  private def getJdbcConnect(): Connection = {
     val props = new Properties()
     props.put("user", System.getProperty("user.name"))
     props.put("password", "")
@@ -635,7 +655,11 @@ abstract class PostgreSQLJdbcTestBase(ssl: Boolean = false) extends SQLServerTes
       props.put("ssl", "true")
       props.put("sslfactory", "org.postgresql.ssl.NonValidatingFactory")
     }
-    val connections = fs.map { _ => DriverManager.getConnection(jdbcUri, props) }
+    DriverManager.getConnection(jdbcUri, props)
+  }
+
+  def testMultipleConnectionJdbcStatement(fs: (Statement => Unit)*) {
+    val connections = fs.map { _ => getJdbcConnect() }
     val statements = connections.map(_.createStatement())
     try {
       statements.zip(fs).foreach { case (s, f) => f(s) }
@@ -645,8 +669,29 @@ abstract class PostgreSQLJdbcTestBase(ssl: Boolean = false) extends SQLServerTes
     }
   }
 
-  def withJdbcStatement(f: Statement => Unit) {
-    withMultipleConnectionJdbcStatement(f)
+  def testJdbcStatement(f: Statement => Unit): Unit = {
+    testMultipleConnectionJdbcStatement(f)
+  }
+
+  def testJdbcStatementWitConf(options: (String, String)*)(f: Statement => Unit) {
+    val connection = getJdbcConnect()
+    val statement = connection.createStatement()
+
+    val (keys, values) = options.unzip
+    val currentValues = keys.map { key =>
+      val rs = statement.executeQuery(s"SET $key")
+      if (rs.next()) { rs.getString(2) } else { assert(false, s"Invalue key detected: $key") }
+    }
+    options.foreach { case (key, value) =>
+      statement.execute(s"SET $key=$value")
+    }
+    try f(statement) finally {
+      keys.zip(currentValues).foreach {
+        case (key, value) => statement.execute(s"SET $key=$value")
+      }
+      statement.close()
+      connection.close()
+    }
   }
 }
 
