@@ -583,6 +583,37 @@ class PostgreSQLJdbcSuite extends PostgreSQLJdbcTestBase(ssl = false) {
     }
   }
 
+  test("independent state across JDBC connections") {
+    testMultipleConnectionJdbcStatement(
+      { statement =>
+        val jarPath = "src/test/resources/TestUDTF.jar"
+        val jarURL = s"file://${System.getProperty("user.dir")}/$jarPath"
+
+        // Configurations and temporary functions added in this session should be visible to all
+        // the other sessions.
+        Seq(
+          "SET foo=bar",
+          s"ADD JAR $jarURL",
+          s"""
+             |CREATE TEMPORARY FUNCTION udtf_count2
+             |  AS 'org.apache.spark.sql.hive.execution.GenericUDTFCount2'
+           """.stripMargin
+        ).foreach(statement.execute)
+      },
+
+      { statement =>
+        val rs1 = statement.executeQuery("SET foo")
+        assert(rs1.next())
+        assert(rs1.getString(1) === "foo")
+        assert(rs1.getString(2) !== "bar")
+
+        val rs2 = statement.executeQuery("DESCRIBE FUNCTION udtf_count2")
+        assert(rs2.next())
+        assert(rs2.getString(1) === "Function: udtf_count2 not found.")
+      }
+    )
+  }
+
   test("jdbc cancellation") {
     testJdbcStatement { statement =>
       Seq(
@@ -642,7 +673,55 @@ class PostgreSQLJdbcWithSslSuite extends PostgreSQLJdbcTestBase(ssl = true) {
   }
 }
 
-abstract class PostgreSQLJdbcTestBase(ssl: Boolean = false) extends SQLServerTest(ssl) {
+class PostgreSQLJdbcSingleSessionSuite extends PostgreSQLJdbcTestBase(singleSession = true) {
+
+  test("share the temporary functions across JDBC connections") {
+    testMultipleConnectionJdbcStatement(
+      { statement =>
+        val jarPath = "src/test/resources/TestUDTF.jar"
+        val jarURL = s"file://${System.getProperty("user.dir")}/$jarPath"
+
+        // Configurations and temporary functions added in this session should be visible to all
+        // the other sessions.
+        Seq(
+          "SET foo=bar",
+          s"ADD JAR $jarURL",
+          s"""
+             |CREATE TEMPORARY FUNCTION udtf_count2
+             |  AS 'org.apache.spark.sql.hive.execution.GenericUDTFCount2'
+           """.stripMargin
+        ).foreach(statement.execute)
+      },
+
+      { statement =>
+        try {
+          val rs1 = statement.executeQuery("SET foo")
+          assert(rs1.next())
+          assert(rs1.getString(1) === "foo")
+          assert(rs1.getString(2) === "bar")
+
+          val rs2 = statement.executeQuery("DESCRIBE FUNCTION udtf_count2")
+          assert(rs2.next())
+          assert(rs2.getString(1) === "Function: udtf_count2")
+          assert(rs2.next())
+          assertResult("Class: org.apache.spark.sql.hive.execution.GenericUDTFCount2") {
+            rs2.getString(1)
+          }
+
+          assert(rs2.next())
+          assert(rs2.getString(1) === "Usage: N/A.")
+        } finally {
+          statement.executeQuery("DROP TEMPORARY FUNCTION udtf_count2")
+        }
+      }
+    )
+  }
+}
+
+abstract class PostgreSQLJdbcTestBase(ssl: Boolean = false, singleSession: Boolean = false)
+    extends SQLServerTest(ssl, singleSession) {
+
+  // Register a JDBC driver for PostgreSQL
   Utils.classForName(classOf[org.postgresql.Driver].getCanonicalName)
 
   private lazy val jdbcUri = s"jdbc:postgresql://localhost:${listeningPort}/default"
@@ -695,8 +774,8 @@ abstract class PostgreSQLJdbcTestBase(ssl: Boolean = false) extends SQLServerTes
   }
 }
 
-abstract class SQLServerTest(ssl: Boolean) extends SparkFunSuite
-    with BeforeAndAfterAll with Logging {
+abstract class SQLServerTest(ssl: Boolean, singleSession: Boolean)
+    extends SparkFunSuite with BeforeAndAfterAll with Logging {
 
   private val className = SQLServer.getClass.getCanonicalName.stripSuffix("$")
   private val logFileMask = s"starting $className, logging to "
@@ -768,6 +847,7 @@ abstract class SQLServerTest(ssl: Boolean) extends SparkFunSuite
        |  --conf spark.ui.enabled=false
        |  --conf ${SQLServerConf.SQLSERVER_PORT.key}=$port
        |  --conf ${SQLServerConf.SQLSERVER_SSL_ENABLED.key}=$ssl
+       |  --conf ${SQLServerConf.SQLSERVER_SINGLE_SESSION_ENABLED.key}=$singleSession
      """.stripMargin.split("\\s+").toSeq
   }
 
