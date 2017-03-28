@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/maropu/spark-sql-server.svg?branch=master)](https://travis-ci.org/maropu/spark-sql-server)
 
-A SQL server based on the PostgreSQL V3 protocol.
+A Spark SQL server based on the PostgreSQL V3 protocol.
 This is just a prototype to check feasibility for yet another SQL JDBC/ODBC server in Apache Spark
 (See [SPARK-15816](https://issues.apache.org/jira/browse/SPARK-15816) for related discussions).
 
@@ -8,7 +8,7 @@ This is just a prototype to check feasibility for yet another SQL JDBC/ODBC serv
 
 To start the JDBC/ODBC server, run the following in the root directory:
 
-    ./sbin/start-sql-server.sh
+    $ ./sbin/start-sql-server.sh
 
 This script accepts all `bin/spark-submit` command line options in Spark, plus options
 for the SQL server. You may run `./sbin/start-sql-server.sh --help` for a complete list of
@@ -16,15 +16,16 @@ all available options. By default, the server listens on localhost:5432.
 
 Now you can use a PostgreSQL `psql` command to test the SQL JDBC/ODBC server:
 
-    psql -h localhost
+    $ psql -h localhost
 
 ### Use PostgreSQL JDBC drivers
 
 To connect the SQL server, you can use mature and widely-used [PostgreSQL JDBC drivers](https://jdbc.postgresql.org/).
-You can get the driver, add it to a class path, and write code like:
+You can get the driver, add it to a class path, and write code like;
 
 ```java
 import java.sql.*;
+import java.util.Properties;
 
 public class JdbcTest {
   public static void main(String[] args) {
@@ -33,7 +34,9 @@ public class JdbcTest {
       Class.forName("org.postgresql.Driver");
 
       // Connect to the SPARK SQL server
-      Connection con = DriverManager.getConnection("jdbc:postgresql://localhost/spark", "maropu", "");
+      Properties props = new Properties();
+      props.put("user", "maropu");
+      Connection con = DriverManager.getConnection("jdbc:postgresql://localhost/spark", props);
 
       // Do something...
       Statement stmt = con.createStatement();
@@ -51,6 +54,34 @@ public class JdbcTest {
   }
 }
 ```
+
+### SSL Encryption
+
+To enable SSL encryption, you need to set the following configurations in `start-sql-server.sh`;
+
+    $ ./sbin/start-sql-server.sh \
+        --conf spark.sql.server.ssl.enabled=true \
+        --conf spark.sql.server.ssl.keystore.path=<your keystore path> \
+        --conf spark.sql.server.ssl.keystore.passwd=<your keystore password>
+
+If you use self-signed certificates, you follow 3 steps below to create self-signed SSL certificates;
+
+    // Create the self signed certificate and add it to a keystore file
+    $ keytool -genkey -alias ssltest -keyalg RSA -keystore server.keystore -keysize 2048
+
+    // Export this certificate from server.keystore to a certificate file
+    $ keytool -export -alias ssltest -file ssltest.crt -keystore server.keystore
+
+    // Add this certificate to the client's truststore to establish trust
+    $ keytool -import -trustcacerts -alias ssltest -file ssltest.crt -keystore client.truststore
+
+You set the generated `server.keystore` to `spark.sql.server.ssl.keystore.path` and add a new property entry (`ssl`=`true`)
+when creating a JDBC connection. Then, you pass `client.truststore` when running `JdbcTest`
+(See [the PostgreSQL JDBC driver documentation](https://jdbc.postgresql.org//documentation/head/ssl-client.html) for more information);
+
+    $ javac JdbcTest.java
+
+    $ java -Djavax.net.ssl.trustStore=client.truststore -Djavax.net.ssl.trustStorePassword=<password> JdbcTest
 
 ### Bug reports
 
