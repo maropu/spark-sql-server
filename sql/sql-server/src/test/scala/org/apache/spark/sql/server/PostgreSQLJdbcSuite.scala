@@ -27,6 +27,7 @@ import java.util.Properties
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.concurrent.duration._
+import scala.io.Source
 import scala.sys.process.BasicIO
 import scala.util.Random
 import scala.util.Try
@@ -38,7 +39,6 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.spark.{SparkException, SparkFunSuite}
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.{ThreadUtils, Utils}
-
 
 object TestData {
   val smallKv = getTestDataFilePath("small_kv.txt")
@@ -63,6 +63,8 @@ class ProcessOutputCapturer(stream: InputStream, capture: String => Unit) extend
 }
 
 class PostgreSQLJdbcSuite extends PostgreSQLJdbcTestBase(ssl = false) {
+
+  val hiveVersion = "1.2.1"
 
   test("server version") {
     testJdbcStatement { statement =>
@@ -200,53 +202,53 @@ class PostgreSQLJdbcSuite extends PostgreSQLJdbcTestBase(ssl = false) {
           "'2016-08-04 00:17:13.0', 32"
       ).foreach(statement.execute)
 
-      val resultSet = statement.executeQuery("SELECT * FROM test")
-      val resultSetMetaData = resultSet.getMetaData
+      val rs = statement.executeQuery("SELECT * FROM test")
+      val rsMetaData = rs.getMetaData
 
-      assert(10 === resultSetMetaData.getColumnCount)
+      assert(10 === rsMetaData.getColumnCount)
 
       val expectedRow = Seq(false, 25, 32, 15, 3.2f, 8.9, "test", Date.valueOf("2016-08-04"),
         Timestamp.valueOf("2016-08-04 00:17:13"), BigDecimal.valueOf(32))
 
       def getTypedValue(offset: Int): Any = {
-        val (typeName, value) = resultSetMetaData.getColumnType(offset) match {
+        val (typeName, value) = rsMetaData.getColumnType(offset) match {
           case java.sql.Types.BIT =>
-            ("bool", resultSet.getBoolean(offset))
+            ("bool", rs.getBoolean(offset))
           case java.sql.Types.SMALLINT =>
-            ("int2", resultSet.getShort(offset))
+            ("int2", rs.getShort(offset))
           case java.sql.Types.INTEGER =>
-            ("int4", resultSet.getInt(offset))
+            ("int4", rs.getInt(offset))
           case java.sql.Types.BIGINT =>
-            ("int8", resultSet.getLong(offset))
+            ("int8", rs.getLong(offset))
           case java.sql.Types.REAL =>
-            ("float4", resultSet.getFloat(offset))
+            ("float4", rs.getFloat(offset))
           case java.sql.Types.DOUBLE =>
-            ("float8", resultSet.getDouble(offset))
+            ("float8", rs.getDouble(offset))
           case java.sql.Types.VARCHAR =>
-            ("varchar", resultSet.getString(offset))
+            ("varchar", rs.getString(offset))
           case java.sql.Types.DATE =>
-            ("date", resultSet.getDate(offset))
+            ("date", rs.getDate(offset))
           case java.sql.Types.TIMESTAMP =>
-            ("timestamp", resultSet.getTimestamp(offset))
+            ("timestamp", rs.getTimestamp(offset))
           case java.sql.Types.NUMERIC =>
-            ("numeric", resultSet.getBigDecimal(offset))
+            ("numeric", rs.getBigDecimal(offset))
           case typeId =>
             fail(s"Unexpected typed value detected: offset=$offset, " +
-              s"typeId=$typeId, typeName=${resultSetMetaData.getColumnTypeName(offset)}")
+              s"typeId=$typeId, typeName=${rsMetaData.getColumnTypeName(offset)}")
         }
-        assert(typeName === resultSetMetaData.getColumnTypeName(offset))
+        assert(typeName === rsMetaData.getColumnTypeName(offset))
         value
       }
 
-      assert(resultSet.next())
+      assert(rs.next())
 
       expectedRow.zipWithIndex.foreach { case (expected, index) =>
         val offset = index + 1
-        assert(s"col${index}" === resultSetMetaData.getColumnName(offset))
+        assert(s"col${index}" === rsMetaData.getColumnName(offset))
         assert(expected === getTypedValue(offset))
       }
 
-      assert(!resultSet.next())
+      assert(!rs.next())
     }
   }
 
@@ -284,10 +286,10 @@ class PostgreSQLJdbcSuite extends PostgreSQLJdbcTestBase(ssl = false) {
           """.stripMargin
       ).foreach(statement.execute)
 
-      val resultSet = statement.executeQuery("SELECT * FROM test")
-      val resultSetMetaData = resultSet.getMetaData
+      val rs = statement.executeQuery("SELECT * FROM test")
+      val rsMetaData = rs.getMetaData
 
-      assert(10 === resultSetMetaData.getColumnCount)
+      assert(10 === rsMetaData.getColumnCount)
 
       val expectedRow = Seq(
         Seq(true, true, false),
@@ -303,8 +305,8 @@ class PostgreSQLJdbcSuite extends PostgreSQLJdbcTestBase(ssl = false) {
       )
 
       def getTypedArray(offset: Int): Seq[Any] = {
-        assert(java.sql.Types.ARRAY === resultSetMetaData.getColumnType(offset))
-        val resultArray = resultSet.getArray(offset)
+        assert(java.sql.Types.ARRAY === rsMetaData.getColumnType(offset))
+        val resultArray = rs.getArray(offset)
         val elementTypeName = resultArray.getBaseType match {
           case java.sql.Types.BIT => "bool"
           case java.sql.Types.SMALLINT => "int2"
@@ -318,22 +320,22 @@ class PostgreSQLJdbcSuite extends PostgreSQLJdbcTestBase(ssl = false) {
           case java.sql.Types.NUMERIC => "numeric"
           case typeId =>
             fail(s"Unexpected typed value detected: offset=$offset, " +
-              s"typeId=$typeId, typeName=${resultSetMetaData.getColumnTypeName(offset)}")
+              s"typeId=$typeId, typeName=${rsMetaData.getColumnTypeName(offset)}")
         }
-        assert(s"_${elementTypeName}" === resultSetMetaData.getColumnTypeName(offset))
+        assert(s"_${elementTypeName}" === rsMetaData.getColumnTypeName(offset))
         assert(elementTypeName === resultArray.getBaseTypeName)
         resultArray.getArray.asInstanceOf[scala.Array[Object]].toSeq
       }
 
-      assert(resultSet.next())
+      assert(rs.next())
 
       expectedRow.zipWithIndex.foreach { case (expected, index) =>
         val offset = index + 1
-        assert(s"col$index" === resultSetMetaData.getColumnName(offset))
+        assert(s"col$index" === rsMetaData.getColumnName(offset))
         assert(expected === getTypedArray(offset))
       }
 
-      assert(!resultSet.next())
+      assert(!rs.next())
     }
   }
 
@@ -345,13 +347,13 @@ class PostgreSQLJdbcSuite extends PostgreSQLJdbcTestBase(ssl = false) {
         "INSERT INTO test SELECT 'abcdefghijklmn'"
       ).foreach(statement.execute)
 
-      val resultSet = statement.executeQuery("SELECT CAST(val AS BINARY) FROM test")
-      val resultSetMetaData = resultSet.getMetaData
+      val rs = statement.executeQuery("SELECT CAST(val AS BINARY) FROM test")
+      val rsMetaData = rs.getMetaData
 
-      assert(1 === resultSetMetaData.getColumnCount)
-      assert(resultSet.next())
-      assert("abcdefghijklmn".getBytes === resultSet.getBytes(1))
-      assert(!resultSet.next())
+      assert(1 === rsMetaData.getColumnCount)
+      assert(rs.next())
+      assert("abcdefghijklmn".getBytes === rs.getBytes(1))
+      assert(!rs.next())
     }
   }
 
@@ -369,39 +371,39 @@ class PostgreSQLJdbcSuite extends PostgreSQLJdbcTestBase(ssl = false) {
         "INSERT INTO test SELECT -1, (0, (0.1, 'test')), map(0, 'value0', 1, 'value1')"
       ).foreach(statement.execute)
 
-      val resultSet = statement.executeQuery("SELECT * FROM test")
-      val resultSetMetaData = resultSet.getMetaData
+      val rs = statement.executeQuery("SELECT * FROM test")
+      val rsMetaData = rs.getMetaData
 
-      assert(3 === resultSetMetaData.getColumnCount)
+      assert(3 === rsMetaData.getColumnCount)
 
       val expectedRow = Seq(-1, """{"val0":0,"val1":{"val11":0.1,"val12":"test"}}""",
         """{0:"value0",1:"value1"}""")
 
       def getCustomTypedValue(offset: Int): Any = {
-        assert("PGobject" === resultSet.getObject(offset).getClass.getSimpleName)
-        resultSetMetaData.getColumnType(offset) match {
+        assert("PGobject" === rs.getObject(offset).getClass.getSimpleName)
+        rsMetaData.getColumnType(offset) match {
           case java.sql.Types.OTHER =>
-            if (resultSetMetaData.getColumnTypeName(offset) == "byte") {
-              resultSet.getByte(offset)
+            if (rsMetaData.getColumnTypeName(offset) == "byte") {
+              rs.getByte(offset)
             } else {
               // Just return the value as a string
-              resultSet.getString(offset)
+              rs.getString(offset)
             }
           case typeId =>
             fail(s"Unexpected typed value detected: offset=$offset, " +
-              s"typeId=$typeId, typeName=${resultSetMetaData.getColumnTypeName(offset)}")
+              s"typeId=$typeId, typeName=${rsMetaData.getColumnTypeName(offset)}")
         }
       }
 
-      assert(resultSet.next())
+      assert(rs.next())
 
       expectedRow.zipWithIndex.foreach { case (expected, index) =>
         val offset = index + 1
-        assert(s"col$index" === resultSetMetaData.getColumnName(offset))
+        assert(s"col$index" === rsMetaData.getColumnName(offset))
         assert(expected === getCustomTypedValue(offset))
       }
 
-      assert(!resultSet.next())
+      assert(!rs.next())
     }
   }
 
@@ -416,9 +418,9 @@ class PostgreSQLJdbcSuite extends PostgreSQLJdbcTestBase(ssl = false) {
       ).foreach(statement.execute)
 
       assertResult(5, "Row count mismatch") {
-        val resultSet = statement.executeQuery("SELECT COUNT(*) FROM test")
-        resultSet.next()
-        resultSet.getInt(1)
+        val rs = statement.executeQuery("SELECT COUNT(*) FROM test")
+        rs.next()
+        rs.getInt(1)
       }
     }
   }
@@ -431,22 +433,41 @@ class PostgreSQLJdbcSuite extends PostgreSQLJdbcTestBase(ssl = false) {
         s"LOAD DATA LOCAL INPATH '${TestData.smallKvWithNull}' OVERWRITE INTO TABLE test_null"
       ).foreach(statement.execute)
 
-      val resultSet = statement.executeQuery("SELECT * FROM test_null WHERE key IS NULL")
+      val rs = statement.executeQuery("SELECT * FROM test_null WHERE key IS NULL")
 
       (0 until 5).foreach { _ =>
-        resultSet.next()
-        assert(0 === resultSet.getInt(1))
-        assert(resultSet.wasNull())
+        rs.next()
+        assert(0 === rs.getInt(1))
+        assert(rs.wasNull())
       }
 
-      assert(!resultSet.next())
+      assert(!rs.next())
+    }
+  }
+
+  test("Checks Hive version via SET -v") {
+    testJdbcStatement { statement =>
+      val rs = statement.executeQuery("SET -v")
+      val conf = mutable.Map.empty[String, String]
+      while (rs.next()) {
+        conf += rs.getString(1) -> rs.getString(2)
+      }
+      assert(conf.get("spark.sql.hive.version") === Some(hiveVersion))
+    }
+  }
+
+  test("Checks Hive version") {
+    testJdbcStatement { statement =>
+      val rs = statement.executeQuery("SET spark.sql.hive.version")
+      rs.next()
+      assert(rs.getString(1) === "spark.sql.hive.version")
+      assert(rs.getString(2) === hiveVersion)
     }
   }
 
   test("multiple session") {
     import org.apache.spark.sql.internal.SQLConf
-    var defaultV1: String = null
-    var defaultV2: String = null
+    var defaultVal: String = null
     var data: mutable.ArrayBuffer[Int] = null
 
     testMultipleConnectionJdbcStatement(
@@ -489,8 +510,8 @@ class PostgreSQLJdbcSuite extends PostgreSQLJdbcTestBase(ssl = false) {
         val rs = statement.executeQuery(s"SET ${SQLConf.SHUFFLE_PARTITIONS.key}")
         assert(rs.next())
         assert(SQLConf.SHUFFLE_PARTITIONS.key === rs.getString("key"))
-        defaultV1 = rs.getString("value")
-        assert("200" === defaultV1)
+        defaultVal = rs.getString("value")
+        assert("200" === defaultVal)
         rs.close()
       },
 
@@ -512,8 +533,8 @@ class PostgreSQLJdbcSuite extends PostgreSQLJdbcTestBase(ssl = false) {
         val rs = statement.executeQuery(s"SET ${SQLConf.SHUFFLE_PARTITIONS.key}")
         assert(rs.next())
         assert(SQLConf.SHUFFLE_PARTITIONS.key === rs.getString("key"))
-        defaultV1 = rs.getString("value")
-        assert("200" === defaultV1)
+        defaultVal = rs.getString("value")
+        assert("200" === defaultVal)
         rs.close()
       },
 
@@ -563,17 +584,60 @@ class PostgreSQLJdbcSuite extends PostgreSQLJdbcTestBase(ssl = false) {
     )
   }
 
+  test("test ADD JAR") {
+    testMultipleConnectionJdbcStatement(
+      { statement =>
+        val jarPath = "src/test/resources/hive-hcatalog-core-0.13.1.jar"
+        val jarURL = s"file://${System.getProperty("user.dir")}/$jarPath"
+        statement.executeQuery(s"ADD JAR $jarURL")
+      },
+
+      { statement =>
+        Seq(
+          "DROP TABLE IF EXISTS smallKv",
+          "CREATE TABLE smallKv(key INT, val STRING)",
+          s"LOAD DATA LOCAL INPATH '${TestData.smallKv}' OVERWRITE INTO TABLE smallKv",
+          "DROP TABLE IF EXISTS addJar",
+          """CREATE TABLE addJar(key string)
+            |ROW FORMAT SERDE 'org.apache.hive.hcatalog.data.JsonSerDe'
+          """.stripMargin
+        ).foreach(statement.execute)
+
+        statement.executeQuery(
+          """
+            |INSERT INTO TABLE addJar SELECT 'k1' as key FROM smallKV limit 1
+          """.stripMargin)
+
+        val actualResult = statement.executeQuery("SELECT key FROM addJar")
+        val actualResultBuffer = new collection.mutable.ArrayBuffer[String]()
+        while (actualResult.next()) {
+          actualResultBuffer += actualResult.getString(1)
+        }
+        actualResult.close()
+
+        val expectedResult = statement.executeQuery("SELECT 'k1'")
+        val expectedResultBuffer = new collection.mutable.ArrayBuffer[String]()
+        while (expectedResult.next()) {
+          expectedResultBuffer += expectedResult.getString(1)
+        }
+        expectedResult.close()
+
+        assert(expectedResultBuffer === actualResultBuffer)
+      }
+    )
+  }
+
   test("collect mode") {
     Set("true", "false").map { mode =>
       testJdbcStatementWitConf("spark.sql.server.incrementalCollect.enabled" -> mode) { statement =>
         // Create a table with many rows
         assert(statement.execute(
           """
-            |CREATE TEMPORARY VIEW t AS
-            |  SELECT id, 1 AS value FROM range(0, 1000000, 1)
+            |CREATE OR REPLACE TEMPORARY VIEW t AS
+            |  SELECT id, 1 AS value FROM range(0, 100000, 1)
           """.stripMargin))
         val rs = statement.executeQuery("SELECT id, COUNT(value) FROM t GROUP BY id")
-        (0 until 1000000).foreach { i =>
+        (0 until 100000).foreach { i =>
           assert(rs.next())
           assert(rs.getInt(2) == 1)
         }
@@ -594,6 +658,7 @@ class PostgreSQLJdbcSuite extends PostgreSQLJdbcTestBase(ssl = false) {
         Seq(
           "SET foo=bar",
           s"ADD JAR $jarURL",
+          "DROP TEMPORARY FUNCTION IF EXISTS udtf_count2",
           s"""
              |CREATE TEMPORARY FUNCTION udtf_count2
              |  AS 'org.apache.spark.sql.hive.execution.GenericUDTFCount2'
@@ -649,12 +714,58 @@ class PostgreSQLJdbcSuite extends PostgreSQLJdbcTestBase(ssl = false) {
       }
     }
   }
+
+  test("ADD JAR with input path having URL scheme") {
+    testJdbcStatement { statement =>
+      try {
+        val jarPath = "src/test/resources/TestUDTF.jar"
+        val jarURL = s"file://${System.getProperty("user.dir")}/$jarPath"
+
+        Seq(
+          s"ADD JAR $jarURL",
+          s"""CREATE TEMPORARY FUNCTION udtf_count2
+             |AS 'org.apache.spark.sql.hive.execution.GenericUDTFCount2'
+           """.stripMargin
+        ).foreach(statement.execute)
+
+        val rs1 = statement.executeQuery("DESCRIBE FUNCTION udtf_count2")
+        assert(rs1.next())
+        assert(rs1.getString(1) === "Function: udtf_count2")
+        assert(rs1.next())
+        assertResult("Class: org.apache.spark.sql.hive.execution.GenericUDTFCount2") {
+          rs1.getString(1)
+        }
+        assert(rs1.next())
+        assert(rs1.getString(1) === "Usage: N/A.")
+
+        val dataPath = "src/test/resources/data/files/kv1.txt"
+
+        Seq(
+          "DROP TABLE IF EXISTS test_udtf",
+          "CREATE TABLE test_udtf(key INT, value STRING)",
+          s"LOAD DATA LOCAL INPATH '$dataPath' OVERWRITE INTO TABLE test_udtf"
+        ).foreach(statement.execute)
+
+        val rs2 = statement.executeQuery(
+          "SELECT key, cc FROM test_udtf LATERAL VIEW udtf_count2(value) dd AS cc")
+
+        assert(rs2.next())
+        assert(rs2.getInt(1) === 97)
+        assert(rs2.getInt(2) === 500)
+        assert(rs2.next())
+        assert(rs2.getInt(1) === 97)
+        assert(rs2.getInt(2) === 500)
+      } finally {
+        statement.executeQuery("DROP TEMPORARY FUNCTION udtf_count2")
+      }
+    }
+  }
 }
 
 class PostgreSQLJdbcWithSslSuite extends PostgreSQLJdbcTestBase(ssl = true) {
 
   test("query execution via SSL") {
-    val testFunc = (statement: Statement) => {
+    testJdbcStatement { statement =>
       Seq(
         "SET spark.sql.shuffle.partitions=3",
         "DROP TABLE IF EXISTS test",
@@ -664,12 +775,19 @@ class PostgreSQLJdbcWithSslSuite extends PostgreSQLJdbcTestBase(ssl = true) {
       ).foreach(statement.execute)
 
       assertResult(5, "Row count mismatch") {
-        val resultSet = statement.executeQuery("SELECT COUNT(*) FROM test")
-        resultSet.next()
-        resultSet.getInt(1)
+        val rs = statement.executeQuery("SELECT COUNT(*) FROM test")
+        rs.next()
+        rs.getInt(1)
       }
     }
-    testJdbcStatement(testFunc)
+
+    // Check SSL used
+    val bufferSrc = Source.fromFile(logPath)
+    Utils.tryWithSafeFinally {
+      assert(bufferSrc.getLines().exists(_.contains("SSL-encrypted connection enabled")))
+    } {
+      bufferSrc.close()
+    }
   }
 }
 
@@ -707,7 +825,6 @@ class PostgreSQLJdbcSingleSessionSuite extends PostgreSQLJdbcTestBase(singleSess
           assertResult("Class: org.apache.spark.sql.hive.execution.GenericUDTFCount2") {
             rs2.getString(1)
           }
-
           assert(rs2.next())
           assert(rs2.getString(1) === "Usage: N/A.")
         } finally {
@@ -785,9 +902,7 @@ abstract class SQLServerTest(ssl: Boolean, singleSession: Boolean)
   private val pidDir = Utils.createTempDir("sqlserver-pid")
 
   protected var listeningPort: Int = _
-
-  private var operationLogPath: File = _
-  private var logPath: File = _
+  protected var logPath: File = _
   private var logTailingProcess: Process = _
   private var diagnosisBuffer = mutable.ArrayBuffer.empty[String]
 
@@ -852,8 +967,6 @@ abstract class SQLServerTest(ssl: Boolean, singleSession: Boolean)
   }
 
   private def startSQLServer(port: Int, attempt: Int) = {
-    operationLogPath = Utils.createTempDir()
-    operationLogPath.delete()
     logPath = null
     logTailingProcess = null
 
@@ -921,12 +1034,8 @@ abstract class SQLServerTest(ssl: Boolean, singleSession: Boolean)
       extraEnvironment = Map("SPARK_PID_DIR" -> pidDir.getCanonicalPath))
     Thread.sleep(3.seconds.toMillis)
 
-    operationLogPath.delete()
-    operationLogPath = null
-
     Option(logPath).foreach(_.delete())
     logPath = null
-
     Option(logTailingProcess).foreach(_.destroy())
     logTailingProcess = null
   }

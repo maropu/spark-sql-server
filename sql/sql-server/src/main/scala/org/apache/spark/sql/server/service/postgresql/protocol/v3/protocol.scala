@@ -585,7 +585,7 @@ private[v3] class SharableByteArrayDecode extends ByteArrayDecoder {}
 
 /** Creates a newly configured [[io.netty.channel.ChannelPipeline]] for a new channel. */
 private[service] class PostgreSQLV3MessageInitializer(cli: CLI, conf: SQLConf)
-    extends ChannelInitializer[SocketChannel] {
+    extends ChannelInitializer[SocketChannel] with Logging {
 
   val msgDecoder = new SharableByteArrayDecode()
   val msgEncoder = new ByteArrayEncoder()
@@ -602,6 +602,7 @@ private[service] class PostgreSQLV3MessageInitializer(cli: CLI, conf: SQLConf)
       // TODO: Read a certificate and a private key from given files
       val sslCtx = SslContext.newServerContext(ssc.certificate(), ssc.privateKey())
       pipeline.addLast(new SslRequestHandler(), sslCtx.newHandler(ch.alloc))
+      logInfo("SSL-encrypted connection enabled")
     }
     pipeline.addLast(msgDecoder, msgEncoder, msgHandler)
   }
