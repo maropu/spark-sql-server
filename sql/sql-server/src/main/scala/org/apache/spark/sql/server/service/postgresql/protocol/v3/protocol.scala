@@ -17,11 +17,12 @@
 
 package org.apache.spark.sql.server.service.postgresql.protocol.v3
 
-import java.io.CharArrayWriter
+import java.io.{BufferedInputStream, CharArrayWriter, File, FileInputStream}
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
-import java.security.PrivilegedExceptionAction
+import java.security.{KeyStore, PrivilegedExceptionAction, Security}
 import java.sql.SQLException
+import javax.net.ssl.{KeyManager, KeyManagerFactory, SSLContext, SSLEngine, TrustManager}
 
 import scala.collection.mutable
 import scala.util.control.NonFatal
@@ -32,7 +33,7 @@ import io.netty.channel.socket.SocketChannel
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
 import io.netty.handler.codec.bytes.{ByteArrayDecoder, ByteArrayEncoder}
-import io.netty.handler.ssl.SslContext
+import io.netty.handler.ssl.{SslContext, SslHandler}
 import io.netty.handler.ssl.util.SelfSignedCertificate
 import org.apache.hadoop.security.UserGroupInformation
 import org.ietf.jgss.{GSSContext, GSSCredential, GSSException, GSSManager, Oid}
@@ -42,6 +43,7 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.json.JacksonGenerator
 import org.apache.spark.sql.catalyst.util.{ArrayData, DateTimeUtils, MapData}
 import org.apache.spark.sql.internal.SQLConf
+import org.apache.spark.sql.server.SQLServerConf
 import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.service.CLI
 import org.apache.spark.sql.server.service.ExecuteStatementOperation
@@ -591,6 +593,25 @@ private[service] class PostgreSQLV3MessageInitializer(cli: CLI, conf: SQLConf)
   val msgEncoder = new ByteArrayEncoder()
   val msgHandler = new PostgreSQLV3MessageHandler(cli, conf)
 
+  // SSL configuration variables
+  val keyStorePathOption = conf.sqlServerSslKeyStorePath
+  val keyStorePasswd = conf.sqlServerSslKeyStorePasswd.getOrElse("")
+
+  private def createSslContext(ch: SocketChannel): SslHandler = if (keyStorePathOption.isDefined) {
+    val keyStore = KeyStore.getInstance("JKS")
+    keyStore.load(new FileInputStream(keyStorePathOption.get), keyStorePasswd.toCharArray)
+    val kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm)
+    kmf.init(keyStore, keyStorePasswd.toCharArray)
+    val sslContext = SSLContext.getInstance("TLS")
+    sslContext.init(kmf.getKeyManagers, null, null)
+    val sslEngine = sslContext.createSSLEngine()
+    sslEngine.setUseClientMode(false)
+    new SslHandler(sslEngine)
+  } else {
+    val ssc = new SelfSignedCertificate()
+    SslContext.newServerContext(ssc.certificate(), ssc.privateKey()).newHandler(ch.alloc)
+  }
+
   override def initChannel(ch: SocketChannel): Unit = {
     val pipeline = ch.pipeline()
     if (conf.sqlServerSslEnabled) {
@@ -598,10 +619,7 @@ private[service] class PostgreSQLV3MessageInitializer(cli: CLI, conf: SQLConf)
       // message from the frontend. Then, the frontend starts an SSL start up handshake
       // with the server. Therefore, `SSLRequestHandler` processes the first message
       // and pass through following messages.
-      val ssc = new SelfSignedCertificate()
-      // TODO: Read a certificate and a private key from given files
-      val sslCtx = SslContext.newServerContext(ssc.certificate(), ssc.privateKey())
-      pipeline.addLast(new SslRequestHandler(), sslCtx.newHandler(ch.alloc))
+      pipeline.addLast(new SslRequestHandler(), createSslContext(ch))
       logInfo("SSL-encrypted connection enabled")
     }
     pipeline.addLast(msgDecoder, msgEncoder, msgHandler)
@@ -684,6 +702,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SQLConf)
   }
 
   override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): Unit = {
+    logError(s"Exception detected: ${cause.getMessage}")
     handleException(ctx, cause.getMessage)
     closeSession(channelId = getUniqueChannelId(ctx))
     ctx.close()

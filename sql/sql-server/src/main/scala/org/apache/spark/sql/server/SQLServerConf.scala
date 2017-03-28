@@ -55,6 +55,16 @@ object SQLServerConf {
     .booleanConf
     .createWithDefault(false)
 
+   val SQLSERVER_SSL_KEYSTORE_PATH = buildConf("spark.sql.server.ssl.keystore.path")
+    .doc("Keystore path")
+    .stringConf
+    .createOptional
+
+   val SQLSERVER_SSL_KEYSTORE_PASSWD = buildConf("spark.sql.server.ssl.keystore.passwd")
+    .doc("Keystore password")
+    .stringConf
+    .createOptional
+
   val SQLSERVER_POOL = buildConf("spark.sql.server.scheduler.pool")
     .doc("Set a Fair Scheduler pool for a JDBC client session.")
     .stringConf
@@ -95,6 +105,10 @@ class SQLServerConf(conf: SQLConf) {
     conf.getConf(SQLSERVER_INCREMENTAL_COLLECT_ENABLE)
 
   def sqlServerSslEnabled: Boolean = conf.getConf(SQLSERVER_SSL_ENABLED)
+
+  def sqlServerSslKeyStorePath: Option[String] = conf.getConf(SQLSERVER_SSL_KEYSTORE_PATH)
+
+  def sqlServerSslKeyStorePasswd: Option[String] = conf.getConf(SQLSERVER_SSL_KEYSTORE_PASSWD)
 
   def sqlServerPool: String = conf.getConf(SQLSERVER_POOL)
 
