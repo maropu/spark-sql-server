@@ -17,39 +17,36 @@
 
 package org.apache.spark.sql.server.service
 
+import org.apache.spark.SparkConf
 import org.apache.spark.deploy.SparkHadoopUtil
-import org.apache.spark.sql.SQLContext
-import org.apache.spark.sql.server.{SQLServer, SQLServerConf}
+import org.apache.spark.sql.server.SQLServer
+
 
 private[server] trait CLI {
 
   def openSession(userName: String, passwd: String, ipAddress: String): Int
-
   def closeSession(sessionId: Int): Unit
-
   def executeStatement(sessionId: Int, statement: String): ExecuteStatementOperation
-
 }
 
-private[server] class SparkSQLCLIService(pgServer: SQLServer, sqlContext: SQLContext)
-    extends CompositeService with CLI {
+private[server] class SparkSQLCLIService(pgServer: SQLServer) extends CompositeService with CLI {
 
   private var sessionManager: SessionManager = _
   private var operationManager: OperationManager = _
 
-  override def init(sqlContext: SQLContext) {
-    if (sqlContext.conf.contains("spark.yarn.keytab")) {
+  override def init(conf: SparkConf) {
+    if (conf.contains("spark.yarn.keytab")) {
       // If you have enabled Kerberos, the following 2 params must be set
-      val principalName = sqlContext.conf.getConfString("spark.yarn.keytab")
-      val keytabFilename = sqlContext.conf.getConfString("spark.yarn.principal")
+      val principalName = conf.get("spark.yarn.keytab")
+      val keytabFilename = conf.get("spark.yarn.principal")
       SparkHadoopUtil.get.loginUserFromKeytab(principalName, keytabFilename)
     }
 
-    sessionManager = new SessionManager(pgServer, sqlContext)
+    sessionManager = new SessionManager(pgServer)
     addService(sessionManager)
-    operationManager = new OperationManager(pgServer, sqlContext)
+    operationManager = new OperationManager(pgServer)
     addService(operationManager)
-    super.init(sqlContext)
+    super.init(conf)
   }
 
   override def openSession(userName: String, passwd: String, ipAddress: String): Int = {

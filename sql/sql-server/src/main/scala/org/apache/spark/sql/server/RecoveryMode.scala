@@ -17,6 +17,11 @@
 
 package org.apache.spark.sql.server
 
+
+/**
+ * This is the copyed class of [[org.apache.spark.deploy.master.RecoveryState]]
+ * because the class is package-private.
+ */
 private[server] object RecoveryState extends Enumeration {
   type SQLServerState = Value
 

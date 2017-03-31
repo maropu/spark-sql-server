@@ -17,22 +17,21 @@
 
 package org.apache.spark.sql.server
 
-import java.util.concurrent.atomic.AtomicBoolean
-
 import scala.collection.mutable
+import scala.util.control.NonFatal
 
+import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.deploy.master.{LeaderElectable, LeaderElectionAgent, MonarchyLeaderAgent, ZooKeeperLeaderElectionAgentAccessor}
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.SQLContext
-import org.apache.spark.SparkContext
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd, SparkListenerJobStart}
-import org.apache.spark.sql.internal.SQLConf
+import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.service.{CompositeService, SparkSQLCLIService}
 import org.apache.spark.sql.server.service.postgresql.PostgreSQLService
 import org.apache.spark.sql.server.ui.SQLServerTab
 import org.apache.spark.util.{ShutdownHookManager, Utils}
+
 
 /**
  * A SQL gateway server that uses a PostgreSQL message-based protocol for communication between
@@ -49,14 +48,14 @@ object SQLServer extends Logging {
    */
   @DeveloperApi
   def startWithContext(sqlContext: SQLContext): Unit = {
-    val server = new SQLServer(sqlContext)
-    server.init(sqlContext)
-    listener = new SQLServerListener(server, sqlContext.conf)
+    SQLServerEnv.withSQLContext(sqlContext)
+    val server = new SQLServer()
+    server.init(SQLServerEnv.sparkConf)
+    listener = new SQLServerListener(server, SQLServerEnv.sparkConf)
     sqlContext.sparkContext.addSparkListener(listener)
-    uiTab = if (sqlContext.sparkContext.getConf.getBoolean("spark.ui.enabled", true)) {
-      Some(new SQLServerTab(sqlContext.sparkContext))
-    } else {
-      None
+    uiTab = SQLServerEnv.sparkConf.getBoolean("spark.ui.enabled", true) match {
+      case true => Some(new SQLServerTab(sqlContext.sparkContext))
+      case _ => None
     }
     server.start()
   }
@@ -64,40 +63,38 @@ object SQLServer extends Logging {
   def main(args: Array[String]) {
     Utils.initDaemon(log)
 
-    // TODO: Need to process given options
-
     logInfo("Starting SparkContext")
-    SQLServerEnv.init()
 
     ShutdownHookManager.addShutdownHook { () =>
-      SQLServerEnv.stop()
+      SQLServerEnv.cleanup()
       uiTab.foreach(_.detach())
     }
 
+    val server = new SQLServer()
+
     try {
-      val server = new SQLServer(SQLServerEnv.sqlContext)
-      server.init(SQLServerEnv.sqlContext)
-      logInfo("SQLServer started")
-      listener = new SQLServerListener(server, SQLServerEnv.sqlContext.conf)
+      // Initialize a Spark SQL server with a given configurations
+      server.init(SQLServerEnv.sparkConf)
+      listener = new SQLServerListener(server, SQLServerEnv.sparkConf)
       SQLServerEnv.sparkContext.addSparkListener(listener)
-      uiTab = if (SQLServerEnv.sparkContext.getConf.getBoolean("spark.ui.enabled", true)) {
-        Some(new SQLServerTab(SQLServerEnv.sparkContext))
-      } else {
-        None
+      uiTab = SQLServerEnv.sparkConf.getBoolean("spark.ui.enabled", true) match {
+        case true => Some(new SQLServerTab(SQLServerEnv.sparkContext))
+        case _ => None
       }
 
+      // Try to start the SQL server
       server.start()
-
-      // If application was killed before SQLServer start successfully then SparkSubmit process
-      // can not exit, so check whether if SparkContext was stopped.
-      if (SQLServerEnv.sparkContext.stopped.get()) {
-        logError("SparkContext has stopped even if SQLServer has started, so exit")
-        System.exit(-1)
-      }
     } catch {
-      case e: Exception =>
+      case NonFatal(e) =>
         logError("Error starting SQLServer", e)
         System.exit(-1)
+    }
+
+    // If application was killed before SQLServer start successfully then SparkSubmit process
+    // can not exit, so check whether if SparkContext was stopped.
+    if (SQLServerEnv.sparkContext.stopped.get()) {
+      logError("SparkContext has stopped even if SQLServer has started, so exit")
+      System.exit(-1)
     }
   }
 
@@ -142,12 +139,10 @@ object SQLServer extends Logging {
     }
   }
 
-  /**
-   * An inner sparkListener called in sc.stop to clean up the SQLServer
-   */
+  /** An inner sparkListener called in sc.stop to clean up the SQLServer. */
   private[server] class SQLServerListener(
       val server: SQLServer,
-      val conf: SQLConf) extends SparkListener {
+      val conf: SparkConf) extends SparkListener {
 
     override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd): Unit = {
       server.stop()
@@ -261,25 +256,26 @@ object SQLServer extends Logging {
   }
 }
 
-private[sql] class SQLServer(sqlContext: SQLContext) extends CompositeService with LeaderElectable {
+private[sql] class SQLServer extends CompositeService with LeaderElectable {
 
-  // A server state is tracked internally so that the server only attempts to shut down if it
-  // successfully started, and then once only.
-  private val started = new AtomicBoolean(false)
-
-  private val RECOVERY_MODE = sqlContext.conf.sqlServerRecoveryMode
-  private val RECOVERY_WORKING_DIR = sqlContext.conf.sqlServerRecoveryDir + "/leader_election"
+  private val RECOVERY_MODE = SQLServerEnv.sparkConf.sqlServerRecoveryMode
+  private val RECOVERY_DIR = SQLServerEnv.sparkConf.sqlServerRecoveryDir + "/leader_election"
 
   // For HA functionality
   private var leaderElectionAgent: LeaderElectionAgent = _
 
-  @volatile var state = RecoveryState.STANDBY
+  // A server state is tracked internally so that the server only attempts to shut down if it
+  // successfully started, and then once only.
+  @volatile private var started: Boolean = false
+  @volatile private var state = RecoveryState.STANDBY
 
-  override def init(sqlContext: SQLContext): Unit = {
-    val cliService = new SparkSQLCLIService(this, sqlContext)
+  var sqlContext: SQLContext = _
+
+  override def init(conf: SparkConf): Unit = {
+    val cliService = new SparkSQLCLIService(this)
     addService(cliService)
-    addService(new PostgreSQLService(cliService))
-    super.init(sqlContext)
+    addService(new PostgreSQLService(this, cliService))
+    super.init(conf)
   }
 
   override def start(): Unit = {
@@ -287,7 +283,7 @@ private[sql] class SQLServer(sqlContext: SQLContext) extends CompositeService wi
       case Some("ZOOKEEPER") =>
         logInfo(s"Recovery mode 'ZOOKEEPER' enabled and initial state: $state")
         val sparkConf = sqlContext.sparkContext.conf
-        new ZooKeeperLeaderElectionAgentAccessor(this, sparkConf, RECOVERY_WORKING_DIR)
+        new ZooKeeperLeaderElectionAgentAccessor(this, sparkConf, RECOVERY_DIR)
       case Some(mode) =>
         throw new IllegalArgumentException(s"Unknown recovery mode: $mode")
       case None =>
@@ -295,7 +291,7 @@ private[sql] class SQLServer(sqlContext: SQLContext) extends CompositeService wi
         new MonarchyLeaderAgent(this)
     }
     super.start()
-    started.set(true)
+    started = true
   }
 
   override def electedLeader(): Unit = {
@@ -309,8 +305,9 @@ private[sql] class SQLServer(sqlContext: SQLContext) extends CompositeService wi
   }
 
   override def stop(): Unit = {
-    if (started.getAndSet(false)) {
+    if (started) {
       super.stop()
+      started = false
     }
   }
 }

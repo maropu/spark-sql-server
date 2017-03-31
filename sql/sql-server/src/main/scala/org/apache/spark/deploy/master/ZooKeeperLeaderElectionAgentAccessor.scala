@@ -19,6 +19,7 @@ package org.apache.spark.deploy.master
 
 import org.apache.spark.SparkConf
 
+/** A [[ZooKeeperLeaderElectionAgent]] accessor because the class is package-private. */
 private[spark] class ZooKeeperLeaderElectionAgentAccessor(
     override val masterInstance: LeaderElectable,
     conf: SparkConf,

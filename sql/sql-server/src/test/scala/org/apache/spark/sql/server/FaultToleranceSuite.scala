@@ -66,19 +66,19 @@ class FaultToleranceSuite extends SparkFunSuite with BeforeAndAfterAll with Befo
     }
   }
 
-  test("sanity-basic") {
+  ignore("sanity-basic") {
     addServers(1)
     delay(30.seconds)
     assertValidClusterState()
   }
 
-  test("sanity-many-masters") {
+  ignore("sanity-many-masters") {
     addServers(3)
     delay(30.seconds)
     assertValidClusterState()
   }
 
-  test("single-master-halt") {
+  ignore("single-master-halt") {
     addServers(3)
     delay(30.seconds)
     assertValidClusterState()
@@ -89,7 +89,7 @@ class FaultToleranceSuite extends SparkFunSuite with BeforeAndAfterAll with Befo
     assertValidClusterState()
   }
 
-  test("single-master-restart") {
+  ignore("single-master-restart") {
     addServers(1)
     delay(30.seconds)
     assertValidClusterState()
@@ -105,7 +105,7 @@ class FaultToleranceSuite extends SparkFunSuite with BeforeAndAfterAll with Befo
     assertValidClusterState()
   }
 
-  test("cluster-failure") {
+  ignore("cluster-failure") {
     addServers(2)
     delay(30.seconds)
     assertValidClusterState()
@@ -116,7 +116,7 @@ class FaultToleranceSuite extends SparkFunSuite with BeforeAndAfterAll with Befo
     assertValidClusterState()
   }
 
-  test("rolling-outage") {
+  ignore("rolling-outage") {
     addServers(1)
     addServers(1)
     addServers(1)

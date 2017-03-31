@@ -23,15 +23,12 @@ import java.util.UUID
 import scala.util.control.NonFatal
 
 import org.apache.spark.internal.Logging
+import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.execution.command.SetCommand
 import org.apache.spark.sql.execution.datasources.CreateTable
-import org.apache.spark.sql.internal.SQLConf
-import org.apache.spark.sql.server.SQLServerConf
+import org.apache.spark.sql.server.{SQLServer, SQLServerConf, SQLServerEnv}
 import org.apache.spark.sql.server.SQLServerConf._
-import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.SQLContext
-import org.apache.spark.sql.server.SQLServer
 import org.apache.spark.sql.server.service.postgresql.{Metadata => PgMetadata}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.{Utils => SparkUtils}
@@ -48,9 +45,9 @@ private[server] case object ERROR extends OperationState
 private[server] case object UNKNOWN extends OperationState
 private[server] case object PENDING extends OperationState
 
-private[server] abstract class Operation(conf: SQLConf) {
+private[server] abstract class Operation {
 
-  private val timeout = conf.sqlServerIdleOperationTimeout
+  private val timeout = SQLServerEnv.sparkConf.sqlServerIdleOperationTimeout
 
   protected[this] var state: OperationState = INITIALIZED
   private var lastAccessTime: Long = System.currentTimeMillis()
@@ -80,7 +77,7 @@ private[server] case class ExecuteStatementOperation(
     sessionId: Int,
     statement: String)
    (sqlContext: SQLContext,
-    activePools: java.util.Map[Int, String]) extends Operation(sqlContext.conf) with Logging {
+    activePools: java.util.Map[Int, String]) extends Operation with Logging {
 
   private[service] val statementId = UUID.randomUUID().toString()
 
@@ -142,7 +139,7 @@ private[server] case class ExecuteStatementOperation(
 
       SQLServer.listener.onStatementParsed(statementId, resultSet.queryExecution.toString())
       rowIter = {
-        val useIncrementalCollect = sqlContext.conf.sqlServerIncrementalCollectEnabled
+        val useIncrementalCollect = SQLServerEnv.sparkConf.sqlServerIncrementalCollectEnabled
         if (useIncrementalCollect) {
           resultSet.queryExecution.executedPlan.executeToIterator()
         } else {

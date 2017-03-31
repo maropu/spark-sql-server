@@ -19,33 +19,24 @@ package org.apache.spark.sql.server.service
 
 import scala.collection.mutable
 
+import org.apache.spark.SparkConf
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.SQLContext
 
-private[server] abstract class Service(name: String) extends Logging {
 
-  /** Initialize the service. */
-  def init(sqlContext: SQLContext): Unit
+private[server] abstract class Service extends Logging {
 
-  /** Start the service. */
+  def init(conf: SparkConf): Unit
   def start(): Unit
-
-  /** Stop the service. */
   def stop(): Unit
-
 }
 
-private[server] class CompositeService(name: String = getClass().getSimpleName)
-    extends Service(name) {
+private[server] class CompositeService extends Service {
 
   private val services = new mutable.ArrayBuffer[Service]()
 
   protected[this] def addService(service: Service): Unit = services += service
 
-  override def init(sqlContext: SQLContext): Unit = services.foreach(_.init(sqlContext))
-
+  override def init(conf: SparkConf): Unit = services.foreach(_.init(conf))
   override def start(): Unit = services.foreach(_.start())
-
   override def stop(): Unit = services.foreach(_.stop())
-
 }
