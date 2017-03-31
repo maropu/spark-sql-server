@@ -24,34 +24,31 @@ import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioServerSocketChannel
 import io.netty.handler.logging.{LoggingHandler, LogLevel}
 
-import org.apache.spark.SparkConf
-import org.apache.spark.sql.server.SQLServer
+import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.server.SQLServerConf._
-import org.apache.spark.sql.server.SQLServerEnv
-import org.apache.spark.sql.server.service.{CLI, CompositeService}
+import org.apache.spark.sql.server.service.CLI
+import org.apache.spark.sql.server.service.CompositeService
 import org.apache.spark.sql.server.service.postgresql.protocol.v3.PostgreSQLV3MessageInitializer
 
-private[server] class PostgreSQLService(pgServer: SQLServer, cli: CLI) extends CompositeService {
+private[server] class PostgreSQLService(cli: CLI) extends CompositeService {
 
   var port: Int = _
   var workerThreads: Int = _
   var msgHandlerInitializer: ChannelInitializer[SocketChannel] = _
 
-  override def init(conf: SparkConf): Unit = {
-    port = conf.sqlServerPort
-    workerThreads = conf.sqlServerWorkerThreads
-    msgHandlerInitializer = new PostgreSQLV3MessageInitializer(cli, conf)
+  override def init(sqlContext: SQLContext): Unit = {
+    port = sqlContext.conf.sqlServerPort
+    workerThreads = sqlContext.conf.sqlServerWorkerThreads
+    msgHandlerInitializer = new PostgreSQLV3MessageInitializer(cli, sqlContext.conf)
+
+    // Load system catalogs for the PostgreSQL v3 protocol
+    Metadata.initCatalogTables(sqlContext)
+    if (sqlContext.conf.sqlServerSingleSessionEnabled) {
+      Metadata.initSystemFunctions(sqlContext)
+    }
   }
 
   override def start(): Unit = {
-    require(SQLServerEnv.sqlContext != null)
-
-    // Load system catalogs for the PostgreSQL v3 protocol
-    Metadata.initCatalogTables(SQLServerEnv.sqlContext)
-    if (SQLServerEnv.sparkConf.sqlServerSingleSessionEnabled) {
-      Metadata.initSystemFunctions(SQLServerEnv.sqlContext)
-    }
-
     val bossGroup = new NioEventLoopGroup(1)
     val workerGroup = new NioEventLoopGroup(workerThreads)
     try {

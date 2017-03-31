@@ -29,7 +29,6 @@ import org.apache.spark.sql.server.SQLServer.{ExecutionInfo, ExecutionState, Ses
 import org.apache.spark.ui._
 import org.apache.spark.ui.UIUtils._
 
-
 /** Page for Spark Web UI that shows statistics of the SQL gateway server */
 private[ui] class SQLServerPage(parent: SQLServerTab)
     extends WebUIPage("") with Logging {

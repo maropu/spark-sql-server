@@ -19,46 +19,48 @@ package org.apache.spark.sql.server
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import org.apache.spark.SparkConf
+import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.internal.Logging
 import org.apache.spark.sql.{SparkSession, SQLContext}
 import org.apache.spark.util.Utils
 
+/** A singleton object for the master program. The slaves should not access this. */
+private[server] object SQLServerEnv extends Logging {
+  logDebug("Initializing SQLServerEnv")
 
-private[server] object SQLServerEnv {
+  var sqlContext: SQLContext = _
+  var sparkContext: SparkContext = _
 
   private val nextSessionId = new AtomicInteger(0)
 
-  private var _sqlContext: Option[SQLContext] = None
-
-  lazy val sparkConf = _sqlContext.map { ctx =>
-    ctx.sparkContext.conf
-  }.getOrElse {
-    val sparkConf = new SparkConf(loadDefaults = true)
-    // If user doesn't specify the appName, we want to get [SparkSQL::localHostName]
-    // instead of the default appName [SQLServer].
-    val maybeAppName = sparkConf
-      .getOption("spark.app.name")
-      .filterNot(_ == classOf[SQLServer].getName)
-    sparkConf.setAppName(
-      maybeAppName.getOrElse(s"SparkSQL::${Utils.localHostName()}"))
-  }
-
-  lazy val sparkContext = sqlContext.sparkContext
-
-  lazy val sqlContext: SQLContext = _sqlContext.getOrElse {
-    val sparkSession = SparkSession.builder.config(sparkConf).enableHiveSupport().getOrCreate()
-    sparkSession.sqlContext
-  }
-
-  def withSQLContext(sqlContext: SQLContext): Unit = {
-    require(_sqlContext == null)
-    _sqlContext = Option(sqlContext)
-  }
-
   def newSessionId(): Int = nextSessionId.getAndIncrement()
 
-  def cleanup() {
-    _sqlContext.map(_.sparkContext.stop())
-    _sqlContext = None
+  def init() {
+    if (sqlContext == null) {
+      val sparkConf = new SparkConf(loadDefaults = true)
+      // If user doesn't specify the appName, we want to get [SparkSQL::localHostName]
+      // instead of the default appName [SQLServer].
+      val maybeAppName = sparkConf
+        .getOption("spark.app.name")
+        .filterNot(_ == classOf[SQLServer].getName)
+
+      sparkConf.setAppName(
+        maybeAppName.getOrElse(s"SparkSQL::${Utils.localHostName()}"))
+
+      val sparkSession = SparkSession.builder.config(sparkConf).enableHiveSupport().getOrCreate()
+      sparkContext = sparkSession.sparkContext
+      sqlContext = sparkSession.sqlContext
+    }
+  }
+
+  /** Cleans up and shuts down the Spark SQL environments. */
+  def stop() {
+    logDebug("Shutting down Spark SQL Environment")
+    // Stop the SparkContext
+    if (SQLServerEnv.sparkContext != null) {
+      sparkContext.stop()
+      sparkContext = null
+      sqlContext = null
+    }
   }
 }
