@@ -17,17 +17,23 @@
 
 package org.apache.spark.sql.server
 
-import java.io.{InputStream, IOException}
+import java.io.{File, InputStream, IOException}
 import java.math.BigDecimal
 import java.net.URL
+import java.nio.charset.StandardCharsets
 import java.sql._
+import java.util.Properties
 
 import scala.collection.mutable
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.concurrent.duration._
 import scala.io.Source
 import scala.sys.process.BasicIO
+import scala.util.Random
+import scala.util.Try
+import scala.util.control.NonFatal
 
+import com.google.common.io.Files
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.spark.{SparkException, SparkFunSuite}
@@ -56,7 +62,7 @@ class ProcessOutputCapturer(stream: InputStream, capture: String => Unit) extend
   }
 }
 
-class PostgreSQLJdbcSuite extends PostgreSQLJdbcTest(ssl = false) {
+class PostgreSQLJdbcSuite extends PostgreSQLJdbcTestBase(ssl = false) {
 
   val hiveVersion = "1.2.1"
 
@@ -756,7 +762,7 @@ class PostgreSQLJdbcSuite extends PostgreSQLJdbcTest(ssl = false) {
   }
 }
 
-class PostgreSQLJdbcWithSslSuite extends PostgreSQLJdbcTest(ssl = true) {
+class PostgreSQLJdbcWithSslSuite extends PostgreSQLJdbcTestBase(ssl = true) {
 
   test("query execution via SSL") {
     testJdbcStatement { statement =>
@@ -776,7 +782,7 @@ class PostgreSQLJdbcWithSslSuite extends PostgreSQLJdbcTest(ssl = true) {
     }
 
     // Check SSL used
-    val bufferSrc = Source.fromFile(server.logPath)
+    val bufferSrc = Source.fromFile(logPath)
     Utils.tryWithSafeFinally {
       assert(bufferSrc.getLines().exists(_.contains("SSL-encrypted connection enabled")))
     } {
@@ -785,7 +791,7 @@ class PostgreSQLJdbcWithSslSuite extends PostgreSQLJdbcTest(ssl = true) {
   }
 }
 
-class PostgreSQLJdbcSingleSessionSuite extends PostgreSQLJdbcTest(singleSession = true) {
+class PostgreSQLJdbcSingleSessionSuite extends PostgreSQLJdbcTestBase(singleSession = true) {
 
   test("share the temporary functions across JDBC connections") {
     testMultipleConnectionJdbcStatement(
@@ -829,30 +835,221 @@ class PostgreSQLJdbcSingleSessionSuite extends PostgreSQLJdbcTest(singleSession 
   }
 }
 
-class PostgreSQLJdbcTest(ssl: Boolean = false, singleSession: Boolean = false)
-  extends SQLServerTest(ssl, singleSession) with PostgreSQLJdbcTestBase {
+abstract class PostgreSQLJdbcTestBase(ssl: Boolean = false, singleSession: Boolean = false)
+    extends SQLServerTest(ssl, singleSession) {
 
-  override def serverInstance: SparkPostgreSQLServerTest = server
+  // Register a JDBC driver for PostgreSQL
+  Utils.classForName(classOf[org.postgresql.Driver].getCanonicalName)
+
+  private lazy val jdbcUri = s"jdbc:postgresql://localhost:${listeningPort}/default"
+
+  private def getJdbcConnect(): Connection = {
+    val props = new Properties()
+    props.put("user", System.getProperty("user.name"))
+    props.put("password", "")
+    if (ssl) {
+      props.put("ssl", "true")
+      props.put("sslfactory", "org.postgresql.ssl.NonValidatingFactory")
+    }
+    DriverManager.getConnection(jdbcUri, props)
+  }
+
+  def testMultipleConnectionJdbcStatement(fs: (Statement => Unit)*) {
+    val connections = fs.map { _ => getJdbcConnect() }
+    val statements = connections.map(_.createStatement())
+    try {
+      statements.zip(fs).foreach { case (s, f) => f(s) }
+    } finally {
+      statements.foreach(_.close())
+      connections.foreach(_.close())
+    }
+  }
+
+  def testJdbcStatement(f: Statement => Unit): Unit = {
+    testMultipleConnectionJdbcStatement(f)
+  }
+
+  def testJdbcStatementWitConf(options: (String, String)*)(f: Statement => Unit) {
+    val connection = getJdbcConnect()
+    val statement = connection.createStatement()
+
+    val (keys, values) = options.unzip
+    val currentValues = keys.map { key =>
+      val rs = statement.executeQuery(s"SET $key")
+      if (rs.next()) { rs.getString(2) } else { assert(false, s"Invalue key detected: $key") }
+    }
+    options.foreach { case (key, value) =>
+      statement.execute(s"SET $key=$value")
+    }
+    try f(statement) finally {
+      keys.zip(currentValues).foreach {
+        case (key, value) => statement.execute(s"SET $key=$value")
+      }
+      statement.close()
+      connection.close()
+    }
+  }
 }
 
 abstract class SQLServerTest(ssl: Boolean, singleSession: Boolean)
     extends SparkFunSuite with BeforeAndAfterAll with Logging {
 
-  protected val server = new SparkPostgreSQLServerTest(
-    this.getClass.getSimpleName, ssl = ssl, singleSession = singleSession)
+  private val className = SQLServer.getClass.getCanonicalName.stripSuffix("$")
+  private val logFileMask = s"starting $className, logging to "
+  private val successStartLine = "PostgreSQLService: Start running the SQL server"
+  private val startScript = "../../sbin/start-sql-server.sh".split("/").mkString(File.separator)
+  private val stopScript = "../../sbin/stop-sql-server.sh".split("/").mkString(File.separator)
+  private val pidDir = Utils.createTempDir("sqlserver-pid")
+
+  protected var listeningPort: Int = _
+  protected var logPath: File = _
+  private var logTailingProcess: Process = _
+  private var diagnosisBuffer = mutable.ArrayBuffer.empty[String]
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    server.start()
+    // Chooses a random port between 10000 and 19999
+    listeningPort = 10000 + Random.nextInt(10000)
+
+    // Retries up to 3 times with different port numbers if the server fails to start
+    (1 to 3).foldLeft(Try(startSQLServer(listeningPort, 0))) { case (started, attempt) =>
+      started.orElse {
+        listeningPort += 1
+        stopSQLServer()
+        Try(startSQLServer(listeningPort, attempt))
+      }
+    }.recover {
+      case NonFatal(e) =>
+        dumpServerLogs()
+        throw e
+    }.get
+
     logInfo("SQLServer started successfully")
   }
 
   override protected def afterAll(): Unit = {
     try {
-      server.stop()
+      stopSQLServer()
       logInfo("SQLServer stopped")
     } finally {
       super.afterAll()
     }
+  }
+
+  private def serverStartCommand(port: Int) = {
+    val driverClassPath = {
+      // Writes a temporary log4j.properties and prepend it to driver classpath, so that it
+      // overrides all other potential log4j configurations contained in other dependency jar files
+      val tempLog4jConf = Utils.createTempDir().getCanonicalPath
+
+      Files.write(
+        """log4j.rootCategory=INFO, console
+          |log4j.appender.console=org.apache.log4j.ConsoleAppender
+          |log4j.appender.console.target=System.err
+          |log4j.appender.console.layout=org.apache.log4j.PatternLayout
+          |log4j.appender.console.layout.ConversionPattern=%d{yy/MM/dd HH:mm:ss} %p %c{1}: %m%n
+        """.stripMargin,
+        new File(s"$tempLog4jConf/log4j.properties"),
+        StandardCharsets.UTF_8)
+
+      tempLog4jConf
+    }
+
+    s"""$startScript
+       |  --master local
+       |  --driver-class-path $driverClassPath
+       |  --driver-java-options -Dlog4j.debug
+       |  --conf spark.ui.enabled=false
+       |  --conf ${SQLServerConf.SQLSERVER_PORT.key}=$port
+       |  --conf ${SQLServerConf.SQLSERVER_SSL_ENABLED.key}=$ssl
+       |  --conf ${SQLServerConf.SQLSERVER_SINGLE_SESSION_ENABLED.key}=$singleSession
+     """.stripMargin.split("\\s+").toSeq
+  }
+
+  private def startSQLServer(port: Int, attempt: Int) = {
+    logPath = null
+    logTailingProcess = null
+
+    val command = serverStartCommand(port)
+
+    diagnosisBuffer ++=
+      s"""
+         |### Attempt $attempt ###
+         |SQLServer command line: $command
+         |Listening port: $port
+       """.stripMargin.split("\n")
+
+    logInfo(s"Trying to start SQLServer: port=$port, attempt=$attempt")
+
+    logPath = {
+      val lines = Utils.executeAndGetOutput(
+        command = command,
+        extraEnvironment = Map(
+          // Disables SPARK_TESTING to exclude log4j.properties in test directories
+          "SPARK_TESTING" -> "0",
+          // But set SPARK_SQL_TESTING to make spark-class happy
+          "SPARK_SQL_TESTING" -> "1",
+          // Points SPARK_PID_DIR to SPARK_HOME, otherwise only 1 SQL server instance can be
+          // started at a time, which is not Jenkins friendly
+          "SPARK_PID_DIR" -> pidDir.getCanonicalPath),
+        redirectStderr = true)
+
+      logInfo(s"COMMAND: $command")
+      logInfo(s"OUTPUT: $lines")
+      lines.split("\n").collectFirst {
+        case line if line.contains(logFileMask) => new File(line.drop(logFileMask.length))
+      }.getOrElse {
+        throw new RuntimeException("Failed to find SQLServer log file.")
+      }
+    }
+
+    val serverStarted = Promise[Unit]()
+
+    // Ensures that the following "tail" command won't fail
+    logPath.createNewFile()
+
+    logTailingProcess = {
+      val command = s"/usr/bin/env tail -n +0 -f ${logPath.getCanonicalPath}".split(" ")
+      // Using "-n +0" to make sure all lines in the log file are checked
+      val builder = new ProcessBuilder(command: _*)
+      val captureOutput: (String) => Unit = (line: String) => diagnosisBuffer.synchronized {
+        diagnosisBuffer += line
+        if (line.contains(successStartLine)) {
+          serverStarted.trySuccess(())
+        }
+      }
+      val process = builder.start()
+      new ProcessOutputCapturer(process.getInputStream, captureOutput).start()
+      new ProcessOutputCapturer(process.getErrorStream, captureOutput).start()
+      process
+    }
+
+    ThreadUtils.awaitResult(serverStarted.future, 1.minutes)
+  }
+
+  private def stopSQLServer(): Unit = {
+    // The `spark-daemon.sh' script uses kill, which is not synchronous, have to wait for a while
+    Utils.executeAndGetOutput(
+      command = Seq(stopScript),
+      extraEnvironment = Map("SPARK_PID_DIR" -> pidDir.getCanonicalPath))
+    Thread.sleep(3.seconds.toMillis)
+
+    Option(logPath).foreach(_.delete())
+    logPath = null
+    Option(logTailingProcess).foreach(_.destroy())
+    logTailingProcess = null
+  }
+
+  private def dumpServerLogs(): Unit = {
+    logError(
+      s"""
+         |=====================================
+         |PostgreSQLJdbcSuite  failure output
+         |=====================================
+         |${diagnosisBuffer.mkString("\n")}
+         |=========================================
+         |End PostgreSQLJdbcSuite failure output
+         |=========================================
+       """.stripMargin)
   }
 }

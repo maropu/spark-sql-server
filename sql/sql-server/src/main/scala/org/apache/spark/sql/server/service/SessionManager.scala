@@ -18,7 +18,7 @@
 package org.apache.spark.sql.server.service
 
 import org.apache.spark.sql.SQLContext
-import org.apache.spark.sql.server.{RecoveryState, SQLServer, SQLServerEnv}
+import org.apache.spark.sql.server.{SQLServer, SQLServerEnv}
 import org.apache.spark.sql.server.SQLServerConf._
 
 private[server] class SessionManager(pgServer: SQLServer, sqlContext: SQLContext)

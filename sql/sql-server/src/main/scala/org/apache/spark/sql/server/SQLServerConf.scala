@@ -50,17 +50,6 @@ object SQLServerConf {
     .booleanConf
     .createWithDefault(true)
 
-  val SQLSERVER_RECOVERY_MODE = buildConf("spark.sql.server.recoveryMode")
-    .doc("Set to ZOOKEEPER to enable recovery mode with Zookeeper.")
-    .stringConf
-    .createOptional
-
-  val SQLSERVER_RECOVERY_DIR = buildConf("spark.sql.server.recoveryDirectory")
-    .doc("The directory in which Spark will store recovery state, accessible " +
-      "from the Spark SQL server's perspective.")
-    .stringConf
-    .createWithDefault("/spark-sql-server")
-
    val SQLSERVER_SSL_ENABLED = buildConf("spark.sql.server.ssl.enabled")
     .doc("When set to true, SQLServer enables SSL encryption.")
     .booleanConf
@@ -114,10 +103,6 @@ class SQLServerConf(conf: SQLConf) {
 
   def sqlServerIncrementalCollectEnabled: Boolean =
     conf.getConf(SQLSERVER_INCREMENTAL_COLLECT_ENABLE)
-
-  def sqlServerRecoveryMode: Option[String] = conf.getConf(SQLSERVER_RECOVERY_MODE)
-
-  def sqlServerRecoveryDir: String = conf.getConf(SQLSERVER_RECOVERY_DIR)
 
   def sqlServerSslEnabled: Boolean = conf.getConf(SQLSERVER_SSL_ENABLED)
 

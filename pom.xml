@@ -42,9 +42,7 @@
     <scala.version>2.11.8</scala.version>
     <scala.binary.version>2.11</scala.binary.version>
     <spark.version>2.1.0</spark.version>
-    <zookeeper.version>3.4.5</zookeeper.version>
     <hadoop.version>2.7.3</hadoop.version>
-    <curator.version>2.4.0</curator.version>
     <hadoop.binary.version>2.7</hadoop.binary.version>
     <jetty.version>9.2.16.v20160414</jetty.version>
 
