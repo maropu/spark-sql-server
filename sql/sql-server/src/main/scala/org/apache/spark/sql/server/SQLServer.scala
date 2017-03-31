@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import scala.collection.mutable
 
 import org.apache.spark.annotation.DeveloperApi
+import org.apache.spark.deploy.master.{LeaderElectable, LeaderElectionAgent, MonarchyLeaderAgent, ZooKeeperLeaderElectionAgentAccessor}
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.SparkContext
@@ -260,10 +261,19 @@ object SQLServer extends Logging {
   }
 }
 
-private[sql] class SQLServer(sqlContext: SQLContext) extends CompositeService {
+private[sql] class SQLServer(sqlContext: SQLContext) extends CompositeService with LeaderElectable {
+
   // A server state is tracked internally so that the server only attempts to shut down if it
   // successfully started, and then once only.
   private val started = new AtomicBoolean(false)
+
+  private val RECOVERY_MODE = sqlContext.conf.sqlServerRecoveryMode
+  private val RECOVERY_WORKING_DIR = sqlContext.conf.sqlServerRecoveryDir + "/leader_election"
+
+  // For HA functionality
+  private var leaderElectionAgent: LeaderElectionAgent = _
+
+  @volatile var state = RecoveryState.STANDBY
 
   override def init(sqlContext: SQLContext): Unit = {
     val cliService = new SparkSQLCLIService(this, sqlContext)
@@ -273,8 +283,29 @@ private[sql] class SQLServer(sqlContext: SQLContext) extends CompositeService {
   }
 
   override def start(): Unit = {
+    leaderElectionAgent = RECOVERY_MODE match {
+      case Some("ZOOKEEPER") =>
+        logInfo(s"Recovery mode 'ZOOKEEPER' enabled and initial state: $state")
+        val sparkConf = sqlContext.sparkContext.conf
+        new ZooKeeperLeaderElectionAgentAccessor(this, sparkConf, RECOVERY_WORKING_DIR)
+      case Some(mode) =>
+        throw new IllegalArgumentException(s"Unknown recovery mode: $mode")
+      case None =>
+        state = RecoveryState.ALIVE
+        new MonarchyLeaderAgent(this)
+    }
     super.start()
     started.set(true)
+  }
+
+  override def electedLeader(): Unit = {
+    state = RecoveryState.ALIVE
+    logInfo("I have been elected leader! New state: " + state)
+  }
+
+  override def revokedLeadership(): Unit = {
+    logError("Leadership has been revoked -- SQLServer shutting down.")
+    System.exit(-1)
   }
 
   override def stop(): Unit = {

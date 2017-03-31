@@ -17,12 +17,12 @@
 
 package org.apache.spark.sql.server.service.postgresql.protocol.v3
 
-import java.io.{BufferedInputStream, CharArrayWriter, File, FileInputStream}
+import java.io.{CharArrayWriter, FileInputStream}
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
-import java.security.{KeyStore, PrivilegedExceptionAction, Security}
+import java.security.{KeyStore, PrivilegedExceptionAction}
 import java.sql.SQLException
-import javax.net.ssl.{KeyManager, KeyManagerFactory, SSLContext, SSLEngine, TrustManager}
+import javax.net.ssl.{KeyManagerFactory, SSLContext}
 
 import scala.collection.mutable
 import scala.util.control.NonFatal
@@ -43,7 +43,6 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.json.JacksonGenerator
 import org.apache.spark.sql.catalyst.util.{ArrayData, DateTimeUtils, MapData}
 import org.apache.spark.sql.internal.SQLConf
-import org.apache.spark.sql.server.SQLServerConf
 import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.service.CLI
 import org.apache.spark.sql.server.service.ExecuteStatementOperation
@@ -686,7 +685,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SQLConf)
   import PostgreSQLWireProtocol._
 
   // A format is like 'spark/fully.qualified.domain.name@YOUR-REALM.COM'
-  private lazy val kerberosServerPrincipal = conf.getConfString("spark.yarn.keytab")
+  private lazy val kerberosServerPrincipal = conf.getConfString("spark.yarn.principal")
 
   private val channelIdToPortalState = java.util.Collections.synchronizedMap(
     new java.util.HashMap[Int, PortalState]())

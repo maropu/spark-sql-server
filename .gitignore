@@ -80,6 +80,7 @@ TempStatsStore/
 metastore/
 metastore_db/
 sql/hive-thriftserver/test_warehouses
+sql/sql-server/sqlserver-fault-tolrance-test-*
 warehouse/
 spark-warehouse/
 
