@@ -22,7 +22,7 @@ import scala.util.control.NonFatal
 
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.annotation.DeveloperApi
-import org.apache.spark.deploy.master.{LeaderElectable, LeaderElectionAgent, MonarchyLeaderAgent, ZooKeeperLeaderElectionAgentAccessor}
+import org.apache.spark.deploy.master.{LeaderElectable, MonarchyLeaderAgent, ZooKeeperLeaderElectionAgentAccessor}
 import org.apache.spark.internal.Logging
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd, SparkListenerJobStart}
 import org.apache.spark.sql.SQLContext
@@ -42,6 +42,18 @@ object SQLServer extends Logging {
   var uiTab: Option[SQLServerTab] = _
   var listener: SQLServerListener = _
 
+  private def prepareWith(sqlServer: SQLServer): Unit = {
+    listener = new SQLServerListener(sqlServer, SQLServerEnv.sparkConf)
+    uiTab = SQLServerEnv.sparkConf.getBoolean("spark.ui.enabled", true) match {
+      case true => Some(new SQLServerTab(SQLServerEnv.sqlContext.sparkContext))
+      case _ => None
+    }
+    ShutdownHookManager.addShutdownHook { () =>
+      SQLServerEnv.cleanup()
+      uiTab.foreach(_.detach())
+    }
+  }
+
   /**
    * :: DeveloperApi ::
    * Starts a new SQL server with the given context.
@@ -49,41 +61,23 @@ object SQLServer extends Logging {
   @DeveloperApi
   def startWithContext(sqlContext: SQLContext): Unit = {
     SQLServerEnv.withSQLContext(sqlContext)
-    val server = new SQLServer()
-    server.init(SQLServerEnv.sparkConf)
-    listener = new SQLServerListener(server, SQLServerEnv.sparkConf)
-    sqlContext.sparkContext.addSparkListener(listener)
-    uiTab = SQLServerEnv.sparkConf.getBoolean("spark.ui.enabled", true) match {
-      case true => Some(new SQLServerTab(sqlContext.sparkContext))
-      case _ => None
-    }
-    server.start()
+
+    val sqlServer = new SQLServer()
+    prepareWith(sqlServer)
+    // Initialize a Spark SQL server with given configurations
+    sqlServer.init(SQLServerEnv.sparkConf)
+    sqlServer.start()
   }
 
   def main(args: Array[String]) {
     Utils.initDaemon(log)
 
-    logInfo("Starting SparkContext")
-
-    ShutdownHookManager.addShutdownHook { () =>
-      SQLServerEnv.cleanup()
-      uiTab.foreach(_.detach())
-    }
-
-    val server = new SQLServer()
-
+    val sqlServer = new SQLServer()
+    prepareWith(sqlServer)
     try {
-      // Initialize a Spark SQL server with a given configurations
-      server.init(SQLServerEnv.sparkConf)
-      listener = new SQLServerListener(server, SQLServerEnv.sparkConf)
-      SQLServerEnv.sparkContext.addSparkListener(listener)
-      uiTab = SQLServerEnv.sparkConf.getBoolean("spark.ui.enabled", true) match {
-        case true => Some(new SQLServerTab(SQLServerEnv.sparkContext))
-        case _ => None
-      }
-
-      // Try to start the SQL server
-      server.start()
+      // Initialize a Spark SQL server with given configurations
+      sqlServer.init(SQLServerEnv.sparkConf)
+      sqlServer.start()
     } catch {
       case NonFatal(e) =>
         logError("Error starting SQLServer", e)
@@ -261,9 +255,6 @@ private[sql] class SQLServer extends CompositeService with LeaderElectable {
   private val RECOVERY_MODE = SQLServerEnv.sparkConf.sqlServerRecoveryMode
   private val RECOVERY_DIR = SQLServerEnv.sparkConf.sqlServerRecoveryDir + "/leader_election"
 
-  // For HA functionality
-  private var leaderElectionAgent: LeaderElectionAgent = _
-
   // A server state is tracked internally so that the server only attempts to shut down if it
   // successfully started, and then once only.
   @volatile private var started: Boolean = false
@@ -277,24 +268,31 @@ private[sql] class SQLServer extends CompositeService with LeaderElectable {
   }
 
   override def start(): Unit = {
-    leaderElectionAgent = RECOVERY_MODE match {
+    logInfo("Try to start the Spark SQL server...")
+    RECOVERY_MODE match {
       case Some("ZOOKEEPER") =>
-        logInfo(s"Recovery mode 'ZOOKEEPER' enabled and initial state: $state")
+        logInfo("Recovery mode 'ZOOKEEPER' enabled and wait for leader election")
         val sparkConf = SQLServerEnv.sparkConf
         new ZooKeeperLeaderElectionAgentAccessor(this, sparkConf, RECOVERY_DIR)
+        // If recovery modes enabled, we should activate a single `SQLContext` across candidates
+        synchronized { wait() }
       case Some(mode) =>
         throw new IllegalArgumentException(s"Unknown recovery mode: $mode")
       case None =>
         state = RecoveryState.ALIVE
         new MonarchyLeaderAgent(this)
     }
+    require(state == RecoveryState.ALIVE)
+    SQLServerEnv.sparkContext.addSparkListener(SQLServer.listener)
     started = true
+    logInfo(s"Started the SQL server and state is: $state")
     super.start()
   }
 
   override def electedLeader(): Unit = {
     state = RecoveryState.ALIVE
-    logInfo("I have been elected leader! New state: " + state)
+    logInfo(s"I have been elected leader! New state: $state")
+    synchronized { notifyAll() }
   }
 
   override def revokedLeadership(): Unit = {

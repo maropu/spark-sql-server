@@ -43,7 +43,10 @@ class SparkPostgreSQLServerTest(
 
   private val className = SQLServer.getClass.getCanonicalName.stripSuffix("$")
   private val logFileMask = s"starting $className, logging to "
-  private val successStartLine = "PostgreSQLService: Start running the SQL server"
+  private val successStartLines = Set(
+    "PostgreSQLService: Start running the SQL server",
+    "Recovery mode 'ZOOKEEPER' enabled"
+  )
   private val startScript = "../../sbin/start-sql-server.sh".split("/").mkString(File.separator)
   private val stopScript = "../../sbin/stop-sql-server.sh".split("/").mkString(File.separator)
   private val pidDir = Utils.createTempDir(s"sqlserver-$name-pid")
@@ -76,27 +79,9 @@ class SparkPostgreSQLServerTest(
 
   private def serverStartCommand(port: Int) = {
     val testTempDirPath = {
-      val tempDir = Utils.createTempDir().getCanonicalPath
-
-      // Write a hive-site.xml containing a setting of hive.metastore.warehouse.dir.
-      val metastoreLocation = Utils.createTempDir()
-      metastoreLocation.delete()
-      val metastoreURL =
-        s"jdbc:derby:memory:;databaseName=${metastoreLocation.getAbsolutePath};create=true"
-      Files.write(
-        s"""
-          |<configuration>
-          |  <property>
-          |    <name>javax.jdo.option.ConnectionURL</name>
-          |    <value>$metastoreURL</value>
-          |  </property>
-          |</configuration>
-        """.stripMargin,
-        new File(s"$tempDir/hive-site.xml"),
-        StandardCharsets.UTF_8)
-
       // Writes a temporary log4j.properties and prepend it to driver classpath, so that it
       // overrides all other potential log4j configurations contained in other dependency jar files
+      val tempDir = Utils.createTempDir().getCanonicalPath
       Files.write(
         """log4j.rootCategory=INFO, console
           |log4j.appender.console=org.apache.log4j.ConsoleAppender
@@ -174,7 +159,7 @@ class SparkPostgreSQLServerTest(
       val builder = new ProcessBuilder(command: _*)
       val captureOutput: (String) => Unit = (line: String) => diagnosisBuffer.synchronized {
         diagnosisBuffer += line
-        if (line.contains(successStartLine)) {
+        if (successStartLines.exists(line.contains(_))) {
           serverStarted.trySuccess(())
         }
       }

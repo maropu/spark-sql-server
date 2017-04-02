@@ -118,8 +118,11 @@ class FaultToleranceSuite extends SparkFunSuite with BeforeAndAfterAll with Befo
 
   ignore("rolling-outage") {
     addServers(1)
+    delay()
     addServers(1)
+    delay()
     addServers(1)
+    delay()
     assertValidClusterState()
     assert(getLeader == servers.head)
 
