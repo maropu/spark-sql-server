@@ -17,30 +17,34 @@
 
 package org.apache.spark.sql.server.service
 
+import org.apache.spark.SparkConf
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.server.{SQLServer, SQLServerEnv}
 import org.apache.spark.sql.server.SQLServerConf._
 
-private[server] class SessionManager(pgServer: SQLServer, sqlContext: SQLContext)
-    extends CompositeService {
+
+private[server] class SessionManager(pgServer: SQLServer) extends CompositeService {
 
   private val sessionIdToContext = java.util.Collections.synchronizedMap(
     new java.util.HashMap[Int, SQLContext]())
 
   private var getSession: () => SQLContext = _
 
-  override def init(sqlContext: SQLContext): Unit = {
-    getSession = if (sqlContext.conf.sqlServerSingleSessionEnabled) {
-      () => sqlContext
+  override def init(conf: SparkConf): Unit = {
+    getSession = if (conf.sqlServerSingleSessionEnabled) {
+      () => SQLServerEnv.sqlContext
     } else {
       () => {
-        val sqlCtx = sqlContext.newSession()
+        val sqlCtx = SQLServerEnv.sqlContext.newSession()
         // TODO: Re-think the design
         postgresql.Metadata.initSystemFunctions(sqlCtx)
         sqlCtx
       }
     }
   }
+
+  // Just for sanity check
+  override def start(): Unit = { require(SQLServerEnv.sqlContext != null) }
 
   override def stop(): Unit = {
     if (sessionIdToContext.size() > 0) {

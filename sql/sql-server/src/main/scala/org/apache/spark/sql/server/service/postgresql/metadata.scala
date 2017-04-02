@@ -22,6 +22,7 @@ import java.sql.SQLException
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.types._
 
+
 /**
  * This is the PostgreSQL system information such as catalog tables and functions.
  */

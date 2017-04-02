@@ -15,28 +15,15 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.server.service
-
-import scala.collection.mutable
-
-import org.apache.spark.SparkConf
-import org.apache.spark.internal.Logging
+package org.apache.spark.sql.server
 
 
-private[server] abstract class Service extends Logging {
+/**
+ * This is the copyed class of [[org.apache.spark.deploy.master.RecoveryState]]
+ * because the class is package-private.
+ */
+private[server] object RecoveryState extends Enumeration {
+  type SQLServerState = Value
 
-  def init(conf: SparkConf): Unit
-  def start(): Unit
-  def stop(): Unit
-}
-
-private[server] class CompositeService extends Service {
-
-  private val services = new mutable.ArrayBuffer[Service]()
-
-  protected[this] def addService(service: Service): Unit = services += service
-
-  override def init(conf: SparkConf): Unit = services.foreach(_.init(conf))
-  override def start(): Unit = services.foreach(_.start())
-  override def stop(): Unit = services.foreach(_.stop())
+  val STANDBY, ALIVE, RECOVERING, COMPLETING_RECOVERY = Value
 }

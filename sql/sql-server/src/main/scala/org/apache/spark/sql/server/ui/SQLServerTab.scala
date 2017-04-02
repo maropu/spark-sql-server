@@ -23,6 +23,7 @@ import org.apache.spark.sql.server.SQLServer
 import org.apache.spark.sql.server.ui.SQLServerTab._
 import org.apache.spark.ui.{SparkUI, SparkUITab}
 
+
 /**
  * Spark Web UI tab that shows statistics of jobs running in the SQL server.
  * This assumes the given SparkContext has enabled its SparkUI.

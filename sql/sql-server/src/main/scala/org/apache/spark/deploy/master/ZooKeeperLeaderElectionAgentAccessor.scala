@@ -15,28 +15,13 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.server.service
-
-import scala.collection.mutable
+package org.apache.spark.deploy.master
 
 import org.apache.spark.SparkConf
-import org.apache.spark.internal.Logging
 
-
-private[server] abstract class Service extends Logging {
-
-  def init(conf: SparkConf): Unit
-  def start(): Unit
-  def stop(): Unit
-}
-
-private[server] class CompositeService extends Service {
-
-  private val services = new mutable.ArrayBuffer[Service]()
-
-  protected[this] def addService(service: Service): Unit = services += service
-
-  override def init(conf: SparkConf): Unit = services.foreach(_.init(conf))
-  override def start(): Unit = services.foreach(_.start())
-  override def stop(): Unit = services.foreach(_.stop())
-}
+/** A [[ZooKeeperLeaderElectionAgent]] accessor because the class is package-private. */
+private[spark] class ZooKeeperLeaderElectionAgentAccessor(
+    override val masterInstance: LeaderElectable,
+    conf: SparkConf,
+    override val WORKING_DIR: String)
+  extends ZooKeeperLeaderElectionAgent(masterInstance, conf)
