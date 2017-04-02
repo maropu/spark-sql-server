@@ -41,7 +41,7 @@ class FaultToleranceSuite extends SparkFunSuite with BeforeAndAfterAll with Befo
 
   private var zkTestServer: TestingServer = _
 
-  override protected def beforeAll() : scala.Unit = {
+  override protected def beforeAll() : Unit = {
     super.beforeEach()
     // TestingServer logs the port conflict exception rather than throwing an exception.
     // So we have to find a free port by ourselves. This approach cannot guarantee always starting
@@ -50,7 +50,7 @@ class FaultToleranceSuite extends SparkFunSuite with BeforeAndAfterAll with Befo
     zkTestServer = new TestingServer(findFreePort(conf), new File("/tmp"))
   }
 
-  override protected def afterAll() : scala.Unit = {
+  override protected def afterAll() : Unit = {
     try {
       zkTestServer.stop()
     } finally {
@@ -58,7 +58,7 @@ class FaultToleranceSuite extends SparkFunSuite with BeforeAndAfterAll with Befo
     }
   }
 
-  override protected def afterEach() : scala.Unit = {
+  override protected def afterEach() : Unit = {
     try {
       killAll()
     } finally {

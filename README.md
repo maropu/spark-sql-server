@@ -4,7 +4,7 @@ A Spark SQL server based on the PostgreSQL V3 protocol.
 This is just a prototype to check feasibility for yet another SQL JDBC/ODBC server in Apache Spark
 (See [SPARK-15816](https://issues.apache.org/jira/browse/SPARK-15816) for related discussions).
 
-### Running the SQL JDBC/ODBC server
+## Running the SQL JDBC/ODBC server
 
 To start the JDBC/ODBC server, run the following in the root directory:
 
@@ -18,7 +18,7 @@ Now you can use a PostgreSQL `psql` command to test the SQL JDBC/ODBC server:
 
     $ psql -h localhost
 
-### Use PostgreSQL JDBC drivers
+## Use PostgreSQL JDBC drivers
 
 To connect the SQL server, you can use mature and widely-used [PostgreSQL JDBC drivers](https://jdbc.postgresql.org/).
 You can get the driver, add it to a class path, and write code like;
@@ -55,6 +55,8 @@ public class JdbcTest {
 }
 ```
 
+## Authentication
+
 ### SSL Encryption
 
 To enable SSL encryption, you need to set the following configurations in `start-sql-server.sh`;
@@ -75,7 +77,7 @@ If you use self-signed certificates, you follow 3 steps below to create self-sig
     // Add this certificate to the client's truststore to establish trust
     $ keytool -import -trustcacerts -alias ssltest -file ssltest.crt -keystore client.truststore
 
-You set the generated `server.keystore` to `spark.sql.server.ssl.keystore.path` and add a new property entry (`ssl`=`true`)
+You set the generated `server.keystore` to `spark.sql.server.ssl.keystore.path` and add a new entry (`ssl`=`true`) in `Properties`
 when creating a JDBC connection. Then, you pass `client.truststore` when running `JdbcTest`
 (See [the PostgreSQL JDBC driver documentation](https://jdbc.postgresql.org//documentation/head/ssl-client.html) for more information);
 
@@ -83,7 +85,34 @@ when creating a JDBC connection. Then, you pass `client.truststore` when running
 
     $ java -Djavax.net.ssl.trustStore=client.truststore -Djavax.net.ssl.trustStorePassword=<password> JdbcTest
 
-### Bug reports
+### Kerberos (GSSAPI) Supports
+
+You can use the SQL server on a Kerberos-enabled cluster only in the YARN mode because Spark supports Kerberos only in that mode.
+To enable GSSAPI, you need to set the following configurations in `start-sql-server.sh`;
+
+    $ ./sbin/start-sql-server.sh \
+        --conf spark.yarn.keytab=<keytab path for server principal> \
+        --conf spark.yarn.principal=<Kerberos principal server>
+
+Then, you set a Kerberos service name (`kerberosServerName`) in `Properties` when creating a JDBC connection.
+See [Connection Parameters](https://jdbc.postgresql.org/documentation/head/connect.html) for more information.
+
+## High Availability
+
+A high availability policy of the Spark SQL server is along with [stand-alone Master one](http://spark.apache.org/docs/latest/spark-standalone.html#high-availability);
+by utilizing ZooKeeper, you can launch multiple SQL servers connected to the same ZooKeeper instance.
+One will be elected “leader” and the others will remain in standby mode.
+If the current leader dies, another Master will be elected and initialize `SQLContext` with given configurations.
+After you have a ZooKeeper cluster set up, you can enable high availability by starting multiple servers
+with the same ZooKeeper configuration (ZooKeeper URL and directory) as follows;
+
+    $ ./sbin/start-sql-server.sh \
+        --conf spark.sql.server.recoveryMode=ZOOKEEPER \
+        --conf spark.deploy.zookeeper.url=<ZooKeeper URL>
+        --conf spark.deploy.zookeeper.dir=<ZooKeeper directory to store recovery state>
+
+## Bug reports
 
 If you hit some bugs and requests, please leave some comments on [Issues](https://github.com/maropu/spark-sql-server/issues)
 or Twitter([@maropu](http://twitter.com/#!/maropu)).
+
