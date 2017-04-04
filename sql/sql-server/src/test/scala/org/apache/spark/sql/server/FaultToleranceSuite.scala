@@ -47,6 +47,8 @@ class FaultToleranceSuite extends SparkFunSuite with BeforeAndAfterAll with Befo
     // So we have to find a free port by ourselves. This approach cannot guarantee always starting
     // zkTestServer successfully because there is a time gap between finding a free port and
     // starting zkTestServer. But the failure possibility should be very low.
+    //
+    // TODO: In travis, `TestingServer` does not work well, so all the tests are ignored now
     zkTestServer = new TestingServer(findFreePort(conf), new File("/tmp"))
   }
 
@@ -188,6 +190,7 @@ class FaultToleranceSuite extends SparkFunSuite with BeforeAndAfterAll with Befo
       val bufferSrc = Source.fromFile(serv.logPath)
       Utils.tryWithSafeFinally {
         assert(bufferSrc.getLines().exists { line =>
+          // Check if `TestingServer` works well
           line.contains("ZooKeeperLeaderElectionAgentAccessor: Starting ZooKeeper LeaderElection")
         })
         bufferSrc.getLines().exists(_.contains("I have been elected leader! New state:"))
