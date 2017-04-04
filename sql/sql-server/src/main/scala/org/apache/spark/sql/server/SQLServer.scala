@@ -39,7 +39,7 @@ import org.apache.spark.util.{ShutdownHookManager, Utils}
  */
 object SQLServer extends Logging {
 
-  var uiTab: Option[SQLServerTab] = _
+  var uiTab: Option[SQLServerTab] = None
   var listener: SQLServerListener = _
 
   private def prepareWith(sqlServer: SQLServer): Unit = {
