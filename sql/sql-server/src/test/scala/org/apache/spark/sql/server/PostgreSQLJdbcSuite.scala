@@ -439,6 +439,20 @@ class PostgreSQLJdbcSuite extends PostgreSQLJdbcTest(ssl = false) {
     }
   }
 
+  test("SPARK-17112 SELECT NULL via JDBC triggers IllegalArgumentException") {
+    testJdbcStatement { statement =>
+      val rs1 = statement.executeQuery("SELECT NULL")
+      rs1.next()
+      assert(0 === rs1.getInt(1))
+      assert(rs1.wasNull())
+
+      val rs2 = statement.executeQuery("SELECT IF(TRUE, NULL, NULL)")
+      rs2.next()
+      assert(0 === rs2.getInt(1))
+      assert(rs2.wasNull())
+    }
+  }
+
   test("Checks Hive version via SET -v") {
     testJdbcStatement { statement =>
       val rs = statement.executeQuery("SET -v")
