@@ -17,6 +17,7 @@ install:
   - ./build/mvn -q clean package -DskipTests
 
 script:
+  # - ENABLE_FAULT_TOLERANCE_TESTS=1 ./build/mvn -q scalastyle:check test
   - ./build/mvn -q scalastyle:check test
 
 after_success:

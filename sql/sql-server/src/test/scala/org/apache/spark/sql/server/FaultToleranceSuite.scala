@@ -36,6 +36,8 @@ import org.apache.spark.util.Utils
 /** This suite tests the fault tolerance of the Spark SQL server. */
 class FaultToleranceSuite extends SparkFunSuite with BeforeAndAfterAll with BeforeAndAfterEach {
 
+  private val envVarNameForEnablingTests = "ENABLE_FAULT_TOLERANCE_TESTS"
+
   private val conf = new SparkConf()
   private val servers = mutable.ListBuffer[SparkPostgreSQLServerTest]()
 
@@ -48,7 +50,7 @@ class FaultToleranceSuite extends SparkFunSuite with BeforeAndAfterAll with Befo
     // zkTestServer successfully because there is a time gap between finding a free port and
     // starting zkTestServer. But the failure possibility should be very low.
     //
-    // TODO: In travis, `TestingServer` does not work well, so all the tests are ignored now
+    // TODO: In travis, `TestingServer` does not work well, so all the tests are testIfEnabledd now
     zkTestServer = new TestingServer(findFreePort(conf), new File("/tmp"))
   }
 
@@ -68,19 +70,30 @@ class FaultToleranceSuite extends SparkFunSuite with BeforeAndAfterAll with Befo
     }
   }
 
-  ignore("sanity-basic") {
+  lazy val shouldRunTests = sys.env.get(envVarNameForEnablingTests) == Some("1")
+
+  /** Run the test if environment variable is set or ignore the test */
+  def testIfEnabled(testName: String)(testBody: => Unit) {
+    if (shouldRunTests) {
+      test(testName)(testBody)
+    } else {
+      ignore(s"$testName [enable by setting env var $envVarNameForEnablingTests=1]")(testBody)
+    }
+  }
+
+  testIfEnabled("sanity-basic") {
     addServers(1)
     delay()
     assertValidClusterState()
   }
 
-  ignore("sanity-many-masters") {
+  testIfEnabled("sanity-many-masters") {
     addServers(3)
     delay()
     assertValidClusterState()
   }
 
-  ignore("single-master-halt") {
+  testIfEnabled("single-master-halt") {
     addServers(3)
     delay()
     assertValidClusterState()
@@ -91,7 +104,7 @@ class FaultToleranceSuite extends SparkFunSuite with BeforeAndAfterAll with Befo
     assertValidClusterState()
   }
 
-  ignore("single-master-restart") {
+  testIfEnabled("single-master-restart") {
     addServers(1)
     delay()
     assertValidClusterState()
@@ -107,7 +120,7 @@ class FaultToleranceSuite extends SparkFunSuite with BeforeAndAfterAll with Befo
     assertValidClusterState()
   }
 
-  ignore("cluster-failure") {
+  testIfEnabled("cluster-failure") {
     addServers(2)
     delay()
     assertValidClusterState()
@@ -118,7 +131,7 @@ class FaultToleranceSuite extends SparkFunSuite with BeforeAndAfterAll with Befo
     assertValidClusterState()
   }
 
-  ignore("rolling-outage") {
+  testIfEnabled("rolling-outage") {
     addServers(1)
     delay()
     addServers(1)
