@@ -825,6 +825,13 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SparkConf)
     //
     // However, it is difficult to handle this query in spark because of the PostgreSQL dialect.
     // Currently, we only support the dialect where the server version is '7.4'.
+    //
+    // scalastyle:off
+    //
+    // See an URL below for valid version numbers:
+    // https://github.com/pgjdbc/pgjdbc/blob/master/pgjdbc/src/main/java/org/postgresql/core/ServerVersion.java
+    //
+    // scalastyle:on
     ctx.write(ParameterStatus("server_version", "7.4"))
     ctx.write(ParameterStatus("TimeZone", java.util.TimeZone.getDefault().getID()))
     ctx.write(BackendKeyData(getUniqueChannelId(ctx), portalState.secretKey))
