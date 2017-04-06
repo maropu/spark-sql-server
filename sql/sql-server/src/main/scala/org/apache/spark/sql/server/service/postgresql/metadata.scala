@@ -92,60 +92,58 @@ private[service] object Metadata {
     sqlContext.udf.register("ANY", (arg: String) => arg)
     sqlContext.udf.register("current_schemas", (arg: Boolean) => defaultSparkNamespace._2)
     sqlContext.udf.register("array_in", () => "array_in")
-    sqlContext.udf.register(
-      s"${catalogDbName}.obj_description", (oid: Int, tableName: String) => "")
-    sqlContext.udf.register(
-      s"${catalogDbName}.pg_get_expr", (adbin: String, adrelid: Int) => "")
+    sqlContext.udf.register(s"$catalogDbName.obj_description", (oid: Int, tableName: String) => "")
+    sqlContext.udf.register(s"$catalogDbName.pg_get_expr", (adbin: String, adrelid: Int) => "")
   }
 
   def initCatalogTables(sqlContext: SQLContext): Unit = {
-    sqlContext.sql(s"CREATE DATABASE IF NOT EXISTS ${catalogDbName}")
+    sqlContext.sql(s"CREATE DATABASE IF NOT EXISTS $catalogDbName")
 
-    sqlContext.sql(s"DROP TABLE IF EXISTS ${catalogDbName}.pg_namespace")
+    sqlContext.sql(s"DROP TABLE IF EXISTS $catalogDbName.pg_namespace")
     sqlContext.sql(
       s"""
-        | CREATE TABLE ${catalogDbName}.pg_namespace(
+        | CREATE TABLE $catalogDbName.pg_namespace(
         |   oid INT,
         |   nspname STRING
         | )
       """.stripMargin)
     sqlContext.sql(
       s"""
-        | INSERT INTO ${catalogDbName}.pg_namespace
+        | INSERT INTO $catalogDbName.pg_namespace
         |   VALUES(${defaultSparkNamespace._1}, '${defaultSparkNamespace._2}')
       """.stripMargin)
 
-    sqlContext.sql(s"DROP TABLE IF EXISTS ${catalogDbName}.pg_roles")
+    sqlContext.sql(s"DROP TABLE IF EXISTS $catalogDbName.pg_roles")
     sqlContext.sql(
       s"""
-        | CREATE TABLE ${catalogDbName}.pg_roles(
+        | CREATE TABLE $catalogDbName.pg_roles(
         |   oid INT,
         |   rolname STRING
         | )
       """.stripMargin)
     sqlContext.sql(
       s"""
-        | INSERT INTO ${catalogDbName}.pg_roles VALUES(%d, 'spark-user')
+        | INSERT INTO $catalogDbName.pg_roles VALUES(%d, 'spark-user')
       """.stripMargin
       .format(userRoleOid))
 
-    sqlContext.sql(s"DROP TABLE IF EXISTS ${catalogDbName}.pg_user")
+    sqlContext.sql(s"DROP TABLE IF EXISTS $catalogDbName.pg_user")
     sqlContext.sql(
       s"""
-        | CREATE TABLE ${catalogDbName}.pg_user(
+        | CREATE TABLE $catalogDbName.pg_user(
         |   usename STRING,
         |   usesysid INT
         | )
       """.stripMargin)
     sqlContext.sql(
       s"""
-        | INSERT INTO ${catalogDbName}.pg_user VALUES('spark-user', ${userRoleOid})
+        | INSERT INTO $catalogDbName.pg_user VALUES('spark-user', $userRoleOid)
       """.stripMargin)
 
-    sqlContext.sql(s"DROP TABLE IF EXISTS ${catalogDbName}.pg_type")
+    sqlContext.sql(s"DROP TABLE IF EXISTS $catalogDbName.pg_type")
     sqlContext.sql(
       s"""
-        | CREATE TABLE ${catalogDbName}.pg_type(
+        | CREATE TABLE $catalogDbName.pg_type(
         |   oid INT,
         |   typname STRING,
         |   typtype STRING,
@@ -165,17 +163,17 @@ private[service] object Metadata {
       // are primitive types.
       sqlContext.sql(
         s"""
-          | INSERT INTO ${catalogDbName}.pg_type
+          | INSERT INTO $catalogDbName.pg_type
           |   SELECT %d, '%s', 'b', %d, false, %d, ',', '%s', 0, 0, %d
         """.stripMargin
         .format(tpe.oid, tpe.name, tpe.len, tpe.elemOid, tpe.input, defaultSparkNamespace._1))
     }
 
     // TODO: Need to load entries for existing tables in a database
-    sqlContext.sql(s"DROP TABLE IF EXISTS ${catalogDbName}.pg_class")
+    sqlContext.sql(s"DROP TABLE IF EXISTS $catalogDbName.pg_class")
     sqlContext.sql(
       s"""
-        | CREATE TABLE ${catalogDbName}.pg_class(
+        | CREATE TABLE $catalogDbName.pg_class(
         |   oid INT,
         |   relname STRING,
         |   relkind STRING,
@@ -185,10 +183,10 @@ private[service] object Metadata {
         | )
       """.stripMargin)
 
-    sqlContext.sql(s"DROP TABLE IF EXISTS ${catalogDbName}.pg_attribute")
+    sqlContext.sql(s"DROP TABLE IF EXISTS $catalogDbName.pg_attribute")
     sqlContext.sql(
       s"""
-        | CREATE TABLE ${catalogDbName}.pg_attribute(
+        | CREATE TABLE $catalogDbName.pg_attribute(
         |   oid INT,
         |   attrelid INT,
         |   attname STRING,
@@ -205,10 +203,10 @@ private[service] object Metadata {
      * Five empty catalog tables are defined below to prevent the PostgreSQL JDBC drivers from
      * throwing meaningless exceptions.
      */
-    sqlContext.sql(s"DROP TABLE IF EXISTS ${catalogDbName}.pg_index")
+    sqlContext.sql(s"DROP TABLE IF EXISTS $catalogDbName.pg_index")
     sqlContext.sql(
       s"""
-        | CREATE TABLE ${catalogDbName}.pg_index(
+        | CREATE TABLE $catalogDbName.pg_index(
         |   oid INT,
         |   indrelid INT,
         |   indexrelid INT,
@@ -216,10 +214,10 @@ private[service] object Metadata {
         | )
       """.stripMargin)
 
-    sqlContext.sql(s"DROP TABLE IF EXISTS ${catalogDbName}.pg_proc")
+    sqlContext.sql(s"DROP TABLE IF EXISTS $catalogDbName.pg_proc")
     sqlContext.sql(
       s"""
-        | CREATE TABLE ${catalogDbName}.pg_proc(
+        | CREATE TABLE $catalogDbName.pg_proc(
         |   oid INT,
         |   proname STRING,
         |   prorettype INT,
@@ -228,10 +226,10 @@ private[service] object Metadata {
         | )
       """.stripMargin)
 
-    sqlContext.sql(s"DROP TABLE IF EXISTS ${catalogDbName}.pg_description")
+    sqlContext.sql(s"DROP TABLE IF EXISTS $catalogDbName.pg_description")
     sqlContext.sql(
       s"""
-        | CREATE TABLE ${catalogDbName}.pg_description(
+        | CREATE TABLE $catalogDbName.pg_description(
         |   objoid INT,
         |   classoid INT,
         |   objsubid INT,
@@ -239,10 +237,10 @@ private[service] object Metadata {
         | )
       """.stripMargin)
 
-    sqlContext.sql(s"DROP TABLE IF EXISTS ${catalogDbName}.pg_depend")
+    sqlContext.sql(s"DROP TABLE IF EXISTS $catalogDbName.pg_depend")
     sqlContext.sql(
       s"""
-        | CREATE TABLE ${catalogDbName}.pg_depend(
+        | CREATE TABLE $catalogDbName.pg_depend(
         |   objid INT,
         |   classid INT,
         |   refobjid INT,
@@ -250,10 +248,10 @@ private[service] object Metadata {
         | )
       """.stripMargin)
 
-    sqlContext.sql(s"DROP TABLE IF EXISTS ${catalogDbName}.pg_constraint")
+    sqlContext.sql(s"DROP TABLE IF EXISTS $catalogDbName.pg_constraint")
     sqlContext.sql(
       s"""
-        | CREATE TABLE ${catalogDbName}.pg_constraint(
+        | CREATE TABLE $catalogDbName.pg_constraint(
         |   oid INT,
         |   confupdtype STRING,
         |   confdeltype STRING,
@@ -268,10 +266,10 @@ private[service] object Metadata {
         | )
       """.stripMargin)
 
-    sqlContext.sql(s"DROP TABLE IF EXISTS ${catalogDbName}.pg_attrdef")
+    sqlContext.sql(s"DROP TABLE IF EXISTS $catalogDbName.pg_attrdef")
     sqlContext.sql(
       s"""
-        | CREATE TABLE ${catalogDbName}.pg_attrdef(
+        | CREATE TABLE $catalogDbName.pg_attrdef(
         |   adrelid INT,
         |   adnum SHORT,
         |   adbin STRING
@@ -282,13 +280,13 @@ private[service] object Metadata {
   def registerTableInCatalog(
       tableName: String, schema: StructType, sqlContext: SQLContext): Unit = {
     if (isReservedTableName(tableName, sqlContext.sparkSession.catalog.currentDatabase)) {
-      throw new IllegalArgumentException(s"${tableName} is reserved for system use")
+      throw new IllegalArgumentException(s"$tableName is reserved for system use")
     }
 
     val tableOid = nextUnusedOid
     sqlContext.sql(
       s"""
-        | INSERT INTO ${catalogDbName}.pg_class VALUES(%d, '%s', '%s', %d, %d, %s)
+        | INSERT INTO $catalogDbName.pg_class VALUES(%d, '%s', '%s', %d, %d, %s)
       """.stripMargin
       .format(tableOid, tableName, "r", defaultSparkNamespace._1, userRoleOid, "null"))
 
@@ -296,7 +294,7 @@ private[service] object Metadata {
       val pgType = getPgType(field.dataType)
       sqlContext.sql(
         s"""
-          | INSERT INTO ${catalogDbName}.pg_attribute
+          | INSERT INTO $catalogDbName.pg_attribute
           |   VALUES(%d, %d, '%s', %d, %b, %d, %d, %d, false)
         """.stripMargin
         .format(nextUnusedOid, tableOid, field.name, pgType.oid, !field.nullable,
@@ -308,7 +306,7 @@ private[service] object Metadata {
     Seq("pg_namespace", "pg_type", "pg_roles", "pg_user", "pg_class", "pg_attribute", "pg_index",
         "pg_procs", "pg_description", "pg_depend", "pg_constraint").map { reserved =>
       if (dbName != catalogDbName) {
-        s"${catalogDbName}.${reserved}"
+        s"$catalogDbName.$reserved"
       } else {
         reserved
       }
