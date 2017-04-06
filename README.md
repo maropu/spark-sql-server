@@ -60,18 +60,18 @@ public class JdbcTest {
 The SQL server supports some of PostgreSQL dialect;
 
     $psql -h localhost
-    psql (9.6, server )
     Type "help" for help.
 
-    maropu=> CREATE TEMPORARY VIEW t AS SELECT * FROM VALUES (0, 'abc'), (1, 'acd') AS t(key, value);
+    maropu=> CREATE TEMPORARY VIEW t AS SELECT id AS key, id :: TEXT AS value FROM generate_series(0, 20, 5);
     --
     (0 rows)
 
-    maropu=> SELECT key :: TEXT, value FROM t WHERE value ~ 'ab%';
+    maropu=> SELECT * FROM t WHERE value ~ '1%';
      key | value
     -----+-------
-     0   | abc
-      (1 row)
+      10 | 10
+      15 | 15
+    (2 rows)
 
 ## Authentication
 

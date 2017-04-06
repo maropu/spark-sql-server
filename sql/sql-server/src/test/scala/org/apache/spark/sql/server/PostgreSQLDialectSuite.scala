@@ -38,6 +38,11 @@ class PostgreSQLDialectSuite extends SparkFunSuite with SharedSQLContext with Be
     assert(parser.parsePlan(pgSql) === parser.parsePlan(sparkSql))
   }
 
+  def assertQueryExecutionInPgParser(sql: String, expected: Seq[Row]): Unit = {
+    val ds = Dataset.ofRows(sqlContext.sparkSession, parser.parsePlan(sql))
+    assert(ds.collect === expected)
+  }
+
   test("~") {
     assertValidSQLString(
       "SELECT * FROM testData WHERE value ~ 'abc%'",
@@ -63,5 +68,8 @@ class PostgreSQLDialectSuite extends SparkFunSuite with SharedSQLContext with Be
     assert(sqlContext.sql("SELECT array_in()").collect === Seq(Row("array_in")))
     assert(sqlContext.sql("SELECT pg_catalog.obj_description(0, '')").collect === Seq(Row("")))
     assert(sqlContext.sql("SELECT pg_catalog.pg_get_expr('', 0)").collect === Seq(Row("")))
+    assertQueryExecutionInPgParser("SELECT * FROM generate_series(0, 1)", Row(0) :: Row(1) :: Nil)
+    assertQueryExecutionInPgParser("SELECT * FROM generate_series(0, 10, 5)",
+      Row(0) :: Row(5) :: Row(10) :: Nil)
   }
 }

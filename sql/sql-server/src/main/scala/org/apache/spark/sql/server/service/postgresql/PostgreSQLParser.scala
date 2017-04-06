@@ -18,10 +18,11 @@
 package org.apache.spark.sql.server.service.postgresql
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.Buffer
 
-import org.apache.spark.sql.catalyst.analysis.UnresolvedFunction
-import org.apache.spark.sql.catalyst.expressions.Cast
-import org.apache.spark.sql.catalyst.expressions.Expression
+import org.apache.spark.sql.catalyst.analysis.{UnresolvedFunction, UnresolvedTableValuedFunction}
+import org.apache.spark.sql.catalyst.expressions.{Add, Cast, Expression, Literal}
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.server.execution.SparkSqlAstBuilder
 import org.apache.spark.sql.server.execution.SparkSqlParser
@@ -70,6 +71,22 @@ class PostgreSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
         UnresolvedFunction(funcName, Seq.empty, false)
       case _ =>
         Cast(expression(ctx.primaryExpression), typedVisit(ctx.pgDataType()))
+    }
+  }
+
+  private def toSparkRange(start: Expression, end: Expression, intvl: Option[Expression]) = {
+    // Fill a gap between PostgreSQL `generate_series` and Spark `range` here
+    val e = end match { case l: Literal => Add(l, Literal(1, IntegerType)) }
+    val args = intvl.map(i => start :: e :: i :: Nil).getOrElse(start :: e :: Nil)
+    UnresolvedTableValuedFunction("range", args)
+  }
+
+  override def visitTableValuedFunction(ctx: TableValuedFunctionContext)
+    : LogicalPlan = withOrigin(ctx) {
+    (ctx.identifier.getText.toLowerCase, ctx.expression.asScala.map(expression)) match {
+      case ("generate_series", Buffer(start, end)) => toSparkRange(start, end, None)
+      case ("generate_series", Buffer(start, end, step)) => toSparkRange(start, end, Some(step))
+      case _ => super.visitTableValuedFunction(ctx)
     }
   }
 }
