@@ -55,6 +55,24 @@ public class JdbcTest {
 }
 ```
 
+## PostgreSQL syntax
+
+The SQL server supports some of PostgreSQL dialect;
+
+    $psql -h localhost
+    psql (9.6, server )
+    Type "help" for help.
+
+    maropu=> CREATE TEMPORARY VIEW t AS SELECT * FROM VALUES (0, 'abc'), (1, 'acd') AS t(key, value);
+    --
+    (0 rows)
+
+    maropu=> SELECT key :: TEXT, value FROM t WHERE value ~ 'ab%';
+     key | value
+    -----+-------
+     0   | abc
+      (1 row)
+
 ## Authentication
 
 ### SSL Encryption
