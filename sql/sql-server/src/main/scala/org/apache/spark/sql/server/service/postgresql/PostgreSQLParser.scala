@@ -76,7 +76,7 @@ class PostgreSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
 
   private def toSparkRange(start: Expression, end: Expression, intvl: Option[Expression]) = {
     // Fill a gap between PostgreSQL `generate_series` and Spark `range` here
-    val e = end match { case l: Literal => Add(l, Literal(1, IntegerType)) }
+    val e = Add(end, Literal(1, IntegerType))
     val args = intvl.map(i => start :: e :: i :: Nil).getOrElse(start :: e :: Nil)
     UnresolvedTableValuedFunction("range", args)
   }
