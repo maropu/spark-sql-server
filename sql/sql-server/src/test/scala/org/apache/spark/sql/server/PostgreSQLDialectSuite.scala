@@ -22,14 +22,16 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.spark.SparkFunSuite
 import org.apache.spark.sql.{Dataset, Row}
 import org.apache.spark.sql.test.SharedSQLContext
+import service.postgresql.Metadata
 
-class PostgreSQLParserSuite extends SparkFunSuite with SharedSQLContext with BeforeAndAfterAll {
+class PostgreSQLDialectSuite extends SparkFunSuite with SharedSQLContext with BeforeAndAfterAll {
 
   lazy val parser = SQLServerEnv.sqlParser
 
   override protected def beforeAll() : Unit = {
     super.beforeAll()
     SQLServerEnv.withSQLContext(sqlContext)
+    Metadata.initSystemFunctions(sqlContext)
   }
 
   def assertValidSQLString(pgSql: String, sparkSql: String): Unit = {
@@ -52,5 +54,14 @@ class PostgreSQLParserSuite extends SparkFunSuite with SharedSQLContext with Bef
     sqlContext.udf.register("testUdf", () => "test")
     val ds = Dataset.ofRows(sqlContext.sparkSession, parser.parsePlan("SELECT 'testUdf'::regproc"))
     assert(ds.collect === Seq(Row("test")))
+  }
+
+  test("pg internal functions") {
+    assert(sqlContext.sql("SELECT ANY(array('abc', 'de'))").collect === Seq(Row("abc")))
+    assert(sqlContext.sql("SELECT current_schemas(false)").collect === Seq(Row(Seq("spark"))))
+    assert(sqlContext.sql("SELECT array_upper(current_schemas(false), 1)").collect === Seq(Row(1)))
+    assert(sqlContext.sql("SELECT array_in()").collect === Seq(Row("array_in")))
+    assert(sqlContext.sql("SELECT pg_catalog.obj_description(0, '')").collect === Seq(Row("")))
+    assert(sqlContext.sql("SELECT pg_catalog.pg_get_expr('', 0)").collect === Seq(Row("")))
   }
 }

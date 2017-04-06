@@ -26,7 +26,7 @@ import org.apache.spark.sql.types._
 /**
  * This is the PostgreSQL system information such as catalog tables and functions.
  */
-private[service] object Metadata {
+object Metadata {
 
   // Since v7.3, all the catalog tables have been moved in a `pg_catalog` database
   private val catalogDbName = "pg_catalog"
@@ -89,8 +89,9 @@ private[service] object Metadata {
   private val userRoleOid = nextUnusedOid
 
   def initSystemFunctions(sqlContext: SQLContext): Unit = {
-    sqlContext.udf.register("ANY", (arg: String) => arg)
-    sqlContext.udf.register("current_schemas", (arg: Boolean) => defaultSparkNamespace._2)
+    sqlContext.udf.register("ANY", (arg: Seq[String]) => arg.head)
+    sqlContext.udf.register("current_schemas", (arg: Boolean) => Seq(defaultSparkNamespace._2))
+    sqlContext.udf.register("array_upper", (ar: Seq[String], n: Int) => ar.size)
     sqlContext.udf.register("array_in", () => "array_in")
     sqlContext.udf.register(s"$catalogDbName.obj_description", (oid: Int, tableName: String) => "")
     sqlContext.udf.register(s"$catalogDbName.pg_get_expr", (adbin: String, adrelid: Int) => "")
