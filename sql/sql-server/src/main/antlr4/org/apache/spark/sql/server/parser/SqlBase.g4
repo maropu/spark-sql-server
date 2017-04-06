@@ -930,8 +930,8 @@ CURRENT_DATE: 'CURRENT_DATE';
 CURRENT_TIMESTAMP: 'CURRENT_TIMESTAMP';
 
 STRING
-    : '\'' ( ~('\''|'\\') | ('\\' .) )* '\''
-    | '\"' ( ~('\"'|'\\') | ('\\' .) )* '\"'
+    : 'E'? '\'' ( ~('\''|'\\') | ('\\' .) )* '\''
+    | 'E'? '\"' ( ~('\"'|'\\') | ('\\' .) )* '\"'
     ;
 
 BIGINT_LITERAL

@@ -63,7 +63,7 @@ class PostgreSQLJdbcSuite extends PostgreSQLJdbcTest(ssl = false) {
   test("server version") {
     testJdbcStatement { statement =>
       val protoInfo = statement.getConnection.asInstanceOf[org.postgresql.jdbc.PgConnection]
-      assert("7.4" === protoInfo.getDBVersionNumber)
+      assert("9.6" === protoInfo.getDBVersionNumber)
     }
   }
 

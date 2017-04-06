@@ -797,42 +797,12 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SparkConf)
     ctx.write(AuthenticationOk)
     ctx.write(ParameterStatus("application_name", "spark-sql-server"))
     ctx.write(ParameterStatus("server_encoding", "UTF-8"))
-    // `server_version` decides how to handle metadata between jdbc clients and servers.
-    // In case of `server_version` >= 8.0, `DatabaseMetaData#getTypeInfo` implicitly
-    // generates a query below;
-    //
-    //  SELECT
-    //    typinput='array_in'::regproc,
-    //    typtype
-    //  FROM
-    //     pg_catalog.pg_type LEFT JOIN (
-    //      SELECT
-    //        ns.oid as nspoid,
-    //        ns.nspname,
-    //        r.r
-    //      FROM
-    //        pg_namespace as ns JOIN (
-    //          SELECT
-    //            s.r,
-    //            (current_schemas(false))[s.r] AS nspname
-    //          FROM
-    //            generate_series(1, array_upper(current_schemas(false), 1)) AS s(r)
-    //        ) AS r USING (nspname)
-    //    ) AS sp ON sp.nspoid = typnamespace
-    //  WHERE typname = 'tid'
-    //  ORDER BY sp.r, pg_type.oid
-    //  DESC LIMIT 1
-    //
-    // However, it is difficult to handle this query in spark because of the PostgreSQL dialect.
-    // Currently, we only support the dialect where the server version is '7.4'.
-    //
     // scalastyle:off
-    //
+    // `server_version` decides how to handle metadata between jdbc clients and servers.
     // See an URL below for valid version numbers:
     // https://github.com/pgjdbc/pgjdbc/blob/master/pgjdbc/src/main/java/org/postgresql/core/ServerVersion.java
-    //
     // scalastyle:on
-    ctx.write(ParameterStatus("server_version", "7.4"))
+    ctx.write(ParameterStatus("server_version", "9.6"))
     ctx.write(ParameterStatus("TimeZone", java.util.TimeZone.getDefault().getID()))
     ctx.write(BackendKeyData(getUniqueChannelId(ctx), portalState.secretKey))
     ctx.write(ReadyForQuery)
