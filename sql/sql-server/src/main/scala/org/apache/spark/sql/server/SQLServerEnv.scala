@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.{SparkSession, SQLContext}
+import org.apache.spark.sql.server.service.postgresql.PostgreSQLParser
 import org.apache.spark.util.Utils
 
 
@@ -45,13 +46,18 @@ private[server] object SQLServerEnv {
 
   lazy val sparkContext = sqlContext.sparkContext
 
-  lazy val sqlContext: SQLContext = _sqlContext.getOrElse {
+  lazy val sqlContext = _sqlContext.getOrElse {
     val sparkSession = SparkSession.builder.config(sparkConf).enableHiveSupport().getOrCreate()
     sparkSession.sqlContext
   }
 
+  lazy val sqlConf = sqlContext.conf
+
+  lazy val sqlParser = new PostgreSQLParser(sqlConf)
+
   def withSQLContext(sqlContext: SQLContext): Unit = {
-    require(_sqlContext == null)
+    require(sqlContext != null)
+    require(_sqlContext.isEmpty)
     _sqlContext = Option(sqlContext)
   }
 

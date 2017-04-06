@@ -23,7 +23,7 @@ import java.util.UUID
 import scala.util.control.NonFatal
 
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.{DataFrame, SQLContext}
+import org.apache.spark.sql.{DataFrame, Dataset, SQLContext}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.execution.command.SetCommand
 import org.apache.spark.sql.execution.datasources.CreateTable
@@ -79,10 +79,12 @@ private[server] case class ExecuteStatementOperation(
    (sqlContext: SQLContext,
     activePools: java.util.Map[Int, String]) extends Operation with Logging {
 
-  private[service] val statementId = UUID.randomUUID().toString()
+  private val sqlParser = SQLServerEnv.sqlParser
 
-  private[service] var resultSet: DataFrame = _
-  private[service] var rowIter: Iterator[InternalRow] = _
+  private val statementId = UUID.randomUUID().toString()
+
+  private var resultSet: DataFrame = _
+  private var rowIter: Iterator[InternalRow] = _
 
   override def cancel(): Unit = {
     logInfo(s"Cancelling '$statement' with $statementId")
@@ -124,7 +126,7 @@ private[server] case class ExecuteStatementOperation(
     }
 
     try {
-      resultSet = sqlContext.sql(statement)
+      resultSet = Dataset.ofRows(sqlContext.sparkSession, sqlParser.parsePlan(statement))
       logDebug(resultSet.queryExecution.toString())
 
       resultSet.queryExecution.logical match {

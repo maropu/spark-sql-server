@@ -904,45 +904,6 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SparkConf)
     }
   }
 
-  // hacky: Replace unsupported PostgreSQL-local syntax
-  private def replaceUnsupportedSyntax(sqlStr: String): String = {
-    sqlStr
-      .replace("~", "=")
-      .replace("""::text""", "")
-      // .replace("""'array_in'::regproc""", "array_in()")
-      .replace("""::regproc""", "")
-      // .replace("""p.proname || '_' || p.oid""", "concat(p.proname, '_', p.oid)")
-      // .replace("""'pg_constraint'::regclass::oid""", "0")
-      // .replace("""'pg_class'::regclass::oid""", "0")
-      // .replace("""information_schema._pg_keypositions() pos(n),""", "")
-      // .replace(""",pos.n""", "")
-      // .replace("""pos.n""", "0")
-    /**
-     * val reTypeCast = """.*\s((\S+)\s*::\s*(\w+)).*""".r
-     * def replaceTypeCast(q: String): String = q match {
-     *   case reTypeCast(substr, expr, tpe) =>
-     *     replaceTypeCast(q.replace(substr, s"CAST(${expr} AS ${tpe})"))
-     *   case _ =>
-     *     q
-     * }
-     * val reTextType = """.*\s(AS\s*text|TEXT).*""".r
-     * def replaceTextType(q: String): String = q match {
-     *   case reTextType(substr) =>
-     *     replaceTextType(q.replace(substr, s"AS STRING"))
-     *   case _ =>
-     *     q
-     * }
-     * val reRegprocType = """.*\s(AS\s*regproc|REGPROC).*""".r
-     * def removeRegprocType(q: String): String = q match {
-     *   case reRegprocType(substr) =>
-     *     removeRegprocType(q.replace(substr, ""))
-     *   case _ =>
-     *     q
-     * }
-     * removeRegprocType(replaceTextType(replaceTypeCast(sqlStr.replace("~", "="))))
-     */
-  }
-
   private def handleV3Messages(ctx: ChannelHandlerContext, msgBuffer: ByteBuffer): Unit = {
     val channelId = getUniqueChannelId(ctx)
     val portalState = channelIdToPortalState.get(channelId)
@@ -1066,7 +1027,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SparkConf)
           handleException(ctx, "Message 'Flush' not supported")
           return
         case Parse(name, query, objIds) =>
-          portalState.queries(name) = replaceUnsupportedSyntax(query)
+          portalState.queries(name) = query
           logInfo(s"Parse: name=${portalState.queries(name)},query=${query},objIds=${objIds}")
           ctx.write(ParseComplete)
           ctx.flush()

@@ -47,6 +47,7 @@
     <curator.version>2.4.0</curator.version>
     <hadoop.binary.version>2.7</hadoop.binary.version>
     <jetty.version>9.2.16.v20160414</jetty.version>
+    <antlr4.version>4.5.3</antlr4.version>
 
     <test.java.home>${java.home}</test.java.home>
     <test.exclude.tags></test.exclude.tags>
@@ -83,6 +84,12 @@
         <version>${scala.version}</version>
         <scope>compile</scope>
       </dependency>
+      <dependency>
+        <groupId>org.antlr</groupId>
+        <artifactId>antlr4-runtime</artifactId>
+        <version>${antlr4.version}</version>
+        <scope>compile</scope>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -91,6 +98,17 @@
     <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
     <finalName>${project.artifactId}-${project.version}</finalName>
     <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
+
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.antlr</groupId>
+          <artifactId>antlr4-maven-plugin</artifactId>
+          <version>${antlr4.version}</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
     <plugins>
       <plugin>
         <groupId>org.scalastyle</groupId>
