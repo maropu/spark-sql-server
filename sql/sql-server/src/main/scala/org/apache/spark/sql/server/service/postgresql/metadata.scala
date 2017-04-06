@@ -29,7 +29,7 @@ import org.apache.spark.sql.types._
 private[service] object Metadata {
 
   // Since v7.3, all the catalog tables have been moved in a `pg_catalog` database
-  private val catalogDbName = "default"
+  private val catalogDbName = "pg_catalog"
 
   // `src/include/catalog/unused_oids` in a PostgreSQL source repository prints unused oids; 2-9,
   // 3300, 3308-3309, 3315-3328, 3330-3381, 3394-3453, 3577-3579, 3997-3999, 4066, 4083, 4099-4101,
@@ -94,6 +94,8 @@ private[service] object Metadata {
     sqlContext.udf.register("array_in", () => "array_in")
     sqlContext.udf.register(
       s"${catalogDbName}.obj_description", (oid: Int, tableName: String) => "")
+    sqlContext.udf.register(
+      s"${catalogDbName}.pg_get_expr", (adbin: String, adrelid: Int) => "")
   }
 
   def initCatalogTables(sqlContext: SQLContext): Unit = {
@@ -232,6 +234,7 @@ private[service] object Metadata {
         | CREATE TABLE ${catalogDbName}.pg_description(
         |   objoid INT,
         |   classoid INT,
+        |   objsubid INT,
         |   description STRING
         | )
       """.stripMargin)
@@ -262,6 +265,16 @@ private[service] object Metadata {
         |   confrelid INT,
         |   conrelid INT,
         |   contype STRING
+        | )
+      """.stripMargin)
+
+    sqlContext.sql(s"DROP TABLE IF EXISTS ${catalogDbName}.pg_attrdef")
+    sqlContext.sql(
+      s"""
+        | CREATE TABLE ${catalogDbName}.pg_attrdef(
+        |   adrelid INT,
+        |   adnum SHORT,
+        |   adbin STRING
         | )
       """.stripMargin)
   }

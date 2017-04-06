@@ -823,10 +823,9 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SparkConf)
     //  ORDER BY sp.r, pg_type.oid
     //  DESC LIMIT 1
     //
-    // However, it is difficult to handle this query in spark because of PostgreSQL dialects.
-    // When the value is set at an empty string, the interaction is the simplest,
-    // so the value is fixed at "" for now.
-    ctx.write(ParameterStatus("server_version", ""))
+    // However, it is difficult to handle this query in spark because of the PostgreSQL dialect.
+    // Currently, we only support the dialect where the server version is '7.4'.
+    ctx.write(ParameterStatus("server_version", "7.4"))
     ctx.write(ParameterStatus("TimeZone", java.util.TimeZone.getDefault().getID()))
     ctx.write(BackendKeyData(getUniqueChannelId(ctx), portalState.secretKey))
     ctx.write(ReadyForQuery)
