@@ -802,7 +802,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SparkConf)
     // See an URL below for valid version numbers:
     // https://github.com/pgjdbc/pgjdbc/blob/master/pgjdbc/src/main/java/org/postgresql/core/ServerVersion.java
     // scalastyle:on
-    ctx.write(ParameterStatus("server_version", "9.6"))
+    ctx.write(ParameterStatus("server_version", conf.sqlServerVersion))
     ctx.write(ParameterStatus("TimeZone", java.util.TimeZone.getDefault().getID()))
     ctx.write(BackendKeyData(getUniqueChannelId(ctx), portalState.secretKey))
     ctx.write(ReadyForQuery)

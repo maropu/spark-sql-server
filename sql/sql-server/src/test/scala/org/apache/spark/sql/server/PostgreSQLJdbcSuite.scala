@@ -56,14 +56,19 @@ class ProcessOutputCapturer(stream: InputStream, capture: String => Unit) extend
   }
 }
 
-class PostgreSQLJdbcSuite extends PostgreSQLJdbcTest(ssl = false) {
+class PostgreSQLV9_6JdbcSuite extends PostgreSQLJdbcSuite("9.6")
+class PostgreSQLV8_0JdbcSuite extends PostgreSQLJdbcSuite("8.0")
+class PostgreSQLV7_4JdbcSuite extends PostgreSQLJdbcSuite("7.4")
+
+abstract class PostgreSQLJdbcSuite(pgVersion: String)
+  extends PostgreSQLJdbcTest(pgVersion = pgVersion, ssl = false) {
 
   val hiveVersion = "1.2.1"
 
   test("server version") {
     testJdbcStatement { statement =>
       val protoInfo = statement.getConnection.asInstanceOf[org.postgresql.jdbc.PgConnection]
-      assert("9.6" === protoInfo.getDBVersionNumber)
+      assert(pgVersion === protoInfo.getDBVersionNumber)
     }
   }
 
@@ -840,17 +845,20 @@ class PostgreSQLJdbcSingleSessionSuite extends PostgreSQLJdbcTest(singleSession 
   }
 }
 
-class PostgreSQLJdbcTest(ssl: Boolean = false, singleSession: Boolean = false)
-  extends SQLServerTest(ssl, singleSession) with PostgreSQLJdbcTestBase {
+class PostgreSQLJdbcTest(
+    pgVersion: String = "9.6",
+    ssl: Boolean = false,
+    singleSession: Boolean = false)
+  extends SQLServerTest(pgVersion, ssl, singleSession) with PostgreSQLJdbcTestBase {
 
   override def serverInstance: SparkPostgreSQLServerTest = server
 }
 
-abstract class SQLServerTest(ssl: Boolean, singleSession: Boolean)
+abstract class SQLServerTest(pgVersion: String, ssl: Boolean, singleSession: Boolean)
     extends SparkFunSuite with BeforeAndAfterAll with Logging {
 
   protected val server = new SparkPostgreSQLServerTest(
-    this.getClass.getSimpleName, ssl = ssl, singleSession = singleSession)
+    this.getClass.getSimpleName, version = pgVersion, ssl = ssl, singleSession = singleSession)
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
