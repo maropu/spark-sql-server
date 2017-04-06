@@ -20,9 +20,9 @@ package org.apache.spark.sql.server.service.postgresql
 import scala.collection.JavaConverters._
 import scala.collection.mutable.Buffer
 
-import org.apache.spark.sql.catalyst.analysis.{UnresolvedFunction, UnresolvedTableValuedFunction}
-import org.apache.spark.sql.catalyst.expressions.{Add, Cast, Expression, Literal}
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.analysis._
+import org.apache.spark.sql.catalyst.expressions._
+import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.server.execution.SparkSqlAstBuilder
 import org.apache.spark.sql.server.execution.SparkSqlParser
@@ -83,10 +83,24 @@ class PostgreSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
 
   override def visitTableValuedFunction(ctx: TableValuedFunctionContext)
     : LogicalPlan = withOrigin(ctx) {
-    (ctx.identifier.getText.toLowerCase, ctx.expression.asScala.map(expression)) match {
+    val funcPlan = (ctx.identifier(0).getText, ctx.expression.asScala.map(expression)) match {
       case ("generate_series", Buffer(start, end)) => toSparkRange(start, end, None)
       case ("generate_series", Buffer(start, end, step)) => toSparkRange(start, end, Some(step))
       case _ => super.visitTableValuedFunction(ctx)
+    }
+    if (ctx.identifier().size > 1) {
+      val prefix = ctx.identifier(1).getText
+      if (ctx.identifierList != null) {
+        val aliases = visitIdentifierList(ctx.identifierList)
+        // TODO: Since there is currently one table function `range`, we just assign an output name
+        // here. But, we need to make this logic more general in future.
+        val projectList = Alias(UnresolvedAttribute("id"), aliases.head)() :: Nil
+        SubqueryAlias(prefix, Project(projectList, funcPlan), None)
+      } else {
+        SubqueryAlias(prefix, funcPlan, None)
+      }
+    } else {
+      funcPlan
     }
   }
 }

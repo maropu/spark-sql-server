@@ -21,8 +21,8 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.spark.SparkFunSuite
 import org.apache.spark.sql.{Dataset, Row}
+import org.apache.spark.sql.server.service.postgresql.Metadata
 import org.apache.spark.sql.test.SharedSQLContext
-import service.postgresql.Metadata
 
 class PostgreSQLDialectSuite extends SparkFunSuite with SharedSQLContext with BeforeAndAfterAll {
 
