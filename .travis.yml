@@ -13,6 +13,8 @@ notifications:
 
 install:
   - . ./bin/install-spark.sh
+  # Build the SQL server for following unit tests
+  - ./build/mvn -q clean package -DskipTests
 
 script:
   - ./build/mvn -q scalastyle:check test
