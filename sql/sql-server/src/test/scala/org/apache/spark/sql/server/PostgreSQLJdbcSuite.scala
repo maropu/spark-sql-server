@@ -56,8 +56,8 @@ class ProcessOutputCapturer(stream: InputStream, capture: String => Unit) extend
   }
 }
 
-class PostgreSQLV9_6JdbcSuite extends PostgreSQLJdbcSuite("9.6")
-class PostgreSQLV8_0JdbcSuite extends PostgreSQLJdbcSuite("8.0")
+// class PostgreSQLV9_6JdbcSuite extends PostgreSQLJdbcSuite("9.6")
+// class PostgreSQLV8_0JdbcSuite extends PostgreSQLJdbcSuite("8.0")
 class PostgreSQLV7_4JdbcSuite extends PostgreSQLJdbcSuite("7.4")
 
 abstract class PostgreSQLJdbcSuite(pgVersion: String)
@@ -846,7 +846,7 @@ class PostgreSQLJdbcSingleSessionSuite extends PostgreSQLJdbcTest(singleSession 
 }
 
 class PostgreSQLJdbcTest(
-    pgVersion: String = "9.6",
+    pgVersion: String = "7.4",
     ssl: Boolean = false,
     singleSession: Boolean = false)
   extends SQLServerTest(pgVersion, ssl, singleSession) with PostgreSQLJdbcTestBase {
@@ -858,7 +858,7 @@ abstract class SQLServerTest(pgVersion: String, ssl: Boolean, singleSession: Boo
     extends SparkFunSuite with BeforeAndAfterAll with Logging {
 
   protected val server = new SparkPostgreSQLServerTest(
-    this.getClass.getSimpleName, version = pgVersion, ssl = ssl, singleSession = singleSession)
+    this.getClass.getSimpleName, pgVersion = pgVersion, ssl = ssl, singleSession = singleSession)
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()

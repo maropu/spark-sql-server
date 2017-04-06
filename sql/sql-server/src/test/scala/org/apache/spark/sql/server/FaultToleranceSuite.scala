@@ -159,7 +159,11 @@ class FaultToleranceSuite extends SparkFunSuite with BeforeAndAfterAll with Befo
     )
     (1 to num).foreach { _ =>
       val serv = new SparkPostgreSQLServerTest(
-        s"fault-tolrance-test-${_servCounter}", options = serverOption)
+        name = s"fault-tolrance-test-${_servCounter}",
+        pgVersion = "7.4",
+        ssl = false,
+        singleSession = false,
+        options = serverOption)
       _servCounter += 1
       serv.start()
       servers += serv

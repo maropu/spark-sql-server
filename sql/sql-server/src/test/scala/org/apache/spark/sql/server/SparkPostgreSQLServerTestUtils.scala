@@ -36,9 +36,9 @@ import org.apache.spark.util.{ThreadUtils, Utils}
 
 class SparkPostgreSQLServerTest(
     name: String,
-    version: String = "9.6",
-    val ssl: Boolean = false,
-    singleSession: Boolean = false,
+    pgVersion: String,
+    val ssl: Boolean,
+    singleSession: Boolean,
     options: Map[String, String] = Map.empty)
   extends Logging {
 
@@ -103,7 +103,7 @@ class SparkPostgreSQLServerTest(
        |  --conf spark.ui.enabled=false
        |  --conf spark.sql.warehouse.dir=$testTempDirPath/spark-warehouse
        |  --conf ${SQLServerConf.SQLSERVER_PORT.key}=$port
-       |  --conf ${SQLServerConf.SQLSERVER_VERSION.key}=$version
+       |  --conf ${SQLServerConf.SQLSERVER_VERSION.key}=$pgVersion
        |  --conf ${SQLServerConf.SQLSERVER_SSL_ENABLED.key}=$ssl
        |  --conf ${SQLServerConf.SQLSERVER_SINGLE_SESSION_ENABLED.key}=$singleSession
      """.stripMargin.split("\\s+").toSeq ++
