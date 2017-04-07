@@ -87,7 +87,10 @@ private[server] case class ExecuteStatementOperation(
   private var rowIter: Iterator[InternalRow] = _
 
   override def cancel(): Unit = {
-    logInfo(s"Cancelling '$statement' with $statementId")
+    logInfo(
+      s"""Cancelling query with $statementId;
+         | $statement
+       """.stripMargin)
     if (statementId != null) {
       sqlContext.sparkContext.cancelJobGroup(statementId)
     }
@@ -111,7 +114,10 @@ private[server] case class ExecuteStatementOperation(
   }
 
   override def run(): Unit = {
-    logInfo(s"Running query '$statement' with $statementId")
+    logInfo(
+      s"""Running query with $statementId;
+         | $statement
+       """.stripMargin)
     setState(RUNNING)
 
     // Always use the latest class loader provided by SQLContext's state.
@@ -151,13 +157,19 @@ private[server] case class ExecuteStatementOperation(
     } catch {
       case NonFatal(e) =>
         if (state != CANCELED) {
-          logError(s"Error executing query, currentState $state, ", e)
+          logError(
+            s"""Error executing query with with $statementId
+               | $statement
+             """.stripMargin)
           setState(ERROR)
           SQLServer.listener.onStatementError(
             statementId, e.getMessage, SparkUtils.exceptionString(e))
           throw new SQLException(e.toString)
         } else {
-          logWarning(s"Cancelled query '$statement' with $statementId")
+          logWarning(
+            s"""Cancelled query with $statementId
+               | $statement
+             """.stripMargin)
           throw new SQLException(e.toString)
         }
     }
