@@ -114,6 +114,40 @@ object Metadata {
         |   VALUES(${defaultSparkNamespace._1}, '${defaultSparkNamespace._2}')
       """.stripMargin)
 
+    // TODO: The PostgreSQL JDBC driver (`SQLSERVER_VERSION` >= 8.0) issues a query below and
+    // it uses `default.pg_namespace instead of `pg_catalog.pg_namespace`.
+    // So, we currently create `pg_namespace` in both `default` and `pg_catalog`.
+    //
+    // SELECT typinput='array_in'::regproc, typtype
+    //   FROM pg_catalog.pg_type
+    //   LEFT JOIN (
+    //     select ns.oid as nspoid, ns.nspname, r.r
+    //       from pg_namespace as ns
+    //            ^^^^^^^^^^^^
+    //       join (
+    //         select s.r, (current_schemas(false))[s.r] as nspname
+    //           from generate_series(1, array_upper(current_schemas(false), 1)) as s(r)
+    //       ) as r using ( nspname )
+    //   ) as sp
+    //   ON sp.nspoid = typnamespace
+    //   WHERE typname = 'byte'
+    //   ORDER BY sp.r, pg_type.oid DESC
+    //   LIMIT 1;
+    //
+    sqlContext.sql(s"DROP TABLE IF EXISTS pg_namespace")
+    sqlContext.sql(
+      s"""
+        | CREATE TABLE pg_namespace(
+        |   oid INT,
+        |   nspname STRING
+        | )
+      """.stripMargin)
+    sqlContext.sql(
+      s"""
+        | INSERT INTO pg_namespace
+        |   VALUES(${defaultSparkNamespace._1}, '${defaultSparkNamespace._2}')
+      """.stripMargin)
+
     sqlContext.sql(s"DROP TABLE IF EXISTS $catalogDbName.pg_roles")
     sqlContext.sql(
       s"""

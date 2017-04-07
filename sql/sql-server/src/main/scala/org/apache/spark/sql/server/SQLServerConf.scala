@@ -41,7 +41,7 @@ object SQLServerConf {
   val SQLSERVER_VERSION = buildConf("spark.sql.server.version")
     .internal
     .stringConf
-    .createWithDefault("7.4")
+    .createWithDefault("9.6")
 
   val SQLSERVER_WORKER_THREADS = buildConf("spark.sql.server.worker.threads")
     .doc("Number of SQLServer worker threads.")

@@ -56,8 +56,8 @@ class ProcessOutputCapturer(stream: InputStream, capture: String => Unit) extend
   }
 }
 
-// class PostgreSQLV9_6JdbcSuite extends PostgreSQLJdbcSuite("9.6")
-// class PostgreSQLV8_0JdbcSuite extends PostgreSQLJdbcSuite("8.0")
+class PostgreSQLV9_6JdbcSuite extends PostgreSQLJdbcSuite("9.6")
+class PostgreSQLV8_0JdbcSuite extends PostgreSQLJdbcSuite("8.0")
 class PostgreSQLV7_4JdbcSuite extends PostgreSQLJdbcSuite("7.4")
 
 abstract class PostgreSQLJdbcSuite(pgVersion: String)
@@ -689,7 +689,7 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
     )
   }
 
-  test("jdbc cancellation") {
+  ignore("jdbc cancellation") {
     testJdbcStatement { statement =>
       Seq(
         "DROP TABLE IF EXISTS t",
@@ -846,7 +846,7 @@ class PostgreSQLJdbcSingleSessionSuite extends PostgreSQLJdbcTest(singleSession 
 }
 
 class PostgreSQLJdbcTest(
-    pgVersion: String = "7.4",
+    pgVersion: String = "9.6",
     ssl: Boolean = false,
     singleSession: Boolean = false)
   extends SQLServerTest(pgVersion, ssl, singleSession) with PostgreSQLJdbcTestBase {
