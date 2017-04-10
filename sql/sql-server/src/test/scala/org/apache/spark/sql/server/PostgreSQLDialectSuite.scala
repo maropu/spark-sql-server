@@ -46,7 +46,7 @@ class PostgreSQLDialectSuite extends SparkFunSuite with SharedSQLContext with Be
   test("~") {
     assertValidSQLString(
       "SELECT * FROM testData WHERE value ~ 'abc'",
-      "SELECT * FROM testData WHERE value LIKE 'abc'"
+      "SELECT * FROM testData WHERE value RLIKE 'abc'"
     )
   }
 

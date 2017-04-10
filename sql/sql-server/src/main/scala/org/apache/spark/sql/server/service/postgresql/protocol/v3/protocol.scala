@@ -713,8 +713,8 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SparkConf)
   }
 
   private def openSession(channelId: Int, secretKey: Int, userName: String, passwd: String,
-      hostAddr: String): PortalState = {
-    val sessionId = cli.openSession(userName, passwd, hostAddr)
+      hostAddr: String, dbName: String): PortalState = {
+    val sessionId = cli.openSession(userName, passwd, hostAddr, dbName)
     val portalState = PortalState(sessionId, secretKey)
     channelIdToPortalState.put(channelId, portalState)
     logInfo(s"Open a session (sessionId=${sessionId}, channelId=${channelId} " +
@@ -868,8 +868,11 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SparkConf)
     val userName = props.getOrElse("user", "UNKNOWN")
     val passwd = props.getOrElse("passwd", "")
     val hostAddr = ctx.channel().localAddress().asInstanceOf[InetSocketAddress].getHostName()
-    val secretKey = 0 // TODO: Set random value
-    val portalState = openSession(getUniqueChannelId(ctx), secretKey, userName, passwd, hostAddr)
+    // TODO: Set random value
+    val secretKey = 0
+    // TODO: Set a user-provided database name
+    val portalState = openSession(
+      getUniqueChannelId(ctx), secretKey, userName, passwd, hostAddr, "default")
 
     // Check if Kerberos authentication is enabled
     if (conf.contains("spark.yarn.keytab")) {

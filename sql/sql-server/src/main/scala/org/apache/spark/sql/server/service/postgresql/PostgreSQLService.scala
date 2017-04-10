@@ -47,9 +47,11 @@ private[server] class PostgreSQLService(pgServer: SQLServer, cli: CLI) extends C
     require(SQLServerEnv.sqlContext != null)
 
     // Load system catalogs for the PostgreSQL v3 protocol
-    Metadata.initCatalogTables(SQLServerEnv.sqlContext)
+    Metadata.initSystemCatalogTables(SQLServerEnv.sqlContext)
     if (SQLServerEnv.sparkConf.sqlServerSingleSessionEnabled) {
       Metadata.initSystemFunctions(SQLServerEnv.sqlContext)
+      // TODO: In a single-session mode, we just load catalog entries from a 'default` database
+      Metadata.initSessionCatalogTables(SQLServerEnv.sqlContext, "default")
     }
 
     val bossGroup = new NioEventLoopGroup(1)

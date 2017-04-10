@@ -24,7 +24,7 @@ import org.apache.spark.sql.server.SQLServer
 
 private[server] trait CLI {
 
-  def openSession(userName: String, passwd: String, ipAddress: String): Int
+  def openSession(userName: String, passwd: String, ipAddress: String, dbName: String): Int
   def closeSession(sessionId: Int): Unit
   def executeStatement(sessionId: Int, statement: String): ExecuteStatementOperation
 }
@@ -49,8 +49,9 @@ private[server] class SparkSQLCLIService(pgServer: SQLServer) extends CompositeS
     super.init(conf)
   }
 
-  override def openSession(userName: String, passwd: String, ipAddress: String): Int = {
-    sessionManager.openSession(userName, passwd, ipAddress)
+  override def openSession(
+      userName: String, passwd: String, ipAddress: String, dbName: String): Int = {
+    sessionManager.openSession(userName, passwd, ipAddress, dbName)
   }
 
   override def closeSession(sessionId: Int): Unit = {

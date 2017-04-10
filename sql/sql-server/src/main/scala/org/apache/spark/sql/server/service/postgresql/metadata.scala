@@ -19,14 +19,15 @@ package org.apache.spark.sql.server.service.postgresql
 
 import java.sql.SQLException
 
-import org.apache.spark.sql.SQLContext
+import org.apache.spark.internal.Logging
+import org.apache.spark.sql.{Row, SQLContext}
 import org.apache.spark.sql.types._
 
 
 /**
  * This is the PostgreSQL system information such as catalog tables and functions.
  */
-object Metadata {
+object Metadata extends Logging {
 
   // Since v7.3, all the catalog tables have been moved in a `pg_catalog` database
   private val catalogDbName = "pg_catalog"
@@ -100,118 +101,207 @@ object Metadata {
     sqlContext.udf.register(s"$catalogDbName.format_type", (type_oid: Int, typemod: String) => "")
   }
 
-  def initCatalogTables(sqlContext: SQLContext): Unit = {
-    sqlContext.sql(s"CREATE DATABASE IF NOT EXISTS $catalogDbName")
+  def initSystemCatalogTables(sqlContext: SQLContext): Unit = {
 
-    sqlContext.sql(s"DROP TABLE IF EXISTS $catalogDbName.pg_namespace")
-    sqlContext.sql(
-      s"""
-        | CREATE TABLE $catalogDbName.pg_namespace(
-        |   oid INT,
-        |   nspname STRING
-        | )
-      """.stripMargin)
-    sqlContext.sql(
-      s"""
-        | INSERT INTO $catalogDbName.pg_namespace
-        |   VALUES(${defaultSparkNamespace._1}, '${defaultSparkNamespace._2}')
-      """.stripMargin)
-
-    // TODO: The PostgreSQL JDBC driver (`SQLSERVER_VERSION` >= 8.0) issues a query below and
-    // it uses `default.pg_namespace instead of `pg_catalog.pg_namespace`.
-    // So, we currently create `pg_namespace` in both `default` and `pg_catalog`.
-    //
-    // SELECT typinput='array_in'::regproc, typtype
-    //   FROM pg_catalog.pg_type
-    //   LEFT JOIN (
-    //     select ns.oid as nspoid, ns.nspname, r.r
-    //       from pg_namespace as ns
-    //            ^^^^^^^^^^^^
-    //       join (
-    //         select s.r, (current_schemas(false))[s.r] as nspname
-    //           from generate_series(1, array_upper(current_schemas(false), 1)) as s(r)
-    //       ) as r using ( nspname )
-    //   ) as sp
-    //   ON sp.nspoid = typnamespace
-    //   WHERE typname = 'byte'
-    //   ORDER BY sp.r, pg_type.oid DESC
-    //   LIMIT 1;
-    //
-    sqlContext.sql(s"DROP TABLE IF EXISTS pg_namespace")
-    sqlContext.sql(
-      s"""
-        | CREATE TABLE pg_namespace(
-        |   oid INT,
-        |   nspname STRING
-        | )
-      """.stripMargin)
-    sqlContext.sql(
-      s"""
-        | INSERT INTO pg_namespace
-        |   VALUES(${defaultSparkNamespace._1}, '${defaultSparkNamespace._2}')
-      """.stripMargin)
-
-    sqlContext.sql(s"DROP TABLE IF EXISTS $catalogDbName.pg_roles")
-    sqlContext.sql(
-      s"""
-        | CREATE TABLE $catalogDbName.pg_roles(
-        |   oid INT,
-        |   rolname STRING
-        | )
-      """.stripMargin)
-    sqlContext.sql(
-      s"""
-        | INSERT INTO $catalogDbName.pg_roles VALUES(%d, 'spark-user')
-      """.stripMargin
-      .format(userRoleOid))
-
-    sqlContext.sql(s"DROP TABLE IF EXISTS $catalogDbName.pg_user")
-    sqlContext.sql(
-      s"""
-        | CREATE TABLE $catalogDbName.pg_user(
-        |   usename STRING,
-        |   usesysid INT
-        | )
-      """.stripMargin)
-    sqlContext.sql(
-      s"""
-        | INSERT INTO $catalogDbName.pg_user VALUES('spark-user', $userRoleOid)
-      """.stripMargin)
-
-    sqlContext.sql(s"DROP TABLE IF EXISTS $catalogDbName.pg_type")
-    sqlContext.sql(
-      s"""
-        | CREATE TABLE $catalogDbName.pg_type(
-        |   oid INT,
-        |   typname STRING,
-        |   typtype STRING,
-        |   typlen INT,
-        |   typnotnull BOOLEAN,
-        |   typelem INT,
-        |   typdelim STRING,
-        |   typinput STRING,
-        |   typrelid INT,
-        |   typbasetype INT,
-        |   typnamespace INT
-        | )
-      """.stripMargin)
-
-    supportedPgTypes.map { tpe =>
-      // `b` in `typtype` means a primitive type and all the entries in `supportedPgTypes`
-      // are primitive types.
-      sqlContext.sql(
-        s"""
-          | INSERT INTO $catalogDbName.pg_type
-          |   SELECT %d, '%s', 'b', %d, false, %d, ',', '%s', 0, 0, %d
-        """.stripMargin
-        .format(tpe.oid, tpe.name, tpe.len, tpe.elemOid, tpe.input, defaultSparkNamespace._1))
+    def hasDatabase(dbName: String): Boolean = {
+      sqlContext.sql(s"SHOW DATABASES LIKE '$dbName'").collect.exists {
+        case Row(s: String) => s.contains(dbName)
+      }
     }
 
-    // TODO: Need to load entries for existing tables in a database
-    sqlContext.sql(s"DROP TABLE IF EXISTS $catalogDbName.pg_class")
-    sqlContext.sql(
+    // TODO: Make this initialization transactional
+    if (!hasDatabase(catalogDbName)) {
+      try {
+        sqlContext.sql(s"CREATE DATABASE $catalogDbName")
+
+        sqlContext.sql(
+          s"""
+            | CREATE TABLE $catalogDbName.pg_namespace(
+            |   oid INT,
+            |   nspname STRING
+            | )
+          """.stripMargin)
+        sqlContext.sql(
+          s"""
+            | INSERT INTO $catalogDbName.pg_namespace
+            |   VALUES(${defaultSparkNamespace._1}, '${defaultSparkNamespace._2}')
+          """.stripMargin)
+
+        // TODO: The PostgreSQL JDBC driver (`SQLSERVER_VERSION` >= 8.0) issues a query below and
+        // it uses `default.pg_namespace instead of `pg_catalog.pg_namespace`.
+        // So, we currently create `pg_namespace` in both `default` and `pg_catalog`.
+        //
+        // SELECT typinput='array_in'::regproc, typtype
+        //   FROM pg_catalog.pg_type
+        //   LEFT JOIN (
+        //     select ns.oid as nspoid, ns.nspname, r.r
+        //       from pg_namespace as ns
+        //            ^^^^^^^^^^^^
+        //       join (
+        //         select s.r, (current_schemas(false))[s.r] as nspname
+        //           from generate_series(1, array_upper(current_schemas(false), 1)) as s(r)
+        //       ) as r using ( nspname )
+        //   ) as sp
+        //   ON sp.nspoid = typnamespace
+        //   WHERE typname = 'byte'
+        //   ORDER BY sp.r, pg_type.oid DESC
+        //   LIMIT 1;
+        //
+        sqlContext.sql(s"DROP TABLE IF EXISTS pg_namespace")
+        sqlContext.sql(
+          s"""
+            | CREATE TABLE pg_namespace(
+            |   oid INT,
+            |   nspname STRING
+            | )
+          """.stripMargin)
+        sqlContext.sql(
+          s"""
+            | INSERT INTO pg_namespace
+            |   VALUES(${defaultSparkNamespace._1}, '${defaultSparkNamespace._2}')
+          """.stripMargin)
+
+        sqlContext.sql(
+          s"""
+            | CREATE TABLE $catalogDbName.pg_roles(
+            |   oid INT,
+            |   rolname STRING
+            | )
+          """.stripMargin)
+        sqlContext.sql(
+          s"""
+            | INSERT INTO $catalogDbName.pg_roles VALUES(%d, 'spark-user')
+          """.stripMargin
+            .format(userRoleOid))
+
+        sqlContext.sql(
+          s"""
+            | CREATE TABLE $catalogDbName.pg_user(
+            |   usename STRING,
+            |   usesysid INT
+            | )
+          """.stripMargin)
+        sqlContext.sql(
+          s"""
+            | INSERT INTO $catalogDbName.pg_user VALUES('spark-user', $userRoleOid)
+          """.stripMargin)
+
+        sqlContext.sql(
+          s"""
+            | CREATE TABLE $catalogDbName.pg_type(
+            |   oid INT,
+            |   typname STRING,
+            |   typtype STRING,
+            |   typlen INT,
+            |   typnotnull BOOLEAN,
+            |   typelem INT,
+            |   typdelim STRING,
+            |   typinput STRING,
+            |   typrelid INT,
+            |   typbasetype INT,
+            |   typnamespace INT
+            | )
+          """.stripMargin)
+
+        supportedPgTypes.map { tpe =>
+          // `b` in `typtype` means a primitive type and all the entries in `supportedPgTypes`
+          // are primitive types.
+          sqlContext.sql(
+            s"""
+              | INSERT INTO $catalogDbName.pg_type
+              |   SELECT %d, '%s', 'b', %d, false, %d, ',', '%s', 0, 0, %d
+            """.stripMargin
+              .format(tpe.oid, tpe.name, tpe.len, tpe.elemOid, tpe.input, defaultSparkNamespace._1))
+        }
+
+        /**
+         * Five empty catalog tables are defined below to prevent the PostgreSQL JDBC drivers from
+         * throwing meaningless exceptions.
+         */
+        sqlContext.sql(
+          s"""
+            | CREATE TABLE $catalogDbName.pg_index(
+            |   oid INT,
+            |   indrelid INT,
+            |   indexrelid INT,
+            |   indisprimary BOOLEAN
+            | )
+          """.stripMargin)
+
+        sqlContext.sql(
+          s"""
+            | CREATE TABLE $catalogDbName.pg_proc(
+            |   oid INT,
+            |   proname STRING,
+            |   prorettype INT,
+            |   proargtypes ARRAY<INT>,
+            |   pronamespace INT
+            | )
+          """.stripMargin)
+
+        sqlContext.sql(
+          s"""
+            | CREATE TABLE $catalogDbName.pg_description(
+            |   objoid INT,
+            |   classoid INT,
+            |   objsubid INT,
+            |   description STRING
+            | )
+          """.stripMargin)
+
+        sqlContext.sql(
+          s"""
+            | CREATE TABLE $catalogDbName.pg_depend(
+            |   objid INT,
+            |   classid INT,
+            |   refobjid INT,
+            |   refclassid INT
+            | )
+          """.stripMargin)
+
+        sqlContext.sql(
+          s"""
+            | CREATE TABLE $catalogDbName.pg_constraint(
+            |   oid INT,
+            |   confupdtype STRING,
+            |   confdeltype STRING,
+            |   conname STRING,
+            |   condeferrable BOOLEAN,
+            |   condeferred BOOLEAN,
+            |   conkey ARRAY<INT>,
+            |   confkey ARRAY<INT>,
+            |   confrelid INT,
+            |   conrelid INT,
+            |   contype STRING
+            | )
+          """.stripMargin)
+
+        sqlContext.sql(
+          s"""
+            | CREATE TABLE $catalogDbName.pg_attrdef(
+            |   adrelid INT,
+            |   adnum SHORT,
+            |   adbin STRING
+            | )
+          """.stripMargin)
+      } catch {
+        case e: Throwable =>
+          sqlContext.sql(s"DROP DATABASE IF EXISTS $catalogDbName")
+          throw e
+      }
+    }
+  }
+
+  def initSessionCatalogTables(sqlContext: SQLContext, dbName: String): Unit = {
+
+    def safeCreateTable(catalogTable: String)(f: String => String): Unit = {
+      sqlContext.sql(s"DROP TABLE IF EXISTS $catalogDbName.$catalogTable")
+      sqlContext.sql(f(s"$catalogDbName.$catalogTable"))
+    }
+
+    safeCreateTable("pg_class") { cTableName =>
       s"""
-        | CREATE TABLE $catalogDbName.pg_class(
+        | CREATE TABLE $cTableName(
         |   oid INT,
         |   relname STRING,
         |   relkind STRING,
@@ -224,12 +314,12 @@ object Metadata {
         |   reltriggers SHORT,
         |   relhasoids BOOLEAN
         | )
-      """.stripMargin)
+      """.stripMargin
+    }
 
-    sqlContext.sql(s"DROP TABLE IF EXISTS $catalogDbName.pg_attribute")
-    sqlContext.sql(
+    safeCreateTable("pg_attribute") { cTableName =>
       s"""
-        | CREATE TABLE $catalogDbName.pg_attribute(
+        | CREATE TABLE $cTableName(
         |   oid INT,
         |   attrelid INT,
         |   attname STRING,
@@ -240,84 +330,17 @@ object Metadata {
         |   attnum INT,
         |   attisdropped BOOLEAN
         | )
-      """.stripMargin)
+      """.stripMargin
+    }
 
-    /**
-     * Five empty catalog tables are defined below to prevent the PostgreSQL JDBC drivers from
-     * throwing meaningless exceptions.
-     */
-    sqlContext.sql(s"DROP TABLE IF EXISTS $catalogDbName.pg_index")
-    sqlContext.sql(
-      s"""
-        | CREATE TABLE $catalogDbName.pg_index(
-        |   oid INT,
-        |   indrelid INT,
-        |   indexrelid INT,
-        |   indisprimary BOOLEAN
-        | )
-      """.stripMargin)
-
-    sqlContext.sql(s"DROP TABLE IF EXISTS $catalogDbName.pg_proc")
-    sqlContext.sql(
-      s"""
-        | CREATE TABLE $catalogDbName.pg_proc(
-        |   oid INT,
-        |   proname STRING,
-        |   prorettype INT,
-        |   proargtypes ARRAY<INT>,
-        |   pronamespace INT
-        | )
-      """.stripMargin)
-
-    sqlContext.sql(s"DROP TABLE IF EXISTS $catalogDbName.pg_description")
-    sqlContext.sql(
-      s"""
-        | CREATE TABLE $catalogDbName.pg_description(
-        |   objoid INT,
-        |   classoid INT,
-        |   objsubid INT,
-        |   description STRING
-        | )
-      """.stripMargin)
-
-    sqlContext.sql(s"DROP TABLE IF EXISTS $catalogDbName.pg_depend")
-    sqlContext.sql(
-      s"""
-        | CREATE TABLE $catalogDbName.pg_depend(
-        |   objid INT,
-        |   classid INT,
-        |   refobjid INT,
-        |   refclassid INT
-        | )
-      """.stripMargin)
-
-    sqlContext.sql(s"DROP TABLE IF EXISTS $catalogDbName.pg_constraint")
-    sqlContext.sql(
-      s"""
-        | CREATE TABLE $catalogDbName.pg_constraint(
-        |   oid INT,
-        |   confupdtype STRING,
-        |   confdeltype STRING,
-        |   conname STRING,
-        |   condeferrable BOOLEAN,
-        |   condeferred BOOLEAN,
-        |   conkey ARRAY<INT>,
-        |   confkey ARRAY<INT>,
-        |   confrelid INT,
-        |   conrelid INT,
-        |   contype STRING
-        | )
-      """.stripMargin)
-
-    sqlContext.sql(s"DROP TABLE IF EXISTS $catalogDbName.pg_attrdef")
-    sqlContext.sql(
-      s"""
-        | CREATE TABLE $catalogDbName.pg_attrdef(
-        |   adrelid INT,
-        |   adnum SHORT,
-        |   adbin STRING
-        | )
-      """.stripMargin)
+    val externalCatalog = sqlContext.sharedState.externalCatalog
+    externalCatalog.listTables(dbName).foreach { tableName =>
+      registerTableInCatalog(
+        tableName,
+        externalCatalog.getTable(dbName, tableName).schema,
+        sqlContext
+      )
+    }
   }
 
   def registerTableInCatalog(
@@ -325,6 +348,8 @@ object Metadata {
     if (isReservedTableName(tableName, sqlContext.sparkSession.catalog.currentDatabase)) {
       throw new IllegalArgumentException(s"$tableName is reserved for system use")
     }
+
+    logInfo(s"Registering $tableName(${schema.sql}}) in a system catalog `pg_class`")
 
     val tableOid = nextUnusedOid
     sqlContext.sql(
@@ -347,8 +372,20 @@ object Metadata {
   }
 
   private def isReservedTableName(tableName: String, dbName: String): Boolean = {
-    Seq("pg_namespace", "pg_type", "pg_roles", "pg_user", "pg_class", "pg_attribute", "pg_index",
-        "pg_procs", "pg_description", "pg_depend", "pg_constraint").map { reserved =>
+    Seq(
+      "pg_namespace",
+      "pg_type",
+      "pg_roles",
+      "pg_user",
+      "pg_class",
+      "pg_attribute",
+      "pg_index",
+      "pg_procs",
+      "pg_description",
+      "pg_depend",
+      "pg_constraint",
+      "pg_attrdef"
+    ).map { reserved =>
       if (dbName != catalogDbName) {
         s"$catalogDbName.$reserved"
       } else {

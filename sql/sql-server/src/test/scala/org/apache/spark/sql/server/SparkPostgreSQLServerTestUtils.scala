@@ -21,6 +21,7 @@ import java.io.File
 import java.nio.charset.StandardCharsets
 import java.sql._
 import java.util.Properties
+import java.util.UUID
 
 import scala.collection.mutable
 import scala.concurrent.Promise
@@ -80,9 +81,25 @@ class SparkPostgreSQLServerTest(
 
   private def serverStartCommand(port: Int) = {
     val testTempDirPath = {
+       val tempDir = Utils.createTempDir(namePrefix = UUID.randomUUID().toString).getCanonicalPath
+
+       // Write a hive-site.xml containing a setting of `hive.metastore.warehouse.dir`
+       val metastoreURL =
+         s"jdbc:derby:memory:;databaseName=${tempDir};create=true"
+       Files.write(
+         s"""
+           |<configuration>
+           |  <property>
+           |    <name>javax.jdo.option.ConnectionURL</name>
+           |    <value>$metastoreURL</value>
+           |  </property>
+           |</configuration>
+         """.stripMargin,
+         new File(s"$tempDir/hive-site.xml"),
+         StandardCharsets.UTF_8)
+
       // Writes a temporary log4j.properties and prepend it to driver classpath, so that it
       // overrides all other potential log4j configurations contained in other dependency jar files
-      val tempDir = Utils.createTempDir().getCanonicalPath
       Files.write(
         """log4j.rootCategory=INFO, console
           |log4j.appender.console=org.apache.log4j.ConsoleAppender

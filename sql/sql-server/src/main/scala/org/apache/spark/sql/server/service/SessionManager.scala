@@ -28,17 +28,20 @@ private[server] class SessionManager(pgServer: SQLServer) extends CompositeServi
   private val sessionIdToContext = java.util.Collections.synchronizedMap(
     new java.util.HashMap[Int, SQLContext]())
 
-  private var getSession: () => SQLContext = _
+  private var getSession: String => SQLContext = _
 
   override def init(conf: SparkConf): Unit = {
     getSession = if (conf.sqlServerSingleSessionEnabled) {
-      () => SQLServerEnv.sqlContext
+      (dbName: String) => {
+        SQLServerEnv.sqlContext
+      }
     } else {
-      () => {
-        val sqlCtx = SQLServerEnv.sqlContext.newSession()
+      (dbName: String) => {
+        val sqlContext = SQLServerEnv.sqlContext.newSession()
         // TODO: Re-think the design
-        postgresql.Metadata.initSystemFunctions(sqlCtx)
-        sqlCtx
+        postgresql.Metadata.initSystemFunctions(sqlContext)
+        postgresql.Metadata.initSessionCatalogTables(sqlContext, dbName)
+        sqlContext
       }
     }
   }
@@ -52,10 +55,10 @@ private[server] class SessionManager(pgServer: SQLServer) extends CompositeServi
     }
   }
 
-  def openSession(userName: String, passwd: String, ipAddress: String): Int = {
+  def openSession(userName: String, passwd: String, ipAddress: String, dbName: String): Int = {
     val sessionId = SQLServerEnv.newSessionId()
     SQLServer.listener.onSessionCreated(sessionId, userName, ipAddress)
-    sessionIdToContext.put(sessionId, getSession())
+    sessionIdToContext.put(sessionId, getSession(dbName))
     sessionId
   }
 

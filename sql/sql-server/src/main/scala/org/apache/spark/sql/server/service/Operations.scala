@@ -137,11 +137,10 @@ private[server] case class ExecuteStatementOperation(
 
       resultSet.queryExecution.logical match {
         case SetCommand(Some((SQLServerConf.SQLSERVER_POOL.key, Some(value)))) =>
-          activePools.put(sessionId, value)
           logInfo(s"Setting spark.scheduler.pool=$value for future statements in this session.")
+          activePools.put(sessionId, value)
         case CreateTable(desc, _, _) =>
           PgMetadata.registerTableInCatalog(desc.identifier.table, desc.schema, sqlContext)
-          logInfo(s"Registering ${desc.identifier.table} in a system catalog `pg_class`")
         case _ =>
       }
 
