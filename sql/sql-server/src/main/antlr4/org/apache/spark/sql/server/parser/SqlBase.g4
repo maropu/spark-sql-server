@@ -534,6 +534,7 @@ primaryExpression
     | qualifiedName '.' ASTERISK                                                               #star
     | '(' expression (',' expression)+ ')'                                                     #rowConstructor
     | '(' query ')'                                                                            #subqueryExpression
+    | SUBSTRING '(' primaryExpression (FROM INTEGER_VALUE)? FOR INTEGER_VALUE ')'              #substringInternalFunc
     | qualifiedName '(' (setQuantifier? expression (',' expression)*)? ')' (OVER windowSpec)?  #functionCall
     | value=primaryExpression '[' index=valueExpression ']'                                    #subscript
     | identifier                                                                               #columnReference
@@ -659,6 +660,7 @@ strictIdentifier
 
 quotedIdentifier
     : BACKQUOTED_IDENTIFIER
+    | STRING
     ;
 
 number
@@ -727,8 +729,8 @@ NOT: 'NOT' | '!';
 NO: 'NO';
 EXISTS: 'EXISTS';
 BETWEEN: 'BETWEEN';
-LIKE: 'LIKE' | '~';
-RLIKE: 'RLIKE' | 'REGEXP';
+LIKE: 'LIKE';
+RLIKE: 'RLIKE' | 'REGEXP' | '~';
 IS: 'IS';
 NULL: 'NULL';
 TRUE: 'TRUE';
@@ -928,6 +930,7 @@ LOCAL: 'LOCAL';
 INPATH: 'INPATH';
 CURRENT_DATE: 'CURRENT_DATE';
 CURRENT_TIMESTAMP: 'CURRENT_TIMESTAMP';
+SUBSTRING: 'SUBSTRING';
 
 STRING
     : 'E'? '\'' ( ~('\''|'\\') | ('\\' .) )* '\''

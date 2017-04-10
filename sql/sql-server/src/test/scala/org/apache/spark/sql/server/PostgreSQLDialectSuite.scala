@@ -45,8 +45,8 @@ class PostgreSQLDialectSuite extends SparkFunSuite with SharedSQLContext with Be
 
   test("~") {
     assertValidSQLString(
-      "SELECT * FROM testData WHERE value ~ 'abc%'",
-      "SELECT * FROM testData WHERE value LIKE 'abc%'"
+      "SELECT * FROM testData WHERE value ~ 'abc'",
+      "SELECT * FROM testData WHERE value LIKE 'abc'"
     )
   }
 
@@ -68,6 +68,8 @@ class PostgreSQLDialectSuite extends SparkFunSuite with SharedSQLContext with Be
     assert(sqlContext.sql("SELECT array_in()").collect === Seq(Row("array_in")))
     assert(sqlContext.sql("SELECT pg_catalog.obj_description(0, '')").collect === Seq(Row("")))
     assert(sqlContext.sql("SELECT pg_catalog.pg_get_expr('', 0)").collect === Seq(Row("")))
+    assert(sqlContext.sql("SELECT pg_catalog.pg_table_is_visible(0)").collect === Seq(Row(true)))
+    assert(sqlContext.sql("SELECT pg_catalog.pg_get_userbyid(0)").collect === Seq(Row("")))
     assertQueryExecutionInPgParser("SELECT * FROM generate_series(0, 1)", Row(0) :: Row(1) :: Nil)
     assertQueryExecutionInPgParser("SELECT * FROM generate_series(0, 10, 5)",
       Row(0) :: Row(5) :: Row(10) :: Nil)

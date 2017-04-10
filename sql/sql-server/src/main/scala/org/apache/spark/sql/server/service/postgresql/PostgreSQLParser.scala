@@ -20,6 +20,7 @@ package org.apache.spark.sql.server.service.postgresql
 import scala.collection.JavaConverters._
 import scala.collection.mutable.Buffer
 
+import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.analysis._
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.plans.logical._
@@ -45,7 +46,7 @@ class PostgreSQLParser(conf: SQLConf) extends SparkSqlParser(conf) {
 /**
  * Builder that converts an ANTLR ParseTree into a LogicalPlan/Expression/TableIdentifier.
  */
-class PostgreSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
+class PostgreSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) with Logging {
   import org.apache.spark.sql.catalyst.parser.ParserUtils._
 
   override def visitPrimitiveDataType(ctx: PrimitiveDataTypeContext): DataType = withOrigin(ctx) {
@@ -79,6 +80,15 @@ class PostgreSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
     val e = Add(end, Literal(1, IntegerType))
     val args = intvl.map(i => start :: e :: i :: Nil).getOrElse(start :: e :: Nil)
     UnresolvedTableValuedFunction("range", args)
+  }
+
+  override def visitSubstringInternalFunc(ctx: SubstringInternalFuncContext)
+    : Expression = withOrigin(ctx) {
+    val expr = expression(ctx.primaryExpression)
+    val pos = Literal(0, IntegerType)
+    val forNum = ctx.INTEGER_VALUE().asScala.toList match { case from :: Nil => from }
+    val len = Literal(forNum, IntegerType)
+    UnresolvedFunction("substring", Seq(expr, pos, len), false)
   }
 
   override def visitTableValuedFunction(ctx: TableValuedFunctionContext)

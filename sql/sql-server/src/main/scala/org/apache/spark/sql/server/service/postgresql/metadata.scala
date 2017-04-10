@@ -95,6 +95,9 @@ object Metadata {
     sqlContext.udf.register("array_in", () => "array_in")
     sqlContext.udf.register(s"$catalogDbName.obj_description", (oid: Int, tableName: String) => "")
     sqlContext.udf.register(s"$catalogDbName.pg_get_expr", (adbin: String, adrelid: Int) => "")
+    sqlContext.udf.register(s"$catalogDbName.pg_table_is_visible", (oid: Int) => true)
+    sqlContext.udf.register(s"$catalogDbName.pg_get_userbyid", (userid: Int) => "")
+    sqlContext.udf.register(s"$catalogDbName.format_type", (type_oid: Int, typemod: String) => "")
   }
 
   def initCatalogTables(sqlContext: SQLContext): Unit = {
@@ -214,7 +217,12 @@ object Metadata {
         |   relkind STRING,
         |   relnamespace INT,
         |   relowner INT,
-        |   relacl ARRAY<STRING>
+        |   relacl ARRAY<STRING>,
+        |   relchecks SHORT,
+        |   relhasindex BOOLEAN,
+        |   relhasrules BOOLEAN,
+        |   reltriggers SHORT,
+        |   relhasoids BOOLEAN
         | )
       """.stripMargin)
 
@@ -321,7 +329,8 @@ object Metadata {
     val tableOid = nextUnusedOid
     sqlContext.sql(
       s"""
-        | INSERT INTO $catalogDbName.pg_class VALUES(%d, '%s', '%s', %d, %d, %s)
+        | INSERT INTO $catalogDbName.pg_class VALUES(
+        |   %d, '%s', '%s', %d, %d, %s, 0, false, false, 0, false)
       """.stripMargin
       .format(tableOid, tableName, "r", defaultSparkNamespace._1, userRoleOid, "null"))
 
