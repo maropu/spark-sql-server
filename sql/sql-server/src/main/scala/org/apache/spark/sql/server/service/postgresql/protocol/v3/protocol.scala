@@ -870,9 +870,9 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SparkConf)
     val hostAddr = ctx.channel().localAddress().asInstanceOf[InetSocketAddress].getHostName()
     // TODO: Set random value
     val secretKey = 0
-    // TODO: Set a user-provided database name
+    val dbName = props.getOrElse("database", "default")
     val portalState = openSession(
-      getUniqueChannelId(ctx), secretKey, userName, passwd, hostAddr, "default")
+      getUniqueChannelId(ctx), secretKey, userName, passwd, hostAddr, dbName)
 
     // Check if Kerberos authentication is enabled
     if (conf.contains("spark.yarn.keytab")) {
