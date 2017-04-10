@@ -24,9 +24,7 @@ import org.apache.spark.sql.{Row, SQLContext}
 import org.apache.spark.sql.types._
 
 
-/**
- * This is the PostgreSQL system information such as catalog tables and functions.
- */
+/** This is the PostgreSQL system information such as catalog tables and functions. */
 object Metadata extends Logging {
 
   // Since v7.3, all the catalog tables have been moved in a `pg_catalog` database
@@ -89,6 +87,21 @@ object Metadata extends Logging {
 
   private val userRoleOid = nextUnusedOid
 
+  private val catalog_tables = Seq(
+    "pg_namespace",
+    "pg_type",
+    "pg_roles",
+    "pg_user",
+    "pg_class",
+    "pg_attribute",
+    "pg_index",
+    "pg_proc",
+    "pg_description",
+    "pg_depend",
+    "pg_constraint",
+    "pg_attrdef"
+  )
+
   def initSystemFunctions(sqlContext: SQLContext): Unit = {
     sqlContext.udf.register("ANY", (arg: Seq[String]) => arg.head)
     sqlContext.udf.register("current_schemas", (arg: Boolean) => Seq(defaultSparkNamespace._2))
@@ -109,23 +122,39 @@ object Metadata extends Logging {
       }
     }
 
+    def hasTable(dbName: String, tableName: String): Boolean = {
+      sqlContext.sql(s"SHOW TABLES IN $dbName LIKE '$tableName'").collect.exists {
+        case Row(s: String) => s.contains(tableName)
+      }
+    }
+
+    def safeBuildTable(catalogTable: String)(f: String => Seq[String]): Unit = {
+      assert(catalog_tables.contains(catalogTable))
+      assert(!hasTable(catalogDbName, catalogTable))
+      f(s"$catalogDbName.$catalogTable").foreach { sqlText =>
+        sqlContext.sql(sqlText.stripMargin)
+      }
+    }
+
     // TODO: Make this initialization transactional
     if (!hasDatabase(catalogDbName)) {
       try {
         sqlContext.sql(s"CREATE DATABASE $catalogDbName")
 
-        sqlContext.sql(
-          s"""
-            | CREATE TABLE $catalogDbName.pg_namespace(
-            |   oid INT,
-            |   nspname STRING
-            | )
-          """.stripMargin)
-        sqlContext.sql(
-          s"""
-            | INSERT INTO $catalogDbName.pg_namespace
-            |   VALUES(${defaultSparkNamespace._1}, '${defaultSparkNamespace._2}')
-          """.stripMargin)
+        safeBuildTable("pg_namespace") { cTableName =>
+          Seq(
+            s"""
+              | CREATE TABLE $cTableName(
+              |   oid INT,
+              |   nspname STRING
+              | )
+            """,
+            s"""
+              | INSERT INTO $cTableName
+              |   VALUES(${defaultSparkNamespace._1}, '${defaultSparkNamespace._2}')
+            """
+          )
+        }
 
         // TODO: The PostgreSQL JDBC driver (`SQLSERVER_VERSION` >= 8.0) issues a query below and
         // it uses `default.pg_namespace instead of `pg_catalog.pg_namespace`.
@@ -161,131 +190,154 @@ object Metadata extends Logging {
             |   VALUES(${defaultSparkNamespace._1}, '${defaultSparkNamespace._2}')
           """.stripMargin)
 
-        sqlContext.sql(
-          s"""
-            | CREATE TABLE $catalogDbName.pg_roles(
-            |   oid INT,
-            |   rolname STRING
-            | )
-          """.stripMargin)
-        sqlContext.sql(
-          s"""
-            | INSERT INTO $catalogDbName.pg_roles VALUES(%d, 'spark-user')
-          """.stripMargin
-            .format(userRoleOid))
-
-        sqlContext.sql(
-          s"""
-            | CREATE TABLE $catalogDbName.pg_user(
-            |   usename STRING,
-            |   usesysid INT
-            | )
-          """.stripMargin)
-        sqlContext.sql(
-          s"""
-            | INSERT INTO $catalogDbName.pg_user VALUES('spark-user', $userRoleOid)
-          """.stripMargin)
-
-        sqlContext.sql(
-          s"""
-            | CREATE TABLE $catalogDbName.pg_type(
-            |   oid INT,
-            |   typname STRING,
-            |   typtype STRING,
-            |   typlen INT,
-            |   typnotnull BOOLEAN,
-            |   typelem INT,
-            |   typdelim STRING,
-            |   typinput STRING,
-            |   typrelid INT,
-            |   typbasetype INT,
-            |   typnamespace INT
-            | )
-          """.stripMargin)
-
-        supportedPgTypes.map { tpe =>
-          // `b` in `typtype` means a primitive type and all the entries in `supportedPgTypes`
-          // are primitive types.
-          sqlContext.sql(
+        safeBuildTable("pg_roles") { cTableName =>
+          Seq(
             s"""
-              | INSERT INTO $catalogDbName.pg_type
-              |   SELECT %d, '%s', 'b', %d, false, %d, ',', '%s', 0, 0, %d
-            """.stripMargin
-              .format(tpe.oid, tpe.name, tpe.len, tpe.elemOid, tpe.input, defaultSparkNamespace._1))
+              | CREATE TABLE $cTableName(
+              |   oid INT,
+              |   rolname STRING
+              | )
+            """,
+            s"""
+              | INSERT INTO $cTableName VALUES($userRoleOid, 'spark-user')
+            """
+          )
+        }
+
+        safeBuildTable("pg_user") { cTableName =>
+          Seq(
+            s"""
+              | CREATE TABLE $cTableName(
+              |   usename STRING,
+              |   usesysid INT
+              | )
+            """,
+            s"""
+              | INSERT INTO $cTableName VALUES('spark-user', $userRoleOid)
+            """
+          )
+        }
+
+        safeBuildTable("pg_type") { cTableName =>
+          Seq(
+            s"""
+              | CREATE TABLE $cTableName(
+              |   oid INT,
+              |   typname STRING,
+              |   typtype STRING,
+              |   typlen INT,
+              |   typnotnull BOOLEAN,
+              |   typelem INT,
+              |   typdelim STRING,
+              |   typinput STRING,
+              |   typrelid INT,
+              |   typbasetype INT,
+              |   typnamespace INT
+              | )
+            """) ++
+            supportedPgTypes.map { tpe =>
+              // `b` in `typtype` means a primitive type and all the entries in `supportedPgTypes`
+              // are primitive types.
+              s"""
+                | INSERT INTO $cTableName SELECT %d, '%s', 'b', %d, false, %d, ',', '%s', 0, 0, %d
+              """.format(tpe.oid, tpe.name, tpe.len, tpe.elemOid, tpe.input,
+                  defaultSparkNamespace._1)
+            }
         }
 
         /**
          * Five empty catalog tables are defined below to prevent the PostgreSQL JDBC drivers from
          * throwing meaningless exceptions.
          */
-        sqlContext.sql(
-          s"""
-            | CREATE TABLE $catalogDbName.pg_index(
-            |   oid INT,
-            |   indrelid INT,
-            |   indexrelid INT,
-            |   indisprimary BOOLEAN
-            | )
-          """.stripMargin)
+        safeBuildTable("pg_index") { cTableName =>
+          Seq(
+            s"""
+              | CREATE TABLE $cTableName(
+              |   oid INT,
+              |   indrelid INT,
+              |   indexrelid INT,
+              |   indisprimary BOOLEAN
+              | )
+            """
+          )
+        }
 
-        sqlContext.sql(
-          s"""
-            | CREATE TABLE $catalogDbName.pg_proc(
-            |   oid INT,
-            |   proname STRING,
-            |   prorettype INT,
-            |   proargtypes ARRAY<INT>,
-            |   pronamespace INT
-            | )
-          """.stripMargin)
+        safeBuildTable("pg_proc") { cTableName =>
+          Seq(
+            s"""
+              | CREATE TABLE $cTableName(
+              |   oid INT,
+              |   proname STRING,
+              |   prorettype INT,
+              |   proargtypes ARRAY<INT>,
+              |   pronamespace INT
+              | )
+            """
+          )
+        }
 
-        sqlContext.sql(
-          s"""
-            | CREATE TABLE $catalogDbName.pg_description(
-            |   objoid INT,
-            |   classoid INT,
-            |   objsubid INT,
-            |   description STRING
-            | )
-          """.stripMargin)
+        safeBuildTable("pg_description") { cTableName =>
+          Seq(
+            s"""
+              | CREATE TABLE $cTableName(
+              |   objoid INT,
+              |   classoid INT,
+              |   objsubid INT,
+              |   description STRING
+              | )
+            """
+          )
+        }
 
-        sqlContext.sql(
-          s"""
-            | CREATE TABLE $catalogDbName.pg_depend(
-            |   objid INT,
-            |   classid INT,
-            |   refobjid INT,
-            |   refclassid INT
-            | )
-          """.stripMargin)
+        safeBuildTable("pg_depend") { cTableName =>
+          Seq(
+            s"""
+              | CREATE TABLE $cTableName(
+              |   objid INT,
+              |   classid INT,
+              |   refobjid INT,
+              |   refclassid INT
+              | )
+            """
+          )
+        }
 
-        sqlContext.sql(
-          s"""
-            | CREATE TABLE $catalogDbName.pg_constraint(
-            |   oid INT,
-            |   confupdtype STRING,
-            |   confdeltype STRING,
-            |   conname STRING,
-            |   condeferrable BOOLEAN,
-            |   condeferred BOOLEAN,
-            |   conkey ARRAY<INT>,
-            |   confkey ARRAY<INT>,
-            |   confrelid INT,
-            |   conrelid INT,
-            |   contype STRING
-            | )
-          """.stripMargin)
+        safeBuildTable("pg_constraint") { cTableName =>
+          Seq(
+            s"""
+              | CREATE TABLE $cTableName(
+              |   oid INT,
+              |   confupdtype STRING,
+              |   confdeltype STRING,
+              |   conname STRING,
+              |   condeferrable BOOLEAN,
+              |   condeferred BOOLEAN,
+              |   conkey ARRAY<INT>,
+              |   confkey ARRAY<INT>,
+              |   confrelid INT,
+              |   conrelid INT,
+              |   contype STRING
+              | )
+            """
+          )
+        }
 
-        sqlContext.sql(
-          s"""
-            | CREATE TABLE $catalogDbName.pg_attrdef(
-            |   adrelid INT,
-            |   adnum SHORT,
-            |   adbin STRING
-            | )
-          """.stripMargin)
+        safeBuildTable("pg_attrdef") { cTableName =>
+          Seq(
+            s"""
+              | CREATE TABLE $cTableName(
+              |   adrelid INT,
+              |   adnum SHORT,
+              |   adbin STRING
+              | )
+            """
+          )
+        }
       } catch {
         case e: Throwable =>
+          catalog_tables.foreach { tableName =>
+            sqlContext.sql(s"DROP TABLE IF EXISTS $catalogDbName.$tableName")
+          }
           sqlContext.sql(s"DROP DATABASE IF EXISTS $catalogDbName")
           throw e
       }
@@ -295,8 +347,9 @@ object Metadata extends Logging {
   def initSessionCatalogTables(sqlContext: SQLContext, dbName: String): Unit = {
 
     def safeCreateTable(catalogTable: String)(f: String => String): Unit = {
+      assert(catalog_tables.contains(catalogTable))
       sqlContext.sql(s"DROP TABLE IF EXISTS $catalogDbName.$catalogTable")
-      sqlContext.sql(f(s"$catalogDbName.$catalogTable"))
+      sqlContext.sql(f(s"$catalogDbName.$catalogTable").stripMargin)
     }
 
     safeCreateTable("pg_class") { cTableName =>
@@ -314,7 +367,7 @@ object Metadata extends Logging {
         |   reltriggers SHORT,
         |   relhasoids BOOLEAN
         | )
-      """.stripMargin
+      """
     }
 
     safeCreateTable("pg_attribute") { cTableName =>
@@ -330,7 +383,7 @@ object Metadata extends Logging {
         |   attnum INT,
         |   attisdropped BOOLEAN
         | )
-      """.stripMargin
+      """
     }
 
     val externalCatalog = sqlContext.sharedState.externalCatalog
@@ -372,20 +425,7 @@ object Metadata extends Logging {
   }
 
   private def isReservedTableName(tableName: String, dbName: String): Boolean = {
-    Seq(
-      "pg_namespace",
-      "pg_type",
-      "pg_roles",
-      "pg_user",
-      "pg_class",
-      "pg_attribute",
-      "pg_index",
-      "pg_procs",
-      "pg_description",
-      "pg_depend",
-      "pg_constraint",
-      "pg_attrdef"
-    ).map { reserved =>
+    catalog_tables.map { reserved =>
       if (dbName != catalogDbName) {
         s"$catalogDbName.$reserved"
       } else {
