@@ -23,6 +23,7 @@ import scala.collection.mutable.Buffer
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.analysis._
 import org.apache.spark.sql.catalyst.expressions._
+import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateFunction, First}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.server.execution.SparkSqlAstBuilder
@@ -59,6 +60,45 @@ class PostgreSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) with 
           case _ => throw e
         }
     }
+  }
+
+  override def visitSubqueryExpression(
+      ctx: SubqueryExpressionContext): Expression = withOrigin(ctx) {
+    val subQuery = super.visitSubqueryExpression(ctx).asInstanceOf[ScalarSubquery]
+    val proj = subQuery.plan.transformDown {
+      // TODO: The PostgreSQL JDBC driver (`SQLSERVER_VERSION` = 7.4) issues a query below, but
+      // Spark-v2.1 cannot correctly handle correlated sub-queries without aggregate.
+      // So, we currently insert a `First` expression when hitting that kind of sub-queries.
+      //
+      // SELECT
+      //   a.attname,
+      //   pg_catalog.format_type(a.atttypid, a.atttypmod),
+      //   (
+      //     SELECT
+      //       substring(pg_catalog.pg_get_expr(d.adbin, d.adrelid) for 128)
+      //     FROM
+      //       pg_catalog.pg_attrdef d
+      //     WHERE
+      //       d.adrelid = a.attrelid AND d.adnum = a.attnum AND a.atthasdef
+      //   ),
+      //   a.attnotnull,
+      //   a.attnum,
+      //   NULL AS attcollation,
+      //   NULL AS indexdef,
+      //   NULL AS attfdwoptions
+      // FROM
+      //   pg_catalog.pg_attribute a
+      // WHERE
+      //   a.attrelid = '6205' AND a.attnum > 0 AND NOT a.attisdropped
+      // ORDER BY
+      //   a.attnum;
+      //
+      case p @ Project(ne :: Nil, child) if ne.find(_.isInstanceOf[AggregateFunction]).isEmpty =>
+        val attr = ne.find(_.isInstanceOf[UnresolvedAttribute]).get
+        val first = First(attr, Literal(true))
+        Project(Alias(first, first.prettyName)() :: Nil, child)
+    }
+    ScalarSubquery(proj)
   }
 
   override def visitPgStyleCast(ctx: PgStyleCastContext): Expression = withOrigin(ctx) {
