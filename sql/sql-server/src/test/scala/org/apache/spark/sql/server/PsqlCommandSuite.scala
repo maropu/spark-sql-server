@@ -121,7 +121,7 @@ class PsqlCommandV7_4Suite extends PostgreSQLJdbcTest with BeforeAndAfterAll {
       assert("t1" === rs1.getString(3))
 
       // Get an OID number for a table `t1`
-      val relOid =  rs1.getInt(1)
+      val relOid = rs1.getInt(1)
 
       assert(!rs1.next())
 

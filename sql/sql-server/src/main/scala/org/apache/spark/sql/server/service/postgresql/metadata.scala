@@ -20,7 +20,7 @@ package org.apache.spark.sql.server.service.postgresql
 import java.sql.SQLException
 
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.{Row, SQLContext}
+import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.types._
 
 
@@ -29,7 +29,7 @@ object Metadata extends Logging {
 
   // Since v7.3, all the catalog tables have been moved in a `pg_catalog` database
   private val catalogDbName = "pg_catalog"
-  private val catalog_tables = Seq(
+  private val catalogTables = Seq(
     "pg_namespace",
     "pg_type",
     "pg_roles",
@@ -114,45 +114,33 @@ object Metadata extends Logging {
   }
 
   def initSystemCatalogTables(sqlContext: SQLContext): Unit = {
+    val externalCatalog = sqlContext.sharedState.externalCatalog
 
-    def hasDatabase(dbName: String): Boolean = {
-      sqlContext.sql(s"SHOW DATABASES LIKE '$dbName'").collect.exists {
-        case Row(s: String) => s.contains(dbName)
-      }
-    }
-
-    def hasTable(dbName: String, tableName: String): Boolean = {
-      sqlContext.sql(s"SHOW TABLES IN $dbName LIKE '$tableName'").collect.exists {
-        case Row(s: String) => s.contains(tableName)
-      }
-    }
-
-    def safeBuildTable(catalogTable: String)(f: String => Seq[String]): Unit = {
-      assert(catalog_tables.contains(catalogTable))
-      assert(!hasTable(catalogDbName, catalogTable))
+    def safeCreateTable(catalogTable: String)(f: String => Seq[String]): Unit = {
+      assert(catalogTables.contains(catalogTable))
+      assert(!externalCatalog.tableExists(catalogDbName, catalogTable))
       f(s"$catalogDbName.$catalogTable").foreach { sqlText =>
         sqlContext.sql(sqlText.stripMargin)
       }
     }
 
     // TODO: Make this initialization transactional
-    if (!hasDatabase(catalogDbName)) {
+    if (!externalCatalog.databaseExists(catalogDbName)) {
       try {
         sqlContext.sql(s"CREATE DATABASE $catalogDbName")
 
-        safeBuildTable("pg_namespace") { cTableName =>
-          Seq(
-            s"""
-              | CREATE TABLE $cTableName(
-              |   oid INT,
-              |   nspname STRING
-              | )
-            """,
-            s"""
-              | INSERT INTO $cTableName
-              |   VALUES(${defaultSparkNamespace._1}, '${defaultSparkNamespace._2}')
-            """
-          )
+        safeCreateTable("pg_namespace") { cTableName =>
+          s"""
+            | CREATE TABLE $cTableName(
+            |   oid INT,
+            |   nspname STRING
+            | )
+          """ ::
+          s"""
+            | INSERT INTO $cTableName
+            |   VALUES(${defaultSparkNamespace._1}, '${defaultSparkNamespace._2}')
+          """ ::
+          Nil
         }
 
         // TODO: The PostgreSQL JDBC driver (`SQLSERVER_VERSION` >= 8.0) issues a query below and
@@ -175,170 +163,174 @@ object Metadata extends Logging {
         //   ORDER BY sp.r, pg_type.oid DESC
         //   LIMIT 1;
         //
-        sqlContext.sql(s"DROP TABLE IF EXISTS pg_namespace")
-        sqlContext.sql(
+        {
+          "DROP TABLE IF EXISTS pg_namespace" ::
           s"""
             | CREATE TABLE pg_namespace(
             |   oid INT,
             |   nspname STRING
             | )
-          """.stripMargin)
-        sqlContext.sql(
+          """ ::
           s"""
             | INSERT INTO pg_namespace
             |   VALUES(${defaultSparkNamespace._1}, '${defaultSparkNamespace._2}')
-          """.stripMargin)
-
-        safeBuildTable("pg_roles") { cTableName =>
-          Seq(
-            s"""
-              | CREATE TABLE $cTableName(
-              |   oid INT,
-              |   rolname STRING
-              | )
-            """,
-            s"""
-              | INSERT INTO $cTableName VALUES($userRoleOid, 'spark-user')
-            """
-          )
+          """ ::
+          Nil
+        }.foreach { sqlText =>
+          sqlContext.sql(sqlText.stripMargin)
         }
 
-        safeBuildTable("pg_user") { cTableName =>
-          Seq(
-            s"""
-              | CREATE TABLE $cTableName(
-              |   usename STRING,
-              |   usesysid INT
-              | )
-            """,
-            s"""
-              | INSERT INTO $cTableName VALUES('spark-user', $userRoleOid)
-            """
-          )
+        safeCreateTable("pg_roles") { cTableName =>
+          s"""
+            | CREATE TABLE $cTableName(
+            |   oid INT,
+            |   rolname STRING
+            | )
+          """ ::
+          s"""
+            | INSERT INTO $cTableName VALUES($userRoleOid, 'spark-user')
+          """ ::
+          Nil
         }
 
-        safeBuildTable("pg_type") { cTableName =>
-          Seq(
+        safeCreateTable("pg_user") { cTableName =>
+          s"""
+            | CREATE TABLE $cTableName(
+            |   usename STRING,
+            |   usesysid INT
+            | )
+          """ ::
+          s"""
+            | INSERT INTO $cTableName VALUES('spark-user', $userRoleOid)
+          """ ::
+          Nil
+        }
+
+        safeCreateTable("pg_type") { cTableName =>
+          s"""
+            | CREATE TABLE $cTableName(
+            |   oid INT,
+            |   typname STRING,
+            |   typtype STRING,
+            |   typlen INT,
+            |   typnotnull BOOLEAN,
+            |   typelem INT,
+            |   typdelim STRING,
+            |   typinput STRING,
+            |   typrelid INT,
+            |   typbasetype INT,
+            |   typnamespace INT
+            | )
+          """ +:
+          supportedPgTypes.map { tpe =>
+            // `b` in `typtype` means a primitive type and all the entries in `supportedPgTypes`
+            // are primitive types.
             s"""
-              | CREATE TABLE $cTableName(
-              |   oid INT,
-              |   typname STRING,
-              |   typtype STRING,
-              |   typlen INT,
-              |   typnotnull BOOLEAN,
-              |   typelem INT,
-              |   typdelim STRING,
-              |   typinput STRING,
-              |   typrelid INT,
-              |   typbasetype INT,
-              |   typnamespace INT
+              | INSERT INTO $cTableName VALUES(
+              |   %d, '%s', 'b', %d, false, %d, ',', '%s', 0, 0, %d
               | )
-            """) ++
-            supportedPgTypes.map { tpe =>
-              // `b` in `typtype` means a primitive type and all the entries in `supportedPgTypes`
-              // are primitive types.
-              s"""
-                | INSERT INTO $cTableName SELECT %d, '%s', 'b', %d, false, %d, ',', '%s', 0, 0, %d
-              """.format(tpe.oid, tpe.name, tpe.len, tpe.elemOid, tpe.input,
-                  defaultSparkNamespace._1)
-            }
+            """.format(
+              tpe.oid,
+              tpe.name,
+              tpe.len,
+              tpe.elemOid,
+              tpe.input,
+              defaultSparkNamespace._1
+            )
+          }
         }
 
         /**
-         * Five empty catalog tables are defined below to prevent the PostgreSQL JDBC drivers from
+         * Six empty catalog tables are defined below to prevent the PostgreSQL JDBC drivers from
          * throwing meaningless exceptions.
          */
-        safeBuildTable("pg_index") { cTableName =>
-          Seq(
-            s"""
-              | CREATE TABLE $cTableName(
-              |   oid INT,
-              |   indrelid INT,
-              |   indexrelid INT,
-              |   indisprimary BOOLEAN
-              | )
-            """
-          )
+        safeCreateTable("pg_index") { cTableName =>
+          s"""
+            | CREATE TABLE $cTableName(
+            |   oid INT,
+            |   indrelid INT,
+            |   indexrelid INT,
+            |   indisprimary BOOLEAN
+            | )
+          """ ::
+          Nil
         }
 
-        safeBuildTable("pg_proc") { cTableName =>
-          Seq(
-            s"""
-              | CREATE TABLE $cTableName(
-              |   oid INT,
-              |   proname STRING,
-              |   prorettype INT,
-              |   proargtypes ARRAY<INT>,
-              |   pronamespace INT
-              | )
-            """
-          )
+        safeCreateTable("pg_proc") { cTableName =>
+          s"""
+            | CREATE TABLE $cTableName(
+            |   oid INT,
+            |   proname STRING,
+            |   prorettype INT,
+            |   proargtypes ARRAY<INT>,
+            |   pronamespace INT
+            | )
+          """ ::
+          Nil
         }
 
-        safeBuildTable("pg_description") { cTableName =>
-          Seq(
-            s"""
-              | CREATE TABLE $cTableName(
-              |   objoid INT,
-              |   classoid INT,
-              |   objsubid INT,
-              |   description STRING
-              | )
-            """
-          )
+        safeCreateTable("pg_description") { cTableName =>
+          s"""
+            | CREATE TABLE $cTableName(
+            |   objoid INT,
+            |   classoid INT,
+            |   objsubid INT,
+            |   description STRING
+            | )
+          """ ::
+          Nil
         }
 
-        safeBuildTable("pg_depend") { cTableName =>
-          Seq(
-            s"""
-              | CREATE TABLE $cTableName(
-              |   objid INT,
-              |   classid INT,
-              |   refobjid INT,
-              |   refclassid INT
-              | )
-            """
-          )
+        safeCreateTable("pg_depend") { cTableName =>
+          s"""
+            | CREATE TABLE $cTableName(
+            |   objid INT,
+            |   classid INT,
+            |   refobjid INT,
+            |   refclassid INT
+            | )
+          """ ::
+          Nil
         }
 
-        safeBuildTable("pg_constraint") { cTableName =>
-          Seq(
-            s"""
-              | CREATE TABLE $cTableName(
-              |   oid INT,
-              |   confupdtype STRING,
-              |   confdeltype STRING,
-              |   conname STRING,
-              |   condeferrable BOOLEAN,
-              |   condeferred BOOLEAN,
-              |   conkey ARRAY<INT>,
-              |   confkey ARRAY<INT>,
-              |   confrelid INT,
-              |   conrelid INT,
-              |   contype STRING
-              | )
-            """
-          )
+        safeCreateTable("pg_constraint") { cTableName =>
+          s"""
+            | CREATE TABLE $cTableName(
+            |   oid INT,
+            |   confupdtype STRING,
+            |   confdeltype STRING,
+            |   conname STRING,
+            |   condeferrable BOOLEAN,
+            |   condeferred BOOLEAN,
+            |   conkey ARRAY<INT>,
+            |   confkey ARRAY<INT>,
+            |   confrelid INT,
+            |   conrelid INT,
+            |   contype STRING
+            | )
+          """ ::
+          Nil
         }
 
-        safeBuildTable("pg_attrdef") { cTableName =>
-          Seq(
-            s"""
-              | CREATE TABLE $cTableName(
-              |   adrelid INT,
-              |   adnum SHORT,
-              |   adbin STRING
-              | )
-            """
-          )
+        safeCreateTable("pg_attrdef") { cTableName =>
+          s"""
+            | CREATE TABLE $cTableName(
+            |   adrelid INT,
+            |   adnum SHORT,
+            |   adbin STRING
+            | )
+          """ ::
+          Nil
         }
       } catch {
         case e: Throwable =>
-          catalog_tables.foreach { tableName =>
+          catalogTables.foreach { tableName =>
             sqlContext.sql(s"DROP TABLE IF EXISTS $catalogDbName.$tableName")
           }
           sqlContext.sql(s"DROP DATABASE IF EXISTS $catalogDbName")
           throw e
+      } finally {
+        // require(catalogTables.forall(externalCatalog.tableExists(catalogDbName, _)))
       }
     }
   }
@@ -346,7 +338,7 @@ object Metadata extends Logging {
   def initSessionCatalogTables(sqlContext: SQLContext, dbName: String): Unit = {
 
     def safeCreateTable(catalogTable: String)(f: String => String): Unit = {
-      assert(catalog_tables.contains(catalogTable))
+      assert(catalogTables.contains(catalogTable))
       sqlContext.sql(s"DROP TABLE IF EXISTS $catalogDbName.$catalogTable")
       sqlContext.sql(f(s"$catalogDbName.$catalogTable").stripMargin)
     }
@@ -404,27 +396,43 @@ object Metadata extends Logging {
     logInfo(s"Registering $tableName(${schema.sql}}) in a system catalog `pg_class`")
 
     val tableOid = nextUnusedOid
-    sqlContext.sql(
+    val sqlTexts =
       s"""
         | INSERT INTO $catalogDbName.pg_class VALUES(
-        |   %d, '%s', '%s', %d, %d, %s, 0, false, false, 0, false)
-      """.stripMargin
-      .format(tableOid, tableName, "r", defaultSparkNamespace._1, userRoleOid, "null"))
-
-    schema.zipWithIndex.map { case (field, index) =>
-      val pgType = getPgType(field.dataType)
-      sqlContext.sql(
-        s"""
-          | INSERT INTO $catalogDbName.pg_attribute
-          |   VALUES(%d, %d, '%s', %d, %b, %d, %d, %d, false)
-        """.stripMargin
-        .format(nextUnusedOid, tableOid, field.name, pgType.oid, !field.nullable,
-          0, pgType.len, 1 + index))
+        |   %d, '%s', '%s', %d, %d, %s, 0, false, false, 0, false
+        | )
+      """.format(
+        tableOid,
+        tableName,
+        "r",
+        defaultSparkNamespace._1,
+        userRoleOid,
+        "null"
+      ) +:
+      schema.zipWithIndex.map { case (field, index) =>
+        val pgType = getPgType(field.dataType)
+          s"""
+          | INSERT INTO $catalogDbName.pg_attribute VALUES(
+          |   %d, %d, '%s', %d, %b, %d, %d, %d, false
+          | )
+        """.format(
+          nextUnusedOid,
+          tableOid,
+          field.name,
+          pgType.oid,
+          !field.nullable,
+          0,
+          pgType.len,
+          1 + index
+        )
+      }
+    sqlTexts.foreach { sqlText =>
+      sqlContext.sql(sqlText.stripMargin)
     }
   }
 
   private def isReservedTableName(tableName: String, dbName: String): Boolean = {
-    catalog_tables.map { reserved =>
+    catalogTables.map { reserved =>
       if (dbName != catalogDbName) {
         s"$catalogDbName.$reserved"
       } else {
@@ -468,8 +476,6 @@ object Metadata extends Logging {
     case DateType                => PgDateArrayType
     case TimestampType           => PgTimestampTypeArrayType
     case DecimalType.Fixed(_, _) => PgNumericArrayType
-    // case MapType              =>
-    // case StructType           =>
     case _ => throw new SQLException("Unsupported array type " + elemType)
     // scalastyle:on
   }
