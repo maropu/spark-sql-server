@@ -117,13 +117,16 @@ class PsqlCommandV7_4Suite extends PostgreSQLJdbcTest with BeforeAndAfterAll {
       )
 
       assert(rs1.next())
-      assert(6228 === rs1.getInt(1))
       assert("spark" === rs1.getString(2))
       assert("t1" === rs1.getString(3))
+
+      // Get an OID number for a table `t1`
+      val relOid =  rs1.getInt(1)
+
       assert(!rs1.next())
 
       val rs2 = statement.executeQuery(
-        """
+        s"""
           |SELECT
           |  relchecks,
           |  relkind,
@@ -138,7 +141,7 @@ class PsqlCommandV7_4Suite extends PostgreSQLJdbcTest with BeforeAndAfterAll {
           |FROM
           |  pg_catalog.pg_class
           |WHERE
-          |  oid = '6228'
+          |  oid = '$relOid'
         """.stripMargin
       )
 

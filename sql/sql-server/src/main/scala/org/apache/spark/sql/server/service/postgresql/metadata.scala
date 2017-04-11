@@ -29,6 +29,20 @@ object Metadata extends Logging {
 
   // Since v7.3, all the catalog tables have been moved in a `pg_catalog` database
   private val catalogDbName = "pg_catalog"
+  private val catalog_tables = Seq(
+    "pg_namespace",
+    "pg_type",
+    "pg_roles",
+    "pg_user",
+    "pg_class",
+    "pg_attribute",
+    "pg_index",
+    "pg_proc",
+    "pg_description",
+    "pg_depend",
+    "pg_constraint",
+    "pg_attrdef"
+  )
 
   // `src/include/catalog/unused_oids` in a PostgreSQL source repository prints unused oids; 2-9,
   // 3300, 3308-3309, 3315-3328, 3330-3381, 3394-3453, 3577-3579, 3997-3999, 4066, 4083, 4099-4101,
@@ -86,21 +100,6 @@ object Metadata extends Logging {
   private val defaultSparkNamespace = (nextUnusedOid, "spark")
 
   private val userRoleOid = nextUnusedOid
-
-  private val catalog_tables = Seq(
-    "pg_namespace",
-    "pg_type",
-    "pg_roles",
-    "pg_user",
-    "pg_class",
-    "pg_attribute",
-    "pg_index",
-    "pg_proc",
-    "pg_description",
-    "pg_depend",
-    "pg_constraint",
-    "pg_attrdef"
-  )
 
   def initSystemFunctions(sqlContext: SQLContext): Unit = {
     sqlContext.udf.register("ANY", (arg: Seq[String]) => arg.head)

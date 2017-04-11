@@ -68,7 +68,7 @@ class PostgreSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) with 
     val proj = subQuery.plan.transformDown {
       // TODO: The PostgreSQL JDBC driver (`SQLSERVER_VERSION` = 7.4) issues a query below, but
       // Spark-v2.1 cannot correctly handle correlated sub-queries without aggregate.
-      // So, we currently insert a `First` expression when hitting that kind of sub-queries.
+      // So, we currently insert a `First` aggregate when hitting that kind of sub-queries.
       //
       // SELECT
       //   a.attname,
@@ -96,7 +96,14 @@ class PostgreSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) with 
       case p @ Project(ne :: Nil, child) if ne.find(_.isInstanceOf[AggregateFunction]).isEmpty =>
         val attr = ne.find(_.isInstanceOf[UnresolvedAttribute]).get
         val first = First(attr, Literal(true))
-        Project(Alias(first, first.prettyName)() :: Nil, child)
+        val projWithAggregate = Project(Alias(first, first.prettyName)() :: Nil, child)
+        logWarning(
+          s"""
+             |Found a sub-query without aggregate, so we add `First` in the projection;
+             | $projWithAggregate
+           """.stripMargin
+        )
+        projWithAggregate
     }
     ScalarSubquery(proj)
   }
