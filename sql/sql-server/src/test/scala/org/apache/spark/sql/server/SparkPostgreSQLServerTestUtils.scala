@@ -26,8 +26,7 @@ import java.util.UUID
 import scala.collection.mutable
 import scala.concurrent.Promise
 import scala.concurrent.duration._
-import scala.util.Random
-import scala.util.Try
+import scala.util.{Random, Try}
 import scala.util.control.NonFatal
 
 import com.google.common.io.Files
@@ -51,7 +50,39 @@ class SparkPostgreSQLServerTest(
   )
   private val startScript = "../../sbin/start-sql-server.sh".split("/").mkString(File.separator)
   private val stopScript = "../../sbin/stop-sql-server.sh".split("/").mkString(File.separator)
-  private val pidDir = Utils.createTempDir(s"sqlserver-$name-pid")
+
+  private val testTempDir = {
+     val tempDir = Utils.createTempDir(namePrefix = UUID.randomUUID().toString).getCanonicalPath
+
+     // Write a hive-site.xml containing a setting of `hive.metastore.warehouse.dir`
+     val metastoreURL =
+       s"jdbc:derby:memory:;databaseName=${tempDir};create=true"
+     Files.write(
+       s"""
+         |<configuration>
+         |  <property>
+         |    <name>javax.jdo.option.ConnectionURL</name>
+         |    <value>$metastoreURL</value>
+         |  </property>
+         |</configuration>
+       """.stripMargin,
+       new File(s"$tempDir/hive-site.xml"),
+       StandardCharsets.UTF_8)
+
+    // Writes a temporary log4j.properties and prepend it to driver classpath, so that it
+    // overrides all other potential log4j configurations contained in other dependency jar files
+    Files.write(
+      """log4j.rootCategory=INFO, console
+        |log4j.appender.console=org.apache.log4j.ConsoleAppender
+        |log4j.appender.console.target=System.err
+        |log4j.appender.console.layout=org.apache.log4j.PatternLayout
+        |log4j.appender.console.layout.ConversionPattern=%d{yy/MM/dd HH:mm:ss} %p %c{1}: %m%n
+      """.stripMargin,
+      new File(s"$tempDir/log4j.properties"),
+      StandardCharsets.UTF_8)
+
+    tempDir
+  }
 
   private var logTailingProcess: Process = _
   private var diagnosisBuffer = mutable.ArrayBuffer.empty[String]
@@ -80,49 +111,16 @@ class SparkPostgreSQLServerTest(
   }
 
   private def serverStartCommand(port: Int) = {
-    val testTempDirPath = {
-       val tempDir = Utils.createTempDir(namePrefix = UUID.randomUUID().toString).getCanonicalPath
-
-       // Write a hive-site.xml containing a setting of `hive.metastore.warehouse.dir`
-       val metastoreURL =
-         s"jdbc:derby:memory:;databaseName=${tempDir};create=true"
-       Files.write(
-         s"""
-           |<configuration>
-           |  <property>
-           |    <name>javax.jdo.option.ConnectionURL</name>
-           |    <value>$metastoreURL</value>
-           |  </property>
-           |</configuration>
-         """.stripMargin,
-         new File(s"$tempDir/hive-site.xml"),
-         StandardCharsets.UTF_8)
-
-      // Writes a temporary log4j.properties and prepend it to driver classpath, so that it
-      // overrides all other potential log4j configurations contained in other dependency jar files
-      Files.write(
-        """log4j.rootCategory=INFO, console
-          |log4j.appender.console=org.apache.log4j.ConsoleAppender
-          |log4j.appender.console.target=System.err
-          |log4j.appender.console.layout=org.apache.log4j.PatternLayout
-          |log4j.appender.console.layout.ConversionPattern=%d{yy/MM/dd HH:mm:ss} %p %c{1}: %m%n
-        """.stripMargin,
-        new File(s"$tempDir/log4j.properties"),
-        StandardCharsets.UTF_8)
-
-      tempDir
-    }
-
     s"""$startScript
-       |  --master local
-       |  --driver-class-path $testTempDirPath
-       |  --driver-java-options -Dlog4j.debug
-       |  --conf spark.ui.enabled=false
-       |  --conf spark.sql.warehouse.dir=$testTempDirPath/spark-warehouse
-       |  --conf ${SQLServerConf.SQLSERVER_PORT.key}=$port
-       |  --conf ${SQLServerConf.SQLSERVER_VERSION.key}=$pgVersion
-       |  --conf ${SQLServerConf.SQLSERVER_SSL_ENABLED.key}=$ssl
-       |  --conf ${SQLServerConf.SQLSERVER_SINGLE_SESSION_ENABLED.key}=$singleSession
+       | --master local
+       | --driver-class-path $testTempDir
+       | --driver-java-options -Dlog4j.debug
+       | --conf spark.ui.enabled=false
+       | --conf spark.sql.warehouse.dir=$testTempDir/spark-warehouse
+       | --conf ${SQLServerConf.SQLSERVER_PORT.key}=$port
+       | --conf ${SQLServerConf.SQLSERVER_VERSION.key}=$pgVersion
+       | --conf ${SQLServerConf.SQLSERVER_SSL_ENABLED.key}=$ssl
+       | --conf ${SQLServerConf.SQLSERVER_SINGLE_SESSION_ENABLED.key}=$singleSession
      """.stripMargin.split("\\s+").toSeq ++
       options.flatMap { case (k, v) => Iterator("--conf", s"$k=$v") }
   }
@@ -152,7 +150,7 @@ class SparkPostgreSQLServerTest(
           "SPARK_SQL_TESTING" -> "1",
           // Points SPARK_PID_DIR to SPARK_HOME, otherwise only 1 SQL server instance can be
           // started at a time, which is not Jenkins friendly
-          "SPARK_PID_DIR" -> pidDir.getCanonicalPath,
+          "SPARK_PID_DIR" -> testTempDir,
           // For submit multiple jobs
           "SPARK_IDENT_STRING" -> name
         ),
@@ -196,7 +194,7 @@ class SparkPostgreSQLServerTest(
     Utils.executeAndGetOutput(
       command = Seq(stopScript),
       extraEnvironment = Map(
-        "SPARK_PID_DIR" -> pidDir.getCanonicalPath,
+        "SPARK_PID_DIR" -> testTempDir,
         "SPARK_IDENT_STRING" -> name
       ))
     Thread.sleep(3.seconds.toMillis)
@@ -260,10 +258,10 @@ trait PostgreSQLJdbcTestBase {
     val connection = getJdbcConnect()
     val statement = connection.createStatement()
 
-    val (keys, values) = options.unzip
+    val (keys, _) = options.unzip
     val currentValues = keys.map { key =>
       val rs = statement.executeQuery(s"SET $key")
-      if (rs.next()) { rs.getString(2) } else { assert(false, s"Invalue key detected: $key") }
+      if (rs.next()) { rs.getString(2) } else { assert(false, s"Invalid key detected: $key") }
     }
     options.foreach { case (key, value) =>
       statement.execute(s"SET $key=$value")
