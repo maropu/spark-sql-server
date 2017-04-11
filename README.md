@@ -16,7 +16,7 @@ all available options. By default, the server listens on localhost:5432.
 
 Now you can use a PostgreSQL `psql` command to test the SQL JDBC/ODBC server:
 
-    $ psql -h localhost
+    $ psql -h localhost -d default
 
 ## Use PostgreSQL JDBC drivers
 
@@ -66,7 +66,7 @@ The SQL server supports some of PostgreSQL dialect;
     --
     (0 rows)
 
-    maropu=> SELECT * FROM t WHERE value ~ '1%';
+    maropu=> SELECT * FROM t WHERE value ~ '^1;
      key | value
     -----+-------
       10 | 10
