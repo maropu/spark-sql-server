@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.{SparkSession, SQLContext}
+import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.service.postgresql.PostgreSQLParser
 import org.apache.spark.util.Utils
 
@@ -54,6 +55,20 @@ private[server] object SQLServerEnv {
   lazy val sqlConf = sqlContext.conf
 
   lazy val sqlParser = new PostgreSQLParser(sqlConf)
+
+  lazy val serverVersion = {
+    // scalastyle:off
+    // `server_version` decides how to handle metadata between jdbc clients and servers.
+    // See an URL below for valid version numbers:
+    // https://github.com/pgjdbc/pgjdbc/blob/master/pgjdbc/src/main/java/org/postgresql/core/ServerVersion.java
+    // scalastyle:on
+    val validNumers = Seq("7.4", "8.0", "9.6")
+    validNumers.find(_ == sparkConf.sqlServerVersion).getOrElse {
+      throw new IllegalArgumentException(
+        s"You need to select a server version from $validNumers, but got " +
+          sparkConf.sqlServerVersion)
+    }
+  }
 
   def withSQLContext(sqlContext: SQLContext): Unit = {
     require(sqlContext != null)

@@ -33,10 +33,11 @@ public class JdbcTest {
       // Register the PostgreSQL JDBC driver
       Class.forName("org.postgresql.Driver");
 
-      // Connect to the SPARK SQL server
+      // Connect to a 'default' database in the SPARK SQL server
+      String dbName = "default";
       Properties props = new Properties();
       props.put("user", "maropu");
-      Connection con = DriverManager.getConnection("jdbc:postgresql://localhost/spark", props);
+      Connection con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/" + dbName, props);
 
       // Do something...
       Statement stmt = con.createStatement();

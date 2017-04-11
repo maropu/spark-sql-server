@@ -268,7 +268,8 @@ private[sql] class SQLServer extends CompositeService with LeaderElectable {
   }
 
   override def start(): Unit = {
-    logInfo("Try to start the Spark SQL server...")
+    require(SQLServerEnv.serverVersion.nonEmpty)
+    logInfo(s"Try to start the Spark SQL server with version=${SQLServerEnv.serverVersion}...")
     RECOVERY_MODE match {
       case Some("ZOOKEEPER") =>
         logInfo("Recovery mode 'ZOOKEEPER' enabled and wait for leader election")

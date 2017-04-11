@@ -797,11 +797,6 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SparkConf)
     ctx.write(AuthenticationOk)
     ctx.write(ParameterStatus("application_name", "spark-sql-server"))
     ctx.write(ParameterStatus("server_encoding", "UTF-8"))
-    // scalastyle:off
-    // `server_version` decides how to handle metadata between jdbc clients and servers.
-    // See an URL below for valid version numbers:
-    // https://github.com/pgjdbc/pgjdbc/blob/master/pgjdbc/src/main/java/org/postgresql/core/ServerVersion.java
-    // scalastyle:on
     ctx.write(ParameterStatus("server_version", conf.sqlServerVersion))
     ctx.write(ParameterStatus("TimeZone", java.util.TimeZone.getDefault().getID()))
     ctx.write(BackendKeyData(getUniqueChannelId(ctx), portalState.secretKey))
