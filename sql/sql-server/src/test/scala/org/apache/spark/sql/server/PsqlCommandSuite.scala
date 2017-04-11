@@ -26,6 +26,7 @@ class PsqlCommandV7_4Suite extends PostgreSQLJdbcTest with BeforeAndAfterAll {
 
     testJdbcStatement { statement =>
       Seq(
+        "CREATE DATABASE d1",
         "CREATE TABLE t1(a INT, b STRING, c DOUBLE)",
         "CREATE TABLE t2(key STRING, value DOUBLE)"
       ).foreach(statement.execute)
@@ -37,11 +38,38 @@ class PsqlCommandV7_4Suite extends PostgreSQLJdbcTest with BeforeAndAfterAll {
       testJdbcStatement { statement =>
         Seq(
           "DROP TABLE IF EXISTS t1",
-          "DROP TABLE IF EXISTS t2"
+          "DROP TABLE IF EXISTS t2",
+          "DROP DATABASE IF EXISTS d1"
         ).foreach(statement.execute)
       }
     } finally {
       super.afterAll()
+    }
+  }
+
+  test("psql --list") {
+    testJdbcStatement { statement =>
+      val rs = statement.executeQuery(
+        s"""
+           |SELECT
+           |  d.datname as "Name",
+           |  pg_catalog.pg_get_userbyid(d.datdba) as "Owner",
+           |  pg_catalog.pg_encoding_to_char(d.encoding) as "Encoding",
+           |  pg_catalog.array_to_string(d.datacl, '\n') AS "Access privileges"
+           |FROM
+           |  pg_catalog.pg_database d
+           |ORDER BY
+           |  1
+         """.stripMargin
+      )
+
+      assert(rs.next())
+      assert("d1" === rs.getString(1))
+      assert(rs.next())
+      assert("default" === rs.getString(1))
+      assert(rs.next())
+      assert("pg_catalog" === rs.getString(1))
+      assert(!rs.next())
     }
   }
 

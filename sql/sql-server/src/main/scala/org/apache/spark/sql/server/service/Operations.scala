@@ -25,7 +25,7 @@ import scala.util.control.NonFatal
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.{DataFrame, Dataset, SQLContext}
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.execution.command.SetCommand
+import org.apache.spark.sql.execution.command.{CreateDatabaseCommand, SetCommand}
 import org.apache.spark.sql.execution.datasources.CreateTable
 import org.apache.spark.sql.server.{SQLServer, SQLServerConf, SQLServerEnv}
 import org.apache.spark.sql.server.SQLServerConf._
@@ -139,8 +139,12 @@ private[server] case class ExecuteStatementOperation(
         case SetCommand(Some((SQLServerConf.SQLSERVER_POOL.key, Some(value)))) =>
           logInfo(s"Setting spark.scheduler.pool=$value for future statements in this session.")
           activePools.put(sessionId, value)
+        case CreateDatabaseCommand(dbName, _, _, _, _) =>
+          PgMetadata.registerDatabase(dbName, sqlContext)
         case CreateTable(desc, _, _) =>
-          PgMetadata.registerTableInCatalog(desc.identifier.table, desc.schema, sqlContext)
+          val dbName = desc.identifier.database.getOrElse("default")
+          val tableName = desc.identifier.table
+          PgMetadata.registerTable(dbName, tableName, desc.schema, sqlContext)
         case _ =>
       }
 
