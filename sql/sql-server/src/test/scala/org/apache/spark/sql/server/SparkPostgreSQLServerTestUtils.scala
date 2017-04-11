@@ -30,9 +30,42 @@ import scala.util.{Random, Try}
 import scala.util.control.NonFatal
 
 import com.google.common.io.Files
+import org.scalatest.BeforeAndAfterAll
 
+import org.apache.spark.SparkFunSuite
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.{ThreadUtils, Utils}
+
+class PostgreSQLJdbcTest(
+    pgVersion: String = "9.6",
+    ssl: Boolean = false,
+    singleSession: Boolean = false)
+  extends SQLServerTest(pgVersion, ssl, singleSession) with PostgreSQLJdbcTestBase {
+
+  override def serverInstance: SparkPostgreSQLServerTest = server
+}
+
+abstract class SQLServerTest(pgVersion: String, ssl: Boolean, singleSession: Boolean)
+  extends SparkFunSuite with BeforeAndAfterAll with Logging {
+
+  protected val server = new SparkPostgreSQLServerTest(
+    this.getClass.getSimpleName, pgVersion = pgVersion, ssl = ssl, singleSession = singleSession)
+
+  override protected def beforeAll(): Unit = {
+    super.beforeAll()
+    server.start()
+    logInfo("SQLServer started successfully")
+  }
+
+  override protected def afterAll(): Unit = {
+    try {
+      server.stop()
+      logInfo("SQLServer stopped")
+    } finally {
+      super.afterAll()
+    }
+  }
+}
 
 class SparkPostgreSQLServerTest(
     name: String,

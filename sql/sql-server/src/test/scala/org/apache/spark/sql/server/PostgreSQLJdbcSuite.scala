@@ -28,10 +28,7 @@ import scala.concurrent.duration._
 import scala.io.Source
 import scala.sys.process.BasicIO
 
-import org.scalatest.BeforeAndAfterAll
-
-import org.apache.spark.{SparkException, SparkFunSuite}
-import org.apache.spark.internal.Logging
+import org.apache.spark.SparkException
 import org.apache.spark.util.{ThreadUtils, Utils}
 
 object TestData {
@@ -844,36 +841,5 @@ class PostgreSQLJdbcSingleSessionSuite extends PostgreSQLJdbcTest(singleSession 
         }
       }
     )
-  }
-}
-
-class PostgreSQLJdbcTest(
-    pgVersion: String = "9.6",
-    ssl: Boolean = false,
-    singleSession: Boolean = false)
-  extends SQLServerTest(pgVersion, ssl, singleSession) with PostgreSQLJdbcTestBase {
-
-  override def serverInstance: SparkPostgreSQLServerTest = server
-}
-
-abstract class SQLServerTest(pgVersion: String, ssl: Boolean, singleSession: Boolean)
-    extends SparkFunSuite with BeforeAndAfterAll with Logging {
-
-  protected val server = new SparkPostgreSQLServerTest(
-    this.getClass.getSimpleName, pgVersion = pgVersion, ssl = ssl, singleSession = singleSession)
-
-  override protected def beforeAll(): Unit = {
-    super.beforeAll()
-    server.start()
-    logInfo("SQLServer started successfully")
-  }
-
-  override protected def afterAll(): Unit = {
-    try {
-      server.stop()
-      logInfo("SQLServer stopped")
-    } finally {
-      super.afterAll()
-    }
   }
 }
