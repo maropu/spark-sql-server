@@ -69,6 +69,20 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
     }
   }
 
+  def assertTable(tableName: String, expectedSchema: Set[(String, String)], m: DatabaseMetaData)
+    : Unit = {
+    val mdTable = m.getTables(null, null, tableName, scala.Array("TABLE"))
+    assert(mdTable.next())
+    assert(tableName === mdTable.getString("TABLE_NAME"))
+    assert(!mdTable.next())
+    val schema = new Iterator[(String, String)] {
+      val schemaInfo = m.getColumns (null, null, tableName, "%")
+      def hasNext = schemaInfo.next()
+      def next() = (schemaInfo.getString("COLUMN_NAME"), schemaInfo.getString("TYPE_NAME"))
+    }
+    assert(expectedSchema === schema.toSet)
+  }
+
   test("DatabaseMetaData tests") {
     testJdbcStatement { statement =>
       val databaseMetaData = statement.getConnection.getMetaData
@@ -154,22 +168,16 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
           """.stripMargin
       ).foreach(statement.execute)
 
-      Seq("test1", "test2").foreach { tableName =>
-        val mdTable = databaseMetaData.getTables(null, null, tableName, scala.Array("TABLE"))
-        assert(mdTable.next())
-        assert(tableName === mdTable.getString("TABLE_NAME"))
-        assert(!mdTable.next())
-      }
-
-      val getTableSchema = (tableName: String) => new Iterator[(String, String)] {
-        val schemaInfo = databaseMetaData.getColumns(null, null, tableName, "%")
-        def hasNext = schemaInfo.next()
-        def next() = (schemaInfo.getString("COLUMN_NAME"), schemaInfo.getString("TYPE_NAME"))
-      }
-
-      assert(Set(("key", "varchar"), ("value", "float8")) === getTableSchema("test1").toSet)
-      assert(Set(("id", "int4"), ("name", "varchar"), ("address", "varchar"), ("salary", "float4"))
-        === getTableSchema("test2").toSet)
+      assertTable(
+        "test1",
+        Set(("key", "varchar"), ("value", "float8")),
+        databaseMetaData
+      )
+      assertTable(
+        "test2",
+        Set(("id", "int4"), ("name", "varchar"), ("address", "varchar"), ("salary", "float4")),
+        databaseMetaData
+      )
     }
   }
 
@@ -767,6 +775,37 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
       } finally {
         statement.executeQuery("DROP TEMPORARY FUNCTION udtf_count2")
       }
+    }
+  }
+
+  test("CREATE/DROP tables between connections") {
+
+    testJdbcStatement { statement =>
+      Seq(
+        "DROP TABLE IF EXISTS test1",
+        "DROP TABLE IF EXISTS test2",
+        "CREATE TABLE test1(a INT)",
+        "CREATE TABLE test2(key STRING, value DOUBLE)"
+      ).foreach(statement.execute)
+
+      val dbMeta = statement.getConnection.getMetaData
+      assertTable("test1", Set(("a", "int4")), dbMeta)
+      assertTable("test2", Set(("key", "varchar"), ("value", "float8")), dbMeta)
+    }
+
+    testJdbcStatement { statement =>
+      val dbMeta = statement.getConnection.getMetaData
+      assertTable("test1", Set(("a", "int4")), dbMeta)
+      assertTable("test2", Set(("key", "varchar"), ("value", "float8")), dbMeta)
+      statement.execute("DROP TABLE test1")
+      assertTable("test2", Set(("key", "varchar"), ("value", "float8")), dbMeta)
+      assert(!dbMeta.getTables(null, null, "test1", scala.Array("TABLE")).next())
+    }
+
+    testJdbcStatement { statement =>
+      val dbMeta = statement.getConnection.getMetaData
+      assertTable("test2", Set(("key", "varchar"), ("value", "float8")), dbMeta)
+      assert(!dbMeta.getTables(null, null, "test1", scala.Array("TABLE")).next())
     }
   }
 }

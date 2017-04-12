@@ -340,6 +340,11 @@ object Metadata extends Logging {
   }
 
   def initSessionCatalogTables(sqlContext: SQLContext, dbName: String): Unit = {
+    refreshDatabases(dbName, sqlContext)
+    refreshTables(dbName, sqlContext)
+  }
+
+  def refreshDatabases(dbName: String, sqlContext: SQLContext): Unit = {
     val externalCatalog = sqlContext.sharedState.externalCatalog
 
     def safeCreateTable(catalogTable: String)(f: String => String): Unit = {
@@ -357,6 +362,20 @@ object Metadata extends Logging {
         |   datacl Array<STRING>
         | )
       """
+    }
+
+    externalCatalog.listDatabases.foreach { dbName =>
+      doRegisterDatabase(dbName, sqlContext)
+    }
+  }
+
+  def refreshTables(dbName: String, sqlContext: SQLContext): Unit = {
+    val externalCatalog = sqlContext.sharedState.externalCatalog
+
+    def safeCreateTable(catalogTable: String)(f: String => String): Unit = {
+      assert(catalogTables.contains(catalogTable))
+      sqlContext.sql(s"DROP TABLE IF EXISTS $catalogDbName.$catalogTable")
+      sqlContext.sql(f(s"$catalogDbName.$catalogTable").stripMargin)
     }
 
     safeCreateTable("pg_class") { cTableName =>
@@ -393,49 +412,46 @@ object Metadata extends Logging {
       """
     }
 
-    externalCatalog.listDatabases.foreach { dbName =>
-      registerDatabase(dbName, sqlContext, checkExists = false)
-    }
-
     externalCatalog.listTables(dbName).foreach { tableName =>
-      registerTable(
+      doRegisterTable(
         dbName,
         tableName,
         externalCatalog.getTable(dbName, tableName).schema,
-        sqlContext,
-        checkExists = false
+        sqlContext
       )
     }
   }
 
-  def registerDatabase(
-      dbName: String, sqlContext: SQLContext, checkExists: Boolean = true): Unit = {
-    val externalCatalog = sqlContext.sharedState.externalCatalog
-
-    if (checkExists && externalCatalog.databaseExists(dbName)) {
-      logWarning(s"A database `$dbName` already exits in a system catalog")
-      return
-    }
-
-    logInfo(s"Registering a database `$dbName` in a system catalog `pg_database`")
-
-    sqlContext.sql(
-      s"INSERT INTO $catalogDbName.pg_database VALUES('$dbName', 0, 0, null)"
-    )
+  def registerDatabase(dbName: String, sqlContext: SQLContext): Unit = {
+    require(dbName != catalogDbName, s"$dbName is reserved for system use")
+    doRegisterDatabase(dbName, sqlContext)
   }
 
-  def registerTable(
-      dbName: String, tableName: String, schema: StructType, sqlContext: SQLContext,
-      checkExists: Boolean = true): Unit = {
-    val externalCatalog = sqlContext.sharedState.externalCatalog
+  private def doRegisterDatabase(dbName: String, sqlContext: SQLContext): Unit = {
+    logInfo(s"Registering a database `$dbName` in a system catalog `pg_database`")
+    sqlContext.sql(s"INSERT INTO $catalogDbName.pg_database VALUES('$dbName', 0, 0, null)")
+  }
 
-    if (checkExists && externalCatalog.tableExists(dbName, tableName)) {
-      logWarning(s"A table `$dbName.$tableName` already exits in a system catalog")
-      return
-    }
+  private def isReservedTableName(dbName: String, tableName: String): Boolean = {
+    catalogTables.map { reserved =>
+      if (dbName != catalogDbName) {
+        s"$catalogDbName.$reserved"
+      } else {
+        reserved
+      }
+    }.contains(tableName)
+  }
 
+  def registerTable(dbName: String, tableName: String, schema: StructType, sqlContext: SQLContext)
+    : Unit = {
+    require(!isReservedTableName(tableName, dbName), s"$tableName is reserved for system use")
+    doRegisterTable(dbName, tableName, schema, sqlContext)
+  }
+
+  private def doRegisterTable(
+      dbName: String, tableName: String, schema: StructType, sqlContext: SQLContext)
+    : Unit = {
     logInfo(s"Registering a table `$tableName(${schema.sql}})` in a system catalog `pg_class`")
-
     val tableOid = nextUnusedOid
     val sqlTexts =
       s"""

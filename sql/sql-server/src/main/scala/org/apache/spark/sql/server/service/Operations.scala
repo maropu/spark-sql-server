@@ -25,7 +25,7 @@ import scala.util.control.NonFatal
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.{DataFrame, Dataset, SQLContext}
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.execution.command.{CreateDatabaseCommand, SetCommand}
+import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.datasources.CreateTable
 import org.apache.spark.sql.server.{SQLServer, SQLServerConf, SQLServerEnv}
 import org.apache.spark.sql.server.SQLServerConf._
@@ -134,20 +134,6 @@ private[server] case class ExecuteStatementOperation(
     try {
       resultSet = Dataset.ofRows(sqlContext.sparkSession, sqlParser.parsePlan(statement))
       logDebug(resultSet.queryExecution.toString())
-
-      resultSet.queryExecution.logical match {
-        case SetCommand(Some((SQLServerConf.SQLSERVER_POOL.key, Some(value)))) =>
-          logInfo(s"Setting spark.scheduler.pool=$value for future statements in this session.")
-          activePools.put(sessionId, value)
-        case CreateDatabaseCommand(dbName, _, _, _, _) =>
-          PgMetadata.registerDatabase(dbName, sqlContext)
-        case CreateTable(desc, _, _) =>
-          val dbName = desc.identifier.database.getOrElse("default")
-          val tableName = desc.identifier.table
-          PgMetadata.registerTable(dbName, tableName, desc.schema, sqlContext)
-        case _ =>
-      }
-
       SQLServer.listener.onStatementParsed(statementId, resultSet.queryExecution.toString())
       rowIter = {
         val useIncrementalCollect = SQLServerEnv.sparkConf.sqlServerIncrementalCollectEnabled
@@ -176,7 +162,34 @@ private[server] case class ExecuteStatementOperation(
           throw new SQLException(e.toString)
         }
     }
+
     setState(FINISHED)
     SQLServer.listener.onStatementFinish(statementId)
+
+    // Based on the assumption that DDL commands succeed, we then update internal states
+    resultSet.queryExecution.logical match {
+      case SetCommand(Some((SQLServerConf.SQLSERVER_POOL.key, Some(value)))) =>
+        logInfo(s"Setting spark.scheduler.pool=$value for future statements in this session.")
+        activePools.put(sessionId, value)
+      case CreateDatabaseCommand(dbName, _, _, _, _) =>
+        PgMetadata.registerDatabase(dbName, sqlContext)
+      case CreateTable(desc, _, _) =>
+        val dbName = desc.identifier.database.getOrElse("default")
+        val tableName = desc.identifier.table
+        PgMetadata.registerTable(dbName, tableName, desc.schema, sqlContext)
+      case CreateTableCommand(table, _) =>
+        val dbName = table.identifier.database.getOrElse("default")
+        val tableName = table.identifier.table
+        PgMetadata.registerTable(dbName, tableName, table.schema, sqlContext)
+      case DropDatabaseCommand(dbName, _, _) =>
+        logInfo(s"Drop a database `$dbName` and refresh database catalog information")
+        PgMetadata.refreshDatabases(dbName, sqlContext)
+      case DropTableCommand(table, _, _, _) =>
+        val dbName = table.database.getOrElse("default")
+        val tableName = table.identifier
+        logInfo(s"Drop a table `$dbName.$tableName` and refresh table catalog information")
+        PgMetadata.refreshTables(dbName, sqlContext)
+      case _ =>
+    }
   }
 }
