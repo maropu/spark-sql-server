@@ -779,7 +779,6 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
   }
 
   test("CREATE/DROP tables between connections") {
-
     testJdbcStatement { statement =>
       Seq(
         "DROP TABLE IF EXISTS test1",

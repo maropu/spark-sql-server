@@ -30,14 +30,13 @@ object Metadata extends Logging {
 
   // Since v7.3, all the catalog tables have been moved in a `pg_catalog` database
   private val catalogDbName = "pg_catalog"
-  private val catalogTables = Seq(
-    "pg_database",
+
+  // Catalog tables and they are immutable
+  private val _catalogTables1 = Seq(
     "pg_namespace",
     "pg_type",
     "pg_roles",
     "pg_user",
-    "pg_class",
-    "pg_attribute",
     "pg_index",
     "pg_proc",
     "pg_description",
@@ -45,6 +44,15 @@ object Metadata extends Logging {
     "pg_constraint",
     "pg_attrdef"
   )
+
+  // Catalog tables that are updated every databases/tables created
+  private val _catalogTables2 = Seq(
+    "pg_database",
+    "pg_class",
+    "pg_attribute"
+  )
+
+  private val catalogTables = _catalogTables1 ++ _catalogTables2
 
   // `src/include/catalog/unused_oids` in a PostgreSQL source repository prints unused oids; 2-9,
   // 3300, 3308-3309, 3315-3328, 3330-3381, 3394-3453, 3577-3579, 3997-3999, 4066, 4083, 4099-4101,
@@ -54,6 +62,7 @@ object Metadata extends Logging {
 
   // Since multiple threads possibly access this variable, we use atomic one
   private val _nextUnusedOid = new AtomicInteger(baseUnusedOid)
+
   private def nextUnusedOid = _nextUnusedOid.getAndIncrement()
 
 
@@ -95,399 +104,8 @@ object Metadata extends Logging {
     PgFloat4Type, PgFloat8Type, PgBoolArrayType, PgInt2ArrayType, PgInt4ArrayType,
     PgVarCharArrayType, PgInt8ArrayType, PgFloat4ArrayType, PgFloat8ArrayType, PgVarCharType,
     PgDateType, PgTimestampType, PgTimestampTypeArrayType, PgDateArrayType, PgNumericArrayType,
-    PgNumericType, PgByteType, PgMapType, PgStructType)
-
-  // We assume the namespace of all entities is `spark`
-  private val defaultSparkNamespace = (nextUnusedOid, "spark")
-
-  private val userRoleOid = nextUnusedOid
-
-  def initSystemFunctions(sqlContext: SQLContext): Unit = {
-    sqlContext.udf.register("ANY", (arg: Seq[String]) => arg.head)
-    sqlContext.udf.register("current_schemas", (arg: Boolean) => Seq(defaultSparkNamespace._2))
-    sqlContext.udf.register("array_upper", (ar: Seq[String], n: Int) => ar.size)
-    sqlContext.udf.register("array_in", () => "array_in")
-    sqlContext.udf.register(s"$catalogDbName.obj_description", (oid: Int, tableName: String) => "")
-    sqlContext.udf.register(s"$catalogDbName.pg_get_expr", (adbin: String, adrelid: Int) => "")
-    sqlContext.udf.register(s"$catalogDbName.pg_table_is_visible", (oid: Int) => true)
-    sqlContext.udf.register(s"$catalogDbName.pg_get_userbyid", (userid: Int) => "")
-    sqlContext.udf.register(s"$catalogDbName.format_type", (type_oid: Int, typemod: String) => "")
-    sqlContext.udf.register(s"$catalogDbName.pg_encoding_to_char", (encoding: Int) => "")
-    sqlContext.udf.register(s"$catalogDbName.array_to_string",
-      (ar: Seq[String], delim: String) => if (ar != null) ar.mkString(delim) else "")
-  }
-
-  def initSystemCatalogTables(sqlContext: SQLContext): Unit = {
-    val externalCatalog = sqlContext.sharedState.externalCatalog
-
-    def safeCreateTable(catalogTable: String)(f: String => Seq[String]): Unit = {
-      assert(catalogTables.contains(catalogTable))
-      assert(!externalCatalog.tableExists(catalogDbName, catalogTable))
-      f(s"$catalogDbName.$catalogTable").foreach { sqlText =>
-        sqlContext.sql(sqlText.stripMargin)
-      }
-    }
-
-    // TODO: Make this initialization transactional
-    if (!externalCatalog.databaseExists(catalogDbName)) {
-      try {
-        sqlContext.sql(s"CREATE DATABASE $catalogDbName")
-
-        safeCreateTable("pg_namespace") { cTableName =>
-          s"""
-            | CREATE TABLE $cTableName(
-            |   oid INT,
-            |   nspname STRING
-            | )
-          """ ::
-          s"""
-            | INSERT INTO $cTableName
-            |   VALUES(${defaultSparkNamespace._1}, '${defaultSparkNamespace._2}')
-          """ ::
-          Nil
-        }
-
-        // TODO: The PostgreSQL JDBC driver (`SQLSERVER_VERSION` >= 8.0) issues a query below and
-        // it uses `default.pg_namespace instead of `pg_catalog.pg_namespace`.
-        // So, we currently create `pg_namespace` in both `default` and `pg_catalog`.
-        //
-        // SELECT typinput='array_in'::regproc, typtype
-        //   FROM pg_catalog.pg_type
-        //   LEFT JOIN (
-        //     select ns.oid as nspoid, ns.nspname, r.r
-        //       from pg_namespace as ns
-        //            ^^^^^^^^^^^^
-        //       join (
-        //         select s.r, (current_schemas(false))[s.r] as nspname
-        //           from generate_series(1, array_upper(current_schemas(false), 1)) as s(r)
-        //       ) as r using ( nspname )
-        //   ) as sp
-        //   ON sp.nspoid = typnamespace
-        //   WHERE typname = 'byte'
-        //   ORDER BY sp.r, pg_type.oid DESC
-        //   LIMIT 1;
-        //
-        {
-          "DROP TABLE IF EXISTS pg_namespace" ::
-          s"""
-            | CREATE TABLE pg_namespace(
-            |   oid INT,
-            |   nspname STRING
-            | )
-          """ ::
-          s"""
-            | INSERT INTO pg_namespace
-            |   VALUES(${defaultSparkNamespace._1}, '${defaultSparkNamespace._2}')
-          """ ::
-          Nil
-        }.foreach { sqlText =>
-          sqlContext.sql(sqlText.stripMargin)
-        }
-
-        safeCreateTable("pg_roles") { cTableName =>
-          s"""
-            | CREATE TABLE $cTableName(
-            |   oid INT,
-            |   rolname STRING
-            | )
-          """ ::
-          s"""
-            | INSERT INTO $cTableName VALUES($userRoleOid, 'spark-user')
-          """ ::
-          Nil
-        }
-
-        safeCreateTable("pg_user") { cTableName =>
-          s"""
-            | CREATE TABLE $cTableName(
-            |   usename STRING,
-            |   usesysid INT
-            | )
-          """ ::
-          s"""
-            | INSERT INTO $cTableName VALUES('spark-user', $userRoleOid)
-          """ ::
-          Nil
-        }
-
-        safeCreateTable("pg_type") { cTableName =>
-          s"""
-            | CREATE TABLE $cTableName(
-            |   oid INT,
-            |   typname STRING,
-            |   typtype STRING,
-            |   typlen INT,
-            |   typnotnull BOOLEAN,
-            |   typelem INT,
-            |   typdelim STRING,
-            |   typinput STRING,
-            |   typrelid INT,
-            |   typbasetype INT,
-            |   typnamespace INT
-            | )
-          """ +:
-          supportedPgTypes.map { tpe =>
-            // `b` in `typtype` means a primitive type and all the entries in `supportedPgTypes`
-            // are primitive types.
-            s"""
-              | INSERT INTO $cTableName VALUES(
-              |   %d, '%s', 'b', %d, false, %d, ',', '%s', 0, 0, %d
-              | )
-            """.format(
-              tpe.oid,
-              tpe.name,
-              tpe.len,
-              tpe.elemOid,
-              tpe.input,
-              defaultSparkNamespace._1
-            )
-          }
-        }
-
-        /**
-         * Six empty catalog tables are defined below to prevent the PostgreSQL JDBC drivers from
-         * throwing meaningless exceptions.
-         */
-        safeCreateTable("pg_index") { cTableName =>
-          s"""
-            | CREATE TABLE $cTableName(
-            |   oid INT,
-            |   indrelid INT,
-            |   indexrelid INT,
-            |   indisprimary BOOLEAN
-            | )
-          """ ::
-          Nil
-        }
-
-        safeCreateTable("pg_proc") { cTableName =>
-          s"""
-            | CREATE TABLE $cTableName(
-            |   oid INT,
-            |   proname STRING,
-            |   prorettype INT,
-            |   proargtypes ARRAY<INT>,
-            |   pronamespace INT
-            | )
-          """ ::
-          Nil
-        }
-
-        safeCreateTable("pg_description") { cTableName =>
-          s"""
-            | CREATE TABLE $cTableName(
-            |   objoid INT,
-            |   classoid INT,
-            |   objsubid INT,
-            |   description STRING
-            | )
-          """ ::
-          Nil
-        }
-
-        safeCreateTable("pg_depend") { cTableName =>
-          s"""
-            | CREATE TABLE $cTableName(
-            |   objid INT,
-            |   classid INT,
-            |   refobjid INT,
-            |   refclassid INT
-            | )
-          """ ::
-          Nil
-        }
-
-        safeCreateTable("pg_constraint") { cTableName =>
-          s"""
-            | CREATE TABLE $cTableName(
-            |   oid INT,
-            |   confupdtype STRING,
-            |   confdeltype STRING,
-            |   conname STRING,
-            |   condeferrable BOOLEAN,
-            |   condeferred BOOLEAN,
-            |   conkey ARRAY<INT>,
-            |   confkey ARRAY<INT>,
-            |   confrelid INT,
-            |   conrelid INT,
-            |   contype STRING
-            | )
-          """ ::
-          Nil
-        }
-
-        safeCreateTable("pg_attrdef") { cTableName =>
-          s"""
-            | CREATE TABLE $cTableName(
-            |   adrelid INT,
-            |   adnum SHORT,
-            |   adbin STRING
-            | )
-          """ ::
-          Nil
-        }
-      } catch {
-        case e: Throwable =>
-          catalogTables.foreach { tableName =>
-            sqlContext.sql(s"DROP TABLE IF EXISTS $catalogDbName.$tableName")
-          }
-          sqlContext.sql(s"DROP DATABASE IF EXISTS $catalogDbName")
-          throw e
-      } finally {
-        // require(catalogTables.forall(externalCatalog.tableExists(catalogDbName, _)))
-      }
-    }
-  }
-
-  def initSessionCatalogTables(sqlContext: SQLContext, dbName: String): Unit = {
-    refreshDatabases(dbName, sqlContext)
-    refreshTables(dbName, sqlContext)
-  }
-
-  def refreshDatabases(dbName: String, sqlContext: SQLContext): Unit = {
-    val externalCatalog = sqlContext.sharedState.externalCatalog
-
-    def safeCreateTable(catalogTable: String)(f: String => String): Unit = {
-      assert(catalogTables.contains(catalogTable))
-      sqlContext.sql(s"DROP TABLE IF EXISTS $catalogDbName.$catalogTable")
-      sqlContext.sql(f(s"$catalogDbName.$catalogTable").stripMargin)
-    }
-
-    safeCreateTable("pg_database") { cTableName =>
-      s"""
-        | CREATE TABLE $cTableName(
-        |   datname STRING,
-        |   datdba INT,
-        |   encoding INT,
-        |   datacl Array<STRING>
-        | )
-      """
-    }
-
-    externalCatalog.listDatabases.foreach { dbName =>
-      doRegisterDatabase(dbName, sqlContext)
-    }
-  }
-
-  def refreshTables(dbName: String, sqlContext: SQLContext): Unit = {
-    val externalCatalog = sqlContext.sharedState.externalCatalog
-
-    def safeCreateTable(catalogTable: String)(f: String => String): Unit = {
-      assert(catalogTables.contains(catalogTable))
-      sqlContext.sql(s"DROP TABLE IF EXISTS $catalogDbName.$catalogTable")
-      sqlContext.sql(f(s"$catalogDbName.$catalogTable").stripMargin)
-    }
-
-    safeCreateTable("pg_class") { cTableName =>
-      s"""
-        | CREATE TABLE $cTableName(
-        |   oid INT,
-        |   relname STRING,
-        |   relkind STRING,
-        |   relnamespace INT,
-        |   relowner INT,
-        |   relacl ARRAY<STRING>,
-        |   relchecks SHORT,
-        |   relhasindex BOOLEAN,
-        |   relhasrules BOOLEAN,
-        |   reltriggers SHORT,
-        |   relhasoids BOOLEAN
-        | )
-      """
-    }
-
-    safeCreateTable("pg_attribute") { cTableName =>
-      s"""
-        | CREATE TABLE $cTableName(
-        |   oid INT,
-        |   attrelid INT,
-        |   attname STRING,
-        |   atttypid INT,
-        |   attnotnull BOOLEAN,
-        |   atttypmod INT,
-        |   attlen INT,
-        |   attnum INT,
-        |   attisdropped BOOLEAN
-        | )
-      """
-    }
-
-    externalCatalog.listTables(dbName).foreach { tableName =>
-      doRegisterTable(
-        dbName,
-        tableName,
-        externalCatalog.getTable(dbName, tableName).schema,
-        sqlContext
-      )
-    }
-  }
-
-  def registerDatabase(dbName: String, sqlContext: SQLContext): Unit = {
-    require(dbName != catalogDbName, s"$dbName is reserved for system use")
-    doRegisterDatabase(dbName, sqlContext)
-  }
-
-  private def doRegisterDatabase(dbName: String, sqlContext: SQLContext): Unit = {
-    logInfo(s"Registering a database `$dbName` in a system catalog `pg_database`")
-    sqlContext.sql(s"INSERT INTO $catalogDbName.pg_database VALUES('$dbName', 0, 0, null)")
-  }
-
-  private def isReservedTableName(dbName: String, tableName: String): Boolean = {
-    catalogTables.map { reserved =>
-      if (dbName != catalogDbName) {
-        s"$catalogDbName.$reserved"
-      } else {
-        reserved
-      }
-    }.contains(tableName)
-  }
-
-  def registerTable(dbName: String, tableName: String, schema: StructType, sqlContext: SQLContext)
-    : Unit = {
-    require(!isReservedTableName(tableName, dbName), s"$tableName is reserved for system use")
-    doRegisterTable(dbName, tableName, schema, sqlContext)
-  }
-
-  private def doRegisterTable(
-      dbName: String, tableName: String, schema: StructType, sqlContext: SQLContext)
-    : Unit = {
-    logInfo(s"Registering a table `$tableName(${schema.sql}})` in a system catalog `pg_class`")
-    val tableOid = nextUnusedOid
-    val sqlTexts =
-      s"""
-        | INSERT INTO $catalogDbName.pg_class VALUES(
-        |   %d, '%s', '%s', %d, %d, %s, 0, false, false, 0, false
-        | )
-      """.format(
-        tableOid,
-        tableName,
-        "r",
-        defaultSparkNamespace._1,
-        userRoleOid,
-        "null"
-      ) +:
-      schema.zipWithIndex.map { case (field, index) =>
-        val pgType = getPgType(field.dataType)
-          s"""
-          | INSERT INTO $catalogDbName.pg_attribute VALUES(
-          |   %d, %d, '%s', %d, %b, %d, %d, %d, false
-          | )
-        """.format(
-          nextUnusedOid,
-          tableOid,
-          field.name,
-          pgType.oid,
-          !field.nullable,
-          0,
-          pgType.len,
-          1 + index
-        )
-      }
-
-    sqlTexts.foreach { sqlText =>
-      sqlContext.sql(sqlText.stripMargin)
-    }
-  }
+    PgNumericType, PgByteType, PgMapType, PgStructType
+  )
 
   def getPgType(catalystType: DataType): PgType = catalystType match {
     // scalastyle:off
@@ -526,5 +144,391 @@ object Metadata extends Logging {
     case DecimalType.Fixed(_, _) => PgNumericArrayType
     case _ => throw new SQLException("Unsupported array type " + elemType)
     // scalastyle:on
+  }
+
+  // We assume the namespace of all entities is `spark`
+  private val defaultSparkNamespace = (nextUnusedOid, "spark")
+
+  private val userRoleOid = nextUnusedOid
+
+  def initSystemFunctions(sqlContext: SQLContext): Unit = {
+    sqlContext.udf.register("ANY", (arg: Seq[String]) => arg.head)
+    sqlContext.udf.register("current_schemas", (arg: Boolean) => Seq(defaultSparkNamespace._2))
+    sqlContext.udf.register("array_upper", (ar: Seq[String], n: Int) => ar.size)
+    sqlContext.udf.register("array_in", () => "array_in")
+    sqlContext.udf.register(s"$catalogDbName.obj_description", (oid: Int, tableName: String) => "")
+    sqlContext.udf.register(s"$catalogDbName.pg_get_expr", (adbin: String, adrelid: Int) => "")
+    sqlContext.udf.register(s"$catalogDbName.pg_table_is_visible", (oid: Int) => true)
+    sqlContext.udf.register(s"$catalogDbName.pg_get_userbyid", (userid: Int) => "")
+    sqlContext.udf.register(s"$catalogDbName.format_type", (type_oid: Int, typemod: String) => "")
+    sqlContext.udf.register(s"$catalogDbName.pg_encoding_to_char", (encoding: Int) => "")
+    sqlContext.udf.register(s"$catalogDbName.array_to_string",
+      (ar: Seq[String], delim: String) => if (ar != null) ar.mkString(delim) else "")
+  }
+
+  private def safeCreateTable(tableName: String, sqlContext: SQLContext)(f: String => Seq[String])
+    : Unit = {
+    assert(catalogTables.contains(tableName))
+    // assert(!sqlContext.sharedState.externalCatalog.tableExists(catalogDbName, tableName))
+    val sqlTexts = s"DROP TABLE IF EXISTS $catalogDbName.$tableName" +:
+      f(s"$catalogDbName.$tableName")
+    sqlTexts.foreach { sqlText =>
+      sqlContext.sql(sqlText.stripMargin)
+    }
+  }
+
+  def initSystemCatalogTables(sqlContext: SQLContext): Unit = {
+    // TODO: Make this initialization transactional
+    if (!sqlContext.sharedState.externalCatalog.databaseExists(catalogDbName)) {
+      try {
+        sqlContext.sql(s"CREATE DATABASE $catalogDbName")
+
+        safeCreateTable("pg_namespace", sqlContext) { cTableName =>
+          s"""
+            |CREATE TABLE $cTableName(
+            |  oid INT,
+            |  nspname STRING
+            |)
+          """ ::
+          s"""
+            |INSERT INTO $cTableName
+            |  VALUES(${defaultSparkNamespace._1}, '${defaultSparkNamespace._2}')
+          """ ::
+          Nil
+        }
+
+        // TODO: The PostgreSQL JDBC driver (`SQLSERVER_VERSION` >= 8.0) issues a query below and
+        // it uses `default.pg_namespace instead of `pg_catalog.pg_namespace`.
+        // So, we currently create `pg_namespace` in both `default` and `pg_catalog`.
+        //
+        // SELECT typinput='array_in'::regproc, typtype
+        //   FROM pg_catalog.pg_type
+        //   LEFT JOIN (
+        //     select ns.oid as nspoid, ns.nspname, r.r
+        //       from pg_namespace as ns
+        //            ^^^^^^^^^^^^
+        //       join (
+        //         select s.r, (current_schemas(false))[s.r] as nspname
+        //           from generate_series(1, array_upper(current_schemas(false), 1)) as s(r)
+        //       ) as r using ( nspname )
+        //   ) as sp
+        //   ON sp.nspoid = typnamespace
+        //   WHERE typname = 'byte'
+        //   ORDER BY sp.r, pg_type.oid DESC
+        //   LIMIT 1;
+        //
+        {
+          "DROP TABLE IF EXISTS pg_namespace" ::
+          s"""
+            |CREATE TABLE pg_namespace(
+            |  oid INT,
+            |  nspname STRING
+            |)
+          """ ::
+          s"""
+            |INSERT INTO pg_namespace
+            |  VALUES(${defaultSparkNamespace._1}, '${defaultSparkNamespace._2}')
+          """ ::
+          Nil
+        }.foreach { sqlText =>
+          sqlContext.sql(sqlText.stripMargin)
+        }
+
+        safeCreateTable("pg_roles", sqlContext) { cTableName =>
+          s"""
+            |CREATE TABLE $cTableName(
+            |  oid INT,
+            |  rolname STRING
+            |)
+          """ ::
+          s"""
+            |INSERT INTO $cTableName VALUES($userRoleOid, 'spark-user')
+          """ ::
+          Nil
+        }
+
+        safeCreateTable("pg_user", sqlContext) { cTableName =>
+          s"""
+            |CREATE TABLE $cTableName(
+            |  usename STRING,
+            |  usesysid INT
+            |)
+          """ ::
+          s"""
+            |INSERT INTO $cTableName VALUES('spark-user', $userRoleOid)
+          """ ::
+          Nil
+        }
+
+        safeCreateTable("pg_type", sqlContext) { cTableName =>
+          s"""
+            |CREATE TABLE $cTableName(
+            |  oid INT,
+            |  typname STRING,
+            |  typtype STRING,
+            |  typlen INT,
+            |  typnotnull BOOLEAN,
+            |  typelem INT,
+            |  typdelim STRING,
+            |  typinput STRING,
+            |  typrelid INT,
+            |  typbasetype INT,
+            |  typnamespace INT
+            |)
+          """ +: supportedPgTypes.map { tpe =>
+            // `b` in `typtype` means a primitive type and all the entries in `supportedPgTypes`
+            // are primitive types.
+            s"""
+              |INSERT INTO $cTableName VALUES(
+              |  %d, '%s', 'b', %d, false, %d, ',', '%s', 0, 0, %d
+              |)
+            """.format(
+              tpe.oid,
+              tpe.name,
+              tpe.len,
+              tpe.elemOid,
+              tpe.input,
+              defaultSparkNamespace._1
+            )
+          }
+        }
+
+        /**
+         * Six empty catalog tables are defined below to prevent the PostgreSQL JDBC drivers from
+         * throwing meaningless exceptions.
+         */
+        safeCreateTable("pg_index", sqlContext) { cTableName =>
+          s"""
+            |CREATE TABLE $cTableName(
+            |  oid INT,
+            |  indrelid INT,
+            |  indexrelid INT,
+            |  indisprimary BOOLEAN
+            |)
+          """ ::
+          Nil
+        }
+
+        safeCreateTable("pg_proc", sqlContext) { cTableName =>
+          s"""
+            |CREATE TABLE $cTableName(
+            |  oid INT,
+            |  proname STRING,
+            |  prorettype INT,
+            |  proargtypes ARRAY<INT>,
+            |  pronamespace INT
+            |)
+          """ ::
+          Nil
+        }
+
+        safeCreateTable("pg_description", sqlContext) { cTableName =>
+          s"""
+            |CREATE TABLE $cTableName(
+            |  objoid INT,
+            |  classoid INT,
+            |  objsubid INT,
+            |  description STRING
+            |)
+          """ ::
+          Nil
+        }
+
+        safeCreateTable("pg_depend", sqlContext) { cTableName =>
+          s"""
+            |CREATE TABLE $cTableName(
+            |  objid INT,
+            |  classid INT,
+            |  refobjid INT,
+            |  refclassid INT
+            |)
+          """ ::
+          Nil
+        }
+
+        safeCreateTable("pg_constraint", sqlContext) { cTableName =>
+          s"""
+            |CREATE TABLE $cTableName(
+            |  oid INT,
+            |  confupdtype STRING,
+            |  confdeltype STRING,
+            |  conname STRING,
+            |  condeferrable BOOLEAN,
+            |  condeferred BOOLEAN,
+            |  conkey ARRAY<INT>,
+            |  confkey ARRAY<INT>,
+            |  confrelid INT,
+            |  conrelid INT,
+            |  contype STRING
+            |)
+          """ ::
+          Nil
+        }
+
+        safeCreateTable("pg_attrdef", sqlContext) { cTableName =>
+          s"""
+            |CREATE TABLE $cTableName(
+            |  adrelid INT,
+            |  adnum SHORT,
+            |  adbin STRING
+            |)
+          """ ::
+          Nil
+        }
+      } catch {
+        case e: Throwable =>
+          val sqlTexts = catalogTables.map(t => s"DROP TABLE IF EXISTS $catalogDbName.$t") :+
+            s"DROP DATABASE IF EXISTS $catalogDbName"
+          sqlTexts.foreach { sqlText =>
+            sqlContext.sql(sqlText)
+          }
+          throw e
+      } finally {
+        require(_catalogTables1.forall { tableName =>
+          sqlContext.sharedState.externalCatalog.tableExists(catalogDbName, tableName)
+        })
+      }
+    }
+  }
+
+  def initSessionCatalogTables(sqlContext: SQLContext, dbName: String): Unit = {
+    refreshDatabases(dbName, sqlContext)
+    refreshTables(dbName, sqlContext)
+  }
+
+  def refreshDatabases(dbName: String, sqlContext: SQLContext): Unit = {
+    safeCreateTable("pg_database", sqlContext) { cTableName =>
+      s"""
+        |CREATE TABLE $cTableName(
+        |  datname STRING,
+        |  datdba INT,
+        |  encoding INT,
+        |  datacl Array<STRING>
+        |)
+      """ ::
+      Nil
+    }
+
+    sqlContext.sharedState.externalCatalog.listDatabases.foreach { dbName =>
+      doRegisterDatabase(dbName, sqlContext)
+    }
+  }
+
+  def refreshTables(dbName: String, sqlContext: SQLContext): Unit = {
+    safeCreateTable("pg_class", sqlContext) { cTableName =>
+      s"""
+        |CREATE TABLE $cTableName(
+        |  oid INT,
+        |  relname STRING,
+        |  relkind STRING,
+        |  relnamespace INT,
+        |  relowner INT,
+        |  relacl ARRAY<STRING>,
+        |  relchecks SHORT,
+        |  relhasindex BOOLEAN,
+        |  relhasrules BOOLEAN,
+        |  reltriggers SHORT,
+        |  relhasoids BOOLEAN
+        |)
+      """ ::
+      Nil
+    }
+
+    safeCreateTable("pg_attribute", sqlContext) { cTableName =>
+      s"""
+        |CREATE TABLE $cTableName(
+        |  oid INT,
+        |  attrelid INT,
+        |  attname STRING,
+        |  atttypid INT,
+        |  attnotnull BOOLEAN,
+        |  atttypmod INT,
+        |  attlen INT,
+        |  attnum INT,
+        |  attisdropped BOOLEAN
+        |)
+      """ ::
+      Nil
+    }
+
+    val externalCatalog = sqlContext.sharedState.externalCatalog
+
+    externalCatalog.listTables(dbName).foreach { tableName =>
+      doRegisterTable(
+        dbName,
+        tableName,
+        externalCatalog.getTable(dbName, tableName).schema,
+        sqlContext
+      )
+    }
+  }
+
+  // TODO: We should refresh catalog tables for databases/tables every updates
+  // by using per-session temporary tables.
+  def registerDatabase(dbName: String, sqlContext: SQLContext): Unit = {
+    require(dbName != catalogDbName, s"$dbName is reserved for system use")
+    doRegisterDatabase(dbName, sqlContext)
+  }
+
+  private def doRegisterDatabase(dbName: String, sqlContext: SQLContext): Unit = {
+    logInfo(s"Registering a database `$dbName` in a system catalog `pg_database`")
+    sqlContext.sql(s"INSERT INTO $catalogDbName.pg_database VALUES('$dbName', 0, 0, null)")
+  }
+
+  private def isReservedTableName(dbName: String, tableName: String): Boolean = {
+    catalogTables.map { reserved =>
+      if (dbName != catalogDbName) {
+        s"$catalogDbName.$reserved"
+      } else {
+        reserved
+      }
+    }.contains(tableName)
+  }
+
+  def registerTable(dbName: String, tableName: String, schema: StructType, sqlContext: SQLContext)
+    : Unit = {
+    require(!isReservedTableName(tableName, dbName), s"$tableName is reserved for system use")
+    doRegisterTable(dbName, tableName, schema, sqlContext)
+  }
+
+  private def doRegisterTable(
+      dbName: String, tableName: String, schema: StructType, sqlContext: SQLContext)
+    : Unit = {
+    logInfo(s"Registering a table `$tableName(${schema.sql}})` in a system catalog `pg_class`")
+    val tableOid = nextUnusedOid
+    val sqlTexts =
+      s"""
+        |INSERT INTO $catalogDbName.pg_class VALUES(
+        |  %d, '%s', '%s', %d, %d, %s, 0, false, false, 0, false
+        |)
+      """.format(
+        tableOid,
+        tableName,
+        "r",
+        defaultSparkNamespace._1,
+        userRoleOid,
+        "null"
+      ) +:
+      schema.zipWithIndex.map { case (field, index) =>
+        val pgType = getPgType(field.dataType)
+          s"""
+          |INSERT INTO $catalogDbName.pg_attribute VALUES(
+          |  %d, %d, '%s', %d, %b, %d, %d, %d, false
+          |)
+        """.format(
+          nextUnusedOid,
+          tableOid,
+          field.name,
+          pgType.oid,
+          !field.nullable,
+          0,
+          pgType.len,
+          1 + index
+        )
+      }
+
+    sqlTexts.foreach { sqlText =>
+      sqlContext.sql(sqlText.stripMargin)
+    }
   }
 }

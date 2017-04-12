@@ -47,7 +47,7 @@ class PsqlCommandV7_4Suite extends PostgreSQLJdbcTest with BeforeAndAfterAll {
     }
   }
 
-  test("psql --list") {
+  test("""\l""") {
     testJdbcStatement { statement =>
       val rs = statement.executeQuery(
         s"""
