@@ -18,6 +18,7 @@
 package org.apache.spark.sql.server.service.postgresql
 
 import java.sql.SQLException
+import java.util.concurrent.atomic.AtomicInteger
 
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SQLContext
@@ -49,13 +50,12 @@ object Metadata extends Logging {
   // 3300, 3308-3309, 3315-3328, 3330-3381, 3394-3453, 3577-3579, 3997-3999, 4066, 4083, 4099-4101,
   // 4109-4565,  4569-5999, and 6015-9999. So, we take the values greater than and equal to 6200
   // for new entries in catalog tables.
-  private var _nextUnusedOid = 6200
+  private val baseUnusedOid = 6200
 
-  private def nextUnusedOid = {
-    val nextOid = _nextUnusedOid
-    _nextUnusedOid = _nextUnusedOid + 1
-    nextOid
-  }
+  // Since multiple threads possibly access this variable, we use atomic one
+  private val _nextUnusedOid = new AtomicInteger(baseUnusedOid)
+  private def nextUnusedOid = _nextUnusedOid.getAndIncrement()
+
 
   case class PgType(oid: Int, name: String, len: Int, elemOid: Int, input: String)
 
