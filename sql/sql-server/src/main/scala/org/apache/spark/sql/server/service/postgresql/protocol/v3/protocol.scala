@@ -25,6 +25,7 @@ import java.sql.SQLException
 import javax.net.ssl.{KeyManagerFactory, SSLContext}
 
 import scala.collection.mutable
+import scala.util.Random
 import scala.util.control.NonFatal
 
 import io.netty.buffer.{ByteBuf, Unpooled}
@@ -863,8 +864,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SparkConf)
     val userName = props.getOrElse("user", "UNKNOWN")
     val passwd = props.getOrElse("passwd", "")
     val hostAddr = ctx.channel().localAddress().asInstanceOf[InetSocketAddress].getHostName()
-    // TODO: Set random value
-    val secretKey = 0
+    val secretKey = new Random(System.currentTimeMillis).nextInt
     val dbName = props.getOrElse("database", "default")
     val portalState = openSession(
       getUniqueChannelId(ctx), secretKey, userName, passwd, hostAddr, dbName)
