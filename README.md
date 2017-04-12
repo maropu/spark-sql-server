@@ -60,7 +60,7 @@ public class JdbcTest {
 
 The SQL server supports some of PostgreSQL dialect;
 
-    $psql -h localhost
+    $psql -h localhost -d default
     Type "help" for help.
 
     maropu=> CREATE TEMPORARY VIEW t AS SELECT id AS key, id :: TEXT AS value FROM generate_series(0, 20, 5);

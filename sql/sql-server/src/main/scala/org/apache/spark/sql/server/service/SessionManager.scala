@@ -58,7 +58,9 @@ private[server] class SessionManager(pgServer: SQLServer) extends CompositeServi
   def openSession(userName: String, passwd: String, ipAddress: String, dbName: String): Int = {
     val sessionId = SQLServerEnv.newSessionId()
     SQLServer.listener.onSessionCreated(sessionId, userName, ipAddress)
-    sessionIdToContext.put(sessionId, getSession(dbName))
+    val sqlContext = getSession(dbName)
+    sqlContext.sharedState.externalCatalog.setCurrentDatabase(dbName)
+    sessionIdToContext.put(sessionId, sqlContext)
     sessionId
   }
 

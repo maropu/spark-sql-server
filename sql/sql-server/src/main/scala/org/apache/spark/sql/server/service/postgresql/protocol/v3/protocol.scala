@@ -56,7 +56,7 @@ import org.apache.spark.sql.types._
  * The V3 protocol is used in PostgreSQL 7.4 and later.
  * A specification of the V3 protocol can be found in an URL:
  *
- * https://www.postgresql.org/docs/9.5/static/protocol.html
+ * https://www.postgresql.org/docs/current/static/protocol.html
  */
 private object PostgreSQLWireProtocol {
 
@@ -932,6 +932,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SparkConf)
           var query = portalState.queries.getOrElse(queryName, {
             throw new SQLException(s"Unknown query specified: ${queryName}")
           })
+          // TODO: Make parameter bindings more smart, e.g., based on analyzed logical plans
           formats.zipWithIndex.foreach { case (format, index) =>
             val target = "$" + s"${index + 1}"
             val param = format match {
