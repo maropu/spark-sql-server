@@ -579,7 +579,7 @@ private object PostgreSQLWireProtocol {
  * This is a special class to avoid a following exception;
  * "ByteArrayDecoder is not @Sharable handler, so can't be added or removed multiple times"
  *
- * http://stackoverflow.com/questions/34068315/bytearraydecoder-is-not-sharable-handler-so-cant-be-added-or-removed-multiple
+ *  http://stackoverflow.com/questions/34068315/bytearraydecoder-is-not-sharable-handler-so-cant-be-added-or-removed-multiple
  */
 // scalastyle:on
 @ChannelHandler.Sharable
@@ -735,7 +735,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SparkConf)
 
   private def getUniqueChannelId(ctx: ChannelHandlerContext): Int = {
     // A netty developer said we could use `Channel#hashCode()` as an unique id in:
-    // http://stackoverflow.com/questions/18262926/howto-get-some-id-for-a-netty-channel
+    //  http://stackoverflow.com/questions/18262926/howto-get-some-id-for-a-netty-channel
     ctx.channel().hashCode()
   }
 

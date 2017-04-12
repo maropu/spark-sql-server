@@ -19,6 +19,11 @@ package org.apache.spark.sql.server
 
 import org.scalatest.BeforeAndAfterAll
 
+/**
+ * A test suite for psql commands.
+ * See an URL below for detailed options;
+ *  https://www.postgresql.org/docs/9.6/static/app-psql.html
+ */
 class PsqlCommandV7_4Suite extends PostgreSQLJdbcTest with BeforeAndAfterAll {
 
   override protected def beforeAll() : Unit = {
