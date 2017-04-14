@@ -122,6 +122,11 @@ class PostgreSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) with 
     }
   }
 
+  override def visitStringConcat(ctx: StringConcatContext): Expression = {
+    val args = expression(ctx.primaryExpression) +: ctx.expression.asScala.map(expression)
+    UnresolvedFunction("concat", args, false)
+  }
+
   private def toSparkRange(start: Expression, end: Expression, intvl: Option[Expression]) = {
     // Fill a gap between PostgreSQL `generate_series` and Spark `range` here
     val e = Add(end, Literal(1, IntegerType))

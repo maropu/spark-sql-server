@@ -57,8 +57,21 @@ class PostgreSQLDialectSuite extends SparkFunSuite with SharedSQLContext with Be
 
   test("::regproc") {
     sqlContext.udf.register("testUdf", () => "test")
-    val ds = Dataset.ofRows(sqlContext.sparkSession, parser.parsePlan("SELECT 'testUdf'::regproc"))
-    assert(ds.collect === Seq(Row("test")))
+    assertQueryExecutionInPgParser("SELECT 'testUdf'::regproc", Row("test") :: Nil)
+  }
+
+  test("||") {
+    val sqlText = "SELECT 'id_' || id :: TEXT, 'a' || 'b' FROM generate_series(0, 5, 1)"
+    assertQueryExecutionInPgParser(
+      sqlText,
+      Row("id_0", "ab") ::
+      Row("id_1", "ab") ::
+      Row("id_2", "ab") ::
+      Row("id_3", "ab") ::
+      Row("id_4", "ab") ::
+      Row("id_5", "ab") ::
+      Nil
+    )
   }
 
   test("pg internal functions") {

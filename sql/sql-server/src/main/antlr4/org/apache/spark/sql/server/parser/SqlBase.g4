@@ -539,6 +539,7 @@ primaryExpression
     | value=primaryExpression '[' index=valueExpression ']'                                    #subscript
     | identifier                                                                               #columnReference
     | base=primaryExpression '.' fieldName=identifier                                          #dereference
+    | primaryExpression (CONCAT expression)+                                                   #stringConcat
     | '(' expression ')'                                                                       #parenthesizedExpression
     ;
 
@@ -834,6 +835,7 @@ DIV: 'DIV';
 TILDE: '~';
 AMPERSAND: '&';
 PIPE: '|';
+CONCAT: '||';
 HAT: '^';
 
 PERCENTLIT: 'PERCENT';
