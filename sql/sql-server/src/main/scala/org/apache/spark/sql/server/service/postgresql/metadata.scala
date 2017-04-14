@@ -22,6 +22,8 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.catalog.CatalogTableType
 import org.apache.spark.sql.types._
 
 
@@ -182,7 +184,6 @@ object Metadata extends Logging {
   private def safeCreateTable(tableName: String, sqlContext: SQLContext)(f: String => Seq[String])
     : Unit = {
     assert(catalogTables.contains(tableName))
-    // assert(!sqlContext.sharedState.externalCatalog.tableExists(catalogDbName, tableName))
     val sqlTexts = s"DROP TABLE IF EXISTS $catalogDbName.$tableName" +:
       f(s"$catalogDbName.$tableName")
     sqlTexts.foreach { sqlText =>
@@ -192,7 +193,7 @@ object Metadata extends Logging {
 
   def initSystemCatalogTables(sqlContext: SQLContext): Unit = {
     // TODO: Make this initialization transactional
-    if (!sqlContext.sharedState.externalCatalog.databaseExists(catalogDbName)) {
+    if (!sqlContext.sessionState.catalog.databaseExists(catalogDbName)) {
       try {
         sqlContext.sql(s"CREATE DATABASE $catalogDbName")
 
@@ -384,8 +385,8 @@ object Metadata extends Logging {
           }
           throw e
       } finally {
-        require(_catalogTables1.forall { tableName =>
-          sqlContext.sharedState.externalCatalog.tableExists(catalogDbName, tableName)
+        require(_catalogTables1.forall { name =>
+          sqlContext.sessionState.catalog.tableExists(TableIdentifier(name, Some(catalogDbName)))
         })
       }
     }
@@ -410,7 +411,7 @@ object Metadata extends Logging {
       Nil
     }
 
-    sqlContext.sharedState.externalCatalog.listDatabases.foreach { dbName =>
+    sqlContext.sessionState.catalog.listDatabases.foreach { dbName =>
       doRegisterDatabase(dbName, sqlContext)
     }
   }
@@ -452,13 +453,14 @@ object Metadata extends Logging {
       Nil
     }
 
-    val externalCatalog = sqlContext.sharedState.externalCatalog
+    val catalog = sqlContext.sessionState.catalog
+    catalog.listTables(dbName).foreach { case table: TableIdentifier =>
 
-    externalCatalog.listTables(dbName).foreach { tableName =>
       doRegisterTable(
         dbName,
-        tableName,
-        externalCatalog.getTable(dbName, tableName).schema,
+        table.identifier,
+        catalog.getTableMetadata(table).schema,
+        catalog.getTableMetadata(table).tableType,
         sqlContext
       )
     }
@@ -480,8 +482,11 @@ object Metadata extends Logging {
       Nil
     }
 
-    sqlContext.sharedState.externalCatalog.listFunctions(dbName, "*").foreach { funcName =>
-      doRegisterFunction(dbName, funcName, sqlContext)
+    sqlContext.sessionState.catalog.listFunctions(dbName, "*").foreach {
+      case (func, "USER") =>
+        doRegisterFunction(dbName, func.identifier, sqlContext)
+      case _ =>
+        // If `scope` is "SYSTEM", ignore it
     }
   }
 
@@ -507,14 +512,16 @@ object Metadata extends Logging {
     }.contains(tableName)
   }
 
-  def registerTable(dbName: String, tableName: String, schema: StructType, sqlContext: SQLContext)
+  def registerTable(dbName: String, tableName: String, schema: StructType,
+    tableType: CatalogTableType, sqlContext: SQLContext)
     : Unit = {
     require(!isReservedName(tableName, dbName), s"$tableName is reserved for system use")
-    doRegisterTable(dbName, tableName, schema, sqlContext)
+    doRegisterTable(dbName, tableName, schema, tableType, sqlContext)
   }
 
   private def doRegisterTable(
-      dbName: String, tableName: String, schema: StructType, sqlContext: SQLContext)
+      dbName: String, tableName: String, schema: StructType, tableType: CatalogTableType,
+      sqlContext: SQLContext)
     : Unit = {
     logInfo(s"Registering a table `$dbName.$tableName(${schema.sql}})` " +
       "in a system catalog `pg_class`")
@@ -527,7 +534,11 @@ object Metadata extends Logging {
       """.format(
         tableOid,
         tableName,
-        "r",
+        tableType match {
+          case CatalogTableType.MANAGED => "r"
+          case CatalogTableType.VIEW => "v"
+          case CatalogTableType.EXTERNAL => "f"
+        },
         defaultSparkNamespace._1,
         userRoleOid,
         "null"

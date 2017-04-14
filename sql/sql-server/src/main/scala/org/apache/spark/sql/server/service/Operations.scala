@@ -25,6 +25,7 @@ import scala.util.control.NonFatal
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.{DataFrame, Dataset, SQLContext}
 import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.catalog.CatalogTableType
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.datasources.CreateTable
 import org.apache.spark.sql.server.{SQLServer, SQLServerConf, SQLServerEnv}
@@ -176,11 +177,17 @@ private[server] case class ExecuteStatementOperation(
       case CreateTable(desc, _, _) =>
         val dbName = desc.identifier.database.getOrElse("default")
         val tableName = desc.identifier.table
-        PgMetadata.registerTable(dbName, tableName, desc.schema, sqlContext)
+        PgMetadata.registerTable(dbName, tableName, desc.schema, desc.tableType, sqlContext)
       case CreateTableCommand(table, _) =>
         val dbName = table.identifier.database.getOrElse("default")
         val tableName = table.identifier.table
-        PgMetadata.registerTable(dbName, tableName, table.schema, sqlContext)
+        PgMetadata.registerTable(dbName, tableName, table.schema, table.tableType, sqlContext)
+      case CreateViewCommand(table, _, _, _, _, child, _, _, _) =>
+        val dbName = table.database.getOrElse("default")
+        val tableName = table.identifier
+        val qe = sqlContext.sparkSession.sessionState.executePlan(child)
+        val schema = qe.analyzed.schema
+        PgMetadata.registerTable(dbName, tableName, schema, CatalogTableType.VIEW, sqlContext)
       case CreateFunctionCommand(dbNameOption, funcName, _, _, _) =>
         val dbName = dbNameOption.getOrElse("default")
         PgMetadata.registerFunction(dbName, funcName, sqlContext)
