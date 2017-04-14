@@ -927,8 +927,8 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SparkConf)
           }
           return
         case Bind(portalName, queryName, formats, params, resultFormats) =>
-          logInfo(s"Bind: portalName=${portalName},queryName=${queryName},formats=${formats},"
-            + s"params=${params},resultFormats=${resultFormats}")
+          logInfo(s"Bind: portalName=${portalName} queryName=${queryName} formats=${formats} "
+            + s"params=${params} resultFormats=${resultFormats}")
           var query = portalState.queries.getOrElse(queryName, {
             throw new SQLException(s"Unknown query specified: ${queryName}")
           })
@@ -975,6 +975,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SparkConf)
           ctx.write(RowDescription(portalState.execState.schema()))
           ctx.flush()
         case Execute(portalName, maxRows) =>
+          logInfo(s"Execute: portalName=$portalName, maxRows=$maxRows")
           try {
             var numRows = 0
             if (maxRows == 0) {
@@ -1003,7 +1004,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SparkConf)
           return
         case Parse(name, query, objIds) =>
           portalState.queries(name) = query
-          logInfo(s"Parse: name=${portalState.queries(name)},query=${query},objIds=${objIds}")
+          logInfo(s"Parse: name=${portalState.queries(name)} query=${query} objIds=${objIds}")
           ctx.write(ParseComplete)
           ctx.flush()
         case Query(queries) =>

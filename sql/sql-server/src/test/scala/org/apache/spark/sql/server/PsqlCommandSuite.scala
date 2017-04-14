@@ -34,7 +34,9 @@ class PsqlCommandV7_4Suite extends PostgreSQLJdbcTest with BeforeAndAfterAll {
         "CREATE DATABASE d1",
         "CREATE TABLE t1(a INT, b STRING, c DOUBLE)",
         "CREATE TABLE t2(key STRING, value DOUBLE)"
-      ).foreach(statement.execute)
+      ).foreach { sqlText =>
+        assert(statement.execute(sqlText))
+      }
     }
   }
 
@@ -45,7 +47,9 @@ class PsqlCommandV7_4Suite extends PostgreSQLJdbcTest with BeforeAndAfterAll {
           "DROP TABLE IF EXISTS t1",
           "DROP TABLE IF EXISTS t2",
           "DROP DATABASE IF EXISTS d1"
-        ).foreach(statement.execute)
+        ).foreach { sqlText =>
+          assert(statement.execute(sqlText))
+        }
       }
     } finally {
       super.afterAll()
@@ -75,6 +79,7 @@ class PsqlCommandV7_4Suite extends PostgreSQLJdbcTest with BeforeAndAfterAll {
       assert(rs.next())
       assert("pg_catalog" === rs.getString(1))
       assert(!rs.next())
+      rs.close()
     }
   }
 
@@ -128,6 +133,7 @@ class PsqlCommandV7_4Suite extends PostgreSQLJdbcTest with BeforeAndAfterAll {
       assert("table" === rs.getString(3))
       assert("" === rs.getString(4))
       assert(!rs.next())
+      rs.close()
     }
   }
 
@@ -157,6 +163,7 @@ class PsqlCommandV7_4Suite extends PostgreSQLJdbcTest with BeforeAndAfterAll {
       val relOid = rs1.getInt(1)
 
       assert(!rs1.next())
+      rs1.close()
 
       val rs2 = statement.executeQuery(
         s"""
@@ -189,6 +196,7 @@ class PsqlCommandV7_4Suite extends PostgreSQLJdbcTest with BeforeAndAfterAll {
       assert(!rs2.getBoolean(8))
       assert("" === rs2.getString(9))
       assert("" === rs2.getString(10))
+      rs2.close()
 
       // TODO: Spark-2.1 cannot handle sub-queries without aggregate for Hive SerDe tables.
       // So, we do not support `\d <table name>` now.
@@ -220,6 +228,7 @@ class PsqlCommandV7_4Suite extends PostgreSQLJdbcTest with BeforeAndAfterAll {
       )
 
       assert(rs3.next())
+      rs3.close()
     }
   }
 }

@@ -265,6 +265,7 @@ trait PostgreSQLJdbcTestBase {
     val props = new Properties()
     props.put("user", System.getProperty("user.name"))
     props.put("password", "")
+    // props.put("loglevel", "2")
     if (serverInstance.ssl) {
       props.put("ssl", "true")
       props.put("sslfactory", "org.postgresql.ssl.NonValidatingFactory")

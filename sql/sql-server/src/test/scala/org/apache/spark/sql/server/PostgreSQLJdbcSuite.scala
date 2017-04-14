@@ -157,7 +157,7 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
           |  key STRING,
           |  value DOUBLE
           |)
-          """.stripMargin,
+          """,
         """
           |CREATE TABLE test2(
           |  id INT,
@@ -165,8 +165,10 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
           |  address STRING,
           |  salary FLOAT
           |)
-          """.stripMargin
-      ).foreach(statement.execute)
+          """
+      ).foreach { sqlText =>
+        assert(statement.execute(sqlText.stripMargin))
+      }
 
       assertTable(
         "test1",
@@ -198,10 +200,14 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
           |  col8 TIMESTAMP,
           |  col9 DECIMAL
           |)
-          """.stripMargin,
-        "INSERT INTO test SELECT false, 25, 32, 15, 3.2, 8.9, 'test', '2016-08-04', " +
-          "'2016-08-04 00:17:13.0', 32"
-      ).foreach(statement.execute)
+          """,
+        """
+          |INSERT INTO test
+          |  SELECT false, 25, 32, 15, 3.2, 8.9, 'test', '2016-08-04', '2016-08-04 00:17:13.0', 32
+        """
+      ).foreach { sqlText =>
+        assert(statement.execute(sqlText.stripMargin))
+      }
 
       val rs = statement.executeQuery("SELECT * FROM test")
       val rsMetaData = rs.getMetaData
@@ -250,6 +256,7 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
       }
 
       assert(!rs.next())
+      rs.close()
     }
   }
 
@@ -270,7 +277,7 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
           |  col8 ARRAY<TIMESTAMP>,
           |  col9 ARRAY<DECIMAL>
           |)
-          """.stripMargin,
+          """,
         """
           |INSERT INTO test
           |  SELECT
@@ -284,8 +291,10 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
           |    array('2016-08-04', '2016-08-05', '2016-08-06'),
           |    array('2016-08-04 00:17:13'),
           |    array(12, 86, 35)
-          """.stripMargin
-      ).foreach(statement.execute)
+          """
+      ).foreach { sqlText =>
+        assert(statement.execute(sqlText.stripMargin))
+      }
 
       val rs = statement.executeQuery("SELECT * FROM test")
       val rsMetaData = rs.getMetaData
@@ -337,6 +346,7 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
       }
 
       assert(!rs.next())
+      rs.close()
     }
   }
 
@@ -346,7 +356,9 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
         "DROP TABLE IF EXISTS test",
         "CREATE TABLE test(val STRING)",
         "INSERT INTO test SELECT 'abcdefghijklmn'"
-      ).foreach(statement.execute)
+      ).foreach { sqlText =>
+        assert(statement.execute(sqlText))
+      }
 
       val rs = statement.executeQuery("SELECT CAST(val AS BINARY) FROM test")
       val rsMetaData = rs.getMetaData
@@ -355,6 +367,7 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
       assert(rs.next())
       assert("abcdefghijklmn".getBytes === rs.getBytes(1))
       assert(!rs.next())
+      rs.close()
     }
   }
 
@@ -368,9 +381,14 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
           |  col1 STRUCT<val0: INT, val1: STRUCT<val11: FLOAT, val12: STRING>>,
           |  col2 MAP<INT, STRING>
           |)
-          """.stripMargin,
-        "INSERT INTO test SELECT -1, (0, (0.1, 'test')), map(0, 'value0', 1, 'value1')"
-      ).foreach(statement.execute)
+          """,
+        """
+          |INSERT INTO test
+          |  SELECT -1, (0, (0.1, 'test')), map(0, 'value0', 1, 'value1')
+        """
+      ).foreach { sqlText =>
+        assert(statement.execute(sqlText.stripMargin))
+      }
 
       val rs = statement.executeQuery("SELECT * FROM test")
       val rsMetaData = rs.getMetaData
@@ -405,6 +423,7 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
       }
 
       assert(!rs.next())
+      rs.close()
     }
   }
 
@@ -416,13 +435,15 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
         "CREATE TABLE test(key INT, val STRING)",
         s"LOAD DATA LOCAL INPATH '${TestData.smallKv}' OVERWRITE INTO TABLE test",
         "CACHE TABLE test"
-      ).foreach(statement.execute)
-
-      assertResult(5, "Row count mismatch") {
-        val rs = statement.executeQuery("SELECT COUNT(*) FROM test")
-        rs.next()
-        rs.getInt(1)
+      ).foreach { sqlText =>
+        assert(statement.execute(sqlText))
       }
+
+      val rs = statement.executeQuery("SELECT COUNT(*) FROM test")
+      assert(rs.next())
+      assert(5 === rs.getInt(1), "Row count mismatch")
+      assert(!rs.next())
+      rs.close()
     }
   }
 
@@ -432,7 +453,9 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
         "DROP TABLE IF EXISTS test_null",
         "CREATE TABLE test_null(key INT, val STRING)",
         s"LOAD DATA LOCAL INPATH '${TestData.smallKvWithNull}' OVERWRITE INTO TABLE test_null"
-      ).foreach(statement.execute)
+      ).foreach { sqlText =>
+        assert(statement.execute(sqlText))
+      }
 
       val rs = statement.executeQuery("SELECT * FROM test_null WHERE key IS NULL")
 
@@ -443,6 +466,7 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
       }
 
       assert(!rs.next())
+      rs.close()
     }
   }
 
@@ -452,11 +476,13 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
       rs1.next()
       assert(0 === rs1.getInt(1))
       assert(rs1.wasNull())
+      rs1.close()
 
       val rs2 = statement.executeQuery("SELECT IF(TRUE, NULL, NULL)")
       rs2.next()
       assert(0 === rs2.getInt(1))
       assert(rs2.wasNull())
+      rs2.close()
     }
   }
 
@@ -468,6 +494,7 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
         conf += rs.getString(1) -> rs.getString(2)
       }
       assert(conf.get("spark.sql.hive.version") === Some(hiveVersion))
+      rs.close()
     }
   }
 
@@ -477,6 +504,7 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
       rs.next()
       assert(rs.getString(1) === "spark.sql.hive.version")
       assert(rs.getString(2) === hiveVersion)
+      rs.close()
     }
   }
 
@@ -486,7 +514,7 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
     var data: mutable.ArrayBuffer[Int] = null
 
     testMultipleConnectionJdbcStatement(
-      // create table, insert data, and fetch them
+      // Create table, insert data, and fetch them
       { statement =>
 
         Seq(
@@ -495,11 +523,14 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
           s"LOAD DATA LOCAL INPATH '${TestData.smallKv}' OVERWRITE INTO TABLE test_map",
           "CACHE TABLE test_table AS SELECT key FROM test_map ORDER BY key DESC",
           "CREATE DATABASE IF NOT EXISTS db1"
-        ).foreach(statement.execute)
+        ).foreach { sqlText =>
+          assert(statement.execute(sqlText))
+        }
 
         val plan = statement.executeQuery("EXPLAIN SELECT * FROM test_table")
         assert(plan.next())
         assert(plan.getString(1).contains("InMemoryTableScan"))
+        plan.close()
 
         val rs1 = statement.executeQuery("SELECT key FROM test_table ORDER BY KEY DESC")
         val buf1 = new mutable.ArrayBuffer[Int]()
@@ -520,7 +551,7 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
         data = buf1
       },
 
-      // get the default value of the session status
+      // Get the default value of the session status
       { statement =>
         val rs = statement.executeQuery(s"SET ${SQLConf.SHUFFLE_PARTITIONS.key}")
         assert(rs.next())
@@ -530,10 +561,10 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
         rs.close()
       },
 
-      // update the session status
+      // Update the session status
       { statement =>
 
-        statement.execute(s"SET ${SQLConf.SHUFFLE_PARTITIONS.key}=291")
+        assert(statement.execute(s"SET ${SQLConf.SHUFFLE_PARTITIONS.key}=291"))
 
         val rs = statement.executeQuery(s"SET ${SQLConf.SHUFFLE_PARTITIONS.key}")
         assert(rs.next())
@@ -542,7 +573,7 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
         rs.close()
       },
 
-      // get the latest session status, supposed to be the default value
+      // Get the latest session status, supposed to be the default value
       { statement =>
 
         val rs = statement.executeQuery(s"SET ${SQLConf.SHUFFLE_PARTITIONS.key}")
@@ -553,7 +584,7 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
         rs.close()
       },
 
-      // try to access the cached data in another session
+      // Try to access the cached data in another session
       { statement =>
 
         val plan = statement.executeQuery("EXPLAIN SELECT key FROM test_map ORDER BY key DESC")
@@ -569,11 +600,11 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
         assert(buf === data)
       },
 
-      // switch another database
+      // Switch another database
       { statement =>
-        statement.execute("USE db1")
+        assert(statement.execute("USE db1"))
 
-        // there is no test_map table in db1
+        // There is no test_map table in db1
         intercept[SQLException] {
           statement.executeQuery("SELECT key FROM test_map ORDER BY KEY DESC")
         }
@@ -581,20 +612,24 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
         Seq(
           "DROP TABLE IF EXISTS test_map2",
           "CREATE TABLE test_map2(key INT, value STRING)"
-        ).foreach(statement.execute)
+        ).foreach { sqlText =>
+          assert(statement.execute(sqlText))
+        }
       },
 
-      // access default database
+      // Access default database
       { statement =>
 
-        // current database should still be `default`
+        // Current database should still be `default`
         intercept[SQLException] {
           statement.executeQuery("SELECT key FROM test_map2")
         }
 
-        statement.execute("USE db1")
-        // access test_map2
-        statement.executeQuery("SELECT key from test_map2")
+        assert(statement.execute("USE db1"))
+        // Access test_map2
+        val rs = statement.executeQuery("SELECT key from test_map2")
+        assert(!rs.next())
+        rs.close()
       }
     )
   }
@@ -604,7 +639,7 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
       { statement =>
         val jarPath = "src/test/resources/hive-hcatalog-core-0.13.1.jar"
         val jarURL = s"file://${System.getProperty("user.dir")}/$jarPath"
-        statement.executeQuery(s"ADD JAR $jarURL")
+        assert(statement.execute(s"ADD JAR $jarURL"))
       },
 
       { statement =>
@@ -613,15 +648,14 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
           "CREATE TABLE smallKv(key INT, val STRING)",
           s"LOAD DATA LOCAL INPATH '${TestData.smallKv}' OVERWRITE INTO TABLE smallKv",
           "DROP TABLE IF EXISTS addJar",
-          """CREATE TABLE addJar(key string)
-            |ROW FORMAT SERDE 'org.apache.hive.hcatalog.data.JsonSerDe'
-          """.stripMargin
-        ).foreach(statement.execute)
-
-        statement.executeQuery(
           """
-            |INSERT INTO TABLE addJar SELECT 'k1' as key FROM smallKV limit 1
-          """.stripMargin)
+            |CREATE TABLE addJar(key string)
+            |  ROW FORMAT SERDE 'org.apache.hive.hcatalog.data.JsonSerDe'
+          """,
+          "INSERT INTO TABLE addJar SELECT 'k1' as key FROM smallKV limit 1"
+        ).foreach { sqlText =>
+          assert(statement.execute(sqlText.stripMargin))
+        }
 
         val actualResult = statement.executeQuery("SELECT key FROM addJar")
         val actualResultBuffer = new collection.mutable.ArrayBuffer[String]()
@@ -677,8 +711,10 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
           s"""
              |CREATE TEMPORARY FUNCTION udtf_count2
              |  AS 'org.apache.spark.sql.hive.execution.GenericUDTFCount2'
-           """.stripMargin
-        ).foreach(statement.execute)
+           """
+        ).foreach { sqlText =>
+          assert(statement.execute(sqlText.stripMargin))
+        }
       },
 
       { statement =>
@@ -686,10 +722,12 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
         assert(rs1.next())
         assert(rs1.getString(1) === "foo")
         assert(rs1.getString(2) !== "bar")
+        rs1.close()
 
         val rs2 = statement.executeQuery("DESCRIBE FUNCTION udtf_count2")
         assert(rs2.next())
         assert(rs2.getString(1) === "Function: udtf_count2 not found.")
+        rs2.close()
       }
     )
   }
@@ -702,7 +740,9 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
         "DROP TABLE IF EXISTS t",
         "CREATE TABLE t(key INT, value STRING)",
         s"LOAD DATA LOCAL INPATH '${TestData.smallKv}' OVERWRITE INTO TABLE t"
-      ).foreach(statement.execute)
+      ).foreach { sqlText =>
+        assert(statement.execute(sqlText))
+      }
 
       implicit val ec = ExecutionContext.fromExecutorService(
         ThreadUtils.newDaemonSingleThreadExecutor("test-jdbc-cancel"))
@@ -741,9 +781,11 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
         Seq(
           s"ADD JAR $jarURL",
           s"""CREATE TEMPORARY FUNCTION udtf_count2
-             |AS 'org.apache.spark.sql.hive.execution.GenericUDTFCount2'
-           """.stripMargin
-        ).foreach(statement.execute)
+             |  AS 'org.apache.spark.sql.hive.execution.GenericUDTFCount2'
+           """
+        ).foreach { sqlText =>
+          assert(statement.execute(sqlText.stripMargin))
+        }
 
         val rs1 = statement.executeQuery("DESCRIBE FUNCTION udtf_count2")
         assert(rs1.next())
@@ -754,6 +796,7 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
         }
         assert(rs1.next())
         assert(rs1.getString(1) === "Usage: N/A.")
+        rs1.close()
 
         val dataPath = "src/test/resources/data/files/kv1.txt"
 
@@ -761,7 +804,9 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
           "DROP TABLE IF EXISTS test_udtf",
           "CREATE TABLE test_udtf(key INT, value STRING)",
           s"LOAD DATA LOCAL INPATH '$dataPath' OVERWRITE INTO TABLE test_udtf"
-        ).foreach(statement.execute)
+        ).foreach { sqlText =>
+          assert(statement.execute(sqlText))
+        }
 
         val rs2 = statement.executeQuery(
           "SELECT key, cc FROM test_udtf LATERAL VIEW udtf_count2(value) dd AS cc")
@@ -772,8 +817,9 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
         assert(rs2.next())
         assert(rs2.getInt(1) === 97)
         assert(rs2.getInt(2) === 500)
+        rs2.close()
       } finally {
-        statement.executeQuery("DROP TEMPORARY FUNCTION udtf_count2")
+        assert(statement.execute("DROP TEMPORARY FUNCTION IF EXISTS udtf_count2"))
       }
     }
   }
@@ -785,7 +831,9 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
         "DROP TABLE IF EXISTS test2",
         "CREATE TABLE test1(a INT)",
         "CREATE TABLE test2(key STRING, value DOUBLE)"
-      ).foreach(statement.execute)
+      ).foreach { sqlText =>
+        assert(statement.execute(sqlText))
+      }
 
       val dbMeta = statement.getConnection.getMetaData
       assertTable("test1", Set(("a", "int4")), dbMeta)
@@ -807,6 +855,21 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
       assert(!dbMeta.getTables(null, null, "test1", scala.Array("TABLE")).next())
     }
   }
+
+  test("setMaxRows") {
+    testJdbcStatement { statement =>
+      assert(statement.execute(
+        """
+          |CREATE OR REPLACE TEMPORARY VIEW t AS
+          |  SELECT id AS value FROM range(0, 100, 1)
+        """.stripMargin))
+      statement.setMaxRows(1)
+      val rs = statement.executeQuery("SELECT * FROM t")
+      assert(rs.next())
+      assert(!rs.next())
+      rs.close()
+    }
+  }
 }
 
 class PostgreSQLJdbcWithSslSuite extends PostgreSQLJdbcTest(ssl = true) {
@@ -819,13 +882,15 @@ class PostgreSQLJdbcWithSslSuite extends PostgreSQLJdbcTest(ssl = true) {
         "CREATE TABLE test(key INT, val STRING)",
         s"LOAD DATA LOCAL INPATH '${TestData.smallKv}' OVERWRITE INTO TABLE test",
         "CACHE TABLE test"
-      ).foreach(statement.execute)
-
-      assertResult(5, "Row count mismatch") {
-        val rs = statement.executeQuery("SELECT COUNT(*) FROM test")
-        rs.next()
-        rs.getInt(1)
+      ).foreach { sqlText =>
+        assert(statement.execute(sqlText))
       }
+
+      val rs = statement.executeQuery("SELECT COUNT(*) FROM test")
+      assert(rs.next())
+      assert(5 === rs.getInt(1), "Row count mismatch")
+      assert(!rs.next())
+      rs.close()
     }
 
     // Check SSL used
@@ -854,8 +919,10 @@ class PostgreSQLJdbcSingleSessionSuite extends PostgreSQLJdbcTest(singleSession 
           s"""
              |CREATE TEMPORARY FUNCTION udtf_count2
              |  AS 'org.apache.spark.sql.hive.execution.GenericUDTFCount2'
-           """.stripMargin
-        ).foreach(statement.execute)
+           """
+        ).foreach { sqlText =>
+          assert(statement.execute(sqlText.stripMargin))
+        }
       },
 
       { statement =>
@@ -864,6 +931,7 @@ class PostgreSQLJdbcSingleSessionSuite extends PostgreSQLJdbcTest(singleSession 
           assert(rs1.next())
           assert(rs1.getString(1) === "foo")
           assert(rs1.getString(2) === "bar")
+          rs1.close()
 
           val rs2 = statement.executeQuery("DESCRIBE FUNCTION udtf_count2")
           assert(rs2.next())
@@ -874,8 +942,9 @@ class PostgreSQLJdbcSingleSessionSuite extends PostgreSQLJdbcTest(singleSession 
           }
           assert(rs2.next())
           assert(rs2.getString(1) === "Usage: N/A.")
+          rs2.close()
         } finally {
-          statement.executeQuery("DROP TEMPORARY FUNCTION udtf_count2")
+          assert(statement.execute("DROP TEMPORARY FUNCTION udtf_count2"))
         }
       }
     )
