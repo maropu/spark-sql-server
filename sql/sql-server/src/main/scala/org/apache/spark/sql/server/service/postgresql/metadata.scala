@@ -38,7 +38,6 @@ object Metadata extends Logging {
     "pg_roles",
     "pg_user",
     "pg_index",
-    "pg_proc",
     "pg_description",
     "pg_depend",
     "pg_constraint",
@@ -49,7 +48,8 @@ object Metadata extends Logging {
   private val _catalogTables2 = Seq(
     "pg_database",
     "pg_class",
-    "pg_attribute"
+    "pg_attribute",
+    "pg_proc"
   )
 
   private val catalogTables = _catalogTables1 ++ _catalogTables2
@@ -174,7 +174,9 @@ object Metadata extends Logging {
       (typeoid: Int) => getPgTypeNameFromOid(typeoid))
     sqlContext.udf.register(s"$catalogDbName.pg_function_is_visible", (functionoid: Int) => true)
     sqlContext.udf.register(s"$catalogDbName.oidvectortypes",
-      (typeoids: Seq[Int]) => typeoids.map(getPgTypeNameFromOid))
+      (typeoids: Seq[Int]) =>  {
+        if (typeoids != null) typeoids.map(getPgTypeNameFromOid).mkString(", ") else ""
+      })
   }
 
   private def safeCreateTable(tableName: String, sqlContext: SQLContext)(f: String => Seq[String])
@@ -320,21 +322,6 @@ object Metadata extends Logging {
           Nil
         }
 
-        safeCreateTable("pg_proc", sqlContext) { cTableName =>
-          s"""
-            |CREATE TABLE $cTableName(
-            |  oid INT,
-            |  proname STRING,
-            |  prorettype INT,
-            |  proargtypes ARRAY<INT>,
-            |  pronamespace INT,
-            |  proisagg BOOLEAN,
-            |  proretset BOOLEAN
-            |)
-          """ ::
-          Nil
-        }
-
         safeCreateTable("pg_description", sqlContext) { cTableName =>
           s"""
             |CREATE TABLE $cTableName(
@@ -407,6 +394,7 @@ object Metadata extends Logging {
   def initSessionCatalogTables(sqlContext: SQLContext, dbName: String): Unit = {
     refreshDatabases(dbName, sqlContext)
     refreshTables(dbName, sqlContext)
+    refreshFunctions(dbName, sqlContext)
   }
 
   def refreshDatabases(dbName: String, sqlContext: SQLContext): Unit = {
@@ -476,6 +464,27 @@ object Metadata extends Logging {
     }
   }
 
+  def refreshFunctions(dbName: String, sqlContext: SQLContext): Unit = {
+    safeCreateTable("pg_proc", sqlContext) { cTableName =>
+      s"""
+        |CREATE TABLE $cTableName(
+        |  oid INT,
+        |  proname STRING,
+        |  prorettype INT,
+        |  proargtypes ARRAY<INT>,
+        |  pronamespace INT,
+        |  proisagg BOOLEAN,
+        |  proretset BOOLEAN
+        |)
+      """ ::
+      Nil
+    }
+
+    sqlContext.sharedState.externalCatalog.listFunctions(dbName, "*").foreach { funcName =>
+      doRegisterFunction(dbName, funcName, sqlContext)
+    }
+  }
+
   // TODO: We should refresh catalog tables for databases/tables every updates
   // by using per-session temporary tables.
   def registerDatabase(dbName: String, sqlContext: SQLContext): Unit = {
@@ -488,7 +497,7 @@ object Metadata extends Logging {
     sqlContext.sql(s"INSERT INTO $catalogDbName.pg_database VALUES('$dbName', 0, 0, null)")
   }
 
-  private def isReservedTableName(dbName: String, tableName: String): Boolean = {
+  private def isReservedName(dbName: String, tableName: String): Boolean = {
     catalogTables.map { reserved =>
       if (dbName != catalogDbName) {
         s"$catalogDbName.$reserved"
@@ -500,14 +509,15 @@ object Metadata extends Logging {
 
   def registerTable(dbName: String, tableName: String, schema: StructType, sqlContext: SQLContext)
     : Unit = {
-    require(!isReservedTableName(tableName, dbName), s"$tableName is reserved for system use")
+    require(!isReservedName(tableName, dbName), s"$tableName is reserved for system use")
     doRegisterTable(dbName, tableName, schema, sqlContext)
   }
 
   private def doRegisterTable(
       dbName: String, tableName: String, schema: StructType, sqlContext: SQLContext)
     : Unit = {
-    logInfo(s"Registering a table `$tableName(${schema.sql}})` in a system catalog `pg_class`")
+    logInfo(s"Registering a table `$dbName.$tableName(${schema.sql}})` " +
+      "in a system catalog `pg_class`")
     val tableOid = nextUnusedOid
     val sqlTexts =
       s"""
@@ -543,5 +553,19 @@ object Metadata extends Logging {
     sqlTexts.foreach { sqlText =>
       sqlContext.sql(sqlText.stripMargin)
     }
+  }
+
+  def registerFunction(dbName: String, funcName: String, sqlContext: SQLContext)
+    : Unit = {
+    require(!isReservedName(funcName, dbName), s"$funcName is reserved for system use")
+    doRegisterFunction(dbName, funcName, sqlContext)
+  }
+
+  private def doRegisterFunction(dbName: String, funcName: String, sqlContext: SQLContext): Unit = {
+    logInfo(s"Registering a function `$dbName.$funcName` in a system catalog `pg_proc`")
+    val funcOid = nextUnusedOid
+    val sqlText = s"INSERT INTO $catalogDbName.pg_proc VALUES(%d, '%s', %d, null, %d, false, false)"
+      .format(funcOid, funcName, 0, defaultSparkNamespace._1)
+    sqlContext.sql(sqlText.stripMargin)
   }
 }

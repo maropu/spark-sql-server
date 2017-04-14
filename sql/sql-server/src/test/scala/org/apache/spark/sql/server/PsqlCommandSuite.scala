@@ -233,35 +233,47 @@ class PsqlCommandV7_4Suite extends PostgreSQLJdbcTest with BeforeAndAfterAll {
   }
 
   test("""\df""") {
-     testJdbcStatement { statement =>
-        // TODO: Since Spark-2.1 cannot use `||` for string concatenation, so we should fix
-        // SPARK-19951 to parse this SQL string.
-        val rs = statement.executeQuery(
-          """
-            |SELECT n.nspname as "Schema",
-            |  p.proname as "Name",
-            |  CASE
-            |    WHEN p.proretset THEN 'SETOF '
-            |    ELSE ''
-            |  END || pg_catalog.format_type(p.prorettype, NULL) as "Result data type",
-            |  pg_catalog.oidvectortypes(p.proargtypes) as "Argument data types",
-            |  CASE
-            |    WHEN p.proisagg THEN 'agg'
-            |    WHEN p.prorettype = 'pg_catalog.trigger'::pg_catalog.regtype THEN 'trigger'
-            |    ELSE 'normal'
-            |  END AS "Type"
-            |FROM pg_catalog.pg_proc p
-            |  LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-            |WHERE pg_catalog.pg_function_is_visible(p.oid)
-            |  AND n.nspname <> 'pg_catalog'
-            |  AND n.nspname <> 'information_schema'
-            |ORDER BY 1, 2, 4
-          """.stripMargin
-        )
+    testJdbcStatement { statement =>
+      // Define a temporary function
+      val jarPath = "src/test/resources/TestUDTF.jar"
+      val jarURL = s"file://${System.getProperty("user.dir")}/$jarPath"
+      Seq(
+        s"ADD JAR $jarURL",
+        "DROP TEMPORARY FUNCTION IF EXISTS udtf",
+        "CREATE TEMPORARY FUNCTION udtf AS 'org.apache.spark.sql.hive.execution.GenericUDTFCount2'"
+      ).foreach { sqlText =>
+        assert(statement.execute(sqlText))
+      }
 
-       // Make sure no entry
-       assert(!rs.next())
-       rs.close()
+      // TODO: Since Spark-2.1 cannot use `||` for string concatenation, so we should fix
+      // SPARK-19951 to parse this SQL string.
+      val rs = statement.executeQuery(
+        """
+          |SELECT n.nspname as "Schema",
+          |  p.proname as "Name",
+          |  CASE
+          |    WHEN p.proretset THEN 'SETOF '
+          |    ELSE ''
+          |  END || pg_catalog.format_type(p.prorettype, NULL) as "Result data type",
+          |  pg_catalog.oidvectortypes(p.proargtypes) as "Argument data types",
+          |  CASE
+          |    WHEN p.proisagg THEN 'agg'
+          |    WHEN p.prorettype = 'pg_catalog.trigger'::pg_catalog.regtype THEN 'trigger'
+          |    ELSE 'normal'
+          |  END AS "Type"
+          |FROM pg_catalog.pg_proc p
+          |  LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+          |WHERE pg_catalog.pg_function_is_visible(p.oid)
+          |  AND n.nspname <> 'pg_catalog'
+          |  AND n.nspname <> 'information_schema'
+          |ORDER BY 1, 2, 4
+        """.stripMargin
+      )
+
+      assert(rs.next())
+      assert("udtf" === rs.getString(2))
+      assert(!rs.next())
+      rs.close()
     }
   }
 }

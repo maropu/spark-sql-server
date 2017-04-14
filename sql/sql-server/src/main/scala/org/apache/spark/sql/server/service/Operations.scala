@@ -181,6 +181,9 @@ private[server] case class ExecuteStatementOperation(
         val dbName = table.identifier.database.getOrElse("default")
         val tableName = table.identifier.table
         PgMetadata.registerTable(dbName, tableName, table.schema, sqlContext)
+      case CreateFunctionCommand(dbNameOption, funcName, _, _, _) =>
+        val dbName = dbNameOption.getOrElse("default")
+        PgMetadata.registerFunction(dbName, funcName, sqlContext)
       case DropDatabaseCommand(dbName, _, _) =>
         logInfo(s"Drop a database `$dbName` and refresh database catalog information")
         PgMetadata.refreshDatabases(dbName, sqlContext)
@@ -189,6 +192,10 @@ private[server] case class ExecuteStatementOperation(
         val tableName = table.identifier
         logInfo(s"Drop a table `$dbName.$tableName` and refresh table catalog information")
         PgMetadata.refreshTables(dbName, sqlContext)
+      case DropFunctionCommand(dbNameOption, funcName, _, _) =>
+        val dbName = dbNameOption.getOrElse("default")
+        logInfo(s"Drop a function `$dbName.$funcName` and refresh function catalog information")
+        PgMetadata.refreshFunctions(dbName, sqlContext)
       case _ =>
     }
   }
