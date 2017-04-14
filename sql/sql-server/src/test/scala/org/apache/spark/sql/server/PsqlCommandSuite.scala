@@ -59,16 +59,16 @@ class PsqlCommandV7_4Suite extends PostgreSQLJdbcTest with BeforeAndAfterAll {
   test("""\l""") {
     testJdbcStatement { statement =>
       val rs = statement.executeQuery(
-        s"""
-           |SELECT
-           |  d.datname as "Name",
-           |  pg_catalog.pg_get_userbyid(d.datdba) as "Owner",
-           |  pg_catalog.pg_encoding_to_char(d.encoding) as "Encoding",
-           |  pg_catalog.array_to_string(d.datacl, '\n') AS "Access privileges"
-           |FROM
-           |  pg_catalog.pg_database d
-           |ORDER BY
-           |  1
+        """
+          |SELECT
+          |  d.datname as "Name",
+          |  pg_catalog.pg_get_userbyid(d.datdba) as "Owner",
+          |  pg_catalog.pg_encoding_to_char(d.encoding) as "Encoding",
+          |  pg_catalog.array_to_string(d.datacl, '\n') AS "Access privileges"
+          |FROM
+          |  pg_catalog.pg_database d
+          |ORDER BY
+          |  1
          """.stripMargin
       )
 
@@ -86,32 +86,32 @@ class PsqlCommandV7_4Suite extends PostgreSQLJdbcTest with BeforeAndAfterAll {
   test("""\d""") {
     testJdbcStatement { statement =>
       val rs = statement.executeQuery(
-        s"""
-           |SELECT
-           |  n.nspname as "Schema",
-           |  c.relname as "Name",
-           |  CASE c.relkind
-           |    WHEN 'r' THEN 'table'
-           |    WHEN 'v' THEN 'view'
-           |    WHEN 'm' THEN 'materialized view'
-           |    WHEN 'i' THEN 'index'
-           |    WHEN 'S' THEN 'sequence'
-           |    WHEN 's' THEN 'special'
-           |    WHEN 'f' THEN 'foreign table'
-           |  END as "Type",
-           |  pg_catalog.pg_get_userbyid(c.relowner) as "Owner"
-           |FROM
-           |  pg_catalog.pg_class c
-           |LEFT JOIN
-           |  pg_catalog.pg_namespace n ON n.oid = c.relnamespace
-           |WHERE
-           |  c.relkind IN ('r','v','m','S','f','')
-           |    AND n.nspname <> 'pg_catalog'
-           |    AND n.nspname <> 'information_schema'
-           |    AND n.nspname !~ '^pg_toast'
-           |    AND pg_catalog.pg_table_is_visible(c.oid)
-           |ORDER BY
-           |  1,2
+        """
+          |SELECT
+          |  n.nspname as "Schema",
+          |  c.relname as "Name",
+          |  CASE c.relkind
+          |    WHEN 'r' THEN 'table'
+          |    WHEN 'v' THEN 'view'
+          |    WHEN 'm' THEN 'materialized view'
+          |    WHEN 'i' THEN 'index'
+          |    WHEN 'S' THEN 'sequence'
+          |    WHEN 's' THEN 'special'
+          |    WHEN 'f' THEN 'foreign table'
+          |  END as "Type",
+          |  pg_catalog.pg_get_userbyid(c.relowner) as "Owner"
+          |FROM
+          |  pg_catalog.pg_class c
+          |LEFT JOIN
+          |  pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+          |WHERE
+          |  c.relkind IN ('r','v','m','S','f','')
+          |    AND n.nspname <> 'pg_catalog'
+          |    AND n.nspname <> 'information_schema'
+          |    AND n.nspname !~ '^pg_toast'
+          |    AND pg_catalog.pg_table_is_visible(c.oid)
+          |ORDER BY
+          |  1,2
          """.stripMargin
       )
 
@@ -166,7 +166,7 @@ class PsqlCommandV7_4Suite extends PostgreSQLJdbcTest with BeforeAndAfterAll {
       rs1.close()
 
       val rs2 = statement.executeQuery(
-        s"""
+        """
           |SELECT
           |  relchecks,
           |  relkind,
@@ -201,34 +201,66 @@ class PsqlCommandV7_4Suite extends PostgreSQLJdbcTest with BeforeAndAfterAll {
       // TODO: Spark-2.1 cannot handle sub-queries without aggregate for Hive SerDe tables.
       // So, we do not support `\d <table name>` now.
       val rs3 = statement.executeQuery(
-        s"""
-           |SELECT
-           |  a.attname,
-           |  pg_catalog.format_type(a.atttypid, a.atttypmod),
-           |  (
-           |    SELECT
-           |      substring(pg_catalog.pg_get_expr(d.adbin, d.adrelid) for 128)
-           |    FROM
-           |      pg_catalog.pg_attrdef d
-           |    WHERE
-           |      d.adrelid = a.attrelid AND d.adnum = a.attnum AND a.atthasdef
-           |   ),
-           |  a.attnotnull,
-           |  a.attnum,
-           |  NULL AS attcollation,
-           |  NULL AS indexdef,
-           |  NULL AS attfdwoptions
-           |FROM
-           |  pg_catalog.pg_attribute a
-           |WHERE
-           |  a.attrelid = '6208' AND a.attnum > 0 AND NOT a.attisdropped
-           |ORDER BY
-           |  a.attnum
+        """
+          |SELECT
+          |  a.attname,
+          |  pg_catalog.format_type(a.atttypid, a.atttypmod),
+          |  (
+          |    SELECT
+          |      substring(pg_catalog.pg_get_expr(d.adbin, d.adrelid) for 128)
+          |    FROM
+          |      pg_catalog.pg_attrdef d
+          |    WHERE
+          |      d.adrelid = a.attrelid AND d.adnum = a.attnum AND a.atthasdef
+          |   ),
+          |  a.attnotnull,
+          |  a.attnum,
+          |  NULL AS attcollation,
+          |  NULL AS indexdef,
+          |  NULL AS attfdwoptions
+          |FROM
+          |  pg_catalog.pg_attribute a
+          |WHERE
+          |  a.attrelid = '6208' AND a.attnum > 0 AND NOT a.attisdropped
+          |ORDER BY
+          |  a.attnum
         """.stripMargin
       )
 
       assert(rs3.next())
       rs3.close()
+    }
+  }
+
+  ignore("""\df""") {
+     testJdbcStatement { statement =>
+        // TODO: Since Spark-2.1 cannot use `||` for string concatenation, so we should fix
+        // SPARK-19951 to parse this SQL string.
+        val rs = statement.executeQuery(
+          """
+            |SELECT n.nspname as "Schema",
+            |  p.proname as "Name",
+            |  CASE
+            |    WHEN p.proretset THEN 'SETOF '
+            |    ELSE ''
+            |  END || pg_catalog.format_type(p.prorettype, NULL) as "Result data type",
+            |  pg_catalog.oidvectortypes(p.proargtypes) as "Argument data types",
+            |  CASE
+            |    WHEN p.proisagg THEN 'agg'
+            |    WHEN p.prorettype = 'pg_catalog.trigger'::pg_catalog.regtype THEN 'trigger'
+            |    ELSE 'normal'
+            |  END AS "Type"
+            |FROM pg_catalog.pg_proc p
+            |  LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+            |WHERE pg_catalog.pg_function_is_visible(p.oid)
+            |  AND n.nspname <> 'pg_catalog'
+            |  AND n.nspname <> 'information_schema'
+            |ORDER BY 1, 2, 4
+          """.stripMargin
+        )
+
+      assert(rs.next())
+      rs.close()
     }
   }
 }
