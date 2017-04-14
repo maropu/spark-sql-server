@@ -232,7 +232,7 @@ class PsqlCommandV7_4Suite extends PostgreSQLJdbcTest with BeforeAndAfterAll {
     }
   }
 
-  ignore("""\df""") {
+  test("""\df""") {
      testJdbcStatement { statement =>
         // TODO: Since Spark-2.1 cannot use `||` for string concatenation, so we should fix
         // SPARK-19951 to parse this SQL string.
@@ -259,8 +259,9 @@ class PsqlCommandV7_4Suite extends PostgreSQLJdbcTest with BeforeAndAfterAll {
           """.stripMargin
         )
 
-      assert(rs.next())
-      rs.close()
+       // Make sure no entry
+       assert(!rs.next())
+       rs.close()
     }
   }
 }

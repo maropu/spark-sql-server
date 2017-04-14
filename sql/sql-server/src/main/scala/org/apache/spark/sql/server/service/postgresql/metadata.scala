@@ -29,7 +29,7 @@ import org.apache.spark.sql.types._
 object Metadata extends Logging {
 
   // Since v7.3, all the catalog tables have been moved in a `pg_catalog` database
-  private val catalogDbName = "pg_catalog"
+  private[sql] val catalogDbName = "pg_catalog"
 
   // Catalog tables and they are immutable
   private val _catalogTables1 = Seq(
@@ -99,13 +99,19 @@ object Metadata extends Logging {
   val PgStructType             = PgType( nextUnusedOid,     "struct", -1,                   0,    "structin")
   // scalastyle:on
 
-  private val supportedPgTypes: Seq[PgType] = Seq(
+  private[sql] val pgTypes: Seq[PgType] = Seq(
     PgBoolType, PgByteaType, PgCharType, PgNameType, PgInt8Type, PgInt2Type, PgInt4Type, PgTidType,
     PgFloat4Type, PgFloat8Type, PgBoolArrayType, PgInt2ArrayType, PgInt4ArrayType,
     PgVarCharArrayType, PgInt8ArrayType, PgFloat4ArrayType, PgFloat8ArrayType, PgVarCharType,
     PgDateType, PgTimestampType, PgTimestampTypeArrayType, PgDateArrayType, PgNumericArrayType,
     PgNumericType, PgByteType, PgMapType, PgStructType
   )
+
+  private val pgTypeMap: Map[Int, PgType] = pgTypes.map(tpe => tpe.oid -> tpe).toMap
+
+  private def getPgTypeNameFromOid(typeoid: Int): String = {
+    pgTypeMap.get(typeoid).map(_.name).getOrElse("unknown")
+  }
 
   def getPgType(catalystType: DataType): PgType = catalystType match {
     // scalastyle:off
@@ -164,6 +170,11 @@ object Metadata extends Logging {
     sqlContext.udf.register(s"$catalogDbName.pg_encoding_to_char", (encoding: Int) => "")
     sqlContext.udf.register(s"$catalogDbName.array_to_string",
       (ar: Seq[String], delim: String) => if (ar != null) ar.mkString(delim) else "")
+    sqlContext.udf.register(s"$catalogDbName.regtype",
+      (typeoid: Int) => getPgTypeNameFromOid(typeoid))
+    sqlContext.udf.register(s"$catalogDbName.pg_function_is_visible", (functionoid: Int) => true)
+    sqlContext.udf.register(s"$catalogDbName.oidvectortypes",
+      (typeoids: Seq[Int]) => typeoids.map(getPgTypeNameFromOid))
   }
 
   private def safeCreateTable(tableName: String, sqlContext: SQLContext)(f: String => Seq[String])
@@ -275,7 +286,7 @@ object Metadata extends Logging {
             |  typbasetype INT,
             |  typnamespace INT
             |)
-          """ +: supportedPgTypes.map { tpe =>
+          """ +: pgTypes.map { tpe =>
             // `b` in `typtype` means a primitive type and all the entries in `supportedPgTypes`
             // are primitive types.
             s"""
@@ -316,7 +327,9 @@ object Metadata extends Logging {
             |  proname STRING,
             |  prorettype INT,
             |  proargtypes ARRAY<INT>,
-            |  pronamespace INT
+            |  pronamespace INT,
+            |  proisagg BOOLEAN,
+            |  proretset BOOLEAN
             |)
           """ ::
           Nil

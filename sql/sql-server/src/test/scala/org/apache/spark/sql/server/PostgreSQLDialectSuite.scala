@@ -21,7 +21,7 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.spark.SparkFunSuite
 import org.apache.spark.sql.{Dataset, Row}
-import org.apache.spark.sql.server.service.postgresql.Metadata
+import org.apache.spark.sql.server.service.postgresql.Metadata._
 import org.apache.spark.sql.test.SharedSQLContext
 
 class PostgreSQLDialectSuite extends SparkFunSuite with SharedSQLContext with BeforeAndAfterAll {
@@ -31,7 +31,7 @@ class PostgreSQLDialectSuite extends SparkFunSuite with SharedSQLContext with Be
   override protected def beforeAll() : Unit = {
     super.beforeAll()
     SQLServerEnv.withSQLContext(sqlContext)
-    Metadata.initSystemFunctions(sqlContext)
+    initSystemFunctions(sqlContext)
   }
 
   def assertValidSQLString(pgSql: String, sparkSql: String): Unit = {
@@ -58,6 +58,13 @@ class PostgreSQLDialectSuite extends SparkFunSuite with SharedSQLContext with Be
   test("::regproc") {
     sqlContext.udf.register("testUdf", () => "test")
     assertQueryExecutionInPgParser("SELECT 'testUdf'::regproc", Row("test") :: Nil)
+  }
+
+  test("::regtype") {
+    pgTypes.foreach { case PgType(oid, name, _, _, _) =>
+      val sqlText = s"SELECT $oid::$catalogDbName.regtype"
+      assertQueryExecutionInPgParser(sqlText, Row(name) :: Nil)
+    }
   }
 
   test("||") {

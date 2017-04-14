@@ -30,6 +30,7 @@ import org.apache.spark.sql.server.execution.SparkSqlAstBuilder
 import org.apache.spark.sql.server.execution.SparkSqlParser
 import org.apache.spark.sql.server.parser._
 import org.apache.spark.sql.server.parser.SqlBaseParser._
+import org.apache.spark.sql.server.service.postgresql.Metadata._
 import org.apache.spark.sql.types._
 
 
@@ -109,7 +110,8 @@ class PostgreSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) with 
   }
 
   override def visitPgStyleCast(ctx: PgStyleCastContext): Expression = withOrigin(ctx) {
-    ctx.pgDataType.getText.toLowerCase match {
+    val dataType = ctx.pgDataType.dataType.getText
+    dataType.toLowerCase match {
       case "regproc" =>
         val extractName = """['|"](.*)['|"]""".r
         val funcName = ctx.primaryExpression.getText match {
@@ -117,8 +119,16 @@ class PostgreSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) with 
           case n => n
         }
         UnresolvedFunction(funcName, Seq.empty, false)
+      case "regtype" =>
+        val args = expression(ctx.primaryExpression()) :: Nil
+        val funcName = if (ctx.pgDataType.identifier != null) {
+          s"${ctx.pgDataType.identifier.getText}.$dataType"
+        } else {
+          dataType
+        }
+        UnresolvedFunction(funcName, args, false)
       case _ =>
-        Cast(expression(ctx.primaryExpression), typedVisit(ctx.pgDataType()))
+        Cast(expression(ctx.primaryExpression), typedVisit(ctx.pgDataType().dataType()))
     }
   }
 
