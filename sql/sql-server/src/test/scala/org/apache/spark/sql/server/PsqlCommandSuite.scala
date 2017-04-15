@@ -232,7 +232,7 @@ class PsqlCommandV7_4Suite extends PostgreSQLJdbcTest with BeforeAndAfterAll {
     }
   }
 
-  ignore("""\df""") {
+  test("""\df""") {
     testJdbcStatement { statement =>
       // Define a temporary function
       val jarPath = "src/test/resources/TestUDTF.jar"

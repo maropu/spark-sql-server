@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.catalyst.FunctionIdentifier
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTableType
 import org.apache.spark.sql.types._
@@ -33,28 +34,9 @@ object Metadata extends Logging {
   // Since v7.3, all the catalog tables have been moved in a `pg_catalog` database
   private[sql] val catalogDbName = "pg_catalog"
 
-  // Catalog tables and they are immutable
-  private val _catalogTables1 = Seq(
-    "pg_namespace",
-    "pg_type",
-    "pg_roles",
-    "pg_user",
-    "pg_index",
-    "pg_description",
-    "pg_depend",
-    "pg_constraint",
-    "pg_attrdef"
-  )
-
-  // Catalog tables that are updated every databases/tables created
-  private val _catalogTables2 = Seq(
-    "pg_database",
-    "pg_class",
-    "pg_attribute",
-    "pg_proc"
-  )
-
-  private val catalogTables = _catalogTables1 ++ _catalogTables2
+  case class PgSystemTable(oid: Int, table: TableIdentifier)
+  case class PgType(oid: Int, name: String, len: Int, elemOid: Int, input: String)
+  case class PgSystemFunction(oid: Int, func: FunctionIdentifier, doRegister: SQLContext => Unit)
 
   // `src/include/catalog/unused_oids` in a PostgreSQL source repository prints unused oids; 2-9,
   // 3300, 3308-3309, 3315-3328, 3330-3381, 3394-3453, 3577-3579, 3997-3999, 4066, 4083, 4099-4101,
@@ -67,8 +49,35 @@ object Metadata extends Logging {
 
   private def nextUnusedOid = _nextUnusedOid.getAndIncrement()
 
+  // Catalog tables and they are immutable
+  private val _catalogTables1 = Seq(
+    // scalastyle:off
+    PgSystemTable( 2615, TableIdentifier("pg_namespace", Some(catalogDbName))),
+    PgSystemTable( 1247, TableIdentifier("pg_type", Some(catalogDbName))),
+    PgSystemTable(11631, TableIdentifier("pg_roles", Some(catalogDbName))),
+    PgSystemTable(11642, TableIdentifier("pg_user", Some(catalogDbName))),
+    PgSystemTable( 2610, TableIdentifier("pg_index", Some(catalogDbName))),
+    PgSystemTable( 2609, TableIdentifier("pg_description", Some(catalogDbName))),
+    PgSystemTable( 2608, TableIdentifier("pg_depend", Some(catalogDbName))),
+    PgSystemTable( 2606, TableIdentifier("pg_constraint", Some(catalogDbName))),
+    PgSystemTable( 2604, TableIdentifier("pg_attrdef", Some(catalogDbName)))
+    // scalastyle:on
+  )
 
-  case class PgType(oid: Int, name: String, len: Int, elemOid: Int, input: String)
+  // Catalog tables that are updated every databases/tables created
+  private val _catalogTables2 = Seq(
+    // scalastyle:off
+    PgSystemTable( 1262, TableIdentifier("pg_database", Some(catalogDbName))),
+    PgSystemTable( 1259, TableIdentifier("pg_class", Some(catalogDbName))),
+    PgSystemTable( 1249, TableIdentifier("pg_attribute", Some(catalogDbName))),
+    PgSystemTable( 1255, TableIdentifier("pg_proc", Some(catalogDbName)))
+    // scalastyle:on
+  )
+
+  private val catalogTables = _catalogTables1 ++ _catalogTables2
+
+  private val pgCatalogOidMap: Map[Int, PgSystemTable] = catalogTables.map(t => t.oid -> t).toMap
+
 
   // scalastyle:off
   val PgBoolType               = PgType(            16,       "bool",  1,                   0,      "boolin")
@@ -109,10 +118,10 @@ object Metadata extends Logging {
     PgNumericType, PgByteType, PgMapType, PgStructType
   )
 
-  private val pgTypeMap: Map[Int, PgType] = pgTypes.map(tpe => tpe.oid -> tpe).toMap
+  private val pgTypeOidMap: Map[Int, PgType] = pgTypes.map(tpe => tpe.oid -> tpe).toMap
 
   private def getPgTypeNameFromOid(typeoid: Int): String = {
-    pgTypeMap.get(typeoid).map(_.name).getOrElse("unknown")
+    pgTypeOidMap.get(typeoid).map(_.name).getOrElse("unknown")
   }
 
   def getPgType(catalystType: DataType): PgType = catalystType match {
@@ -154,41 +163,50 @@ object Metadata extends Logging {
     // scalastyle:on
   }
 
+
   // We assume the namespace of all entities is `spark`
   private val defaultSparkNamespace = (nextUnusedOid, "spark")
-
   private val userRoleOid = nextUnusedOid
 
-  def initSystemFunctions(sqlContext: SQLContext): Unit = {
-    sqlContext.udf.register("ANY", (arg: Seq[String]) => arg.head)
-    sqlContext.udf.register("current_schemas", (arg: Boolean) => Seq(defaultSparkNamespace._2))
-    sqlContext.udf.register("array_upper", (ar: Seq[String], n: Int) => ar.size)
-    sqlContext.udf.register("array_in", () => "array_in")
-    sqlContext.udf.register(s"$catalogDbName.obj_description", (oid: Int, tableName: String) => "")
-    sqlContext.udf.register(s"$catalogDbName.pg_get_expr", (adbin: String, adrelid: Int) => "")
-    sqlContext.udf.register(s"$catalogDbName.pg_table_is_visible", (oid: Int) => true)
-    sqlContext.udf.register(s"$catalogDbName.pg_get_userbyid", (userid: Int) => "")
-    sqlContext.udf.register(s"$catalogDbName.format_type", (type_oid: Int, typemod: String) => "")
-    sqlContext.udf.register(s"$catalogDbName.pg_encoding_to_char", (encoding: Int) => "")
-    sqlContext.udf.register(s"$catalogDbName.array_to_string",
-      (ar: Seq[String], delim: String) => if (ar != null) ar.mkString(delim) else "")
-    sqlContext.udf.register(s"$catalogDbName.regtype",
-      (typeoid: Int) => getPgTypeNameFromOid(typeoid))
-    sqlContext.udf.register(s"$catalogDbName.pg_function_is_visible", (functionoid: Int) => true)
-    sqlContext.udf.register(s"$catalogDbName.oidvectortypes",
-      (typeoids: Seq[Int]) =>  {
-        if (typeoids != null) typeoids.map(getPgTypeNameFromOid).mkString(", ") else ""
-      })
-  }
+  private val pgFunctions = Seq(
+    // scalastyle:off
+    PgSystemFunction(          384,        FunctionIdentifier("array_to_string", Some(catalogDbName)), { c => c.udf.register(s"$catalogDbName.array_to_string", (ar: Seq[String], delim: String) => if (ar != null) ar.mkString(delim) else "") }),
+    PgSystemFunction(          750,                              FunctionIdentifier("array_in", None), { c => c.udf.register("array_in", () => "array_in") }),
+    PgSystemFunction(         1081,            FunctionIdentifier("format_type", Some(catalogDbName)), { c => c.udf.register(s"$catalogDbName.format_type", (type_oid: Int, typemod: String) => "") }),
+    PgSystemFunction(         1215,        FunctionIdentifier("obj_description", Some(catalogDbName)), { c => c.udf.register(s"$catalogDbName.obj_description", (oid: Int, tableName: String) => "") }),
+    PgSystemFunction(         1402,                       FunctionIdentifier("current_schemas", None), { c => c.udf.register("current_schemas", (arg: Boolean) => Seq(defaultSparkNamespace._2)) }),
+    PgSystemFunction(         1597,    FunctionIdentifier("pg_encoding_to_char", Some(catalogDbName)), { c => c.udf.register(s"$catalogDbName.pg_encoding_to_char", (encoding: Int) => "") }),
+    PgSystemFunction(         1642,        FunctionIdentifier("pg_get_userbyid", Some(catalogDbName)), { c => c.udf.register(s"$catalogDbName.pg_get_userbyid", (userid: Int) => "") }),
+    PgSystemFunction(         1716,            FunctionIdentifier("pg_get_expr", Some(catalogDbName)), { c => c.udf.register(s"$catalogDbName.pg_get_expr", (adbin: String, adrelid: Int) => "") }),
+    PgSystemFunction(         2079,    FunctionIdentifier("pg_table_is_visible", Some(catalogDbName)), { c => c.udf.register(s"$catalogDbName.pg_table_is_visible", (tableoid: Int) => !pgCatalogOidMap.get(tableoid).isDefined) }),
+    PgSystemFunction(         2081, FunctionIdentifier("pg_function_is_visible", Some(catalogDbName)), { c => c.udf.register(s"$catalogDbName.pg_function_is_visible", (functionoid: Int) => !pgFunctionOidMap.get(functionoid).isDefined) }),
+    PgSystemFunction(         2092,                           FunctionIdentifier("array_upper", None), { c => c.udf.register("array_upper", (ar: Seq[String], n: Int) => ar.size) }),
+    PgSystemFunction(         2420,         FunctionIdentifier("oidvectortypes", Some(catalogDbName)), { c => c.udf.register(s"$catalogDbName.oidvectortypes", (typeoids: Seq[Int]) =>  if (typeoids != null) typeoids.map(getPgTypeNameFromOid).mkString(", ") else "") }),
 
-  private def safeCreateTable(tableName: String, sqlContext: SQLContext)(f: String => Seq[String])
+    // Entries below is not a kind of functions though, we need to process some interactions
+    // between clients and JDBC drivers.
+    PgSystemFunction(nextUnusedOid,                                   FunctionIdentifier("ANY", None), { c => c.udf.register("ANY", (arg: Seq[String]) => arg.head) }),
+    PgSystemFunction(nextUnusedOid,                FunctionIdentifier("regtype", Some(catalogDbName)), { c => c.udf.register(s"$catalogDbName.regtype", (typeoid: Int) => getPgTypeNameFromOid(typeoid)) })
+    // scalastyle:on
+  )
+
+  private val pgFunctionOidMap: Map[Int, PgSystemFunction] =
+    pgFunctions.map(f => f.oid -> f).toMap
+  private val pgFunctionNameMap: Map[String, PgSystemFunction] =
+    pgFunctions.map(f => f.func.unquotedString.toLowerCase -> f).toMap
+
+  private def safeCreateCatalogTable(name: String, sqlContext: SQLContext)(f: String => Seq[String])
     : Unit = {
-    assert(catalogTables.contains(tableName))
-    val sqlTexts = s"DROP TABLE IF EXISTS $catalogDbName.$tableName" +:
-      f(s"$catalogDbName.$tableName")
+    assert(catalogTables.exists { case PgSystemTable(oid, table) => table.identifier == name })
+    val sqlTexts = s"DROP TABLE IF EXISTS $catalogDbName.$name" +:
+      f(s"$catalogDbName.$name")
     sqlTexts.foreach { sqlText =>
       sqlContext.sql(sqlText.stripMargin)
     }
+  }
+
+  def initSystemFunctions(sqlContext: SQLContext): Unit = {
+    pgFunctions.foreach { case PgSystemFunction(_, _, doRegister) => doRegister(sqlContext) }
   }
 
   def initSystemCatalogTables(sqlContext: SQLContext): Unit = {
@@ -197,7 +215,7 @@ object Metadata extends Logging {
       try {
         sqlContext.sql(s"CREATE DATABASE $catalogDbName")
 
-        safeCreateTable("pg_namespace", sqlContext) { cTableName =>
+        safeCreateCatalogTable("pg_namespace", sqlContext) { cTableName =>
           s"""
             |CREATE TABLE $cTableName(
             |  oid INT,
@@ -248,7 +266,7 @@ object Metadata extends Logging {
           sqlContext.sql(sqlText.stripMargin)
         }
 
-        safeCreateTable("pg_roles", sqlContext) { cTableName =>
+        safeCreateCatalogTable("pg_roles", sqlContext) { cTableName =>
           s"""
             |CREATE TABLE $cTableName(
             |  oid INT,
@@ -261,7 +279,7 @@ object Metadata extends Logging {
           Nil
         }
 
-        safeCreateTable("pg_user", sqlContext) { cTableName =>
+        safeCreateCatalogTable("pg_user", sqlContext) { cTableName =>
           s"""
             |CREATE TABLE $cTableName(
             |  usename STRING,
@@ -274,7 +292,7 @@ object Metadata extends Logging {
           Nil
         }
 
-        safeCreateTable("pg_type", sqlContext) { cTableName =>
+        safeCreateCatalogTable("pg_type", sqlContext) { cTableName =>
           s"""
             |CREATE TABLE $cTableName(
             |  oid INT,
@@ -311,7 +329,7 @@ object Metadata extends Logging {
          * Six empty catalog tables are defined below to prevent the PostgreSQL JDBC drivers from
          * throwing meaningless exceptions.
          */
-        safeCreateTable("pg_index", sqlContext) { cTableName =>
+        safeCreateCatalogTable("pg_index", sqlContext) { cTableName =>
           s"""
             |CREATE TABLE $cTableName(
             |  oid INT,
@@ -323,7 +341,7 @@ object Metadata extends Logging {
           Nil
         }
 
-        safeCreateTable("pg_description", sqlContext) { cTableName =>
+        safeCreateCatalogTable("pg_description", sqlContext) { cTableName =>
           s"""
             |CREATE TABLE $cTableName(
             |  objoid INT,
@@ -335,7 +353,7 @@ object Metadata extends Logging {
           Nil
         }
 
-        safeCreateTable("pg_depend", sqlContext) { cTableName =>
+        safeCreateCatalogTable("pg_depend", sqlContext) { cTableName =>
           s"""
             |CREATE TABLE $cTableName(
             |  objid INT,
@@ -347,7 +365,7 @@ object Metadata extends Logging {
           Nil
         }
 
-        safeCreateTable("pg_constraint", sqlContext) { cTableName =>
+        safeCreateCatalogTable("pg_constraint", sqlContext) { cTableName =>
           s"""
             |CREATE TABLE $cTableName(
             |  oid INT,
@@ -366,7 +384,7 @@ object Metadata extends Logging {
           Nil
         }
 
-        safeCreateTable("pg_attrdef", sqlContext) { cTableName =>
+        safeCreateCatalogTable("pg_attrdef", sqlContext) { cTableName =>
           s"""
             |CREATE TABLE $cTableName(
             |  adrelid INT,
@@ -378,15 +396,16 @@ object Metadata extends Logging {
         }
       } catch {
         case e: Throwable =>
-          val sqlTexts = catalogTables.map(t => s"DROP TABLE IF EXISTS $catalogDbName.$t") :+
-            s"DROP DATABASE IF EXISTS $catalogDbName"
+          val sqlTexts = catalogTables.map { case PgSystemTable(_, TableIdentifier(name, _)) =>
+            s"DROP TABLE IF EXISTS $catalogDbName.$name"
+          } :+ s"DROP DATABASE IF EXISTS $catalogDbName"
           sqlTexts.foreach { sqlText =>
             sqlContext.sql(sqlText)
           }
           throw e
       } finally {
-        require(_catalogTables1.forall { name =>
-          sqlContext.sessionState.catalog.tableExists(TableIdentifier(name, Some(catalogDbName)))
+        require(_catalogTables1.forall { case PgSystemTable(_, table) =>
+          sqlContext.sessionState.catalog.tableExists(table)
         })
       }
     }
@@ -399,7 +418,7 @@ object Metadata extends Logging {
   }
 
   def refreshDatabases(dbName: String, sqlContext: SQLContext): Unit = {
-    safeCreateTable("pg_database", sqlContext) { cTableName =>
+    safeCreateCatalogTable("pg_database", sqlContext) { cTableName =>
       s"""
         |CREATE TABLE $cTableName(
         |  datname STRING,
@@ -417,7 +436,7 @@ object Metadata extends Logging {
   }
 
   def refreshTables(dbName: String, sqlContext: SQLContext): Unit = {
-    safeCreateTable("pg_class", sqlContext) { cTableName =>
+    safeCreateCatalogTable("pg_class", sqlContext) { cTableName =>
       s"""
         |CREATE TABLE $cTableName(
         |  oid INT,
@@ -436,7 +455,7 @@ object Metadata extends Logging {
       Nil
     }
 
-    safeCreateTable("pg_attribute", sqlContext) { cTableName =>
+    safeCreateCatalogTable("pg_attribute", sqlContext) { cTableName =>
       s"""
         |CREATE TABLE $cTableName(
         |  oid INT,
@@ -467,7 +486,7 @@ object Metadata extends Logging {
   }
 
   def refreshFunctions(dbName: String, sqlContext: SQLContext): Unit = {
-    safeCreateTable("pg_proc", sqlContext) { cTableName =>
+    safeCreateCatalogTable("pg_proc", sqlContext) { cTableName =>
       s"""
         |CREATE TABLE $cTableName(
         |  oid INT,
@@ -484,7 +503,15 @@ object Metadata extends Logging {
 
     sqlContext.sessionState.catalog.listFunctions(dbName, "*").foreach {
       case (func, "USER") =>
-        doRegisterFunction(dbName, func.identifier, sqlContext)
+        // TODO: We should put system functions in a database `pg_catalog`
+        val sysFuncOption = pgFunctionNameMap.get(func.unquotedString.toLowerCase)
+        if (sysFuncOption.isDefined) {
+          sysFuncOption.foreach { case PgSystemFunction(oid, func, _) =>
+            doRegisterFunction(func, oid, sqlContext)
+          }
+        } else {
+          doRegisterFunction(func, nextUnusedOid, sqlContext)
+        }
       case _ =>
         // If `scope` is "SYSTEM", ignore it
     }
@@ -502,14 +529,14 @@ object Metadata extends Logging {
     sqlContext.sql(s"INSERT INTO $catalogDbName.pg_database VALUES('$dbName', 0, 0, null)")
   }
 
-  private def isReservedName(dbName: String, tableName: String): Boolean = {
-    catalogTables.map { reserved =>
+  private def isReservedName(dbName: String, identifier: String): Boolean = {
+    catalogTables.map { case PgSystemTable(_, reserved) =>
       if (dbName != catalogDbName) {
         s"$catalogDbName.$reserved"
       } else {
         reserved
       }
-    }.contains(tableName)
+    }.contains(identifier)
   }
 
   def registerTable(dbName: String, tableName: String, schema: StructType,
@@ -566,17 +593,16 @@ object Metadata extends Logging {
     }
   }
 
-  def registerFunction(dbName: String, funcName: String, sqlContext: SQLContext)
-    : Unit = {
+  def registerFunction(dbName: String, funcName: String, sqlContext: SQLContext): Unit = {
     require(!isReservedName(funcName, dbName), s"$funcName is reserved for system use")
-    doRegisterFunction(dbName, funcName, sqlContext)
+    doRegisterFunction(FunctionIdentifier(funcName, Option(dbName)), nextUnusedOid, sqlContext)
   }
 
-  private def doRegisterFunction(dbName: String, funcName: String, sqlContext: SQLContext): Unit = {
-    logInfo(s"Registering a function `$dbName.$funcName` in a system catalog `pg_proc`")
-    val funcOid = nextUnusedOid
+  private def doRegisterFunction(func: FunctionIdentifier, oid: Int, sqlContext: SQLContext)
+    : Unit = {
+    logInfo(s"Registering a function `$func` in a system catalog `pg_proc`")
     val sqlText = s"INSERT INTO $catalogDbName.pg_proc VALUES(%d, '%s', %d, null, %d, false, false)"
-      .format(funcOid, funcName, 0, defaultSparkNamespace._1)
+      .format(oid, func.identifier, 0, defaultSparkNamespace._1)
     sqlContext.sql(sqlText.stripMargin)
   }
 }
