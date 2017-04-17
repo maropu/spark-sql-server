@@ -261,7 +261,7 @@ trait PostgreSQLJdbcTestBase {
 
   def serverInstance: SparkPostgreSQLServerTest
 
-  private def getJdbcConnect(): Connection = {
+  protected def getJdbcConnect(): Connection = {
     val props = new Properties()
     props.put("user", System.getProperty("user.name"))
     props.put("password", "")

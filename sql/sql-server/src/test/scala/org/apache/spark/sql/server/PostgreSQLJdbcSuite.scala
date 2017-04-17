@@ -22,6 +22,7 @@ import java.math.BigDecimal
 import java.net.URL
 import java.sql._
 
+import org.postgresql.util.PSQLException
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
@@ -61,6 +62,23 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
   extends PostgreSQLJdbcTest(pgVersion = pgVersion, ssl = false) {
 
   val hiveVersion = "1.2.1"
+
+  test("BEGIN non-supported") {
+    // Since Spark does not support transaction blocks with `BEGIN`, we cannot implement
+    // some operations like `Statement#setFetchSize`.
+    val conn = getJdbcConnect()
+    conn.setAutoCommit(false)
+    val stmt = conn.createStatement()
+    try {
+      val errMsg = intercept[PSQLException] {
+        stmt.execute("SELECT 1")
+      }
+      assert(errMsg.getMessage.contains("Cannot handle transaction blocks with `BEGIN`"))
+    } finally {
+      stmt.close()
+      conn.close()
+    }
+  }
 
   test("server version") {
     testJdbcStatement { statement =>

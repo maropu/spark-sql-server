@@ -45,6 +45,7 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.json.JacksonGenerator
 import org.apache.spark.sql.catalyst.util.{ArrayData, DateTimeUtils, MapData}
 import org.apache.spark.sql.server.SQLServerConf._
+import org.apache.spark.sql.server.parser.ParseException
 import org.apache.spark.sql.server.service.CLI
 import org.apache.spark.sql.server.service.ExecuteStatementOperation
 import org.apache.spark.sql.server.service.postgresql.{Metadata => PgMetadata}
@@ -952,6 +953,11 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SparkConf)
             portalState.execState = cli.executeStatement(portalState.sessionId, query)
             portalState.execState.run()
           } catch {
+            // In case of some parsing exception, we put explicit error messages
+            // to make users understood.
+            case e: ParseException if e.command == Some("BEGIN") =>
+              handleException(ctx, s"Cannot handle transaction blocks with `BEGIN`: $e")
+              return
             case NonFatal(e) =>
               handleException(ctx, s"Exception detected during message `Bind`: ${e}")
               return
@@ -1033,8 +1039,13 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SparkConf)
               }
               ctx.write(CommandComplete(s"SELECT ${numRows}"))
             } catch {
+              // In case of some parsing exception, we put explicit error messages
+              // to make users understood.
+              case e: ParseException if e.command == Some("BEGIN") =>
+                handleException(ctx, s"Cannot handle transaction blocks with `BEGIN`: $e")
+                return
               case NonFatal(e) =>
-                handleException(ctx, s"Exception detected during message `Query`: ${e}")
+                handleException(ctx, s"Exception detected during message `Query`: $e")
                 return
             }
           }

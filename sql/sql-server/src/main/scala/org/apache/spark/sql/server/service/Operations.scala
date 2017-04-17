@@ -146,7 +146,13 @@ private[server] case class ExecuteStatementOperation(
       }
     } catch {
       case NonFatal(e) =>
-        if (state != CANCELED) {
+        if (state == CANCELED) {
+          logWarning(
+            s"""Cancelled query with $statementId
+               | $statement
+             """.stripMargin)
+          throw new SQLException(e.toString)
+        } else {
           logError(
             s"""Error executing query with with $statementId
                | $statement
@@ -154,13 +160,8 @@ private[server] case class ExecuteStatementOperation(
           setState(ERROR)
           SQLServer.listener.onStatementError(
             statementId, e.getMessage, SparkUtils.exceptionString(e))
-          throw new SQLException(e.toString)
-        } else {
-          logWarning(
-            s"""Cancelled query with $statementId
-               | $statement
-             """.stripMargin)
-          throw new SQLException(e.toString)
+          // In this case, pass through the exception
+          throw e
         }
     }
 
