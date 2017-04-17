@@ -132,8 +132,9 @@ class PostgreSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) with 
     }
   }
 
-  override def visitStringConcat(ctx: StringConcatContext): Expression = {
-    val args = expression(ctx.primaryExpression) +: ctx.expression.asScala.map(expression)
+  override def visitConcat(ctx: ConcatContext): Expression = {
+    val exprs = ctx.primaryExpression().asScala
+    val args = expression(exprs.head) +: exprs.drop(1).map(expression)
     UnresolvedFunction("concat", args, false)
   }
 

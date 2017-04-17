@@ -539,7 +539,7 @@ primaryExpression
     | value=primaryExpression '[' index=valueExpression ']'                                    #subscript
     | identifier                                                                               #columnReference
     | base=primaryExpression '.' fieldName=identifier                                          #dereference
-    | primaryExpression (CONCAT expression)+                                                   #stringConcat
+    | primaryExpression (CONCAT_PIPE primaryExpression)+                                       #concat
     | '(' expression ')'                                                                       #parenthesizedExpression
     ;
 
@@ -557,7 +557,7 @@ comparisonOperator
     ;
 
 arithmeticOperator
-    : PLUS | MINUS | ASTERISK | SLASH | PERCENT | DIV | TILDE | AMPERSAND | PIPE | HAT
+    : PLUS | MINUS | ASTERISK | SLASH | PERCENT | DIV | TILDE | AMPERSAND | PIPE | CONCAT_PIPE | HAT
     ;
 
 predicateOperator
@@ -836,7 +836,7 @@ DIV: 'DIV';
 TILDE: '~';
 AMPERSAND: '&';
 PIPE: '|';
-CONCAT: '||';
+CONCAT_PIPE: '||';
 HAT: '^';
 
 PERCENTLIT: 'PERCENT';
