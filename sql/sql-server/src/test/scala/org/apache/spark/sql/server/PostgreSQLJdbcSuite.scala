@@ -701,7 +701,7 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
         assert(statement.execute(
           """
             |CREATE OR REPLACE TEMPORARY VIEW t AS
-            |  SELECT id, 1 AS value FROM range(0, 100000, 1)
+            |  SELECT id, 1 AS value FROM range(0, 100000, 1, 32)
           """.stripMargin))
         val rs = statement.executeQuery("SELECT id, COUNT(value) FROM t GROUP BY id")
         (0 until 100000).foreach { i =>
