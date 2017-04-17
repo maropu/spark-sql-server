@@ -677,7 +677,8 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
     )
   }
 
-  test("collect mode") {
+  // TODO: This test is flaky, so we should revisit this
+  ignore("collect mode") {
     Set("true", "false").map { mode =>
       testJdbcStatementWitConf("spark.sql.server.incrementalCollect.enabled" -> mode) { statement =>
         // Create a table with many rows
