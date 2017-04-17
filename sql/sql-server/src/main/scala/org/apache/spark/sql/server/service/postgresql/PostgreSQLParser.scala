@@ -134,8 +134,7 @@ class PostgreSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) with 
 
   override def visitConcat(ctx: ConcatContext): Expression = {
     val exprs = ctx.primaryExpression().asScala
-    val args = expression(exprs.head) +: exprs.drop(1).map(expression)
-    UnresolvedFunction("concat", args, false)
+    Concat(expression(exprs.head) +: exprs.drop(1).map(expression))
   }
 
   private def toSparkRange(start: Expression, end: Expression, intvl: Option[Expression]) = {
@@ -151,7 +150,7 @@ class PostgreSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) with 
     val pos = Literal(0, IntegerType)
     val forNum = ctx.INTEGER_VALUE().asScala.toList match { case from :: Nil => from }
     val len = Literal(forNum, IntegerType)
-    UnresolvedFunction("substring", Seq(expr, pos, len), false)
+    Substring(expr, pos, len)
   }
 
   override def visitTableValuedFunction(ctx: TableValuedFunctionContext)
