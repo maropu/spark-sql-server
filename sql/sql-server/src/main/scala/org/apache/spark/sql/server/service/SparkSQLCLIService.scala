@@ -26,7 +26,8 @@ private[server] trait CLI {
 
   def openSession(userName: String, passwd: String, ipAddress: String, dbName: String): Int
   def closeSession(sessionId: Int): Unit
-  def executeStatement(sessionId: Int, statement: String): ExecuteStatementOperation
+  def executeStatement(sessionId: Int, statement: String, isCursor: Boolean)
+    : ExecuteStatementOperation
 }
 
 private[server] class SparkSQLCLIService(pgServer: SQLServer) extends CompositeService with CLI {
@@ -58,10 +59,12 @@ private[server] class SparkSQLCLIService(pgServer: SQLServer) extends CompositeS
     sessionManager.closeSession(sessionId)
   }
 
-  override def executeStatement(sessionId: Int, statement: String): ExecuteStatementOperation = {
+  override def executeStatement(sessionId: Int, statement: String, isCursor: Boolean)
+    : ExecuteStatementOperation = {
     operationManager.newExecuteStatementOperation(
       sessionManager.getSession(sessionId),
       sessionId,
-      statement)
+      statement,
+      isCursor)
   }
 }

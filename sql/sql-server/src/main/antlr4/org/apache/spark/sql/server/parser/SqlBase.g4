@@ -148,6 +148,7 @@ statement
     | SET ROLE .*?                                                     #failNativeCommand
     | SET .*?                                                          #setConfiguration
     | RESET                                                            #resetConfiguration
+    | BEGIN                                                            #beginTransaction
     | unsupportedHiveNativeCommands .*?                                #failNativeCommand
     ;
 
@@ -815,6 +816,7 @@ TRANSACTION: 'TRANSACTION';
 COMMIT: 'COMMIT';
 ROLLBACK: 'ROLLBACK';
 MACRO: 'MACRO';
+BEGIN: 'BEGIN';
 
 IF: 'IF';
 

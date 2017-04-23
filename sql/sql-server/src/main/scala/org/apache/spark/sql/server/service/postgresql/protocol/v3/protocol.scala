@@ -46,8 +46,7 @@ import org.apache.spark.sql.catalyst.json.JacksonGenerator
 import org.apache.spark.sql.catalyst.util.{ArrayData, DateTimeUtils, MapData}
 import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.parser.ParseException
-import org.apache.spark.sql.server.service.CLI
-import org.apache.spark.sql.server.service.ExecuteStatementOperation
+import org.apache.spark.sql.server.service.{BEGIN, CLI, ExecuteStatementOperation, FETCH, SELECT}
 import org.apache.spark.sql.server.service.postgresql.{Metadata => PgMetadata}
 import org.apache.spark.sql.types._
 
@@ -949,8 +948,14 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SparkConf)
             query = query.replace(target, s"'${param}'")
           }
           logInfo(s"Bound query: ${query}")
+
+          val isPortal = portalName != null
+          if (isPortal) {
+            logInfo(s"Cursor mode enabled: portalName=$portalName")
+          }
+
           try {
-            portalState.execState = cli.executeStatement(portalState.sessionId, query)
+            portalState.execState = cli.executeStatement(portalState.sessionId, query, isPortal)
             portalState.execState.run()
           } catch {
             // In case of some parsing exception, we put explicit error messages
@@ -995,7 +1000,16 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SparkConf)
                 numRows = numRows + 1
               }
             }
-            ctx.write(CommandComplete(s"SELECT ${numRows}"))
+            portalState.execState.queryType match {
+              case BEGIN =>
+                ctx.write(CommandComplete(s"BEGIN"))
+              case SELECT =>
+                ctx.write(CommandComplete(s"SELECT $numRows"))
+              case FETCH =>
+                // ctx.write(CommandComplete(s"FETCH $numRows"))
+                ctx.write(PortalSuspended)
+              case _ =>
+            }
           } catch {
             case NonFatal(e) =>
               handleException(ctx, s"Exception detected during message `Execute`: ${e}")
@@ -1023,7 +1037,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SparkConf)
           } else {
             // TODO: Support multiple queries
             val query = queries(0)
-            val execState = cli.executeStatement(portalState.sessionId, query)
+            val execState = cli.executeStatement(portalState.sessionId, query, isCursor = false)
             portalState.execState = execState
             try {
               execState.run()

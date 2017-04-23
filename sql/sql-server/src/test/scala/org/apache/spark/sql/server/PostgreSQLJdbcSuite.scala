@@ -873,21 +873,43 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
       rs.close()
     }
   }
+}
 
-  test("BEGIN non-supported") {
-    // Since Spark does not support transaction blocks with `BEGIN`, we cannot implement
-    // some operations like `Statement#setFetchSize`.
+// To check cursor-mode enabled in log strings, we put the test in this individual suite
+class PostgreSQLJdbcCursorModeSuite extends PostgreSQLJdbcTest(ssl = true) {
+
+  test("cursor mode") {
     val conn = getJdbcConnect()
     conn.setAutoCommit(false)
     val stmt = conn.createStatement()
+    stmt.setFetchSize(2)
     try {
-      val errMsg = intercept[PSQLException] {
-        stmt.execute("SELECT 1")
-      }
-      assert(errMsg.getMessage.contains("Cannot handle transaction blocks with `BEGIN`"))
+      val rs = stmt.executeQuery("SELECT id FROM range (6)")
+      assert(rs.next())
+      assert(rs.getInt(1) === 0)
+      assert(rs.next())
+      assert(rs.getInt(1) === 1)
+      assert(rs.next())
+      assert(rs.getInt(1) === 2)
+      assert(rs.next())
+      assert(rs.getInt(1) === 3)
+      assert(rs.next())
+      assert(rs.getInt(1) === 4)
+      assert(rs.next())
+      assert(rs.getInt(1) === 5)
+      assert(!rs.next())
+      rs.close()
     } finally {
       stmt.close()
       conn.close()
+    }
+
+    // Check cursor-mode enabled
+    val bufferSrc = Source.fromFile(server.logPath)
+    Utils.tryWithSafeFinally {
+      assert(bufferSrc.getLines().exists(_.contains("Cursor mode enabled: portalName=")))
+    } {
+      bufferSrc.close()
     }
   }
 }

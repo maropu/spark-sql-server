@@ -29,11 +29,10 @@ private[server] class OperationManager(pgServer: SQLServer) extends CompositeSer
     new java.util.HashMap[Int, String]())
 
   def newExecuteStatementOperation(
-      sqlContext: SQLContext,
-      sessionId:
-      Int, statement: String): ExecuteStatementOperation = {
+      sqlContext: SQLContext, sessionId: Int, statement: String, isCursor: Boolean)
+    : ExecuteStatementOperation = {
     val operation = new ExecuteStatementOperation(
-      sessionId, statement)(sqlContext, sessionIdToActivePool)
+      sessionId, statement, isCursor)(sqlContext, sessionIdToActivePool)
     if (!sessionIdToOperations.containsKey(sessionId)) {
       sessionIdToOperations.put(sessionId, new java.util.ArrayList())
     }

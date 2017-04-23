@@ -36,15 +36,25 @@ import org.apache.spark.util.{Utils => SparkUtils}
 
 
 /** The states of an [[ExecuteStatementOperation]]. */
-private[server] sealed trait OperationState
-private[server] case object INITIALIZED extends OperationState
-private[server] case object RUNNING extends OperationState
-private[server] case object FINISHED extends OperationState
-private[server] case object CANCELED extends OperationState
-private[server] case object CLOSED extends OperationState
-private[server] case object ERROR extends OperationState
-private[server] case object UNKNOWN extends OperationState
-private[server] case object PENDING extends OperationState
+sealed trait OperationState
+case object INITIALIZED extends OperationState
+case object RUNNING extends OperationState
+case object FINISHED extends OperationState
+case object CANCELED extends OperationState
+case object CLOSED extends OperationState
+case object ERROR extends OperationState
+case object UNKNOWN extends OperationState
+case object PENDING extends OperationState
+
+/** Query type executd in [[ExecuteStatementOperation]]. */
+sealed trait OperationType {
+  override def toString: String = getClass.getSimpleName.stripSuffix("$")
+}
+
+object BEGIN extends OperationType
+object FETCH extends OperationType
+object SELECT extends OperationType
+
 
 private[server] abstract class Operation {
 
@@ -76,7 +86,8 @@ private[server] abstract class Operation {
 
 private[server] case class ExecuteStatementOperation(
     sessionId: Int,
-    statement: String)
+    statement: String,
+    isCursor: Boolean)
    (sqlContext: SQLContext,
     activePools: java.util.Map[Int, String]) extends Operation with Logging {
 
@@ -86,6 +97,12 @@ private[server] case class ExecuteStatementOperation(
 
   private var resultSet: DataFrame = _
   private var rowIter: Iterator[InternalRow] = _
+
+  lazy val queryType: OperationType = statement match {
+    case s if s.contains("BEGIN") => BEGIN
+    case _ if isCursor => FETCH
+    case _ => SELECT
+  }
 
   override def cancel(): Unit = {
     logInfo(

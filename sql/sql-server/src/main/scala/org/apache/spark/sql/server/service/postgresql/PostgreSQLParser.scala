@@ -26,11 +26,10 @@ import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateFunction, First}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.internal.SQLConf
-import org.apache.spark.sql.server.execution.SparkSqlAstBuilder
-import org.apache.spark.sql.server.execution.SparkSqlParser
+import org.apache.spark.sql.server.execution.{SparkSqlAstBuilder, SparkSqlParser}
+import org.apache.spark.sql.server.execution.command.BeginCommand
 import org.apache.spark.sql.server.parser._
 import org.apache.spark.sql.server.parser.SqlBaseParser._
-import org.apache.spark.sql.server.service.postgresql.Metadata._
 import org.apache.spark.sql.types._
 
 
@@ -50,6 +49,10 @@ class PostgreSQLParser(conf: SQLConf) extends SparkSqlParser(conf) {
  */
 class PostgreSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) with Logging {
   import org.apache.spark.sql.catalyst.parser.ParserUtils._
+
+  override def visitBeginTransaction(ctx: BeginTransactionContext): LogicalPlan = {
+    new BeginCommand()
+  }
 
   override def visitPrimitiveDataType(ctx: PrimitiveDataTypeContext): DataType = withOrigin(ctx) {
     try {
