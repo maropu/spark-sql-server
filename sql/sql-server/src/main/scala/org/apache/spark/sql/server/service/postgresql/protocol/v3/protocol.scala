@@ -673,6 +673,7 @@ private case class PortalState(sessionId: Int, secretKey: Int) {
   var pendingBytes: Array[Byte] = Array.empty
   // `execState` possibly accessed by asynchronous JDBC cancellation requests
   @volatile var execState: ExecuteStatementOperation = _
+  var numFetched: Int = 0
   val queries: mutable.Map[String, String] = mutable.Map.empty
   val jsonStates: mutable.Map[String, JsonState] = mutable.Map.empty
 }
@@ -998,6 +999,8 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
                 ctx.write(DataRow(iter, portalState))
                 numRows = numRows + 1
               }
+              // Accumulate fetched #rows in this execution
+              portalState.numFetched += numRows
             }
             portalState.execState.queryType match {
               case BEGIN =>
@@ -1005,8 +1008,11 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
               case SELECT =>
                 ctx.write(CommandComplete(s"SELECT $numRows"))
               case FETCH =>
-                // ctx.write(CommandComplete(s"FETCH $numRows"))
-                ctx.write(PortalSuspended)
+                if (numRows == 0) {
+                  ctx.write(CommandComplete(s"FETCH ${portalState.numFetched}"))
+                } else {
+                  ctx.write(PortalSuspended)
+                }
             }
           } catch {
             case NonFatal(e) =>
