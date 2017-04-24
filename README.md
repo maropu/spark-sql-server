@@ -56,6 +56,28 @@ public class JdbcTest {
 }
 ```
 
+## Cursor mode
+
+To enable a cursor mode on your JDBC driver, you make sure autocommit is off and you need to set fetch size
+throught `Statement.setFetchSize` (See descriptions in [Chapter 5. Issuing a Query and Processing the Result](https://jdbc.postgresql.org/documentation/head/query.html#query-with-cursor));
+
+```java
+      // Make sure autocommit is off
+      Connection con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/" + dbName, props);
+      con.setAutoCommit(false);
+
+      // Turn use of the cursor on.
+      Statement stmt = con.createStatement();
+      stmt.setFetchSize(50);
+      ResultSet rs = stmt.executeQuery("SELECT * FROM range(10000000)");
+      while (rs.next()){
+        System.out.println("id=" + rs.getLong("id"));
+      }
+```
+
+Also, you could set `spark.sql.server.incrementalCollect.enabled` for memory efficiency
+when launching the SQL server. If enabled, the SQL server collects result data partition-by-parititon.
+
 ## PostgreSQL syntax
 
 The SQL server supports some of PostgreSQL dialect;
