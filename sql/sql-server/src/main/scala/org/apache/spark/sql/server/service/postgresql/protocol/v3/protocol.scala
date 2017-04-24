@@ -46,7 +46,7 @@ import org.apache.spark.sql.catalyst.json.JacksonGenerator
 import org.apache.spark.sql.catalyst.util.{ArrayData, DateTimeUtils, MapData}
 import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.parser.ParseException
-import org.apache.spark.sql.server.service.{BEGIN, CLI, ExecuteStatementOperation, FETCH, SELECT}
+import org.apache.spark.sql.server.service.{BEGIN, SessionService, ExecuteStatementOperation, FETCH, SELECT}
 import org.apache.spark.sql.server.service.postgresql.{Metadata => PgMetadata}
 import org.apache.spark.sql.types._
 
@@ -586,7 +586,7 @@ private object PostgreSQLWireProtocol {
 private[v3] class SharableByteArrayDecode extends ByteArrayDecoder {}
 
 /** Creates a newly configured [[io.netty.channel.ChannelPipeline]] for a new channel. */
-private[service] class PostgreSQLV3MessageInitializer(cli: CLI, conf: SparkConf)
+private[service] class PostgreSQLV3MessageInitializer(cli: SessionService, conf: SparkConf)
     extends ChannelInitializer[SocketChannel] with Logging {
 
   val msgDecoder = new SharableByteArrayDecode()
@@ -680,7 +680,7 @@ private case class PortalState(sessionId: Int, secretKey: Int) {
 }
 
 @ChannelHandler.Sharable
-private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SparkConf)
+private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkConf)
     extends SimpleChannelInboundHandler[Array[Byte]] with Logging {
 
   import PostgreSQLWireProtocol._

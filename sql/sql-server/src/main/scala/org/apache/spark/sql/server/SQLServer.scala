@@ -27,7 +27,7 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd, SparkListenerJobStart}
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.server.SQLServerConf._
-import org.apache.spark.sql.server.service.{CompositeService, SparkSQLCLIService}
+import org.apache.spark.sql.server.service.{CompositeService, SparkSQLSessionService}
 import org.apache.spark.sql.server.service.postgresql.PostgreSQLService
 import org.apache.spark.sql.server.ui.SQLServerTab
 import org.apache.spark.util.{ShutdownHookManager, Utils}
@@ -261,7 +261,7 @@ private[sql] class SQLServer extends CompositeService with LeaderElectable {
   @volatile private var state = RecoveryState.STANDBY
 
   override def init(conf: SparkConf): Unit = {
-    val cliService = new SparkSQLCLIService(this)
+    val cliService = new SparkSQLSessionService(this)
     addService(cliService)
     addService(new PostgreSQLService(this, cliService))
     super.init(conf)

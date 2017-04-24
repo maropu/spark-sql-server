@@ -22,7 +22,7 @@ import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.sql.server.SQLServer
 
 
-private[server] trait CLI {
+private[server] trait SessionService {
 
   def openSession(userName: String, passwd: String, ipAddress: String, dbName: String): Int
   def closeSession(sessionId: Int): Unit
@@ -30,7 +30,8 @@ private[server] trait CLI {
     : ExecuteStatementOperation
 }
 
-private[server] class SparkSQLCLIService(pgServer: SQLServer) extends CompositeService with CLI {
+private[server] class SparkSQLSessionService(pgServer: SQLServer)
+    extends CompositeService with SessionService {
 
   private var sessionManager: SessionManager = _
   private var operationManager: OperationManager = _
