@@ -289,15 +289,30 @@ trait PostgreSQLJdbcTestBase {
   }
 
   def testJdbcStatementWitConf(options: (String, String)*)(f: Statement => Unit) {
-    val connection = getJdbcConnect()
-    val statement = connection.createStatement()
+    val jdbcOptions = Seq("autoCommitModeEnabled", "fetchSize")
+    val (sparkOptions, otherOptions) = options.partition(ops => !jdbcOptions.contains(ops._1))
+    val connection = otherOptions.find(_._1 == "autoCommitModeEnabled").map { case (_, v) =>
+      val conn = getJdbcConnect()
+      conn.setAutoCommit(java.lang.Boolean.valueOf(v))
+      conn
+    }.getOrElse {
+      getJdbcConnect()
+    }
 
-    val (keys, _) = options.unzip
+    val statement = otherOptions.find(_._1 == "fetchSize").map { case (_, v) =>
+      val stmt = connection.createStatement()
+      stmt.setFetchSize(java.lang.Integer.valueOf(v))
+      stmt
+    }.getOrElse {
+      connection.createStatement()
+    }
+
+    val (keys, _) = sparkOptions.unzip
     val currentValues = keys.map { key =>
       val rs = statement.executeQuery(s"SET $key")
       if (rs.next()) { rs.getString(2) } else { assert(false, s"Invalid key detected: $key") }
     }
-    options.foreach { case (key, value) =>
+    sparkOptions.foreach { case (key, value) =>
       statement.execute(s"SET $key=$value")
     }
     try f(statement) finally {

@@ -677,27 +677,6 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
     )
   }
 
-  // TODO: This test is flaky, so we should revisit this
-  ignore("collect mode") {
-    Set("true", "false").map { mode =>
-      testJdbcStatementWitConf("spark.sql.server.incrementalCollect.enabled" -> mode) { statement =>
-        // Create a table with many rows
-        assert(statement.execute(
-          """
-            |CREATE OR REPLACE TEMPORARY VIEW t AS
-            |  SELECT id, 1 AS value FROM range(0, 100000, 1, 32)
-          """.stripMargin))
-        val rs = statement.executeQuery("SELECT id, COUNT(value) FROM t GROUP BY id")
-        (0 until 100000).foreach { i =>
-          assert(rs.next())
-          assert(rs.getInt(2) == 1)
-        }
-        assert(!rs.next())
-        rs.close()
-      }
-    }
-  }
-
   test("independent state across JDBC connections") {
     testMultipleConnectionJdbcStatement(
       { statement =>
@@ -879,12 +858,8 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
 class PostgreSQLJdbcCursorModeSuite extends PostgreSQLJdbcTest(ssl = true) {
 
   test("cursor mode") {
-    val conn = getJdbcConnect()
-    conn.setAutoCommit(false)
-    val stmt = conn.createStatement()
-    stmt.setFetchSize(2)
-    try {
-      val rs = stmt.executeQuery("SELECT id FROM range (6)")
+    testJdbcStatementWitConf("autoCommitModeEnabled" -> "false", "fetchSize" -> "2") { statement =>
+      val rs = statement.executeQuery("SELECT id FROM range (6)")
       assert(rs.next())
       assert(rs.getInt(1) === 0)
       assert(rs.next())
@@ -899,9 +874,6 @@ class PostgreSQLJdbcCursorModeSuite extends PostgreSQLJdbcTest(ssl = true) {
       assert(rs.getInt(1) === 5)
       assert(!rs.next())
       rs.close()
-    } finally {
-      stmt.close()
-      conn.close()
     }
 
     // Check cursor-mode enabled
@@ -910,6 +882,23 @@ class PostgreSQLJdbcCursorModeSuite extends PostgreSQLJdbcTest(ssl = true) {
       assert(bufferSrc.getLines().exists(_.contains("Cursor mode enabled: portalName=")))
     } {
       bufferSrc.close()
+    }
+  }
+
+  test("collect mode") {
+    testJdbcStatementWitConf(
+        "autoCommitModeEnabled" -> "false",
+        "fetchSize" -> "1000",
+        "spark.sql.server.incrementalCollect.enabled" -> "true") { statement =>
+      val rs = statement.executeQuery(
+        "SELECT id, COUNT(1) FROM range(0, 100000, 1, 32) GROUP BY id ORDER BY id ASC")
+      (0 until 100000).foreach { i =>
+        assert(rs.next())
+        assert(rs.getLong(1) === i)
+        assert(rs.getInt(2) === 1)
+      }
+      assert(!rs.next())
+      rs.close()
     }
   }
 }

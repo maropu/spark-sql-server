@@ -949,7 +949,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: CLI, conf: SparkConf)
           }
           logInfo(s"Bound query: ${query}")
 
-          val isPortal = portalName != null
+          val isPortal = !(portalName == null || portalName.isEmpty)
           if (isPortal) {
             logInfo(s"Cursor mode enabled: portalName=$portalName")
           }
