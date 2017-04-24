@@ -43,7 +43,7 @@ public class JdbcTest {
       Statement stmt = con.createStatement();
       stmt.executeQuery("CREATE TEMPORARY VIEW t AS SELECT * FROM VALUES (1, 1), (1, 2) AS t(a, b)").close();
       ResultSet rs = stmt.executeQuery("SELECT * FROM t");
-      while (rs.next()){
+      while (rs.next()) {
         System.out.println("a=" + rs.getInt("a") + " b=" + rs.getInt("b"));
       }
       rs.close();
@@ -70,7 +70,7 @@ throught `Statement.setFetchSize` (See descriptions in [Chapter 5. Issuing a Que
       Statement stmt = con.createStatement();
       stmt.setFetchSize(50);
       ResultSet rs = stmt.executeQuery("SELECT * FROM range(10000000)");
-      while (rs.next()){
+      while (rs.next()) {
         System.out.println("id=" + rs.getLong("id"));
       }
 ```
