@@ -31,8 +31,7 @@ import scala.util.control.NonFatal
 import io.netty.buffer.{ByteBuf, Unpooled}
 import io.netty.channel.{ChannelHandler, ChannelInboundHandlerAdapter, ChannelInitializer}
 import io.netty.channel.socket.SocketChannel
-import io.netty.channel.ChannelHandlerContext
-import io.netty.channel.SimpleChannelInboundHandler
+import io.netty.channel.{ChannelHandlerContext, SimpleChannelInboundHandler}
 import io.netty.handler.codec.bytes.{ByteArrayDecoder, ByteArrayEncoder}
 import io.netty.handler.ssl.{SslContext, SslHandler}
 import io.netty.handler.ssl.util.SelfSignedCertificate
@@ -650,7 +649,7 @@ private[v3] class SslRequestHandler() extends ChannelInboundHandlerAdapter with 
         case _ =>
           val sockAddr = ctx.channel().remoteAddress().asInstanceOf[InetSocketAddress]
           val hostName = s"${sockAddr.getHostName()}:${sockAddr.getPort()}"
-          logWarning(s"Non-SSL Connection requested from ${hostName} though, " +
+          logWarning(s"Non-SSL Connection requested from $hostName though, " +
             "this SQL server is currently running with a SSL mode")
           ctx.close()
       }
@@ -718,15 +717,15 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
     val sessionId = cli.openSession(userName, passwd, hostAddr, dbName)
     val portalState = PortalState(sessionId, secretKey)
     channelIdToPortalState.put(channelId, portalState)
-    logInfo(s"Open a session (sessionId=${sessionId}, channelId=${channelId} " +
-      s"userName=${userName} hostAddr=${hostAddr})")
+    logInfo(s"Open a session (sessionId=$sessionId, channelId=$channelId " +
+      s"userName=$userName hostAddr=$hostAddr)")
     portalState
   }
 
   private def closeSession(channelId: Int): Unit = {
     if (channelIdToPortalState.containsKey(channelId)) {
       val portalState = channelIdToPortalState.get(channelId)
-      logInfo(s"Close the session (sessionId=${portalState.sessionId}, channelId=${channelId}})")
+      logInfo(s"Close the session (sessionId=${portalState.sessionId}, channelId=$channelId)")
       portalState.jsonStates.map(_._2.generator.close)
       cli.closeSession(portalState.sessionId)
       channelIdToPortalState.remove(channelId)
@@ -780,7 +779,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
           }
         } catch {
           case e: GSSException =>
-            throw new SQLException("Kerberos authentication failed: ", e)
+            throw new SQLException(s"Kerberos authentication failed: $e")
         } finally {
           if (gssContext != null) {
             try {
@@ -815,7 +814,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
     if (magic == SSL_REQUEST_CODE) {
       val sockAddr = ctx.channel().remoteAddress().asInstanceOf[InetSocketAddress]
       val hostName = s"${sockAddr.getHostName()}:${sockAddr.getPort()}"
-      logWarning(s"SSL Connection requested from ${hostName} though, " +
+      logWarning(s"SSL Connection requested from $hostName though, " +
         "this SQL server is currently running with a non-SSL mode")
       ctx.write(NoSSL)
       ctx.close()
@@ -824,12 +823,12 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
       val channelId = msgBuffer.getInt()
       val secretKey = msgBuffer.getInt()
       val portal = Some(channelIdToPortalState.get(channelId)).getOrElse {
-        throw new SQLException(s"Unknown cancel request: channelId=${channelId}")
+        throw new SQLException(s"Unknown cancel request: channelId=$channelId")
       }
       if (portal.secretKey != secretKey) {
-        throw new SQLException(s"Illegal secretKey: channelId=${channelId}")
+        throw new SQLException(s"Illegal secretKey: channelId=$channelId")
       }
-      logWarning(s"Canceling the running query: channelId=${channelId}")
+      logWarning(s"Canceling the running query: channelId=$channelId")
       portal.execState.cancel()
       ctx.close()
       return
@@ -851,7 +850,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
     }
     val props = keys.zip(values).toMap
     logDebug("Received properties from a client: "
-      + props.map { case (key, value) => s"${key}=${value}" }.mkString(", "))
+      + props.map { case (key, value) => s"$key=$value" }.mkString(", "))
     // props.get("application_name").map { appName =>
     //   if (appName == "psql") {
     //     ctx.write(ErrorResponse("`psql` not supported in Spark SQL server"))
@@ -927,10 +926,10 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
           }
           return
         case Bind(portalName, queryName, formats, params, resultFormats) =>
-          logInfo(s"Bind: portalName=${portalName} queryName=${queryName} formats=${formats} "
-            + s"params=${params} resultFormats=${resultFormats}")
+          logInfo(s"Bind: portalName=$portalName queryName=$queryName formats=$formats "
+            + s"params=$params resultFormats=$resultFormats")
           var query = portalState.queries.getOrElse(queryName, {
-            throw new SQLException(s"Unknown query specified: ${queryName}")
+            throw new SQLException(s"Unknown query specified: $queryName")
           })
           // TODO: Make parameter bindings more smart, e.g., based on analyzed logical plans
           formats.zipWithIndex.foreach { case (format, index) =>
@@ -944,10 +943,10 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
                   case 4 => s"${ByteBuffer.wrap(params(index)).getInt}"
                 }
             }
-            logDebug(s"binds param: ${target}->${param}")
-            query = query.replace(target, s"'${param}'")
+            logDebug(s"binds param: $target->$param")
+            query = query.replace(target, s"'$param'")
           }
-          logInfo(s"Bound query: ${query}")
+          logInfo(s"Bound query: $query")
 
           val isPortal = !(portalName == null || portalName.isEmpty)
           if (isPortal) {
@@ -958,13 +957,14 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
             portalState.execState = cli.executeStatement(portalState.sessionId, query, isPortal)
             portalState.execState.run()
           } catch {
-            // In case of some parsing exception, we put explicit error messages
+            // In case of the parsing exception, we put explicit error messages
             // to make users understood.
-            case e: ParseException if e.command == Some("BEGIN") =>
-              handleException(ctx, s"Cannot handle transaction blocks with `BEGIN`: $e")
+            case e: ParseException =>
+              handleException(ctx, s"Cannot handle a command ${e.command} " +
+                s"in processing message `Bind`: $e")
               return
             case NonFatal(e) =>
-              handleException(ctx, s"Exception detected during message `Bind`: ${e}")
+              handleException(ctx, s"Exception detected in processing message `Bind`: $e")
               return
           }
           ctx.write(BindComplete)
@@ -972,12 +972,12 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
         case Close(tpe, name) =>
           if (tpe == 83) { // Close a prepared statement
             portalState.queries.remove(name)
-            logInfo(s"Close the '${name}' prepared statement in this session "
+            logInfo(s"Close the '$name' prepared statement in this session "
               + "(id:${portalState.sessionId}")
           } else if (tpe == 80) { // Close a portal
             // Do nothing
           } else {
-            logWarning(s"Unknown type id received in message 'Close`: ${tpe}")
+            logWarning(s"Unknown type id received in processing message 'Close`: $tpe")
           }
         case Describe(tpe, name) =>
           // The response to a SELECT query (or other queries that return row sets, such as
@@ -1008,11 +1008,10 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
               case FETCH =>
                 // ctx.write(CommandComplete(s"FETCH $numRows"))
                 ctx.write(PortalSuspended)
-              case _ =>
             }
           } catch {
             case NonFatal(e) =>
-              handleException(ctx, s"Exception detected during message `Execute`: ${e}")
+              handleException(ctx, s"Exception detected in processing message `Execute`: $e")
               return
           }
           ctx.flush()
@@ -1024,12 +1023,12 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
           return
         case Parse(name, query, objIds) =>
           portalState.queries(name) = query
-          logInfo(s"Parse: name=${portalState.queries(name)} query=${query} objIds=${objIds}")
+          logInfo(s"Parse: name=${portalState.queries(name)} query=$query objIds=$objIds")
           ctx.write(ParseComplete)
           ctx.flush()
         case Query(queries) =>
           require(queries.size > 0)
-          logDebug(s"input quries are ${queries.mkString(", ")}")
+          logDebug(s"input queries are ${queries.mkString(", ")}")
           // If a completely empty (no contents other than whitespace) query string is received,
           // the response is EmptyQueryResponse followed by ReadyForQuery.
           if (queries.length == 1 && queries(0).isEmpty) {
@@ -1051,15 +1050,16 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
                 ctx.write(DataRow(iter, portalState))
                 numRows += 1
               }
-              ctx.write(CommandComplete(s"SELECT ${numRows}"))
+              ctx.write(CommandComplete(s"SELECT $numRows"))
             } catch {
-              // In case of some parsing exception, we put explicit error messages
+              // In case of the parsing exception, we put explicit error messages
               // to make users understood.
-              case e: ParseException if e.command == Some("BEGIN") =>
-                handleException(ctx, s"Cannot handle transaction blocks with `BEGIN`: $e")
+              case e: ParseException =>
+                handleException(ctx, s"Cannot handle a command ${e.command} " +
+                  s"in processing message `Bind`: $e")
                 return
               case NonFatal(e) =>
-                handleException(ctx, s"Exception detected during message `Query`: $e")
+                handleException(ctx, s"Exception detected in processing message `Query`: $e")
                 return
             }
           }
