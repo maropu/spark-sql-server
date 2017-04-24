@@ -27,9 +27,9 @@ import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateFunction, F
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.server.execution.{SparkSqlAstBuilder, SparkSqlParser}
-import org.apache.spark.sql.server.execution.command.BeginCommand
 import org.apache.spark.sql.server.parser._
 import org.apache.spark.sql.server.parser.SqlBaseParser._
+import org.apache.spark.sql.server.service.postgresql.execution.command.BeginCommand
 import org.apache.spark.sql.types._
 
 
