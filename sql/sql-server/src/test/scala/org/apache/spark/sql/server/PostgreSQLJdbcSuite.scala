@@ -887,9 +887,9 @@ class PostgreSQLJdbcCursorModeSuite extends PostgreSQLJdbcTest(ssl = true) {
 
   test("collect mode") {
     testJdbcStatementWitConf(
+        SQLServerConf.SQLSERVER_INCREMENTAL_COLLECT_ENABLE.key -> "true",
         "autoCommitModeEnabled" -> "false",
-        "fetchSize" -> "1000",
-        "spark.sql.server.incrementalCollect.enabled" -> "true") { statement =>
+        "fetchSize" -> "1000") { statement =>
       val rs = statement.executeQuery(
         "SELECT id, COUNT(1) FROM range(0, 100000, 1, 32) GROUP BY id ORDER BY id ASC")
       (0 until 100000).foreach { i =>
