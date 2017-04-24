@@ -852,6 +852,15 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
       rs.close()
     }
   }
+
+  test("Unsupported SQL strings") {
+    testJdbcStatement { statement =>
+      Seq("COMMIT", "ROLLBACK"). foreach { cmd =>
+        val e = intercept[SQLException] { statement.execute(cmd) }
+        assert(e.getMessage.contains(s"Cannot handle a command $cmd in processing message `Bind`"))
+      }
+    }
+  }
 }
 
 // To check cursor-mode enabled in log strings, we put the test in this individual suite

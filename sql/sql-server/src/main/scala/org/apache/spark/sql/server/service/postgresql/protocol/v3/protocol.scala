@@ -29,9 +29,8 @@ import scala.util.Random
 import scala.util.control.NonFatal
 
 import io.netty.buffer.{ByteBuf, Unpooled}
-import io.netty.channel.{ChannelHandler, ChannelInboundHandlerAdapter, ChannelInitializer}
+import io.netty.channel._
 import io.netty.channel.socket.SocketChannel
-import io.netty.channel.{ChannelHandlerContext, SimpleChannelInboundHandler}
 import io.netty.handler.codec.bytes.{ByteArrayDecoder, ByteArrayEncoder}
 import io.netty.handler.ssl.{SslContext, SslHandler}
 import io.netty.handler.ssl.util.SelfSignedCertificate
@@ -45,7 +44,7 @@ import org.apache.spark.sql.catalyst.json.JacksonGenerator
 import org.apache.spark.sql.catalyst.util.{ArrayData, DateTimeUtils, MapData}
 import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.parser.ParseException
-import org.apache.spark.sql.server.service.{BEGIN, SessionService, ExecuteStatementOperation, FETCH, SELECT}
+import org.apache.spark.sql.server.service.{BEGIN, ExecuteStatementOperation, FETCH, SELECT, SessionService}
 import org.apache.spark.sql.server.service.postgresql.{Metadata => PgMetadata}
 import org.apache.spark.sql.types._
 
@@ -959,8 +958,8 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
           } catch {
             // In case of the parsing exception, we put explicit error messages
             // to make users understood.
-            case e: ParseException =>
-              handleException(ctx, s"Cannot handle a command ${e.command} " +
+            case e: ParseException if e.command.isDefined =>
+              handleException(ctx, s"Cannot handle a command ${e.command.get} " +
                 s"in processing message `Bind`: $e")
               return
             case NonFatal(e) =>
@@ -1054,8 +1053,8 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
             } catch {
               // In case of the parsing exception, we put explicit error messages
               // to make users understood.
-              case e: ParseException =>
-                handleException(ctx, s"Cannot handle a command ${e.command} " +
+              case e: ParseException if e.command.isDefined =>
+                handleException(ctx, s"Cannot handle a command ${e.command.get} " +
                   s"in processing message `Bind`: $e")
                 return
               case NonFatal(e) =>

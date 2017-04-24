@@ -28,10 +28,11 @@ import org.apache.spark.SparkConf
 import org.apache.spark.sql.server.SQLServer
 import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.SQLServerEnv
-import org.apache.spark.sql.server.service.{SessionService, CompositeService}
+import org.apache.spark.sql.server.service.{CompositeService, SessionService}
 import org.apache.spark.sql.server.service.postgresql.protocol.v3.PostgreSQLV3MessageInitializer
 
-private[server] class PostgreSQLService(pgServer: SQLServer, cli: SessionService) extends CompositeService {
+private[server] class PostgreSQLService(pgServer: SQLServer, cli: SessionService)
+    extends CompositeService {
 
   var port: Int = _
   var workerThreads: Int = _
