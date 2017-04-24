@@ -805,8 +805,7 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
     }
   }
 
-  // TODO: This test is flaky, so we should revisit this
-  ignore("CREATE/DROP tables between connections") {
+  test("CREATE/DROP tables between connections") {
     testJdbcStatement { statement =>
       Seq(
         "DROP TABLE IF EXISTS test1",
