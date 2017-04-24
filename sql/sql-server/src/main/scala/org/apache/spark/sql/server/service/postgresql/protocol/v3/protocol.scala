@@ -836,7 +836,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
       // The protocol version number. The most significant 16 bits are the major version number
       // (3 for the protocol described here). The least significant 16 bits are
       // the minor version number (0 for the protocol described here).
-      throw new SQLException("Unsupported a protocol version")
+      throw new SQLException(s"Protocol version $magic unsupported")
     }
 
     // This message includes the names of the user and of the database the user wants to
@@ -892,8 +892,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
     portalState.pendingBytes = Array.empty
     uncheckedBuffer.flip()
     while (uncheckedBuffer.hasRemaining) {
-      val basePos = uncheckedBuffer.position()
-      val msgType = uncheckedBuffer.get()
+      val (basePos, _) = (uncheckedBuffer.position(), uncheckedBuffer.get())
       if (uncheckedBuffer.remaining() >= 4) {
         val msgLen = 1 + uncheckedBuffer.getInt()
         uncheckedBuffer.position(basePos)
@@ -1038,9 +1037,11 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
           // the response is EmptyQueryResponse followed by ReadyForQuery.
           if (queries.length == 1 && queries(0).isEmpty) {
             ctx.write(EmptyQueryResponse)
-          } else {
+          } else if (queries.size > 1) {
             // TODO: Support multiple queries
-            val query = queries(0)
+            throw new SQLException(s"multi-query execution unsupported: ${queries.mkString(", ")}")
+          } else {
+            val query = queries.head
             val execState = cli.executeStatement(portalState.sessionId, query, isCursor = false)
             portalState.execState = execState
             try {
