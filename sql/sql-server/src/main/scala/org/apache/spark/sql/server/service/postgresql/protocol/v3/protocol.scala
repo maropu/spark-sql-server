@@ -934,7 +934,12 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
     logDebug(s"#processed=${procBuffer.remaining} #pending=${portalState.pendingBytes.size}")
 
     while (procBuffer.remaining() > 0) {
-      extractClientMessageType(procBuffer) match {
+      val message = try {
+        extractClientMessageType(procBuffer)
+      } catch {
+        case NonFatal(e) => handleException(ctx, e.getMessage)
+      }
+      message match {
         case PasswordMessage(token) =>
           if (handleGSSAuthentication(ctx, token)) {
             handleAuthenticationOk(ctx, portalState)
