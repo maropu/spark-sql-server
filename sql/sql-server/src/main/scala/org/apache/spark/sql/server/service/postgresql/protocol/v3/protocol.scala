@@ -56,7 +56,7 @@ import org.apache.spark.sql.types._
  *
  * https://www.postgresql.org/docs/current/static/protocol.html
  */
-private object PostgreSQLWireProtocol {
+object PostgreSQLWireProtocol {
 
   /** An identifier for `StartupMessage`. */
   val V3_PROTOCOL_VERSION: Int = 196608
@@ -74,55 +74,208 @@ private object PostgreSQLWireProtocol {
    */
   sealed trait ClientMessageType
 
-  /** An ASCII code 'B' is an identifier of this [[Bind]] message. */
   case class Bind(portalName: String, queryName: String, formats: Seq[Int],
     params: Seq[Array[Byte]], resultFormats: Seq[Int]) extends ClientMessageType
-
-  /** An ASCII code 'C' is an identifier of this [[Close]] message. */
   case class Close(tpe: Int, name: String) extends ClientMessageType
-
-  /** An ASCII code 'd' is an identifier of this [[CopyData]] message. */
   case class CopyData(data: Array[Byte]) extends ClientMessageType
-
-  /** An ASCII code 'c' is an identifier of this [[CopyDone]] message. */
   case class CopyDone() extends ClientMessageType
-
-  /** An ASCII code 'f' is an identifier of this [[CopyFail]] message. */
   case class CopyFail(cause: String) extends ClientMessageType
-
-  /** An ASCII code 'D' is an identifier of this [[Describe]] message. */
   case class Describe(tpe: Int, name: String) extends ClientMessageType
-
-  /** An ASCII code 'E' is an identifier of this [[Execute]] message. */
   case class Execute(portalName: String, maxRows: Int) extends ClientMessageType
-
-  /** An ASCII code 'H' is an identifier of this [[Flush]] message. */
   case class Flush() extends ClientMessageType
-
-  /** An ASCII code 'F' is an identifier of this [[FunctionCall]] message. */
   case class FunctionCall(objId: Int, formats: Seq[Int], params: Seq[Array[Byte]],
     resultFormat: Int) extends ClientMessageType
-
-  /** An ASCII code 'P' is an identifier of this [[Parse]] message. */
   case class Parse(name: String, query: String, objIds: Seq[Int]) extends ClientMessageType
-
-  /** An ASCII code 'p' is an identifier of this [[PasswordMessage]] message. */
   case class PasswordMessage(token: Array[Byte]) extends ClientMessageType
-
-  /** An ASCII code 'Q' is an identifier of this [[Query]] message. */
   case class Query(queries: Seq[String]) extends ClientMessageType
-
-  /** An ASCII code 'S' is an identifier of this [[Sync]] message. */
   case class Sync() extends ClientMessageType
-
-  /** An ASCII code 'F' is an identifier of this [[Sync]] message. */
-  case class CancelRequest(channelId: Int, secretId: Int) extends ClientMessageType
-
-  /** An ASCII code 'X' is an identifier of this [[Terminate]] message. */
   case class Terminate() extends ClientMessageType
 
-  /** This type represents the other unknown types. */
-  case class UnknownType(typeId: Int) extends ClientMessageType
+  /**
+   * A string in messages is a null-terminated one (C-style string) and there is no specific
+   * length limitation on strings.
+   */
+  private def extractString(msg: ByteBuffer): String = {
+    val origPos = msg.position()
+    var len = 0
+    // Search null from a current position
+    while (msg.hasRemaining() && msg.get() != 0.toByte) {
+      len = len + 1
+    }
+    if (len != 0) {
+      val localBuf = new Array[Byte](len)
+      msg.position(origPos)
+      msg.get(localBuf, 0, len)
+      msg.get()
+      new String(localBuf, "US-ASCII")
+    } else {
+      ""
+    }
+  }
+
+  /**
+   * Internal registry of Message parsers.
+   */
+  private val messageParsers: Map[Int, ByteBuffer => ClientMessageType] = Map(
+    // An ASCII code of the `Bind` message is 'B'(66)
+    66 -> { msg =>
+      val portalName = extractString(msg)
+      val queryName = extractString(msg)
+      val numFormats = msg.getShort()
+      val formats = if (numFormats > 0) {
+        val arrayBuf = new Array[Int](numFormats)
+        (0 until numFormats).foreach(i => arrayBuf(i) = msg.getShort())
+        arrayBuf.toSeq
+      } else {
+        Seq.empty[Int]
+      }
+      val numParams = msg.getShort()
+      val params = if (numParams > 0) {
+        val arrayBuf = new Array[Array[Byte]](numParams)
+        (0 until numParams).foreach { i =>
+          val byteLen = msg.getInt()
+          val byteArray = new Array[Byte](byteLen)
+          msg.get(byteArray)
+          arrayBuf(i) = byteArray
+        }
+        arrayBuf.toSeq
+      } else {
+        Seq.empty[Array[Byte]]
+      }
+      val numResultFormats = msg.getShort()
+      val resultFormats = if (numResultFormats > 0) {
+        val arrayBuf = new Array[Int](numParams)
+        (0 until numResultFormats).foreach(i => arrayBuf(i) = msg.getShort())
+        arrayBuf.toSeq
+      } else {
+        Seq.empty[Int]
+      }
+      Bind(portalName, queryName, formats, params, resultFormats)
+    },
+
+    // An ASCII code of the `Close` message is 'C'(67)
+    67 -> { msg =>
+      Close(msg.get(), extractString(msg))
+    },
+
+    // An ASCII code of the `Describe` message is 'D'(68)
+    68 -> { msg =>
+      Describe(msg.get(), extractString(msg))
+    },
+
+    // An ASCII code of the `Execute` message is 'E'(69)
+    69 -> { msg =>
+      Execute(extractString(msg), msg.getInt())
+    },
+
+    // An ASCII code of the `FunctionCall` message is 'F'(70)
+    70 -> { msg =>
+      val objId = msg.getInt()
+      val numFormats = msg.getShort()
+      val formats = if (numFormats > 0) {
+        val arrayBuf = new Array[Int](numFormats)
+        (0 until numFormats).foreach(i => arrayBuf(i) = msg.getShort())
+        arrayBuf.toSeq
+      } else {
+        Seq.empty[Int]
+      }
+      val numParams = msg.getShort()
+      val params = if (numParams > 0) {
+        val arrayBuf = new Array[Array[Byte]](numParams)
+        (0 until numParams).foreach { i =>
+          val byteLen = msg.getInt()
+          val byteArray = new Array[Byte](byteLen)
+          msg.get(byteArray)
+          arrayBuf(i) = byteArray
+        }
+        arrayBuf.toSeq
+      } else {
+        Seq.empty[Array[Byte]]
+      }
+      val resultFormat = msg.getShort()
+      FunctionCall(objId, formats, params, resultFormat)
+    },
+
+    // An ASCII code of the `Flush` message is 'H'(72)
+    72 -> { msg =>
+      Flush()
+    },
+
+    // An ASCII code of the `Parse` message is 'P'(80)
+    80 -> { msg =>
+      val portalName = extractString(msg)
+      val query = extractString(msg)
+      val numParams = msg.getShort()
+      val params = if (numParams > 0) {
+        val arrayBuf = new Array[Int](numParams)
+        (0 until numParams).foreach(i => arrayBuf(i) = msg.getInt())
+        arrayBuf.toSeq
+      } else {
+        Seq.empty[Int]
+      }
+      Parse(portalName, query, params.toSeq)
+    },
+
+    // An ASCII code of the `Query` message is 'Q'(81)
+    81 -> { msg =>
+      val byteArray = new Array[Byte](msg.remaining)
+      msg.get(byteArray)
+      // Since a query string could contain several queries (separated by semicolons),
+      // there might be several such response sequences before the backend finishes processing
+      // the query string.
+      Query(new String(byteArray, "US-ASCII").split(";").init.map(_.trim))
+    },
+
+    // An ASCII code of the `Sync` message is 'S'(83)
+    83 -> { msg =>
+      Sync()
+    },
+
+    // An ASCII code of the `Terminate` message is 'X'(88)
+    88 -> { msg =>
+      Sync()
+    },
+
+    // An ASCII code of the `CopyDone` message is 'c'(99)
+    99 -> { msg =>
+      CopyDone()
+    },
+
+    // An ASCII code of the `CopyData` message is 'd'(100)
+    100 -> { msg =>
+      val byteArray = new Array[Byte](msg.getInt())
+      msg.get(byteArray)
+      CopyData(byteArray)
+    },
+
+    // An ASCII code of the `CopyFail` message is 'f'(102)
+    102 -> { msg =>
+      CopyFail(extractString(msg))
+    },
+
+    // An ASCII code of the `PasswordMessage` message is 'p'(112)
+    112 -> { msg =>
+      val byteArray = new Array[Byte](msg.remaining)
+      msg.get(byteArray)
+      PasswordMessage(byteArray)
+    }
+  )
+
+  /**
+   * Extract a single client message from a current position in given `msgBuffer`.
+   * Since `msgBuffer` could have multiple client messages, we update the position to point
+   * to a next message.
+   */
+  def extractClientMessageType(msgBuffer: ByteBuffer): ClientMessageType = {
+    val messageId = msgBuffer.get().toInt
+    val basePos = msgBuffer.position()
+    val msgLen = msgBuffer.getInt()
+    val message = messageParsers.get(messageId).map(_(msgBuffer)).getOrElse {
+      throw new SQLException(s"Unknown message type: $messageId")
+    }
+    msgBuffer.position(basePos + msgLen)
+    message
+  }
 
 
   /**
@@ -432,143 +585,6 @@ private object PostgreSQLWireProtocol {
       }
       buf.array()
     }
-  }
-
-  /**
-   * Extract a single client message from a current position in given `msgBuffer`.
-   * Since `msgBuffer` could have multiple client messages, we update the position to point
-   * to a next message.
-   */
-  def extractClientMessageType(msgBuffer: ByteBuffer): ClientMessageType = {
-    // A string in messages is a null-terminated one (C-style string) and there is no specific
-    // length limitation on strings.
-    def extractString(): String = {
-      val origPos = msgBuffer.position()
-      var len = 0
-      // Search null from a crrent position
-      while (msgBuffer.hasRemaining() && msgBuffer.get() != 0.toByte) {
-        len = len + 1
-      }
-      if (len != 0) {
-        val localBuf = new Array[Byte](len)
-        msgBuffer.position(origPos)
-        msgBuffer.get(localBuf, 0, len)
-        msgBuffer.get()
-        new String(localBuf, "US-ASCII")
-      } else {
-        ""
-      }
-    }
-    val messageId = msgBuffer.get().toInt
-    val basePos = msgBuffer.position()
-    val msgLen = msgBuffer.getInt()
-    val message = messageId match {
-      case 66 =>
-        val portalName = extractString()
-        val queryName = extractString()
-        val numFormats = msgBuffer.getShort()
-        val formats = if (numFormats > 0) {
-          val arrayBuf = new Array[Int](numFormats)
-          (0 until numFormats).foreach(i => arrayBuf(i) = msgBuffer.getShort())
-          arrayBuf.toSeq
-        } else {
-          Seq.empty[Int]
-        }
-        val numParams = msgBuffer.getShort()
-        val params = if (numParams > 0) {
-          val arrayBuf = new Array[Array[Byte]](numParams)
-          (0 until numParams).foreach { i =>
-            val byteLen = msgBuffer.getInt()
-            val byteArray = new Array[Byte](byteLen)
-            msgBuffer.get(byteArray)
-            arrayBuf(i) = byteArray
-          }
-          arrayBuf.toSeq
-        } else {
-          Seq.empty[Array[Byte]]
-        }
-        val numResultFormats = msgBuffer.getShort()
-        val resultFormats = if (numResultFormats > 0) {
-          val arrayBuf = new Array[Int](numParams)
-          (0 until numResultFormats).foreach(i => arrayBuf(i) = msgBuffer.getShort())
-          arrayBuf.toSeq
-        } else {
-          Seq.empty[Int]
-        }
-        Bind(portalName, queryName, formats, params, resultFormats)
-      case 67 =>
-        Close(msgBuffer.get(), extractString())
-      case 68 =>
-        Describe(msgBuffer.get(), extractString())
-      case 69 =>
-        Execute(extractString(), msgBuffer.getInt())
-      case 70 =>
-        val objId = msgBuffer.getInt()
-        val numFormats = msgBuffer.getShort()
-        val formats = if (numFormats > 0) {
-          val arrayBuf = new Array[Int](numFormats)
-          (0 until numFormats).foreach(i => arrayBuf(i) = msgBuffer.getShort())
-          arrayBuf.toSeq
-        } else {
-          Seq.empty[Int]
-        }
-        val numParams = msgBuffer.getShort()
-        val params = if (numParams > 0) {
-          val arrayBuf = new Array[Array[Byte]](numParams)
-          (0 until numParams).foreach { i =>
-            val byteLen = msgBuffer.getInt()
-            val byteArray = new Array[Byte](byteLen)
-            msgBuffer.get(byteArray)
-            arrayBuf(i) = byteArray
-          }
-          arrayBuf.toSeq
-        } else {
-          Seq.empty[Array[Byte]]
-        }
-        val resultFormat = msgBuffer.getShort()
-        FunctionCall(objId, formats, params, resultFormat)
-      case 72 =>
-        Flush()
-      case 80 =>
-        val portalName = extractString()
-        val query = extractString()
-        val numParams = msgBuffer.getShort()
-        val params = if (numParams > 0) {
-          val arrayBuf = new Array[Int](numParams)
-          (0 until numParams).foreach(i => arrayBuf(i) = msgBuffer.getInt())
-          arrayBuf.toSeq
-        } else {
-          Seq.empty[Int]
-        }
-        Parse(portalName, query, params.toSeq)
-      case 81 =>
-        val byteArray = new Array[Byte](msgBuffer.remaining)
-        msgBuffer.get(byteArray)
-        // Since a query string could contain several queries (separated by semicolons),
-        // there might be several such response sequences before the backend finishes processing
-        // the query string.
-        Query(new String(byteArray, "US-ASCII").split(";").init.map(_.trim))
-      case 83 =>
-        Sync()
-      case 88 =>
-        Terminate()
-      case 99 =>
-        CopyDone()
-      case 100 =>
-        val byteArray = new Array[Byte](msgBuffer.getInt())
-        msgBuffer.get(byteArray)
-        CopyData(byteArray)
-      case 102 =>
-        CopyFail(extractString())
-      case 112 =>
-        val byteArray = new Array[Byte](msgBuffer.remaining)
-        msgBuffer.get(byteArray)
-        PasswordMessage(byteArray)
-      case _ =>
-        UnknownType(messageId)
-    }
-    msgBuffer.position(basePos + msgLen)
-    message
   }
 }
 
