@@ -600,22 +600,6 @@ private[v3] class SslRequestHandler() extends ChannelInboundHandlerAdapter with 
   }
 }
 
-/**
- * Manage a cursor state in a session.
- *
- * TODO: We need to recheck threading policies in PostgreSQL JDBC drivers and related documents:
- * - Chapter 10. Using the Driver in a Multithreaded or a Servlet Environment
- *  https://jdbc.postgresql.org/documentation/92/thread.html
- */
-private case class PortalState(sessionId: Int, secretKey: Int) {
-  var pendingBytes: Array[Byte] = Array.empty
-  // `execState` possibly accessed by asynchronous JDBC cancellation requests
-  @volatile var execState: ExecuteStatementOperation = _
-  var numFetched: Int = 0
-  var rowWriter: InternalRow => Seq[Array[Byte]] = _
-  val queries: mutable.Map[String, String] = mutable.Map.empty
-}
-
 @ChannelHandler.Sharable
 private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkConf)
     extends SimpleChannelInboundHandler[Array[Byte]] with Logging {
@@ -624,6 +608,28 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
 
   // A format is like 'spark/fully.qualified.domain.name@YOUR-REALM.COM'
   private lazy val kerberosServerPrincipal = conf.get("spark.yarn.principal")
+
+  /**
+   * Manage a cursor state in a session.
+   *
+   * TODO: We need to recheck threading policies in PostgreSQL JDBC drivers and related documents:
+   * - Chapter 10. Using the Driver in a Multithreaded or a Servlet Environment
+   *  https://jdbc.postgresql.org/documentation/92/thread.html
+   */
+  case class PortalState(sessionId: Int, secretKey: Int) {
+    val queries: mutable.Map[String, String] = mutable.Map.empty
+    var pendingBytes: Array[Byte] = Array.empty
+    var numFetched: Int = 0
+    // `execState` possibly accessed by asynchronous JDBC cancellation requests
+    @volatile var execState: ExecuteStatementOperation = _
+    var rowWriter: InternalRow => Seq[Array[Byte]] = _
+  }
+
+  private def resetPortalState(state: PortalState): Unit = {
+    state.execState = null
+    state.rowWriter = null
+    state.numFetched = 0
+  }
 
   private val channelIdToPortalState = java.util.Collections.synchronizedMap(
     new java.util.HashMap[Int, PortalState]())
@@ -814,7 +820,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
     }
   }
 
-  def buildRowWriter(schema: StructType): (InternalRow) => Seq[Array[Byte]] = {
+  private def buildRowWriter(schema: StructType): (InternalRow) => Seq[Array[Byte]] = {
     def toBytes(s: String) = s.getBytes("US-ASCII")
     val attrs = schema.toAttributes
     val fieldsWriter: Seq[InternalRow => Array[Byte]] = schema.fields.zip(attrs).map {
@@ -1022,9 +1028,11 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
                 ctx.write(CommandComplete(s"BEGIN"))
               case SELECT =>
                 ctx.write(CommandComplete(s"SELECT $numRows"))
+                resetPortalState(portalState)
               case FETCH =>
                 if (numRows == 0) {
                   ctx.write(CommandComplete(s"FETCH ${portalState.numFetched}"))
+                  resetPortalState(portalState)
                 } else {
                   ctx.write(PortalSuspended)
                 }
@@ -1032,6 +1040,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
           } catch {
             case NonFatal(e) =>
               handleException(ctx, s"Exception detected in processing message `Execute`: $e")
+              resetPortalState(portalState)
               return
           }
           ctx.flush()
