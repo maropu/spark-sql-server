@@ -750,13 +750,13 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
     })
   }
 
-  private def handleAuthenticationOk(ctx: ChannelHandlerContext, portalState: SessionState): Unit = {
+  private def handleAuthenticationOk(ctx: ChannelHandlerContext, state: SessionState): Unit = {
     ctx.write(AuthenticationOk)
     ctx.write(ParameterStatus("application_name", "spark-sql-server"))
     ctx.write(ParameterStatus("server_encoding", "UTF-8"))
     ctx.write(ParameterStatus("server_version", conf.sqlServerVersion))
     ctx.write(ParameterStatus("TimeZone", java.util.TimeZone.getDefault().getID()))
-    ctx.write(BackendKeyData(getUniqueChannelId(ctx), portalState.secretKey))
+    ctx.write(BackendKeyData(getUniqueChannelId(ctx), state.secretKey))
     ctx.write(ReadyForQuery)
     ctx.flush()
   }
