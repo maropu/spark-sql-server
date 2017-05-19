@@ -622,12 +622,12 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
     var numFetched: Int = 0
     // `execState` possibly accessed by asynchronous JDBC cancellation requests
     @volatile var execState: ExecuteStatementOperation = _
-    var rowWriter: InternalRow => Seq[Array[Byte]] = _
+    var rowConverter: InternalRow => Seq[Array[Byte]] = _
   }
 
   private def resetPortalState(state: PortalState): Unit = {
     state.execState = null
-    state.rowWriter = null
+    state.rowConverter = null
     state.numFetched = 0
   }
 
@@ -820,10 +820,10 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
     }
   }
 
-  private def buildRowWriter(schema: StructType): (InternalRow) => Seq[Array[Byte]] = {
+  private def buildRowConverter(schema: StructType): (InternalRow) => Seq[Array[Byte]] = {
     def toBytes(s: String) = s.getBytes("US-ASCII")
     val attrs = schema.toAttributes
-    val fieldsWriter: Seq[InternalRow => Array[Byte]] = schema.fields.zip(attrs).map {
+    val fieldsConverter: Seq[InternalRow => Array[Byte]] = schema.fields.zip(attrs).map {
       case (f, attrRef @ AttributeReference(name, tpe, _, _)) =>
         val proj = UnsafeProjection.create(attrRef :: Nil, attrs)
         tpe match {
@@ -883,7 +883,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
       require(row.numFields == schema.length)
       (0 until row.numFields).map { index =>
         if (!row.isNullAt(index)) {
-          fieldsWriter(index)(row)
+          fieldsConverter(index)(row)
         } else {
           Array.empty[Byte]
         }
@@ -975,7 +975,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
             val execState = cli.executeStatement(portalState.sessionId, query, isPortal)
             execState.run()
             portalState.execState = execState
-            portalState.rowWriter = buildRowWriter(execState.schema)
+            portalState.rowConverter = buildRowConverter(execState.schema)
           } catch {
             // In case of the parsing exception, we put explicit error messages
             // to make users understood.
@@ -1008,16 +1008,16 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
         case Execute(portalName, maxRows) =>
           logInfo(s"Execute: portalName=$portalName, maxRows=$maxRows")
           try {
-            val rowWriter = portalState.rowWriter
+            val rowConveter = portalState.rowConverter
             var numRows = 0
             if (maxRows == 0) {
               portalState.execState.iterator().foreach { iter =>
-                ctx.write(DataRow(iter, rowWriter(iter)))
+                ctx.write(DataRow(iter, rowConveter(iter)))
                 numRows = numRows + 1
               }
             } else {
               portalState.execState.iterator().take(maxRows).foreach { iter =>
-                ctx.write(DataRow(iter, rowWriter(iter)))
+                ctx.write(DataRow(iter, rowConveter(iter)))
                 numRows = numRows + 1
               }
               // Accumulate fetched #rows in this execution
@@ -1076,10 +1076,10 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
               // messages, and then CommandComplete.
               ctx.write(RowDescription(execState.schema))
 
-              val rowWriter = buildRowWriter(execState.schema)
+              val rowConveter = buildRowConverter(execState.schema)
               var numRows = 0
               execState.iterator().foreach { iter =>
-                ctx.write(DataRow(iter, rowWriter(iter)))
+                ctx.write(DataRow(iter, rowConveter(iter)))
                 numRows += 1
               }
               ctx.write(CommandComplete(s"SELECT $numRows"))
