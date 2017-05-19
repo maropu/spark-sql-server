@@ -41,8 +41,8 @@ import org.apache.spark.SparkConf
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{AttributeReference, UnsafeProjection}
-import org.apache.spark.sql.catalyst.json.{JSONOptions, JacksonGenerator}
-import org.apache.spark.sql.catalyst.util.DateTimeUtils
+import org.apache.spark.sql.catalyst.json.{JacksonGenerator, JSONOptions}
+import org.apache.spark.sql.catalyst.util.DateTimeUtils._
 import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.parser.ParseException
 import org.apache.spark.sql.server.service.{BEGIN, ExecuteStatementOperation, FETCH, SELECT, SessionService}
@@ -835,13 +835,13 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
           case TimestampType =>
             (row: InternalRow) => {
               val field = proj(row)
-              val timestampData = DateTimeUtils.toJavaTimestamp(field.get(0, TimestampType).asInstanceOf[Long])
+              val timestampData = toJavaTimestamp(field.get(0, TimestampType).asInstanceOf[Long])
               toBytes(s"$timestampData")
             }
           case DateType =>
             (row: InternalRow) => {
               val field = proj(row)
-              val dateData = DateTimeUtils.toJavaDate(field.get(0, DateType).asInstanceOf[Int])
+              val dateData = toJavaDate(field.get(0, DateType).asInstanceOf[Int])
               toBytes(s"$dateData")
             }
           case complexType @ (_: StructType | _: MapType | _: ArrayType) =>
