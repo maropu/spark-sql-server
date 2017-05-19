@@ -610,33 +610,47 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
   private lazy val kerberosServerPrincipal = conf.get("spark.yarn.principal")
 
   /**
-   * Manage a cursor state in a session.
+   * Manage cursor states in a session.
    *
    * TODO: We need to recheck threading policies in PostgreSQL JDBC drivers and related documents:
    * - Chapter 10. Using the Driver in a Multithreaded or a Servlet Environment
    *  https://jdbc.postgresql.org/documentation/92/thread.html
    */
-  case class PortalState(sessionId: Int, secretKey: Int) {
-    val queries: mutable.Map[String, String] = mutable.Map.empty
-    var pendingBytes: Array[Byte] = Array.empty
-    var numFetched: Int = 0
-    // `execState` possibly accessed by asynchronous JDBC cancellation requests
+  case class SessionState(id: Int, secretKey: Int) {
+
+    // Holds multiple prepared statements inside a session
+    val queries: mutable.Map[String, QueryState] = mutable.Map.empty
+
+    // Holds portal states
+    val portals: mutable.Map[String, PortalState] = mutable.Map.empty
+
+    // Holds a current active state of query execution and this variable possibly accessed
+    // by asynchronous JDBC cancellation requests.
     @volatile var execState: ExecuteStatementOperation = _
-    var rowConverter: InternalRow => Seq[Array[Byte]] = _
+
+    // Holds unprocessed bytes for a message parser
+    var pendingBytes: Array[Byte] = Array.empty
   }
 
-  private def resetPortalState(state: PortalState): Unit = {
+  case class QueryState(str: String, rowConverter: Option[InternalRow => Seq[Array[Byte]]] = None)
+
+  case class PortalState(queryState: QueryState) {
+
+    // Number of the rows that this portal state returns
+    var numFetched: Int = 0
+  }
+
+  private def resetPortalState(portalName: String, state: SessionState): Unit = {
+    state.portals.remove(portalName)
     state.execState = null
-    state.rowConverter = null
-    state.numFetched = 0
   }
 
-  private val channelIdToPortalState = java.util.Collections.synchronizedMap(
-    new java.util.HashMap[Int, PortalState]())
+  private val channelIdToSessionState = java.util.Collections.synchronizedMap(
+    new java.util.HashMap[Int, SessionState]())
 
   override def channelRead0(ctx: ChannelHandlerContext, msg: Array[Byte]): Unit = {
     val msgBuffer = ByteBuffer.wrap(msg)
-    if (!channelIdToPortalState.containsKey(getUniqueChannelId(ctx))) {
+    if (!channelIdToSessionState.containsKey(getUniqueChannelId(ctx))) {
       acceptStartupMessage(ctx, msgBuffer)
     } else {
       // Once the connection established, following messages are processed here
@@ -657,21 +671,21 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
   }
 
   private def openSession(channelId: Int, secretKey: Int, userName: String, passwd: String,
-      hostAddr: String, dbName: String): PortalState = {
+      hostAddr: String, dbName: String): SessionState = {
     val sessionId = cli.openSession(userName, passwd, hostAddr, dbName)
-    val portalState = PortalState(sessionId, secretKey)
-    channelIdToPortalState.put(channelId, portalState)
+    val portalState = SessionState(sessionId, secretKey)
+    channelIdToSessionState.put(channelId, portalState)
     logInfo(s"Open a session (sessionId=$sessionId, channelId=$channelId " +
       s"userName=$userName hostAddr=$hostAddr)")
     portalState
   }
 
   private def closeSession(channelId: Int): Unit = {
-    if (channelIdToPortalState.containsKey(channelId)) {
-      val portalState = channelIdToPortalState.get(channelId)
-      logInfo(s"Close the session (sessionId=${portalState.sessionId}, channelId=$channelId)")
-      cli.closeSession(portalState.sessionId)
-      channelIdToPortalState.remove(channelId)
+    if (channelIdToSessionState.containsKey(channelId)) {
+      val portalState = channelIdToSessionState.get(channelId)
+      logInfo(s"Close the session (sessionId=${portalState.id}, channelId=$channelId)")
+      cli.closeSession(portalState.id)
+      channelIdToSessionState.remove(channelId)
     }
   }
 
@@ -736,7 +750,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
     })
   }
 
-  private def handleAuthenticationOk(ctx: ChannelHandlerContext, portalState: PortalState): Unit = {
+  private def handleAuthenticationOk(ctx: ChannelHandlerContext, portalState: SessionState): Unit = {
     ctx.write(AuthenticationOk)
     ctx.write(ParameterStatus("application_name", "spark-sql-server"))
     ctx.write(ParameterStatus("server_encoding", "UTF-8"))
@@ -765,7 +779,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
     } else if (magic == CANCEL_REQUEST_CODE) {
       val channelId = msgBuffer.getInt()
       val secretKey = msgBuffer.getInt()
-      val portal = Some(channelIdToPortalState.get(channelId)).getOrElse {
+      val portal = Some(channelIdToSessionState.get(channelId)).getOrElse {
         throw new SQLException(s"Unknown cancel request: channelId=$channelId")
       }
       if (portal.secretKey != secretKey) {
@@ -893,17 +907,17 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
 
   private def handleV3Messages(ctx: ChannelHandlerContext, msgBuffer: ByteBuffer): Unit = {
     val channelId = getUniqueChannelId(ctx)
-    val portalState = channelIdToPortalState.get(channelId)
+    val sessionState = channelIdToSessionState.get(channelId)
 
     // Since a message possible spans over multiple in-coming data in `channelRead0` calls,
     // we need to check enough data to process. We put complete messages in `procBuffer` for message
     // processing; otherwise it puts left data in `pendingBytes` for a next call.
-    val len = portalState.pendingBytes.size + msgBuffer.remaining()
+    val len = sessionState.pendingBytes.size + msgBuffer.remaining()
     val uncheckedBuffer = ByteBuffer.allocate(len)
     val procBuffer = ByteBuffer.allocate(len)
-    uncheckedBuffer.put(portalState.pendingBytes)
+    uncheckedBuffer.put(sessionState.pendingBytes)
     uncheckedBuffer.put(msgBuffer.array)
-    portalState.pendingBytes = Array.empty
+    sessionState.pendingBytes = Array.empty
     uncheckedBuffer.flip()
     while (uncheckedBuffer.hasRemaining) {
       val (basePos, _) = (uncheckedBuffer.position(), uncheckedBuffer.get())
@@ -918,18 +932,18 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
         } else {
           val pendingBytes = new Array[Byte](uncheckedBuffer.remaining())
           uncheckedBuffer.get(pendingBytes)
-          portalState.pendingBytes = pendingBytes
+          sessionState.pendingBytes = pendingBytes
         }
       } else {
         uncheckedBuffer.position(basePos)
         val pendingBytes = new Array[Byte](uncheckedBuffer.remaining())
         uncheckedBuffer.get(pendingBytes)
-        portalState.pendingBytes = pendingBytes
+        sessionState.pendingBytes = pendingBytes
       }
     }
 
     procBuffer.flip()
-    logDebug(s"#processed=${procBuffer.remaining} #pending=${portalState.pendingBytes.size}")
+    logDebug(s"#processed=${procBuffer.remaining} #pending=${sessionState.pendingBytes.size}")
 
     while (procBuffer.remaining() > 0) {
       val message = try {
@@ -940,16 +954,17 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
       message match {
         case PasswordMessage(token) =>
           if (handleGSSAuthentication(ctx, token)) {
-            handleAuthenticationOk(ctx, portalState)
+            handleAuthenticationOk(ctx, sessionState)
           }
           return
         case Bind(portalName, queryName, formats, params, resultFormats) =>
           logInfo(s"Bind: portalName=$portalName queryName=$queryName formats=$formats "
             + s"params=$params resultFormats=$resultFormats")
-          var query = portalState.queries.getOrElse(queryName, {
+          val queryState = sessionState.queries.getOrElse(queryName, {
             throw new SQLException(s"Unknown query specified: $queryName")
           })
           // TODO: Make parameter bindings more smart, e.g., based on analyzed logical plans
+          var boundQuery = queryState.str
           formats.zipWithIndex.foreach { case (format, index) =>
             val target = "$" + s"${index + 1}"
             val param = format match {
@@ -962,20 +977,25 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
                 }
             }
             logDebug(s"binds param: $target->$param")
-            query = query.replace(target, s"'$param'")
+            boundQuery = boundQuery.replace(target, s"'$param'")
           }
-          logInfo(s"Bound query: $query")
+          logInfo(s"Bound query: $boundQuery")
 
-          val isPortal = !(portalName == null || portalName.isEmpty)
-          if (isPortal) {
+          val isCursorMode = !portalName.isEmpty()
+          if (isCursorMode) {
             logInfo(s"Cursor mode enabled: portalName=$portalName")
           }
 
           try {
-            val execState = cli.executeStatement(portalState.sessionId, query, isPortal)
+            val execState = cli.executeStatement(sessionState.id, boundQuery, isCursorMode)
             execState.run()
-            portalState.execState = execState
-            portalState.rowConverter = buildRowConverter(execState.schema)
+            sessionState.execState = execState
+            // If a row converter not initialized yet, build it here
+            if (!queryState.rowConverter.isDefined) {
+              sessionState.queries(queryName) =
+                QueryState(queryState.str, Some(buildRowConverter(execState.schema)))
+            }
+            sessionState.portals(portalName) = PortalState(sessionState.queries(queryName))
           } catch {
             // In case of the parsing exception, we put explicit error messages
             // to make users understood.
@@ -991,11 +1011,13 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
           ctx.flush()
         case Close(tpe, name) =>
           if (tpe == 83) { // Close a prepared statement
-            portalState.queries.remove(name)
+            sessionState.queries.remove(name)
             logInfo(s"Close the '$name' prepared statement in this session "
-              + "(id:${portalState.sessionId}")
+              + s"(id:${sessionState.id}")
           } else if (tpe == 80) { // Close a portal
-            // Do nothing
+            sessionState.portals.remove(name)
+            logInfo(s"Close the '$name' portal in this session "
+              + s"(id:${sessionState.id}")
           } else {
             logWarning(s"Unknown type id received in processing message 'Close`: $tpe")
           }
@@ -1003,36 +1025,41 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
           // The response to a SELECT query (or other queries that return row sets, such as
           // EXPLAIN or SHOW) normally consists of RowDescription, zero or more DataRow
           // messages, and then CommandComplete.
-          ctx.write(RowDescription(portalState.execState.schema()))
+          ctx.write(RowDescription(sessionState.execState.schema()))
           ctx.flush()
         case Execute(portalName, maxRows) =>
           logInfo(s"Execute: portalName=$portalName, maxRows=$maxRows")
           try {
-            val rowConveter = portalState.rowConverter
+            val portalState = sessionState.portals.getOrElse(portalName, {
+              throw new SQLException(s"Unknown portal specified: $portalName")
+            })
+            val rowConveter = portalState.queryState.rowConverter.getOrElse {
+              throw new SQLException(s"Row converter not initialized for $portalName")
+            }
             var numRows = 0
             if (maxRows == 0) {
-              portalState.execState.iterator().foreach { iter =>
+              sessionState.execState.iterator().foreach { iter =>
                 ctx.write(DataRow(iter, rowConveter(iter)))
                 numRows = numRows + 1
               }
             } else {
-              portalState.execState.iterator().take(maxRows).foreach { iter =>
+              sessionState.execState.iterator().take(maxRows).foreach { iter =>
                 ctx.write(DataRow(iter, rowConveter(iter)))
                 numRows = numRows + 1
               }
-              // Accumulate fetched #rows in this execution
+              // Accumulate fetched #rows in this query
               portalState.numFetched += numRows
             }
-            portalState.execState.queryType match {
+            sessionState.execState.queryType match {
               case BEGIN =>
                 ctx.write(CommandComplete(s"BEGIN"))
               case SELECT =>
                 ctx.write(CommandComplete(s"SELECT $numRows"))
-                resetPortalState(portalState)
+                resetPortalState(portalName, sessionState)
               case FETCH =>
                 if (numRows == 0) {
                   ctx.write(CommandComplete(s"FETCH ${portalState.numFetched}"))
-                  resetPortalState(portalState)
+                  resetPortalState(portalName, sessionState)
                 } else {
                   ctx.write(PortalSuspended)
                 }
@@ -1040,7 +1067,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
           } catch {
             case NonFatal(e) =>
               handleException(ctx, s"Exception detected in processing message `Execute`: $e")
-              resetPortalState(portalState)
+              resetPortalState(portalName, sessionState)
               return
           }
           ctx.flush()
@@ -1050,9 +1077,9 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
         case Flush() =>
           handleException(ctx, "Message 'Flush' not supported")
           return
-        case Parse(name, query, objIds) =>
-          portalState.queries(name) = query
-          logInfo(s"Parse: name=${portalState.queries(name)} query=$query objIds=$objIds")
+        case Parse(queryName, query, objIds) =>
+          sessionState.queries(queryName) = QueryState(query)
+          logInfo(s"Parse: queryName=$queryName query=$query objIds=$objIds")
           ctx.write(ParseComplete)
           ctx.flush()
         case Query(queries) =>
@@ -1068,7 +1095,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
           } else {
             val query = queries.head
             try {
-              val execState = cli.executeStatement(portalState.sessionId, query, isCursor = false)
+              val execState = cli.executeStatement(sessionState.id, query, isCursor = false)
               execState.run()
 
               // The response to a SELECT query (or other queries that return row sets, such as
@@ -1088,7 +1115,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
               // to make users understood.
               case e: ParseException if e.command.isDefined =>
                 handleException(ctx, s"Cannot handle a command ${e.command.get} " +
-                  s"in processing message `Bind`: $e")
+                  s"in processing message `Query`: $e")
                 return
               case NonFatal(e) =>
                 handleException(ctx, s"Exception detected in processing message `Query`: $e")
