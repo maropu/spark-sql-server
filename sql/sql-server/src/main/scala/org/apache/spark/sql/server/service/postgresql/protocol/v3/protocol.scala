@@ -808,15 +808,6 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
     val props = keys.zip(values).toMap
     logDebug("Received properties from a client: "
       + props.map { case (key, value) => s"$key=$value" }.mkString(", "))
-    // props.get("application_name").map { appName =>
-    //   if (appName == "psql") {
-    //     ctx.write(ErrorResponse("`psql` not supported in Spark SQL server"))
-    //     logWarning("Close the connection from `psql` because of unsupported client")
-    //     ctx.flush()
-    //     ctx.close()
-    //     return
-    //   }
-    // }
     val userName = props.getOrElse("user", "UNKNOWN")
     val passwd = props.getOrElse("passwd", "")
     val hostAddr = ctx.channel().localAddress().asInstanceOf[InetSocketAddress].getHostName()
