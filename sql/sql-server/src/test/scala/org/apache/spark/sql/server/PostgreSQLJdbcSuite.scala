@@ -397,7 +397,7 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
       assert(3 === rsMetaData.getColumnCount)
 
       val expectedRow = Seq(-1, """{"val0":0,"val1":{"val11":0.1,"val12":"test"}}""",
-        """{0:"value0",1:"value1"}""")
+        """{"0":"value0","1":"value1"}""")
 
       def getCustomTypedValue(offset: Int): Any = {
         assert("PGobject" === rs.getObject(offset).getClass.getSimpleName)

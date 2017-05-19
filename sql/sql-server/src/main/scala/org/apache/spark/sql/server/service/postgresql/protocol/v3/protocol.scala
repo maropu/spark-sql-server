@@ -40,8 +40,9 @@ import org.ietf.jgss.{GSSContext, GSSCredential, GSSException, GSSManager, Oid}
 import org.apache.spark.SparkConf
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.json.JacksonGenerator
-import org.apache.spark.sql.catalyst.util.{ArrayData, DateTimeUtils, MapData}
+import org.apache.spark.sql.catalyst.expressions.{AttributeReference, UnsafeProjection}
+import org.apache.spark.sql.catalyst.json.{JSONOptions, JacksonGenerator}
+import org.apache.spark.sql.catalyst.util.DateTimeUtils
 import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.parser.ParseException
 import org.apache.spark.sql.server.service.{BEGIN, ExecuteStatementOperation, FETCH, SELECT, SessionService}
@@ -425,97 +426,21 @@ object PostgreSQLWireProtocol {
    * If any command request (e.g., [[Query]] and [[Execute]]) is finished successfully and we have
    * result rows, we send the results as the [[DataRow]]s.
    */
-  def DataRow(internalRow: InternalRow, state: PortalState): Array[Byte] = {
-    val schema = state.execState.schema
-    val row = internalRow.toSeq(schema)
-    val rowBytes = row.zipWithIndex.map { case (data, index) =>
-      if (!internalRow.isNullAt(index)) {
-        if (schema(index).dataType == BinaryType) {
-          // Send back as binary data
-          data.asInstanceOf[Array[Byte]]
-        } else {
-          // Send back as text data
-          val rowStr = schema(index).dataType match {
-            case s: StructType =>
-              val key = schema(index).name
-              val jsonState = state.jsonStates.getOrElse(key, {
-                val writer = new CharArrayWriter
-                val js = JsonState(writer, new JacksonGenerator(s, writer))
-                state.jsonStates.put(key, js)
-                js
-              })
-              toJson(data.asInstanceOf[InternalRow], jsonState)
-            case MapType(keyType, valueType, _) =>
-              val mapData = data.asInstanceOf[MapData]
-              val keyArray = mapData.keyArray()
-              val valueArray = mapData.valueArray()
-              // TODO: Use `JacksonGenerator` here
-              (0 until mapData.numElements).map { index =>
-                val keyData = keyType match {
-                  case StringType => s""""${keyArray.get(index, StringType)}""""
-                  case _ => s"${keyArray.get(index, keyType)}"
-                }
-                val valueData = valueType match {
-                  case StringType => s""""${valueArray.get(index, StringType)}""""
-                  case _ => s"${valueArray.get(index, valueType)}"
-                }
-                s"$keyData:$valueData"
-              }.mkString("{", ",", "}")
-            case ArrayType(tpe, _) =>
-              val arrayData = data.asInstanceOf[ArrayData]
-              (0 until arrayData.numElements).map { index =>
-                tpe match {
-                  case TimestampType =>
-                    val timestampData = DateTimeUtils.toJavaTimestamp(
-                      arrayData.get(index, TimestampType).asInstanceOf[Long])
-                    s""""$timestampData""""
-                  case DateType =>
-                    val dateData = DateTimeUtils.toJavaDate(
-                      arrayData.get(index, DateType).asInstanceOf[Int])
-                    s"$dateData"
-                  case _ =>
-                    s"${arrayData.get(index, tpe)}"
-                }
-              }.mkString("{", ",", "}")
-            case TimestampType =>
-              val timestampData = DateTimeUtils.toJavaTimestamp(data.asInstanceOf[Long])
-              s"$timestampData"
-            case DateType =>
-              val dateData = DateTimeUtils.toJavaDate(data.asInstanceOf[Int])
-              s"$dateData"
-            case _ =>
-              s"$data"
-          }
-          rowStr.getBytes("US-ASCII")
-        }
-      } else {
-        Array.empty[Byte]
-      }
-    }
-    val length = 6 + row.zipWithIndex.map { case (data, index) =>
-        4 + rowBytes(index).length
-      }.reduce(_ + _)
+  def DataRow(row: InternalRow, rowInBytes: Seq[Array[Byte]]): Array[Byte] = {
+    require(row.numFields == rowInBytes.length)
+    val length = 6 + rowInBytes.map(_.length + 4).sum
     val buf = ByteBuffer.allocate(1 + length)
-    buf.put('D'.toByte).putInt(length).putShort(internalRow.numFields.toShort)
-    schema.zipWithIndex.map { case (field, index) =>
-      if (!internalRow.isNullAt(index)) {
-        buf.putInt(rowBytes(index).length)
-        buf.put(rowBytes(index))
+    buf.put('D'.toByte).putInt(length).putShort(row.numFields.toShort)
+    (0 until row.numFields).foreach { index =>
+      if (!row.isNullAt(index)) {
+        buf.putInt(rowInBytes(index).length)
+        buf.put(rowInBytes(index))
       } else {
         // '-1' indicates a NULL column value
         buf.putInt(-1)
       }
     }
     buf.array()
-  }
-
-  private def toJson(structRow: InternalRow, state: JsonState): String = {
-    val (gen, writer) = (state.generator, state.writer)
-    gen.write(structRow)
-    gen.flush()
-    val json = writer.toString
-    writer.reset()
-    json
   }
 
   /**
@@ -675,9 +600,6 @@ private[v3] class SslRequestHandler() extends ChannelInboundHandlerAdapter with 
   }
 }
 
-/** A state to convert struct-typed data into json */
-private case class JsonState(writer: CharArrayWriter, generator: JacksonGenerator)
-
 /**
  * Manage a cursor state in a session.
  *
@@ -690,8 +612,8 @@ private case class PortalState(sessionId: Int, secretKey: Int) {
   // `execState` possibly accessed by asynchronous JDBC cancellation requests
   @volatile var execState: ExecuteStatementOperation = _
   var numFetched: Int = 0
+  var rowWriter: InternalRow => Seq[Array[Byte]] = _
   val queries: mutable.Map[String, String] = mutable.Map.empty
-  val jsonStates: mutable.Map[String, JsonState] = mutable.Map.empty
 }
 
 @ChannelHandler.Sharable
@@ -742,7 +664,6 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
     if (channelIdToPortalState.containsKey(channelId)) {
       val portalState = channelIdToPortalState.get(channelId)
       logInfo(s"Close the session (sessionId=${portalState.sessionId}, channelId=$channelId)")
-      portalState.jsonStates.map(_._2.generator.close)
       cli.closeSession(portalState.sessionId)
       channelIdToPortalState.remove(channelId)
     }
@@ -893,6 +814,77 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
     }
   }
 
+  def buildRowWriter(schema: StructType): (InternalRow) => Seq[Array[Byte]] = {
+    def toBytes(s: String) = s.getBytes("US-ASCII")
+    val attrs = schema.toAttributes
+    val fieldsWriter: Seq[InternalRow => Array[Byte]] = schema.fields.zip(attrs).map {
+      case (f, attrRef @ AttributeReference(name, tpe, _, _)) =>
+        val proj = UnsafeProjection.create(attrRef :: Nil, attrs)
+        tpe match {
+          case BinaryType =>
+            (row: InternalRow) => {
+              val field = proj(row)
+              field.get(0, BinaryType).asInstanceOf[Array[Byte]]
+            }
+          case TimestampType =>
+            (row: InternalRow) => {
+              val field = proj(row)
+              val timestampData = DateTimeUtils.toJavaTimestamp(field.get(0, TimestampType).asInstanceOf[Long])
+              toBytes(s"$timestampData")
+            }
+          case DateType =>
+            (row: InternalRow) => {
+              val field = proj(row)
+              val dateData = DateTimeUtils.toJavaDate(field.get(0, DateType).asInstanceOf[Int])
+              toBytes(s"$dateData")
+            }
+          case complexType @ (_: StructType | _: MapType | _: ArrayType) =>
+            val outputSchema = new StructType().add(f)
+            val writer = new CharArrayWriter
+            // Set a timestamp format so that JDBC drivers can parse data
+            val options = new JSONOptions(Map("timestampFormat" -> "yyyy-MM-dd HH:mm:ss"))
+            val jsonGenerator = new JacksonGenerator(outputSchema, writer, options)
+            def toJson(row: InternalRow): String = {
+              jsonGenerator.write(row)
+              jsonGenerator.flush()
+              val json = writer.toString
+              writer.reset()
+              json
+            }
+
+            (row: InternalRow) => {
+              val field = proj(row)
+              val extractInnerJson = s"""\\{"$name":(.*)\\}""".r
+              val json = toJson(field) match {
+                case extractInnerJson(json) if complexType.isInstanceOf[ArrayType] =>
+                  val extractArrayElements = s"""\\[(.*)\\]""".r
+                  json match {
+                    case extractArrayElements(elems) => s"{$elems}"
+                  }
+                case extractInnerJson(json) =>
+                  json
+              }
+              toBytes(json)
+            }
+          case _ =>
+            (row: InternalRow) => {
+              toBytes(s"${proj(row).get(0, tpe)}")
+            }
+        }
+    }
+
+    (row: InternalRow) => {
+      require(row.numFields == schema.length)
+      (0 until row.numFields).map { index =>
+        if (!row.isNullAt(index)) {
+          fieldsWriter(index)(row)
+        } else {
+          Array.empty[Byte]
+        }
+      }
+    }
+  }
+
   private def handleV3Messages(ctx: ChannelHandlerContext, msgBuffer: ByteBuffer): Unit = {
     val channelId = getUniqueChannelId(ctx)
     val portalState = channelIdToPortalState.get(channelId)
@@ -974,8 +966,10 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
           }
 
           try {
-            portalState.execState = cli.executeStatement(portalState.sessionId, query, isPortal)
-            portalState.execState.run()
+            val execState = cli.executeStatement(portalState.sessionId, query, isPortal)
+            execState.run()
+            portalState.execState = execState
+            portalState.rowWriter = buildRowWriter(execState.schema)
           } catch {
             // In case of the parsing exception, we put explicit error messages
             // to make users understood.
@@ -1008,15 +1002,16 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
         case Execute(portalName, maxRows) =>
           logInfo(s"Execute: portalName=$portalName, maxRows=$maxRows")
           try {
+            val rowWriter = portalState.rowWriter
             var numRows = 0
             if (maxRows == 0) {
               portalState.execState.iterator().foreach { iter =>
-                ctx.write(DataRow(iter, portalState))
+                ctx.write(DataRow(iter, rowWriter(iter)))
                 numRows = numRows + 1
               }
             } else {
               portalState.execState.iterator().take(maxRows).foreach { iter =>
-                ctx.write(DataRow(iter, portalState))
+                ctx.write(DataRow(iter, rowWriter(iter)))
                 numRows = numRows + 1
               }
               // Accumulate fetched #rows in this execution
@@ -1063,18 +1058,19 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
             throw new SQLException(s"multi-query execution unsupported: ${queries.mkString(", ")}")
           } else {
             val query = queries.head
-            val execState = cli.executeStatement(portalState.sessionId, query, isCursor = false)
-            portalState.execState = execState
             try {
+              val execState = cli.executeStatement(portalState.sessionId, query, isCursor = false)
               execState.run()
 
               // The response to a SELECT query (or other queries that return row sets, such as
               // EXPLAIN or SHOW) normally consists of RowDescription, zero or more DataRow
               // messages, and then CommandComplete.
               ctx.write(RowDescription(execState.schema))
+
+              val rowWriter = buildRowWriter(execState.schema)
               var numRows = 0
               execState.iterator().foreach { iter =>
-                ctx.write(DataRow(iter, portalState))
+                ctx.write(DataRow(iter, rowWriter(iter)))
                 numRows += 1
               }
               ctx.write(CommandComplete(s"SELECT $numRows"))
