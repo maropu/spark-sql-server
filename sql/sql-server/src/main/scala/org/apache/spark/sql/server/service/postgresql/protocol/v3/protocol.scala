@@ -101,7 +101,7 @@ object PostgreSQLWireProtocol {
     var len = 0
     // Search null from a current position
     while (msg.hasRemaining() && msg.get() != 0.toByte) {
-      len = len + 1
+      len += 1
     }
     if (len != 0) {
       val localBuf = new Array[Byte](len)
