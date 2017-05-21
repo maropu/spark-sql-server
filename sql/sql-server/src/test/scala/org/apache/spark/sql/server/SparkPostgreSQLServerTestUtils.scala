@@ -288,6 +288,17 @@ trait PostgreSQLJdbcTestBase {
     testMultipleConnectionJdbcStatement(f)
   }
 
+  def testJdbcPreparedStatement(sql: String)(f: PreparedStatement => Unit): Unit = {
+    val connection = getJdbcConnect()
+    val statement = connection.prepareStatement(sql)
+    try {
+      f(statement)
+    } finally {
+      statement.close()
+      connection.close()
+    }
+  }
+
   def testJdbcStatementWitConf(options: (String, String)*)(f: Statement => Unit) {
     val jdbcOptions = Seq("autoCommitModeEnabled", "fetchSize")
     val (sparkOptions, otherOptions) = options.partition(ops => !jdbcOptions.contains(ops._1))

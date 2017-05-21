@@ -461,13 +461,54 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
       val rs = statement.executeQuery("SELECT * FROM test_null WHERE key IS NULL")
 
       (0 until 5).foreach { _ =>
-        rs.next()
+        assert(rs.next())
         assert(0 === rs.getInt(1))
         assert(rs.wasNull())
       }
 
       assert(!rs.next())
       rs.close()
+    }
+  }
+
+  test("PreparedStatement") {
+    testJdbcStatement { statement =>
+      Seq(
+        "DROP TABLE IF EXISTS test",
+        """
+          |CREATE TABLE test(
+          |  col0 INT,
+          |  col1 STRING,
+          |  col2 DOUBLE
+          |)
+          """,
+        """
+          |INSERT INTO test VALUES (1, 'data1', 0.3), (1, 'data2', 0.4)
+        """
+      ).foreach { sqlText =>
+        assert(statement.execute(sqlText.stripMargin))
+      }
+    }
+
+    testJdbcPreparedStatement("SELECT * FROM test WHERE col0 = ? AND col1 = ?") { statement =>
+      statement.setInt(1, 1)
+      statement.setString(2, "data1")
+      val rs1 = statement.executeQuery()
+      assert(rs1.next())
+      assert(1 === rs1.getInt(1))
+      assert("data1" === rs1.getString(2))
+      assert(0.3 === rs1.getDouble(3))
+      assert(!rs1.next())
+      rs1.close()
+
+      statement.setString(2, "data2")
+      val rs2 = statement.executeQuery()
+      assert(rs2.next())
+      assert(1 === rs2.getInt(1))
+      assert("data2" === rs2.getString(2))
+      assert(0.4 === rs2.getDouble(3))
+      assert(!rs2.next())
+      rs2.close()
     }
   }
 
