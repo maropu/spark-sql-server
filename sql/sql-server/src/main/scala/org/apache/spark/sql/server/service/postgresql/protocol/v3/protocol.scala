@@ -956,28 +956,28 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
           val queryState = sessionState.queries.getOrElse(queryName, {
             throw new SQLException(s"Unknown query specified: $queryName")
           })
-          // TODO: Make parameter bindings more smart, e.g., based on analyzed logical plans
-          var boundQuery = queryState.str
-          formats.zipWithIndex.foreach { case (format, index) =>
-            val target = "$" + s"${index + 1}"
-            val param = format match {
-              case 0 => // text
-                new String(params(index), "US-ASCII")
-              case 1 => // binary
-                val data = params(index)
-                data.length match {
-                  case 4 => s"${ByteBuffer.wrap(params(index)).getInt}"
-                }
-            }
-            logDebug(s"binds param: $target->$param")
-            boundQuery = boundQuery.replace(target, s"'$param'")
-          }
-          logInfo(s"Bound query: $boundQuery")
 
           val isCursorMode = !portalName.isEmpty()
           if (isCursorMode) {
             logInfo(s"Cursor mode enabled: portalName=$portalName")
           }
+
+          // Convert `params` to string parameters
+          val strParams = formats.zip(params).zipWithIndex.map { case ((format, param), i) =>
+            val value = format match {
+              case 0 => // text
+                new String(param, "US-ASCII")
+              case 1 => // binary
+                param.length match {
+                  case 4 => s"${ByteBuffer.wrap(param).getInt}"
+                }
+            }
+            (i + 1) -> s"'$value'"
+          }
+
+          // TODO: Make parameter bindings more smart, e.g., based on analyzed logical plans
+          val boundQuery = ParameterBinder.bind(queryState.str, strParams.toMap)
+          logInfo(s"Bound query: $boundQuery")
 
           try {
             val execState = cli.executeStatement(sessionState.id, boundQuery, isCursorMode)
