@@ -896,19 +896,16 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
     }
   }
 
-  private def handleV3Messages(ctx: ChannelHandlerContext, msgBuffer: ByteBuffer): Unit = {
-    val channelId = getUniqueChannelId(ctx)
-    val sessionState = channelIdToSessionState.get(channelId)
-
-    // Since a message possible spans over multiple in-coming data in `channelRead0` calls,
-    // we need to check enough data to process. We put complete messages in `procBuffer` for message
-    // processing; otherwise it puts left data in `pendingBytes` for a next call.
-    val len = sessionState.pendingBytes.size + msgBuffer.remaining()
+  private def getBytesToProcess(msgBuffer: ByteBuffer, state: SessionState) = {
+    // Since a message possibly spans over multiple in-coming data in `channelRead0` calls,
+    // we need to check enough data to process first. We push complete messages into
+    // `bytesToProcess`; otherwise it puts left data in `pendingBytes` for a next call.
+    val len = state.pendingBytes.size + msgBuffer.remaining()
+    val bytesToProcess = mutable.ArrayBuffer[Array[Byte]]()
     val uncheckedBuffer = ByteBuffer.allocate(len)
-    val procBuffer = ByteBuffer.allocate(len)
-    uncheckedBuffer.put(sessionState.pendingBytes)
+    uncheckedBuffer.put(state.pendingBytes)
     uncheckedBuffer.put(msgBuffer.array)
-    sessionState.pendingBytes = Array.empty
+    state.pendingBytes = Array.empty
     uncheckedBuffer.flip()
     while (uncheckedBuffer.hasRemaining) {
       val (basePos, _) = (uncheckedBuffer.position(), uncheckedBuffer.get())
@@ -919,26 +916,31 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
           // Okay to process
           val buf = new Array[Byte](msgLen)
           uncheckedBuffer.get(buf)
-          procBuffer.put(buf)
+          bytesToProcess.append(buf)
         } else {
           val pendingBytes = new Array[Byte](uncheckedBuffer.remaining())
           uncheckedBuffer.get(pendingBytes)
-          sessionState.pendingBytes = pendingBytes
+          state.pendingBytes = pendingBytes
         }
       } else {
         uncheckedBuffer.position(basePos)
         val pendingBytes = new Array[Byte](uncheckedBuffer.remaining())
         uncheckedBuffer.get(pendingBytes)
-        sessionState.pendingBytes = pendingBytes
+        state.pendingBytes = pendingBytes
       }
     }
 
-    procBuffer.flip()
-    logDebug(s"#processed=${procBuffer.remaining} #pending=${sessionState.pendingBytes.size}")
+    logDebug(s"#bytesToProcess=${bytesToProcess.size} #pendingBytes=${state.pendingBytes.size}")
+    bytesToProcess
+  }
 
-    while (procBuffer.remaining() > 0) {
+  private def handleV3Messages(ctx: ChannelHandlerContext, msgBuffer: ByteBuffer): Unit = {
+    val channelId = getUniqueChannelId(ctx)
+    val sessionState = channelIdToSessionState.get(channelId)
+    val bytesToProcess = getBytesToProcess(msgBuffer, sessionState)
+    for (msg <- bytesToProcess) {
       val message = try {
-        extractClientMessageType(procBuffer)
+        extractClientMessageType(ByteBuffer.wrap(msg))
       } catch {
         case NonFatal(e) => handleException(ctx, e.getMessage)
       }
