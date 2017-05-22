@@ -471,47 +471,6 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
     }
   }
 
-  test("PreparedStatement") {
-    testJdbcStatement { statement =>
-      Seq(
-        "DROP TABLE IF EXISTS test",
-        """
-          |CREATE TABLE test(
-          |  col0 INT,
-          |  col1 STRING,
-          |  col2 DOUBLE
-          |)
-          """,
-        """
-          |INSERT INTO test VALUES (1, 'data1', 0.3), (1, 'data2', 0.4)
-        """
-      ).foreach { sqlText =>
-        assert(statement.execute(sqlText.stripMargin))
-      }
-    }
-
-    testJdbcPreparedStatement("SELECT * FROM test WHERE col0 = ? AND col1 = ?") { statement =>
-      statement.setInt(1, 1)
-      statement.setString(2, "data1")
-      val rs1 = statement.executeQuery()
-      assert(rs1.next())
-      assert(1 === rs1.getInt(1))
-      assert("data1" === rs1.getString(2))
-      assert(0.3 === rs1.getDouble(3))
-      assert(!rs1.next())
-      rs1.close()
-
-      statement.setString(2, "data2")
-      val rs2 = statement.executeQuery()
-      assert(rs2.next())
-      assert(1 === rs2.getInt(1))
-      assert("data2" === rs2.getString(2))
-      assert(0.4 === rs2.getDouble(3))
-      assert(!rs2.next())
-      rs2.close()
-    }
-  }
-
   test("SPARK-17112 SELECT NULL via JDBC triggers IllegalArgumentException") {
     testJdbcStatement { statement =>
       val rs1 = statement.executeQuery("SELECT NULL")
@@ -524,6 +483,83 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
       rs2.next()
       assert(0 === rs2.getInt(1))
       assert(rs2.wasNull())
+      rs2.close()
+    }
+  }
+
+  test("PreparedStatement") {
+    testJdbcStatement { statement =>
+      Seq(
+        "DROP TABLE IF EXISTS test",
+        """
+          |CREATE TABLE test(
+          |  col0 BOOLEAN,
+          |  col1 SHORT,
+          |  col2 INT,
+          |  col3 LONG,
+          |  col4 FLOAT,
+          |  col5 DOUBLE,
+          |  col6 STRING,
+          |  col7 DATE,
+          |  col8 TIMESTAMP,
+          |  col9 DECIMAL
+          |)
+          """,
+        """
+          |INSERT INTO test VALUES
+          |  (true, 25, 321, 8, 3.0, 8.9, 'data1', '2016-08-04', '2016-08-04 00:17:13.0', 29),
+          |  (false, 25, -2, 8, 3.0, 8.9, 'data2', '2016-08-04', '2016-08-04 00:17:13.0', 29)
+        """
+      ).foreach { sqlText =>
+        assert(statement.execute(sqlText.stripMargin))
+      }
+    }
+
+    testJdbcPreparedStatement(
+        """
+          | SELECT * FROM test
+          |   WHERE col0 = ? AND col1 = ? AND col2 = ? AND col3 = ? AND col4 = ? AND
+          |   col5 = ? AND col6 = ? AND col9 = ?
+        """.stripMargin) { statement =>
+      statement.setBoolean(1, true)
+      statement.setShort(2, 25)
+      statement.setInt(3, 321)
+      statement.setLong(4, 8)
+      statement.setFloat(5, 3.0f)
+      statement.setDouble(6, 8.9)
+      statement.setString(7, "data1")
+      statement.setBigDecimal(8, BigDecimal.valueOf(29))
+      val rs1 = statement.executeQuery()
+      assert(rs1.next())
+      assert(true === rs1.getBoolean(1))
+      assert(25 === rs1.getShort(2))
+      assert(321 === rs1.getInt(3))
+      assert(8 === rs1.getLong(4))
+      assert(3.0f === rs1.getFloat(5))
+      assert(8.9 === rs1.getDouble(6))
+      assert("data1" === rs1.getString(7))
+      assert(Date.valueOf("2016-08-04") === rs1.getDate(8))
+      assert(Timestamp.valueOf("2016-08-04 00:17:13") === rs1.getTimestamp(9))
+      assert(BigDecimal.valueOf(29) === rs1.getBigDecimal(10))
+      assert(!rs1.next())
+      rs1.close()
+
+      statement.setBoolean(1, false)
+      statement.setInt(3, -2)
+      statement.setString(7, "data2")
+      val rs2 = statement.executeQuery()
+      assert(rs2.next())
+      assert(false === rs2.getBoolean(1))
+      assert(25 === rs2.getShort(2))
+      assert(-2 === rs2.getInt(3))
+      assert(8 === rs2.getLong(4))
+      assert(3.0f === rs2.getFloat(5))
+      assert(8.9 === rs2.getDouble(6))
+      assert("data2" === rs2.getString(7))
+      // assert(Date.valueOf("2016-08-04") === rs2.getDate(8))
+      // assert(Timestamp.valueOf("2016-08-04 00:17:13") === rs2.getTimestamp(9))
+      assert(BigDecimal.valueOf(29) === rs2.getBigDecimal(10))
+      assert(!rs2.next())
       rs2.close()
     }
   }
@@ -897,7 +933,7 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
     testJdbcStatement { statement =>
       Seq("COMMIT", "ROLLBACK"). foreach { cmd =>
         val e = intercept[SQLException] { statement.execute(cmd) }
-        assert(e.getMessage.contains(s"Cannot handle a command $cmd in processing message `Bind`"))
+        assert(e.getMessage.contains(s"Cannot handle command $cmd in processing message `Bind`"))
       }
     }
   }

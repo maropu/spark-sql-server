@@ -46,7 +46,7 @@ import org.apache.spark.sql.catalyst.util.DateTimeUtils._
 import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.parser.ParseException
 import org.apache.spark.sql.server.service.{BEGIN, ExecuteStatementOperation, FETCH, SELECT, SessionService}
-import org.apache.spark.sql.server.service.postgresql.{Metadata => PgMetadata}
+import org.apache.spark.sql.server.service.postgresql.Metadata._
 import org.apache.spark.sql.types._
 
 
@@ -145,8 +145,10 @@ object PostgreSQLWireProtocol {
       }
       val numResultFormats = msg.getShort()
       val resultFormats = if (numResultFormats > 0) {
-        val arrayBuf = new Array[Int](numParams)
-        (0 until numResultFormats).foreach(i => arrayBuf(i) = msg.getShort())
+        val arrayBuf = new Array[Int](numResultFormats)
+        (0 until numResultFormats).foreach { i =>
+          arrayBuf(i) = msg.getShort()
+        }
         arrayBuf.toSeq
       } else {
         Seq.empty[Int]
@@ -234,7 +236,7 @@ object PostgreSQLWireProtocol {
 
     // An ASCII code of the `Terminate` message is 'X'(88)
     88 -> { msg =>
-      Sync()
+      Terminate()
     },
 
     // An ASCII code of the `CopyDone` message is 'c'(99)
@@ -498,7 +500,7 @@ object PostgreSQLWireProtocol {
       buf.put('T'.toByte).putInt(length).putShort(schema.size.toShort)
       // Each column has length(field.name) + 19 bytes
       schema.toSeq.zipWithIndex.map { case (field, index) =>
-        val pgType = PgMetadata.getPgType(field.dataType)
+        val pgType = getPgType(field.dataType)
         val mode = if (field.dataType == BinaryType) 1 else 0
         buf.put(field.name.getBytes("US-ASCII")).put(0.toByte) // field name
           .putInt(0)                        // object ID of the table
@@ -632,7 +634,11 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
     var pendingBytes: Array[Byte] = Array.empty
   }
 
-  case class QueryState(str: String, rowConverter: Option[InternalRow => Seq[Array[Byte]]] = None)
+  case class QueryState(
+    str: String,
+    paramIds: Seq[Int],
+    rowConverter: Option[InternalRow => Seq[Array[Byte]]] = None,
+    schema: Option[StructType] = None)
 
   case class PortalState(queryState: QueryState) {
 
@@ -772,7 +778,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
       val sockAddr = ctx.channel().remoteAddress().asInstanceOf[InetSocketAddress]
       val hostName = s"${sockAddr.getHostName()}:${sockAddr.getPort()}"
       logWarning(s"SSL Connection requested from $hostName though, " +
-        "this SQL server is currently running with a non-SSL mode")
+        "this SQL server is currently running with non-SSL mode")
       ctx.write(NoSSL)
       ctx.close()
       return
@@ -806,7 +812,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
       case (a, b) => (a.map(_._1), b.map(_._1))
     }
     val props = keys.zip(values).toMap
-    logDebug("Received properties from a client: "
+    logDebug("Received properties from client: "
       + props.map { case (key, value) => s"$key=$value" }.mkString(", "))
     val userName = props.getOrElse("user", "UNKNOWN")
     val passwd = props.getOrElse("passwd", "")
@@ -825,32 +831,40 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
     }
   }
 
-  private def buildRowConverter(schema: StructType): (InternalRow) => Seq[Array[Byte]] = {
+  private def buildRowConverter(schema: StructType, formats: Seq[Int] = Seq.empty)
+    : (InternalRow) => Seq[Array[Byte]] = {
+    require(formats.isEmpty || schema.length == formats.size,
+      "format must have the same length with schema")
     def toBytes(s: String) = s.getBytes("US-ASCII")
+    val outputFormats = if (formats.isEmpty) {
+      Seq.fill[Int](schema.length)(0)
+    } else {
+      formats
+    }
     val attrs = schema.toAttributes
-    val fieldsConverter: Seq[InternalRow => Array[Byte]] = schema.fields.zip(attrs).map {
-      case (f, attrRef @ AttributeReference(name, tpe, _, _)) =>
+    val fieldsConverter: Seq[InternalRow => Array[Byte]] = attrs.zipWithIndex.map {
+      case (attrRef @ AttributeReference(name, tpe, _, _), i) =>
         val proj = UnsafeProjection.create(attrRef :: Nil, attrs)
-        tpe match {
-          case BinaryType =>
+        (tpe, outputFormats(i)) match {
+          case (BinaryType, _) =>
             (row: InternalRow) => {
               val field = proj(row)
               field.get(0, BinaryType).asInstanceOf[Array[Byte]]
             }
-          case TimestampType =>
+          case (TimestampType, _) =>
             (row: InternalRow) => {
               val field = proj(row)
               val timestampData = toJavaTimestamp(field.get(0, TimestampType).asInstanceOf[Long])
               toBytes(s"$timestampData")
             }
-          case DateType =>
+          case (DateType, _) =>
             (row: InternalRow) => {
               val field = proj(row)
               val dateData = toJavaDate(field.get(0, DateType).asInstanceOf[Int])
               toBytes(s"$dateData")
             }
-          case complexType @ (_: StructType | _: MapType | _: ArrayType) =>
-            val outputSchema = new StructType().add(f)
+          case (complexType @ (_: StructType | _: MapType | _: ArrayType), _) =>
+            val outputSchema = new StructType().add(schema.fields(i))
             val writer = new CharArrayWriter
             // Set a timestamp format so that JDBC drivers can parse data
             val options = new JSONOptions(Map("timestampFormat" -> "yyyy-MM-dd HH:mm:ss"))
@@ -877,10 +891,45 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
               }
               toBytes(json)
             }
-          case _ =>
+          case (_, 0) => // In text mode, it's ok to just print it
             (row: InternalRow) => {
               toBytes(s"${proj(row).get(0, tpe)}")
             }
+          case (ShortType, 1) =>
+            val buf = new Array[Byte](2)
+            val writer = ByteBuffer.wrap(buf)
+            (row: InternalRow) => {
+              val value = proj(row).get(0, ShortType)
+              writer.putShort(value.asInstanceOf[Short])
+              writer.flip()
+              buf
+            }
+          case (fourByteType @ (IntegerType | FloatType), 1) =>
+            val buf = new Array[Byte](4)
+            val writer = ByteBuffer.wrap(buf)
+            (row: InternalRow) => {
+              val value = proj(row).get(0, fourByteType)
+              fourByteType match {
+                case IntegerType => writer.putInt(value.asInstanceOf[Int])
+                case FloatType => writer.putFloat(value.asInstanceOf[Float])
+              }
+              writer.flip()
+              buf
+            }
+          case (eightByteType @ (LongType | DoubleType), _) =>
+            val buf = new Array[Byte](8)
+            val writer = ByteBuffer.wrap(buf)
+            (row: InternalRow) => {
+              val value = proj(row).get(0, eightByteType)
+              eightByteType match {
+                case LongType => writer.putLong(value.asInstanceOf[Long])
+                case DoubleType => writer.putDouble(value.asInstanceOf[Double])
+              }
+              writer.flip()
+              buf
+            }
+          case (tpe, format) =>
+            throw new SQLException(s"Cannot convert param: type=$tpe, format=$format")
         }
     }
 
@@ -963,16 +1012,37 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
           }
 
           // Convert `params` to string parameters
-          val strParams = formats.zip(params).zipWithIndex.map { case ((format, param), i) =>
-            val value = format match {
-              case 0 => // text
-                new String(param, "US-ASCII")
-              case 1 => // binary
-                param.length match {
-                  case 4 => s"${ByteBuffer.wrap(param).getInt}"
-                }
+          val strParams = params.zipWithIndex.map { case (param, i) =>
+            val value = (queryState.paramIds(i), formats(i)) match {
+              // TODO: Need to support `Date` and `Timestamp` here
+              // case (PgDateType.oid, _) =>
+              //   val formatter = new SimpleDateFormat("yyyy-MM-dd")
+              //   s"${formatter.parse(new String(param, "US-ASCII"))}"
+              // case (PgTimestampType.oid, _) =>
+              //   val formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+              //   s"${formatter.parse(new String(param, "US-ASCII"))}"
+              case (PgBoolType.oid, _) =>
+                // '1' (49) means true; otherwise false
+                if (param(0) == 49) "true" else "false"
+              case (PgNumericType.oid, _) =>
+                s"${new String(param, "US-ASCII")}"
+              case (_, 0) =>
+                s"'${new String(param, "US-ASCII")}'"
+              case (PgInt2Type.oid, 1) =>
+                s"${ByteBuffer.wrap(param).getShort}"
+              case (PgInt4Type.oid, 1) =>
+                s"${ByteBuffer.wrap(param).getInt}"
+              case (PgInt8Type.oid, 1) =>
+                s"${ByteBuffer.wrap(param).getLong}"
+              case (PgFloat4Type.oid, 1) =>
+                s"${ByteBuffer.wrap(param).getFloat}"
+              case (PgFloat8Type.oid, 1) =>
+                s"${ByteBuffer.wrap(param).getDouble}"
+              case (paramId, format) =>
+                throw new SQLException(s"Cannot bind param: paramId=$paramId, format=$format")
             }
-            (i + 1) -> s"'$value'"
+            logInfo(s"""Bind param: $$${i + 1} -> $value""")
+            (i + 1) -> value
           }
 
           // TODO: Make parameter bindings more smart, e.g., based on analyzed logical plans
@@ -983,21 +1053,21 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
             val execState = cli.executeStatement(sessionState.id, boundQuery, isCursorMode)
             execState.run()
             sessionState.execState = execState
-            // If a row converter not initialized yet, build it here
-            if (!queryState.rowConverter.isDefined) {
-              sessionState.queries(queryName) =
-                QueryState(queryState.str, Some(buildRowConverter(execState.schema)))
-            }
-            sessionState.portals(portalName) = PortalState(sessionState.queries(queryName))
+            // TODO: We could reuse this row converters in some cases?
+            val newQueryState = queryState.copy(
+              rowConverter = Some(buildRowConverter(execState.schema, resultFormats)),
+              schema = Some(execState.schema)
+            )
+            sessionState.queries(queryName) = newQueryState
+            sessionState.portals(portalName) = PortalState(newQueryState)
           } catch {
             // In case of the parsing exception, we put explicit error messages
             // to make users understood.
             case e: ParseException if e.command.isDefined =>
-              handleException(ctx, s"Cannot handle a command ${e.command.get} " +
-                s"in processing message `Bind`: $e")
+              handleException(ctx, s"Cannot handle command ${e.command.get} in `Bind`: $e")
               return
             case NonFatal(e) =>
-              handleException(ctx, s"Exception detected in processing message `Bind`: $e")
+              handleException(ctx, s"Exception detected in `Bind`: $e")
               return
           }
           ctx.write(BindComplete)
@@ -1006,19 +1076,47 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
           if (tpe == 83) { // Close a prepared statement
             sessionState.queries.remove(name)
             logInfo(s"Close the '$name' prepared statement in this session "
-              + s"(id:${sessionState.id}")
+              + s"(id:${sessionState.id})")
           } else if (tpe == 80) { // Close a portal
             sessionState.portals.remove(name)
             logInfo(s"Close the '$name' portal in this session "
-              + s"(id:${sessionState.id}")
+              + s"(id:${sessionState.id})")
           } else {
-            logWarning(s"Unknown type id received in processing message 'Close`: $tpe")
+            logWarning(s"Unknown type received in 'Close`: $tpe")
           }
         case Describe(tpe, name) =>
-          // The response to a SELECT query (or other queries that return row sets, such as
-          // EXPLAIN or SHOW) normally consists of RowDescription, zero or more DataRow
-          // messages, and then CommandComplete.
-          ctx.write(RowDescription(sessionState.execState.schema()))
+          if (tpe == 83) { // Describe a prepared statement
+            logInfo(s"Describe the '$name' prepared statement in this session "
+              + s"(id:${sessionState.id})")
+            // TODO: Make the logic to get a schema more smarter
+            val schema = {
+              val queryState = sessionState.queries.getOrElse(name, {
+                throw new SQLException(s"Unknown query specified: $name")
+              })
+              // To get a schema, run a query with default params
+              val defaultParams = queryState.paramIds.zipWithIndex.map {
+                case (_, i) => (i + 1) -> s"''"
+              }
+              val boundQuery = ParameterBinder.bind(queryState.str, defaultParams.toMap)
+              val execState = cli.executeStatement(sessionState.id, boundQuery, isCursor = false)
+              try {
+                execState.run()
+                execState.schema()
+              } catch {
+                case NonFatal(_) =>
+                  throw new SQLException("Cannot get schema in 'Describe'")
+              } finally {
+                execState.close()
+              }
+            }
+            ctx.write(RowDescription(schema))
+          } else if (tpe == 80) { // Describe a portal
+            logInfo(s"Describe the '$name' portal in this session "
+              + s"(id:${sessionState.id})")
+            ctx.write(RowDescription(sessionState.execState.schema()))
+          } else {
+            throw new SQLException(s"Unknown type received in 'Describe`: $tpe")
+          }
           ctx.flush()
         case Execute(portalName, maxRows) =>
           logInfo(s"Execute: portalName=$portalName, maxRows=$maxRows")
@@ -1059,7 +1157,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
             }
           } catch {
             case NonFatal(e) =>
-              handleException(ctx, s"Exception detected in processing message `Execute`: $e")
+              handleException(ctx, s"Exception detected in `Execute`: $e")
               resetPortalState(portalName, sessionState)
               return
           }
@@ -1071,7 +1169,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
           handleException(ctx, "Message 'Flush' not supported")
           return
         case Parse(queryName, query, objIds) =>
-          sessionState.queries(queryName) = QueryState(query)
+          sessionState.queries(queryName) = QueryState(query, objIds)
           logInfo(s"Parse: queryName=$queryName query=$query objIds=$objIds")
           ctx.write(ParseComplete)
           ctx.flush()
@@ -1107,11 +1205,10 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
               // In case of the parsing exception, we put explicit error messages
               // to make users understood.
               case e: ParseException if e.command.isDefined =>
-                handleException(ctx, s"Cannot handle a command ${e.command.get} " +
-                  s"in processing message `Query`: $e")
+                handleException(ctx, s"Cannot handle command ${e.command.get} in `Query`: $e")
                 return
               case NonFatal(e) =>
-                handleException(ctx, s"Exception detected in processing message `Query`: $e")
+                handleException(ctx, s"Exception detected in `Query`: $e")
                 return
             }
           }
