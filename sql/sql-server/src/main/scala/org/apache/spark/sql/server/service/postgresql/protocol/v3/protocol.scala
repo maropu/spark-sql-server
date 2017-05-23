@@ -22,6 +22,7 @@ import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.security.{KeyStore, PrivilegedExceptionAction}
 import java.sql.SQLException
+import java.util.TimeZone
 import javax.net.ssl.{KeyManagerFactory, SSLContext}
 
 import scala.collection.mutable
@@ -761,7 +762,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
     ctx.write(ParameterStatus("application_name", "spark-sql-server"))
     ctx.write(ParameterStatus("server_encoding", "UTF-8"))
     ctx.write(ParameterStatus("server_version", conf.sqlServerVersion))
-    ctx.write(ParameterStatus("TimeZone", java.util.TimeZone.getDefault().getID()))
+    ctx.write(ParameterStatus("TimeZone", TimeZone.getDefault().getID()))
     ctx.write(BackendKeyData(getUniqueChannelId(ctx), state.secretKey))
     ctx.write(ReadyForQuery)
     ctx.flush()
@@ -846,24 +847,72 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
       case (attrRef @ AttributeReference(name, tpe, _, _), i) =>
         val proj = UnsafeProjection.create(attrRef :: Nil, attrs)
         (tpe, outputFormats(i)) match {
-          case (BinaryType, _) =>
+          case (BinaryType, 0) =>
             (row: InternalRow) => {
               val field = proj(row)
               field.get(0, BinaryType).asInstanceOf[Array[Byte]]
             }
-          case (TimestampType, _) =>
-            (row: InternalRow) => {
-              val field = proj(row)
-              val timestampData = toJavaTimestamp(field.get(0, TimestampType).asInstanceOf[Long])
-              toBytes(s"$timestampData")
-            }
-          case (DateType, _) =>
+          case (DateType, 0) =>
             (row: InternalRow) => {
               val field = proj(row)
               val dateData = toJavaDate(field.get(0, DateType).asInstanceOf[Int])
               toBytes(s"$dateData")
             }
-          case (complexType @ (_: StructType | _: MapType | _: ArrayType), _) =>
+          case (TimestampType, 0) =>
+            (row: InternalRow) => {
+              val field = proj(row)
+              val timestampData = toJavaTimestamp(field.get(0, TimestampType).asInstanceOf[Long])
+              toBytes(s"$timestampData")
+            }
+          case (binaryTimeType @ (DateType | TimestampType), 1) =>
+            val timezone = TimeZone.getDefault
+            // Converts the given java seconds to postgresql seconds
+            def toPgSecs(secs: Long) = {
+              // java epoc to postgres epoc
+              val pgSecs = secs - 946684800L
+
+              // Julian/Greagorian calendar cutoff point
+              if (pgSecs < -13165977600L) { // October 15, 1582 -> October 4, 1582
+                val localSecs = pgSecs - 86400 * 10
+                if (localSecs < -15773356800L) { // 1500-03-01 -> 1500-02-28
+                  var years = (localSecs + 15773356800L) / -3155823050L
+                  years += 1
+                  years -= years / 4
+                  localSecs + years * 86400
+                } else {
+                  localSecs
+                }
+              } else {
+                pgSecs
+              }
+            }
+
+            binaryTimeType match {
+              case DateType =>
+                val buf = new Array[Byte](4)
+                val writer = ByteBuffer.wrap(buf)
+                (row: InternalRow) => {
+                  val field = proj(row)
+                  val date = toJavaDate(field.get(0, DateType).asInstanceOf[Int])
+                  val millis = date.getTime + timezone.getOffset(date.getTime)
+                  val days = toPgSecs(millis / 1000) / 86400
+                  writer.putInt(days.asInstanceOf[Int])
+                  writer.flip()
+                  buf
+                }
+              case TimestampType =>
+                val buf = new Array[Byte](8)
+                val writer = ByteBuffer.wrap(buf)
+                (row: InternalRow) => {
+                  val field = proj(row)
+                  val timestamp = toJavaTimestamp(field.get(0, TimestampType).asInstanceOf[Long])
+                  val mills = timestamp.getTime + timezone.getOffset(timestamp.getTime)
+                  writer.putLong(toPgSecs(mills / 1000) * 1000000)
+                  writer.flip()
+                  buf
+                }
+            }
+          case (textComplexType @ (_: StructType | _: MapType | _: ArrayType), 0) =>
             val outputSchema = new StructType().add(schema.fields(i))
             val writer = new CharArrayWriter
             // Set a timestamp format so that JDBC drivers can parse data
@@ -881,7 +930,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
               val field = proj(row)
               val extractInnerJson = s"""\\{"$name":(.*)\\}""".r
               val json = toJson(field) match {
-                case extractInnerJson(json) if complexType.isInstanceOf[ArrayType] =>
+                case extractInnerJson(json) if textComplexType.isInstanceOf[ArrayType] =>
                   val extractArrayElements = s"""\\[(.*)\\]""".r
                   json match {
                     case extractArrayElements(elems) => s"{$elems}"
@@ -904,24 +953,24 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
               writer.flip()
               buf
             }
-          case (fourByteType @ (IntegerType | FloatType), 1) =>
+          case (binary4ByteType @ (IntegerType | FloatType), 1) =>
             val buf = new Array[Byte](4)
             val writer = ByteBuffer.wrap(buf)
             (row: InternalRow) => {
-              val value = proj(row).get(0, fourByteType)
-              fourByteType match {
+              val value = proj(row).get(0, binary4ByteType)
+              binary4ByteType match {
                 case IntegerType => writer.putInt(value.asInstanceOf[Int])
                 case FloatType => writer.putFloat(value.asInstanceOf[Float])
               }
               writer.flip()
               buf
             }
-          case (eightByteType @ (LongType | DoubleType), _) =>
+          case (binary8ByteType @ (LongType | DoubleType), 1) =>
             val buf = new Array[Byte](8)
             val writer = ByteBuffer.wrap(buf)
             (row: InternalRow) => {
-              val value = proj(row).get(0, eightByteType)
-              eightByteType match {
+              val value = proj(row).get(0, binary8ByteType)
+              binary8ByteType match {
                 case LongType => writer.putLong(value.asInstanceOf[Long])
                 case DoubleType => writer.putDouble(value.asInstanceOf[Double])
               }
@@ -1014,17 +1063,17 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
           // Convert `params` to string parameters
           val strParams = params.zipWithIndex.map { case (param, i) =>
             val value = (queryState.paramIds(i), formats(i)) match {
-              // TODO: Need to support `Date` and `Timestamp` here
+              // TODO: Need to handle `Date` and `Timestamp` here
               // case (PgDateType.oid, _) =>
               //   val formatter = new SimpleDateFormat("yyyy-MM-dd")
               //   s"${formatter.parse(new String(param, "US-ASCII"))}"
               // case (PgTimestampType.oid, _) =>
               //   val formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
               //   s"${formatter.parse(new String(param, "US-ASCII"))}"
-              case (PgBoolType.oid, _) =>
+              case (PgBoolType.oid, 1) =>
                 // '1' (49) means true; otherwise false
                 if (param(0) == 49) "true" else "false"
-              case (PgNumericType.oid, _) =>
+              case (PgNumericType.oid, 1) =>
                 s"${new String(param, "US-ASCII")}"
               case (_, 0) =>
                 s"'${new String(param, "US-ASCII")}'"
@@ -1170,7 +1219,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
           return
         case Parse(queryName, query, objIds) =>
           sessionState.queries(queryName) = QueryState(query, objIds)
-          logInfo(s"Parse: queryName=$queryName query=$query objIds=$objIds")
+          logWarning(s"Parse: queryName=$queryName query=$query objIds=$objIds")
           ctx.write(ParseComplete)
           ctx.flush()
         case Query(queries) =>

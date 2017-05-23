@@ -22,12 +22,13 @@ import java.math.BigDecimal
 import java.net.URL
 import java.sql._
 
-import org.postgresql.util.PSQLException
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 import scala.io.Source
 import scala.sys.process.BasicIO
+
+import org.postgresql.util.PGTimestamp
 
 import org.apache.spark.SparkException
 import org.apache.spark.util.{ThreadUtils, Utils}
@@ -515,11 +516,39 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
       }
     }
 
+    def assertRow1(row: ResultSet): Unit = {
+      assert(true === row.getBoolean(1))
+      assert(25 === row.getShort(2))
+      assert(321 === row.getInt(3))
+      assert(8 === row.getLong(4))
+      assert(3.0f === row.getFloat(5))
+      assert(8.9 === row.getDouble(6))
+      assert("data1" === row.getString(7))
+      assert(Date.valueOf("2016-08-04") === row.getDate(8))
+      // TODO: Need to support Timestamp
+      // assert(Timestamp.valueOf("2016-08-04 00:17:13") === row.getTimestamp(9))
+      assert(BigDecimal.valueOf(29) === row.getBigDecimal(10))
+    }
+
+    def assertRow2(row: ResultSet): Unit = {
+      assert(false === row.getBoolean(1))
+      assert(25 === row.getShort(2))
+      assert(-2 === row.getInt(3))
+      assert(8 === row.getLong(4))
+      assert(3.0f === row.getFloat(5))
+      assert(8.9 === row.getDouble(6))
+      assert("data2" === row.getString(7))
+      // TODO: Need to support Timestamp
+      assert(Date.valueOf("2016-08-04") === row.getDate(8))
+      // assert(Timestamp.valueOf("2016-08-04 00:17:13") === row.getTimestamp(9))
+      assert(BigDecimal.valueOf(29) === row.getBigDecimal(10))
+    }
+
     testJdbcPreparedStatement(
         """
           | SELECT * FROM test
           |   WHERE col0 = ? AND col1 = ? AND col2 = ? AND col3 = ? AND col4 = ? AND
-          |   col5 = ? AND col6 = ? AND col9 = ?
+          |     col5 = ? AND col6 = ? AND col7 = ? AND col8 = ? AND col9 = ?
         """.stripMargin) { statement =>
       statement.setBoolean(1, true)
       statement.setShort(2, 25)
@@ -528,19 +557,12 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
       statement.setFloat(5, 3.0f)
       statement.setDouble(6, 8.9)
       statement.setString(7, "data1")
-      statement.setBigDecimal(8, BigDecimal.valueOf(29))
+      statement.setString(8, "2016-08-04")
+      statement.setString(9, "2016-08-04 00:17:13")
+      statement.setBigDecimal(10, BigDecimal.valueOf(29))
       val rs1 = statement.executeQuery()
       assert(rs1.next())
-      assert(true === rs1.getBoolean(1))
-      assert(25 === rs1.getShort(2))
-      assert(321 === rs1.getInt(3))
-      assert(8 === rs1.getLong(4))
-      assert(3.0f === rs1.getFloat(5))
-      assert(8.9 === rs1.getDouble(6))
-      assert("data1" === rs1.getString(7))
-      assert(Date.valueOf("2016-08-04") === rs1.getDate(8))
-      assert(Timestamp.valueOf("2016-08-04 00:17:13") === rs1.getTimestamp(9))
-      assert(BigDecimal.valueOf(29) === rs1.getBigDecimal(10))
+      assertRow1(rs1)
       assert(!rs1.next())
       rs1.close()
 
@@ -549,16 +571,40 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
       statement.setString(7, "data2")
       val rs2 = statement.executeQuery()
       assert(rs2.next())
-      assert(false === rs2.getBoolean(1))
-      assert(25 === rs2.getShort(2))
-      assert(-2 === rs2.getInt(3))
-      assert(8 === rs2.getLong(4))
-      assert(3.0f === rs2.getFloat(5))
-      assert(8.9 === rs2.getDouble(6))
-      assert("data2" === rs2.getString(7))
-      // assert(Date.valueOf("2016-08-04") === rs2.getDate(8))
-      // assert(Timestamp.valueOf("2016-08-04 00:17:13") === rs2.getTimestamp(9))
-      assert(BigDecimal.valueOf(29) === rs2.getBigDecimal(10))
+      assertRow2(rs2)
+      assert(!rs2.next())
+      rs2.close()
+
+      statement.clearParameters()
+      statement.setBoolean(1, false)
+      statement.setShort(2, 25)
+      statement.setInt(3, -2)
+      statement.setLong(4, 8)
+      statement.setFloat(5, 3.0f)
+      statement.setDouble(6, 8.9)
+      statement.setString(7, "data2")
+      statement.setString(8, "2016-08-04")
+      statement.setString(9, "2016-08-04 00:17:13")
+      statement.setBigDecimal(10, BigDecimal.valueOf(29))
+      val rs3 = statement.executeQuery()
+      assert(rs3.next())
+      assertRow2(rs3)
+      assert(!rs3.next())
+      rs3.close()
+    }
+
+    testJdbcPreparedStatement("SELECT * FROM test WHERE col3 = ?") { statement =>
+      statement.setLong(1, 7)
+      val rs1 = statement.executeQuery()
+      assert(!rs1.next())
+      rs1.close()
+
+      statement.setLong(1, 8)
+      val rs2 = statement.executeQuery()
+      assert(rs2.next())
+      assertRow1(rs2)
+      assert(rs2.next())
+      assertRow2(rs2)
       assert(!rs2.next())
       rs2.close()
     }
@@ -933,7 +979,7 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
     testJdbcStatement { statement =>
       Seq("COMMIT", "ROLLBACK"). foreach { cmd =>
         val e = intercept[SQLException] { statement.execute(cmd) }
-        assert(e.getMessage.contains(s"Cannot handle command $cmd in processing message `Bind`"))
+        assert(e.getMessage.contains(s"Cannot handle command $cmd in `Bind`"))
       }
     }
   }
