@@ -69,6 +69,19 @@ object PostgreSQLWireProtocol {
   /** An identifier for `CancelRequest`. */
   val CANCEL_REQUEST_CODE: Int = 80877102
 
+  // A type list for binary formats
+  val binaryFormatTypes: Seq[AbstractDataType] = Seq(
+    BinaryType,
+    ShortType,
+    IntegerType,
+    LongType,
+    FloatType,
+    DoubleType,
+    DateType
+    // TODO: Need to support a binary format for `TimestampType`
+    // TimestampType
+  )
+
   /**
    * Message types received from clients.
    * NOTE: We need special handling for the three messages: `CancelRequest`, `SSLRequest`,
@@ -501,8 +514,9 @@ object PostgreSQLWireProtocol {
       buf.put('T'.toByte).putInt(length).putShort(schema.size.toShort)
       // Each column has length(field.name) + 19 bytes
       schema.toSeq.zipWithIndex.map { case (field, index) =>
-        val pgType = getPgType(field.dataType)
-        val mode = if (field.dataType == BinaryType) 1 else 0
+        val sparkType = field.dataType
+        val pgType = getPgType(sparkType)
+        val mode = binaryFormatTypes.find(_ == sparkType).map(_ => 1).getOrElse(0)
         buf.put(field.name.getBytes("US-ASCII")).put(0.toByte) // field name
           .putInt(0)                        // object ID of the table
           .putShort((index + 1).toShort)    // attribute number of the column
@@ -838,7 +852,9 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
       "format must have the same length with schema")
     def toBytes(s: String) = s.getBytes("US-ASCII")
     val outputFormats = if (formats.isEmpty) {
-      Seq.fill[Int](schema.length)(0)
+      schema.map { field =>
+        binaryFormatTypes.find(_ == field.dataType).map(_ => 1).getOrElse(0)
+      }
     } else {
       formats
     }
@@ -847,22 +863,18 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
       case (attrRef @ AttributeReference(name, tpe, _, _), i) =>
         val proj = UnsafeProjection.create(attrRef :: Nil, attrs)
         (tpe, outputFormats(i)) match {
-          case (BinaryType, 0) =>
+          case (BinaryType, 1) =>
             (row: InternalRow) => {
               val field = proj(row)
               field.get(0, BinaryType).asInstanceOf[Array[Byte]]
             }
-          case (DateType, 0) =>
-            (row: InternalRow) => {
-              val field = proj(row)
-              val dateData = toJavaDate(field.get(0, DateType).asInstanceOf[Int])
-              toBytes(s"$dateData")
-            }
           case (TimestampType, 0) =>
+            val buf = new Array[Byte](8)
+            val writer = ByteBuffer.wrap(buf)
             (row: InternalRow) => {
               val field = proj(row)
-              val timestampData = toJavaTimestamp(field.get(0, TimestampType).asInstanceOf[Long])
-              toBytes(s"$timestampData")
+              val timestamp = toJavaTimestamp(field.get(0, TimestampType).asInstanceOf[Long])
+              toBytes(s"$timestamp")
             }
           case (binaryTimeType @ (DateType | TimestampType), 1) =>
             val timezone = TimeZone.getDefault
@@ -907,7 +919,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
                   val field = proj(row)
                   val timestamp = toJavaTimestamp(field.get(0, TimestampType).asInstanceOf[Long])
                   val mills = timestamp.getTime + timezone.getOffset(timestamp.getTime)
-                  writer.putLong(toPgSecs(mills / 1000) * 1000000)
+                  writer.putLong(toPgSecs(mills / 1000) * 1000000L)
                   writer.flip()
                   buf
                 }
