@@ -1075,6 +1075,8 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
           // Convert `params` to string parameters
           val strParams = params.zipWithIndex.map { case (param, i) =>
             val value = (queryState.paramIds(i), formats(i)) match {
+              case (PgUnspecifiedType.oid, format) =>
+                throw new SQLException(s"Unspecified type unsupported: format=$format")
               // TODO: Need to handle `Date` and `Timestamp` here
               // case (PgDateType.oid, _) =>
               //   val formatter = new SimpleDateFormat("yyyy-MM-dd")

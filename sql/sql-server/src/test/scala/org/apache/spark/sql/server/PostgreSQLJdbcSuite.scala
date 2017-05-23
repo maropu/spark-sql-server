@@ -608,6 +608,23 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
       assert(!rs2.next())
       rs2.close()
     }
+
+    // Check unsupported operations
+    val e1 = intercept[SQLException] {
+      testJdbcPreparedStatement("SELECT * FROM test WHERE col7 = ?") { statement =>
+        statement.setDate(1, Date.valueOf("2016-08-04"))
+        statement.executeQuery()
+      }
+    }
+    assert(e1.getMessage.contains("Unspecified type unsupported: format="))
+
+    val e2 = intercept[SQLException] {
+      testJdbcPreparedStatement("SELECT * FROM test WHERE col7 = ?") { statement =>
+        statement.setTimestamp(1, Timestamp.valueOf("2016-08-04 00:17:13"))
+        statement.executeQuery()
+      }
+    }
+    assert(e2.getMessage.contains("Unspecified type unsupported: format="))
   }
 
   test("Checks Hive version via SET -v") {
