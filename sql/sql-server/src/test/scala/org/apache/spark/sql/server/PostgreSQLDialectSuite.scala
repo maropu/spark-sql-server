@@ -21,16 +21,18 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.spark.SparkFunSuite
 import org.apache.spark.sql.{Dataset, Row}
+import org.apache.spark.sql.hive.test.TestHive
 import org.apache.spark.sql.server.service.postgresql.Metadata._
-import org.apache.spark.sql.test.SharedSQLContext
 
-class PostgreSQLDialectSuite extends SparkFunSuite with SharedSQLContext with BeforeAndAfterAll {
+class PostgreSQLDialectSuite extends SparkFunSuite with BeforeAndAfterAll {
 
   lazy val parser = SQLServerEnv.sqlParser
+  lazy val sqlContext = TestHive
 
   override protected def beforeAll() : Unit = {
     super.beforeAll()
     SQLServerEnv.withSQLContext(sqlContext)
+    initSystemCatalogTables(sqlContext)
     initSystemFunctions(sqlContext)
   }
 
@@ -81,17 +83,63 @@ class PostgreSQLDialectSuite extends SparkFunSuite with SharedSQLContext with Be
     )
   }
 
-  test("pg internal functions") {
+  test("generate_series") {
+    assertQueryExecutionInPgParser("SELECT * FROM generate_series(0, 1)", Row(0) :: Row(1) :: Nil)
+    assertQueryExecutionInPgParser("SELECT * FROM generate_series(0, 10, 5)",
+      Row(0) :: Row(5) :: Row(10) :: Nil)
+  }
+
+  test("array_to_string") {
+    assert(sqlContext.sql("SELECT pg_catalog.array_to_string(array(1, 2, 3), ',')").collect ===
+      Seq(Row("1,2,3")))
+  }
+
+  test("format_type") {
+    val typeNames = sqlContext.sql(
+      """
+        |SELECT pg_catalog.format_type(oid, '')
+        |  FROM pg_catalog.pg_type
+      """.stripMargin).collect.map {
+      case Row(typeName: String) => typeName
+    }.toSet
+    val expectedTypeNames = Set(
+      "name", "float4", "bool", "int4", "_date", "_float8", "date", "varchar", "byte", "_int8",
+      "_int4", "_timestamp", "_float4", "_numeric", "tid", "numeric", "float8", "int8", "timestamp",
+      "_bool", "char", "map", "bytea", "int2", "struct", "_int2", "_varchar")
+    assert(typeNames === expectedTypeNames)
+
+    assert(sqlContext.sql("SELECT pg_catalog.format_type(-895032, '')").collect ===
+      Seq(Row("unknown")))
+  }
+
+  test("oidvectortypes") {
+    val typeNames = sqlContext.sql(
+      """
+        |SELECT pg_catalog.oidvectortypes(collect_list(oid))
+        |  FROM (SELECT oid FROM pg_catalog.pg_type)
+      """.stripMargin).collect.map {
+      case Row(typeNames: String) => typeNames
+    }.head
+    Seq("name", "float4", "bool", "int4", "_date", "_float8", "date", "varchar", "byte", "_int8",
+      "_int4", "_timestamp", "_float4", "_numeric", "tid", "numeric", "float8", "int8", "timestamp",
+      "_bool", "char", "map", "bytea", "int2", "struct", "_int2", "_varchar"
+    ).foreach { expectedTypeName =>
+      assert(typeNames.contains(expectedTypeName))
+    }
+  }
+
+  test("other internal system functions") {
+    // The pre-defined functions below have no implementation and they are registered
+    // just to talk with PostgreSQL JDBC drivers.
     assert(sqlContext.sql("SELECT ANY(array('abc', 'de'))").collect === Seq(Row("abc")))
     assert(sqlContext.sql("SELECT current_schemas(false)").collect === Seq(Row(Seq("spark"))))
     assert(sqlContext.sql("SELECT array_upper(current_schemas(false), 1)").collect === Seq(Row(1)))
     assert(sqlContext.sql("SELECT array_in()").collect === Seq(Row("array_in")))
     assert(sqlContext.sql("SELECT pg_catalog.obj_description(0, '')").collect === Seq(Row("")))
     assert(sqlContext.sql("SELECT pg_catalog.pg_get_expr('', 0)").collect === Seq(Row("")))
+    assert(sqlContext.sql("SELECT pg_catalog.pg_encoding_to_char(0)").collect === Seq(Row("")))
     assert(sqlContext.sql("SELECT pg_catalog.pg_table_is_visible(0)").collect === Seq(Row(true)))
+    assert(sqlContext.sql("SELECT pg_catalog.pg_function_is_visible(0)").collect === Seq(Row(true)))
     assert(sqlContext.sql("SELECT pg_catalog.pg_get_userbyid(0)").collect === Seq(Row("")))
-    assertQueryExecutionInPgParser("SELECT * FROM generate_series(0, 1)", Row(0) :: Row(1) :: Nil)
-    assertQueryExecutionInPgParser("SELECT * FROM generate_series(0, 10, 5)",
-      Row(0) :: Row(5) :: Row(10) :: Nil)
   }
 }

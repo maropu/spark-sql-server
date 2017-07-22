@@ -170,18 +170,18 @@ object Metadata extends Logging {
   private val defaultSparkNamespace = (nextUnusedOid, "spark")
   private val userRoleOid = nextUnusedOid
 
-  private val pgFunctions = Seq(
+  private val pgSystemFunctions = Seq(
     // scalastyle:off
     PgSystemFunction(          384, FunctionIdentifier(       "array_to_string", Some(catalogDbName)), { c => c.udf.register(s"$catalogDbName.array_to_string", (ar: Seq[String], delim: String) => if (ar != null) ar.mkString(delim) else "") }),
     PgSystemFunction(          750, FunctionIdentifier(              "array_in",                None), { c => c.udf.register("array_in", () => "array_in") }),
-    PgSystemFunction(         1081, FunctionIdentifier(           "format_type", Some(catalogDbName)), { c => c.udf.register(s"$catalogDbName.format_type", (type_oid: Int, typemod: String) => "") }),
+    PgSystemFunction(         1081, FunctionIdentifier(           "format_type", Some(catalogDbName)), { c => c.udf.register(s"$catalogDbName.format_type", (type_oid: Int, typemod: String) => pgTypeOidMap.get(type_oid).map(_.name).getOrElse("unknown")) }),
     PgSystemFunction(         1215, FunctionIdentifier(       "obj_description", Some(catalogDbName)), { c => c.udf.register(s"$catalogDbName.obj_description", (oid: Int, tableName: String) => "") }),
     PgSystemFunction(         1402, FunctionIdentifier(       "current_schemas",                None), { c => c.udf.register("current_schemas", (arg: Boolean) => Seq(defaultSparkNamespace._2)) }),
     PgSystemFunction(         1597, FunctionIdentifier(   "pg_encoding_to_char", Some(catalogDbName)), { c => c.udf.register(s"$catalogDbName.pg_encoding_to_char", (encoding: Int) => "") }),
     PgSystemFunction(         1642, FunctionIdentifier(       "pg_get_userbyid", Some(catalogDbName)), { c => c.udf.register(s"$catalogDbName.pg_get_userbyid", (userid: Int) => "") }),
     PgSystemFunction(         1716, FunctionIdentifier(           "pg_get_expr", Some(catalogDbName)), { c => c.udf.register(s"$catalogDbName.pg_get_expr", (adbin: String, adrelid: Int) => "") }),
     PgSystemFunction(         2079, FunctionIdentifier(   "pg_table_is_visible", Some(catalogDbName)), { c => c.udf.register(s"$catalogDbName.pg_table_is_visible", (tableoid: Int) => !pgCatalogOidMap.get(tableoid).isDefined) }),
-    PgSystemFunction(         2081, FunctionIdentifier("pg_function_is_visible", Some(catalogDbName)), { c => c.udf.register(s"$catalogDbName.pg_function_is_visible", (functionoid: Int) => !pgFunctionOidMap.get(functionoid).isDefined) }),
+    PgSystemFunction(         2081, FunctionIdentifier("pg_function_is_visible", Some(catalogDbName)), { c => c.udf.register(s"$catalogDbName.pg_function_is_visible", (functionoid: Int) => !pgSystemFunctionOidMap.get(functionoid).isDefined) }),
     PgSystemFunction(         2092, FunctionIdentifier(           "array_upper",                None), { c => c.udf.register("array_upper", (ar: Seq[String], n: Int) => ar.size) }),
     PgSystemFunction(         2420, FunctionIdentifier(        "oidvectortypes", Some(catalogDbName)), { c => c.udf.register(s"$catalogDbName.oidvectortypes", (typeoids: Seq[Int]) =>  if (typeoids != null) typeoids.map(getPgTypeNameFromOid).mkString(", ") else "") }),
 
@@ -192,10 +192,10 @@ object Metadata extends Logging {
     // scalastyle:on
   )
 
-  private val pgFunctionOidMap: Map[Int, PgSystemFunction] =
-    pgFunctions.map(f => f.oid -> f).toMap
-  private val pgFunctionNameMap: Map[String, PgSystemFunction] =
-    pgFunctions.map(f => f.func.unquotedString.toLowerCase -> f).toMap
+  private val pgSystemFunctionOidMap: Map[Int, PgSystemFunction] =
+    pgSystemFunctions.map(f => f.oid -> f).toMap
+  private val pgSystemFunctionNameMap: Map[String, PgSystemFunction] =
+    pgSystemFunctions.map(f => f.func.unquotedString.toLowerCase -> f).toMap
 
   private def safeCreateCatalogTable(name: String, sqlContext: SQLContext)(f: String => Seq[String])
     : Unit = {
@@ -208,7 +208,7 @@ object Metadata extends Logging {
   }
 
   def initSystemFunctions(sqlContext: SQLContext): Unit = {
-    pgFunctions.foreach { case PgSystemFunction(_, _, doRegister) => doRegister(sqlContext) }
+    pgSystemFunctions.foreach { case PgSystemFunction(_, _, doRegister) => doRegister(sqlContext) }
   }
 
   def initSystemCatalogTables(sqlContext: SQLContext): Unit = {
@@ -465,6 +465,7 @@ object Metadata extends Logging {
         |  attname STRING,
         |  atttypid INT,
         |  attnotnull BOOLEAN,
+        |  atthasdef BOOLEAN,
         |  atttypmod INT,
         |  attlen INT,
         |  attnum INT,
@@ -506,7 +507,7 @@ object Metadata extends Logging {
     sqlContext.sessionState.catalog.listFunctions(dbName, "*").foreach {
       case (func, "USER") =>
         // TODO: We should put system functions in a database `pg_catalog`
-        val sysFuncOption = pgFunctionNameMap.get(func.unquotedString.toLowerCase)
+        val sysFuncOption = pgSystemFunctionNameMap.get(func.unquotedString.toLowerCase)
         if (sysFuncOption.isDefined) {
           sysFuncOption.foreach { case PgSystemFunction(oid, func, _) =>
             doRegisterFunction(func, oid, sqlContext)
@@ -576,7 +577,7 @@ object Metadata extends Logging {
         val pgType = getPgType(field.dataType)
           s"""
           |INSERT INTO $catalogDbName.pg_attribute VALUES(
-          |  %d, %d, '%s', %d, %b, %d, %d, %d, false
+          |  %d, %d, '%s', %d, %b, true, %d, %d, %d, false
           |)
         """.format(
           nextUnusedOid,

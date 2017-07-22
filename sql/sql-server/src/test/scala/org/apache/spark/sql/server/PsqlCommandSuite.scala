@@ -137,7 +137,7 @@ class PsqlCommandV7_4Suite extends PostgreSQLJdbcTest with BeforeAndAfterAll {
     }
   }
 
-  ignore("""\d <table name>""") {
+  test("""\d <table name>""") {
     testJdbcStatement { statement =>
       val rs1 = statement.executeQuery(
         """
@@ -166,7 +166,7 @@ class PsqlCommandV7_4Suite extends PostgreSQLJdbcTest with BeforeAndAfterAll {
       rs1.close()
 
       val rs2 = statement.executeQuery(
-        """
+        s"""
           |SELECT
           |  relchecks,
           |  relkind,
@@ -196,12 +196,11 @@ class PsqlCommandV7_4Suite extends PostgreSQLJdbcTest with BeforeAndAfterAll {
       assert(!rs2.getBoolean(8))
       assert("" === rs2.getString(9))
       assert("" === rs2.getString(10))
+      assert(!rs2.next())
       rs2.close()
 
-      // TODO: Spark-2.1 cannot handle sub-queries without aggregate for Hive SerDe tables.
-      // So, we do not support `\d <table name>` now.
       val rs3 = statement.executeQuery(
-        """
+        s"""
           |SELECT
           |  a.attname,
           |  pg_catalog.format_type(a.atttypid, a.atttypmod),
@@ -212,7 +211,7 @@ class PsqlCommandV7_4Suite extends PostgreSQLJdbcTest with BeforeAndAfterAll {
           |      pg_catalog.pg_attrdef d
           |    WHERE
           |      d.adrelid = a.attrelid AND d.adnum = a.attnum AND a.atthasdef
-          |   ),
+          |  ),
           |  a.attnotnull,
           |  a.attnum,
           |  NULL AS attcollation,
@@ -221,13 +220,28 @@ class PsqlCommandV7_4Suite extends PostgreSQLJdbcTest with BeforeAndAfterAll {
           |FROM
           |  pg_catalog.pg_attribute a
           |WHERE
-          |  a.attrelid = '6208' AND a.attnum > 0 AND NOT a.attisdropped
+          |  a.attrelid = '$relOid' AND a.attnum > 0 AND NOT a.attisdropped
           |ORDER BY
           |  a.attnum
         """.stripMargin
       )
 
       assert(rs3.next())
+      assert("a" === rs3.getString(1))
+      assert("int4" === rs3.getString(2))
+      assert(false === rs3.getBoolean(4))
+      assert(1 === rs3.getInt(5))
+      assert(rs3.next())
+      assert("b" === rs3.getString(1))
+      assert("varchar" === rs3.getString(2))
+      assert(false === rs3.getBoolean(4))
+      assert(2 === rs3.getInt(5))
+      assert(rs3.next())
+      assert("c" === rs3.getString(1))
+      assert("float8" === rs3.getString(2))
+      assert(false === rs3.getBoolean(4))
+      assert(3 === rs3.getInt(5))
+      assert(!rs3.next())
       rs3.close()
     }
   }

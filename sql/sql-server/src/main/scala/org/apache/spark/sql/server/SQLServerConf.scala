@@ -18,9 +18,8 @@
 package org.apache.spark.sql.server
 
 import org.apache.spark.SparkConf
-import org.apache.spark.internal.config.ConfigBuilder
+import org.apache.spark.internal.config.{ConfigBuilder, ConfigEntry}
 import org.apache.spark.sql.internal.SQLConf
-import org.apache.spark.sql.internal.SQLConf.SQLConfigBuilder
 
 
 /** A parameter set of a SQL JDBC/ODBC server. */
@@ -31,7 +30,22 @@ object SQLServerConf {
    */
   implicit def SQLConfToSQLServerConf(conf: SparkConf): SQLServerConf = new SQLServerConf(conf)
 
-  def buildConf(key: String): ConfigBuilder = SQLConfigBuilder(key)
+  private val sqlConfEntries = java.util.Collections.synchronizedMap(
+    new java.util.HashMap[String, ConfigEntry[_]]())
+
+  private def register(entry: ConfigEntry[_]): Unit = sqlConfEntries.synchronized {
+    require(!sqlConfEntries.containsKey(entry.key),
+      s"Duplicate SQLConfigEntry. ${entry.key} has been registered")
+    sqlConfEntries.put(entry.key, entry)
+  }
+
+  // For testing only
+  // TODO: Need to add tests for the configurations
+  private[sql] def unregister(entry: ConfigEntry[_]): Unit = sqlConfEntries.synchronized {
+    sqlConfEntries.remove(entry.key)
+  }
+
+  def buildConf(key: String): ConfigBuilder = ConfigBuilder(key).onCreate(register)
 
   val SQLSERVER_PORT = buildConf("spark.sql.server.port")
     .doc("Port number of SQLServer interface.")

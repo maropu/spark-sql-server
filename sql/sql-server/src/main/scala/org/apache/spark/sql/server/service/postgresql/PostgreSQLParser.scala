@@ -17,17 +17,18 @@
 
 package org.apache.spark.sql.server.service.postgresql
 
+import java.util.Locale
+
 import scala.collection.JavaConverters._
 import scala.collection.mutable.Buffer
 
-import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.analysis._
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateFunction, First}
+import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.server.execution.{SparkSqlAstBuilder, SparkSqlParser}
-import org.apache.spark.sql.server.parser._
 import org.apache.spark.sql.server.parser.SqlBaseParser._
 import org.apache.spark.sql.server.service.postgresql.execution.command.BeginCommand
 import org.apache.spark.sql.types._
@@ -47,7 +48,7 @@ class PostgreSQLParser(conf: SQLConf) extends SparkSqlParser(conf) {
 /**
  * Builder that converts an ANTLR ParseTree into a LogicalPlan/Expression/TableIdentifier.
  */
-class PostgreSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) with Logging {
+class PostgreSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) with PredicateHelper {
   import org.apache.spark.sql.catalyst.parser.ParserUtils._
 
   override def visitBeginTransaction(ctx: BeginTransactionContext): LogicalPlan = {
@@ -59,7 +60,8 @@ class PostgreSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) with 
       super.visitPrimitiveDataType(ctx)
     } catch {
       case e: ParseException =>
-        (ctx.identifier.getText.toLowerCase, ctx.INTEGER_VALUE().asScala.toList) match {
+        val dataType = ctx.identifier.getText.toLowerCase(Locale.ROOT)
+        (dataType, ctx.INTEGER_VALUE().asScala.toList) match {
           case ("text", Nil) => StringType
           case _ => throw e
         }
@@ -99,14 +101,35 @@ class PostgreSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) with 
       //
       case p @ Project(ne :: Nil, child) if ne.find(_.isInstanceOf[AggregateFunction]).isEmpty =>
         val attr = ne.find(_.isInstanceOf[UnresolvedAttribute]).get
-        val first = First(attr, Literal(true))
-        val projWithAggregate = Project(Alias(first, first.prettyName)() :: Nil, child)
+        val first = First(attr, ignoreNullsExpr = Literal(true))
+        val newChild = child.transform {
+          case f @ Filter(cond, _) =>
+            val origPreds = splitConjunctivePredicates(cond)
+            val (newPreds, droppedPreds) = origPreds.partition { expr =>
+              expr.isInstanceOf[EqualTo] || expr.isInstanceOf[EqualNullSafe]
+            }
+            if (droppedPreds.nonEmpty) {
+              logWarning(
+                s"""
+                   |Spark-2.2 does not allow correlated sub-queries to have non-equal predicates,
+                   |so we drop non-supported predicates to pass JDBC metadata operations.
+                   |The dropped predicates are:
+                   |
+                   | ${droppedPreds.mkString(" ")}
+                 """.stripMargin)
+            }
+            f.copy(condition = newPreds.reduce(And))
+        }
+        val projWithAggregate = Aggregate(
+          groupingExpressions = Nil,
+          aggregateExpressions = UnresolvedAlias(first.toAggregateExpression()) :: Nil,
+          child = newChild)
         logWarning(
           s"""
-             |Found a sub-query without aggregate, so we add `First` in the projection;
-             | $projWithAggregate
-           """.stripMargin
-        )
+             |Found a sub-query without aggregate, so we add `First` in the projection:
+             |
+             |$projWithAggregate
+           """.stripMargin)
         projWithAggregate
     }
     ScalarSubquery(proj)
@@ -165,14 +188,21 @@ class PostgreSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) with 
     }
     if (ctx.identifier().size > 1) {
       val prefix = ctx.identifier(1).getText
+      // This workaround is needed to parse a SQL syntax below:
+      //
+      // SELECT
+      //   s.r, (current_schemas(false))[s.r] AS nspname
+      // FROM
+      //   generate_series(1, array_upper(current_schemas(false), 1)) AS s(r)
+      //
       if (ctx.identifierList != null) {
         val aliases = visitIdentifierList(ctx.identifierList)
         // TODO: Since there is currently one table function `range`, we just assign an output name
         // here. But, we need to make this logic more general in future.
         val projectList = Alias(UnresolvedAttribute("id"), aliases.head)() :: Nil
-        SubqueryAlias(prefix, Project(projectList, funcPlan), None)
+        SubqueryAlias(prefix, Project(projectList, funcPlan))
       } else {
-        SubqueryAlias(prefix, funcPlan, None)
+        SubqueryAlias(prefix, funcPlan)
       }
     } else {
       funcPlan

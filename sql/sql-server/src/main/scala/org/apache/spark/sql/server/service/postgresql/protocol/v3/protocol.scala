@@ -43,9 +43,9 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{AttributeReference, UnsafeProjection}
 import org.apache.spark.sql.catalyst.json.{JacksonGenerator, JSONOptions}
+import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.catalyst.util.DateTimeUtils._
 import org.apache.spark.sql.server.SQLServerConf._
-import org.apache.spark.sql.server.parser.ParseException
 import org.apache.spark.sql.server.service.{BEGIN, ExecuteStatementOperation, FETCH, SELECT, SessionService}
 import org.apache.spark.sql.server.service.postgresql.Metadata._
 import org.apache.spark.sql.types._
@@ -928,7 +928,8 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
             val outputSchema = new StructType().add(schema.fields(i))
             val writer = new CharArrayWriter
             // Set a timestamp format so that JDBC drivers can parse data
-            val options = new JSONOptions(Map("timestampFormat" -> "yyyy-MM-dd HH:mm:ss"))
+            val options = new JSONOptions(Map("timestampFormat" -> "yyyy-MM-dd HH:mm:ss"),
+              TimeZone.getDefault.getID)
             val jsonGenerator = new JacksonGenerator(outputSchema, writer, options)
             def toJson(row: InternalRow): String = {
               jsonGenerator.write(row)

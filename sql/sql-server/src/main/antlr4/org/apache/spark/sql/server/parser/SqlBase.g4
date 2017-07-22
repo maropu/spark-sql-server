@@ -56,6 +56,10 @@ singleTableIdentifier
     : tableIdentifier EOF
     ;
 
+singleFunctionIdentifier
+    : functionIdentifier EOF
+    ;
+
 singleDataType
     : dataType EOF
     ;
@@ -69,26 +73,32 @@ statement
     | ALTER DATABASE identifier SET DBPROPERTIES tablePropertyList     #setDatabaseProperties
     | DROP DATABASE (IF EXISTS)? identifier (RESTRICT | CASCADE)?      #dropDatabase
     | createTableHeader ('(' colTypeList ')')? tableProvider
-        (OPTIONS tablePropertyList)?
+        (OPTIONS options=tablePropertyList)?
         (PARTITIONED BY partitionColumnNames=identifierList)?
-        bucketSpec? (AS? query)?                                       #createTableUsing
+        bucketSpec? locationSpec?
+        (COMMENT comment=STRING)?
+        (AS? query)?                                                   #createTable
     | createTableHeader ('(' columns=colTypeList ')')?
-        (COMMENT STRING)?
+        (COMMENT comment=STRING)?
         (PARTITIONED BY '(' partitionColumns=colTypeList ')')?
         bucketSpec? skewSpec?
         rowFormat?  createFileFormat? locationSpec?
         (TBLPROPERTIES tablePropertyList)?
-        (AS? query)?                                                   #createTable
+        (AS? query)?                                                   #createHiveTable
     | CREATE TABLE (IF NOT EXISTS)? target=tableIdentifier
-        LIKE source=tableIdentifier                                    #createTableLike
+        LIKE source=tableIdentifier locationSpec?                      #createTableLike
     | ANALYZE TABLE tableIdentifier partitionSpec? COMPUTE STATISTICS
         (identifier | FOR COLUMNS identifierSeq)?                      #analyze
+    | ALTER TABLE tableIdentifier
+        ADD COLUMNS '(' columns=colTypeList ')'                        #addTableColumns
     | ALTER (TABLE | VIEW) from=tableIdentifier
         RENAME TO to=tableIdentifier                                   #renameTable
     | ALTER (TABLE | VIEW) tableIdentifier
         SET TBLPROPERTIES tablePropertyList                            #setTableProperties
     | ALTER (TABLE | VIEW) tableIdentifier
         UNSET TBLPROPERTIES (IF EXISTS)? tablePropertyList             #unsetTableProperties
+    | ALTER TABLE tableIdentifier partitionSpec?
+        CHANGE COLUMN? identifier colType colPosition?                 #changeColumn
     | ALTER TABLE tableIdentifier (partitionSpec)?
         SET SERDE STRING (WITH SERDEPROPERTIES tablePropertyList)?     #setTableSerDe
     | ALTER TABLE tableIdentifier (partitionSpec)?
@@ -119,9 +129,12 @@ statement
     | CREATE TEMPORARY? FUNCTION qualifiedName AS className=STRING
         (USING resource (',' resource)*)?                              #createFunction
     | DROP TEMPORARY? FUNCTION (IF EXISTS)? qualifiedName              #dropFunction
-    | EXPLAIN (LOGICAL | FORMATTED | EXTENDED | CODEGEN)? statement    #explain
+    | EXPLAIN (LOGICAL | FORMATTED | EXTENDED | CODEGEN | COST)?
+        statement                                                      #explain
     | SHOW TABLES ((FROM | IN) db=identifier)?
         (LIKE? pattern=STRING)?                                        #showTables
+    | SHOW TABLE EXTENDED ((FROM | IN) db=identifier)?
+        LIKE pattern=STRING partitionSpec?                             #showTable
     | SHOW DATABASES (LIKE pattern=STRING)?                            #showDatabases
     | SHOW TBLPROPERTIES table=tableIdentifier
         ('(' key=tablePropertyKey ')')?                                #showTblProperties
@@ -148,6 +161,7 @@ statement
     | SET ROLE .*?                                                     #failNativeCommand
     | SET .*?                                                          #setConfiguration
     | RESET                                                            #resetConfiguration
+    // `BEGIN` is implicitly issued from PostgreSQL JDBC drivers
     | BEGIN                                                            #beginTransaction
     | unsupportedHiveNativeCommands .*?                                #failNativeCommand
     ;
@@ -192,8 +206,6 @@ unsupportedHiveNativeCommands
     | kw1=ALTER kw2=TABLE tableIdentifier partitionSpec? kw3=COMPACT
     | kw1=ALTER kw2=TABLE tableIdentifier partitionSpec? kw3=CONCATENATE
     | kw1=ALTER kw2=TABLE tableIdentifier partitionSpec? kw3=SET kw4=FILEFORMAT
-    | kw1=ALTER kw2=TABLE tableIdentifier partitionSpec? kw3=ADD kw4=COLUMNS
-    | kw1=ALTER kw2=TABLE tableIdentifier partitionSpec? kw3=CHANGE kw4=COLUMN?
     | kw1=ALTER kw2=TABLE tableIdentifier partitionSpec? kw3=REPLACE kw4=COLUMNS
     | kw1=START kw2=TRANSACTION
     | kw1=COMMIT
@@ -361,13 +373,22 @@ querySpecification
        (RECORDREADER recordReader=STRING)?
        fromClause?
        (WHERE where=booleanExpression)?)
-    | ((kind=SELECT setQuantifier? namedExpressionSeq fromClause?
+    | ((kind=SELECT (hints+=hint)* setQuantifier? namedExpressionSeq fromClause?
        | fromClause (kind=SELECT setQuantifier? namedExpressionSeq)?)
        lateralView*
        (WHERE where=booleanExpression)?
        aggregation?
        (HAVING having=booleanExpression)?
        windows?)
+    ;
+
+hint
+    : '/*+' hintStatements+=hintStatement (','? hintStatements+=hintStatement)* '*/'
+    ;
+
+hintStatement
+    : hintName=identifier
+    | hintName=identifier '(' parameters+=primaryExpression (',' parameters+=primaryExpression)* ')'
     ;
 
 fromClause
@@ -478,6 +499,10 @@ tableIdentifier
     : (db=identifier '.')? table=identifier
     ;
 
+functionIdentifier
+    : (db=identifier '.')? function=identifier
+    ;
+
 namedExpression
     : expression (AS? (identifier | identifierList))?
     ;
@@ -492,10 +517,10 @@ expression
 
 booleanExpression
     : NOT booleanExpression                                        #logicalNot
+    | EXISTS '(' query ')'                                         #exists
     | predicated                                                   #booleanDefault
     | left=booleanExpression operator=AND right=booleanExpression  #logicalBinary
     | left=booleanExpression operator=OR right=booleanExpression   #logicalBinary
-    | EXISTS '(' query ')'                                         #exists
     ;
 
 // workaround for:
@@ -526,20 +551,27 @@ valueExpression
 
 primaryExpression
     : name=(CURRENT_DATE | CURRENT_TIMESTAMP)                                                  #timeFunctionCall
-    | CASE value=expression whenClause+ (ELSE elseExpression=expression)? END                  #simpleCase
     | CASE whenClause+ (ELSE elseExpression=expression)? END                                   #searchedCase
+    | CASE value=expression whenClause+ (ELSE elseExpression=expression)? END                  #simpleCase
     | CAST '(' expression AS dataType ')'                                                      #cast
+    // This is needed to parse PostgreSQL-style type casts like `SELECT 1 :: TEXT`
     | primaryExpression PGCAST pgDataType                                                      #pgStyleCast
+    | STRUCT '(' (argument+=namedExpression (',' argument+=namedExpression)*)? ')'             #struct
+    | FIRST '(' expression (IGNORE NULLS)? ')'                                                 #first
+    | LAST '(' expression (IGNORE NULLS)? ')'                                                  #last
     | constant                                                                                 #constantDefault
     | ASTERISK                                                                                 #star
     | qualifiedName '.' ASTERISK                                                               #star
-    | '(' expression (',' expression)+ ')'                                                     #rowConstructor
+    | '(' namedExpression (',' namedExpression)+ ')'                                           #rowConstructor
     | '(' query ')'                                                                            #subqueryExpression
+    // `substring is an internal function of PostgreSQL, e.g., `substring('Thomas' from 2 for 3)`
     | SUBSTRING '(' primaryExpression (FROM INTEGER_VALUE)? FOR INTEGER_VALUE ')'              #substringInternalFunc
-    | qualifiedName '(' (setQuantifier? expression (',' expression)*)? ')' (OVER windowSpec)?  #functionCall
+    | qualifiedName '(' (setQuantifier? argument+=expression (',' argument+=expression)*)? ')'
+       (OVER windowSpec)?                                                                      #functionCall
     | value=primaryExpression '[' index=valueExpression ']'                                    #subscript
     | identifier                                                                               #columnReference
     | base=primaryExpression '.' fieldName=identifier                                          #dereference
+    // `CONCAT_PIPE` is supported in the next Spark-v2.3
     | primaryExpression (CONCAT_PIPE primaryExpression)+                                       #concat
     | '(' expression ')'                                                                       #parenthesizedExpression
     ;
@@ -585,6 +617,10 @@ intervalValue
 pgDataType
     : (identifier '.')? dataType
     | dataType
+    ;
+
+colPosition
+    : FIRST | AFTER identifier
     ;
 
 dataType
@@ -663,6 +699,7 @@ strictIdentifier
 
 quotedIdentifier
     : BACKQUOTED_IDENTIFIER
+    // This is needed to parse double-quoted alias names like 'SELECT 1 as "Col1"'
     | STRING
     ;
 
@@ -679,21 +716,21 @@ number
 nonReserved
     : SHOW | TABLES | COLUMNS | COLUMN | PARTITIONS | FUNCTIONS | DATABASES
     | ADD
-    | OVER | PARTITION | RANGE | ROWS | PRECEDING | FOLLOWING | CURRENT | ROW | LAST | FIRST
+    | OVER | PARTITION | RANGE | ROWS | PRECEDING | FOLLOWING | CURRENT | ROW | LAST | FIRST | AFTER
     | MAP | ARRAY | STRUCT
     | LATERAL | WINDOW | REDUCE | TRANSFORM | USING | SERDE | SERDEPROPERTIES | RECORDREADER
     | DELIMITED | FIELDS | TERMINATED | COLLECTION | ITEMS | KEYS | ESCAPED | LINES | SEPARATED
     | EXTENDED | REFRESH | CLEAR | CACHE | UNCACHE | LAZY | GLOBAL | TEMPORARY | OPTIONS
     | GROUPING | CUBE | ROLLUP
-    | EXPLAIN | FORMAT | LOGICAL | FORMATTED | CODEGEN
+    | EXPLAIN | FORMAT | LOGICAL | FORMATTED | CODEGEN | COST
     | TABLESAMPLE | USE | TO | BUCKET | PERCENTLIT | OUT | OF
     | SET | RESET
     | VIEW | REPLACE
     | IF
     | NO | DATA
-    | START | TRANSACTION | COMMIT | ROLLBACK
+    | START | TRANSACTION | COMMIT | ROLLBACK | IGNORE
     | SORT | CLUSTER | DISTRIBUTE | UNSET | TBLPROPERTIES | SKEWED | STORED | DIRECTORIES | LOCATION
-    | EXCHANGE | ARCHIVE | UNARCHIVE | FILEFORMAT | TOUCH | COMPACT | CONCATENATE | CHANGE | CONCATENATE
+    | EXCHANGE | ARCHIVE | UNARCHIVE | FILEFORMAT | TOUCH | COMPACT | CONCATENATE | CHANGE
     | CASCADE | RESTRICT | BUCKETS | CLUSTERED | SORTED | PURGE | INPUTFORMAT | OUTPUTFORMAT
     | DBPROPERTIES | DFS | TRUNCATE | COMPUTE | LIST
     | STATISTICS | ANALYZE | PARTITIONED | EXTERNAL | DEFINED | RECORDWRITER
@@ -733,6 +770,7 @@ NO: 'NO';
 EXISTS: 'EXISTS';
 BETWEEN: 'BETWEEN';
 LIKE: 'LIKE';
+// `~` is a PostgreSQL-style symbol for regular expression
 RLIKE: 'RLIKE' | 'REGEXP' | '~';
 IS: 'IS';
 NULL: 'NULL';
@@ -769,6 +807,7 @@ PRECEDING: 'PRECEDING';
 FOLLOWING: 'FOLLOWING';
 CURRENT: 'CURRENT';
 FIRST: 'FIRST';
+AFTER: 'AFTER';
 LAST: 'LAST';
 ROW: 'ROW';
 WITH: 'WITH';
@@ -785,6 +824,7 @@ EXPLAIN: 'EXPLAIN';
 FORMAT: 'FORMAT';
 LOGICAL: 'LOGICAL';
 CODEGEN: 'CODEGEN';
+COST: 'COST';
 CAST: 'CAST';
 PGCAST: '::';
 SHOW: 'SHOW';
@@ -817,6 +857,7 @@ COMMIT: 'COMMIT';
 ROLLBACK: 'ROLLBACK';
 MACRO: 'MACRO';
 BEGIN: 'BEGIN';
+IGNORE: 'IGNORE';
 
 IF: 'IF';
 
@@ -1006,8 +1047,12 @@ SIMPLE_COMMENT
     : '--' ~[\r\n]* '\r'? '\n'? -> channel(HIDDEN)
     ;
 
+BRACKETED_EMPTY_COMMENT
+    : '/**/' -> channel(HIDDEN)
+    ;
+
 BRACKETED_COMMENT
-    : '/*' .*? '*/' -> channel(HIDDEN)
+    : '/*' ~[+] .*? '*/' -> channel(HIDDEN)
     ;
 
 WS

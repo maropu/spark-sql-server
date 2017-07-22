@@ -22,13 +22,15 @@ import org.antlr.v4.runtime.misc.ParseCancellationException
 
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.AnalysisException
-import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.parser.ParseException
+import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.parser.ParserInterface
-import org.apache.spark.sql.catalyst.parser.ParserUtils
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.trees.Origin
-import org.apache.spark.sql.types.DataType
+import org.apache.spark.sql.internal.SQLConf
+import org.apache.spark.sql.types.{DataType, StructType}
+
 
 /**
  * Base SQL parsing infrastructure.
@@ -36,8 +38,7 @@ import org.apache.spark.sql.types.DataType
 abstract class AbstractSqlParser extends ParserInterface with Logging {
 
   /** Creates/Resolves DataType for a given SQL string. */
-  def parseDataType(sqlText: String): DataType = parse(sqlText) { parser =>
-    // TODO add this to the parser interface.
+  override def parseDataType(sqlText: String): DataType = parse(sqlText) { parser =>
     astBuilder.visitSingleDataType(parser.singleDataType())
   }
 
@@ -49,6 +50,21 @@ abstract class AbstractSqlParser extends ParserInterface with Logging {
   /** Creates TableIdentifier for a given SQL string. */
   override def parseTableIdentifier(sqlText: String): TableIdentifier = parse(sqlText) { parser =>
     astBuilder.visitSingleTableIdentifier(parser.singleTableIdentifier())
+  }
+
+  /** Creates FunctionIdentifier for a given SQL string. */
+  override def parseFunctionIdentifier(sqlText: String): FunctionIdentifier = {
+    parse(sqlText) { parser =>
+      astBuilder.visitSingleFunctionIdentifier(parser.singleFunctionIdentifier())
+    }
+  }
+
+  /**
+   * Creates StructType for a given SQL string, which is a comma separated list of field
+   * definitions which will preserve the correct Hive metadata.
+   */
+  override def parseTableSchema(sqlText: String): StructType = parse(sqlText) { parser =>
+    StructType(astBuilder.visitColTypeList(parser.colTypeList()))
   }
 
   /** Creates LogicalPlan for a given SQL string. */
@@ -65,7 +81,7 @@ abstract class AbstractSqlParser extends ParserInterface with Logging {
   protected def astBuilder: AstBuilder
 
   protected def parse[T](command: String)(toResult: SqlBaseParser => T): T = {
-    logInfo(s"Parsing command: $command")
+    logDebug(s"Parsing command: $command")
 
     val lexer = new SqlBaseLexer(new ANTLRNoCaseStringStream(command))
     lexer.removeErrorListeners()
@@ -109,8 +125,13 @@ abstract class AbstractSqlParser extends ParserInterface with Logging {
 /**
  * Concrete SQL parser for Catalyst-only SQL statements.
  */
+class CatalystSqlParser(conf: SQLConf) extends AbstractSqlParser {
+  val astBuilder = new AstBuilder(conf)
+}
+
+/** For test-only. */
 object CatalystSqlParser extends AbstractSqlParser {
-  val astBuilder = new AstBuilder
+  val astBuilder = new AstBuilder(new SQLConf())
 }
 
 /**
@@ -154,49 +175,6 @@ case object ParseErrorListener extends BaseErrorListener {
       e: RecognitionException): Unit = {
     val position = Origin(Some(line), Some(charPositionInLine))
     throw new ParseException(None, msg, position, position)
-  }
-}
-
-/**
- * A [[ParseException]] is an [[AnalysisException]] that is thrown during the parse process. It
- * contains fields and an extended error message that make reporting and diagnosing errors easier.
- */
-class ParseException(
-    val command: Option[String],
-    message: String,
-    val start: Origin,
-    val stop: Origin) extends AnalysisException(message, start.line, start.startPosition) {
-
-  def this(message: String, ctx: ParserRuleContext) = {
-    this(Option(ParserUtils.command(ctx)),
-      message,
-      ParserUtils.position(ctx.getStart),
-      ParserUtils.position(ctx.getStop))
-  }
-
-  override def getMessage: String = {
-    val builder = new StringBuilder
-    builder ++= "\n" ++= message
-    start match {
-      case Origin(Some(l), Some(p)) =>
-        builder ++= s"(line $l, pos $p)\n"
-        command.foreach { cmd =>
-          val (above, below) = cmd.split("\n").splitAt(l)
-          builder ++= "\n== SQL ==\n"
-          above.foreach(builder ++= _ += '\n')
-          builder ++= (0 until p).map(_ => "-").mkString("") ++= "^^^\n"
-          below.foreach(builder ++= _ += '\n')
-        }
-      case _ =>
-        command.foreach { cmd =>
-          builder ++= "\n== SQL ==\n" ++= cmd
-        }
-    }
-    builder.toString
-  }
-
-  def withCommand(cmd: String): ParseException = {
-    new ParseException(Option(cmd), message, start, stop)
   }
 }
 
