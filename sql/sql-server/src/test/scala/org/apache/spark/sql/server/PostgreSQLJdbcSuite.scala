@@ -855,7 +855,7 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
 
   // This test often hangs and then times out, leaving the hanging processes.
   // Let's ignore it and improve the test.
-  test("jdbc cancellation") {
+  ignore("jdbc cancellation") {
     testJdbcStatement { statement =>
       Seq(
         "DROP TABLE IF EXISTS t",
