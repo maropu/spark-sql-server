@@ -114,8 +114,7 @@ class PostgreSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) with 
                    |Spark-2.2 does not allow correlated sub-queries to have non-equal predicates,
                    |so we drop non-supported predicates to pass JDBC metadata operations.
                    |The dropped predicates are:
-                   |
-                   | ${droppedPreds.mkString(" ")}
+                   |${droppedPreds.mkString(" ")}
                  """.stripMargin)
             }
             f.copy(condition = newPreds.reduce(And))
@@ -127,7 +126,6 @@ class PostgreSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) with 
         logWarning(
           s"""
              |Found a sub-query without aggregate, so we add `First` in the projection:
-             |
              |$projWithAggregate
            """.stripMargin)
         projWithAggregate
@@ -153,6 +151,8 @@ class PostgreSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) with 
           dataType
         }
         UnresolvedFunction(funcName, args, false)
+      case "regclass" =>
+        expression(ctx.primaryExpression)
       case _ =>
         Cast(expression(ctx.primaryExpression), typedVisit(ctx.pgDataType().dataType()))
     }

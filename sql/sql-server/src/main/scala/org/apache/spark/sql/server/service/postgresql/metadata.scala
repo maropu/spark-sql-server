@@ -61,7 +61,8 @@ object Metadata extends Logging {
     PgSystemTable(          2609, TableIdentifier("pg_description", Some(catalogDbName))),
     PgSystemTable(          2608, TableIdentifier(     "pg_depend", Some(catalogDbName))),
     PgSystemTable(          2606, TableIdentifier( "pg_constraint", Some(catalogDbName))),
-    PgSystemTable(          2604, TableIdentifier(    "pg_attrdef", Some(catalogDbName)))
+    PgSystemTable(          2604, TableIdentifier(    "pg_attrdef", Some(catalogDbName))),
+    PgSystemTable(          2611, TableIdentifier(   "pg_inherits", Some(catalogDbName)))
     // scalastyle:on
   )
 
@@ -309,21 +310,15 @@ object Metadata extends Logging {
             |  typbasetype INT,
             |  typnamespace INT
             |)
-          """ +: pgTypes.map { tpe =>
+          """ +: pgTypes.map { case PgType(oid, name, len, elemOid, input) =>
             // `b` in `typtype` means a primitive type and all the entries in `supportedPgTypes`
             // are primitive types.
             s"""
               |INSERT INTO $cTableName VALUES(
-              |  %d, '%s', 'b', %d, false, %d, ',', '%s', 0, 0, %d
+              |  $oid, '$name', 'b', $len, false, $elemOid, ',', '$input', 0, 0,
+              |  ${defaultSparkNamespace._1}
               |)
-            """.format(
-              tpe.oid,
-              tpe.name,
-              tpe.len,
-              tpe.elemOid,
-              tpe.input,
-              defaultSparkNamespace._1
-            )
+            """
           }
         }
 
@@ -392,6 +387,17 @@ object Metadata extends Logging {
             |  adrelid INT,
             |  adnum SHORT,
             |  adbin STRING
+            |)
+          """ ::
+          Nil
+        }
+
+        safeCreateCatalogTable("pg_inherits", sqlContext) { cTableName =>
+          s"""
+            |CREATE TABLE $cTableName(
+            |  inhrelid INT,
+            |  inhparent INT,
+            |  inhseqno INT
             |)
           """ ::
           Nil
@@ -556,39 +562,25 @@ object Metadata extends Logging {
     logInfo(s"Registering a table `$dbName.$tableName(${schema.sql}})` " +
       "in a system catalog `pg_class`")
     val tableOid = nextUnusedOid
+    val tableTypeId = tableType match {
+      case CatalogTableType.MANAGED => "r"
+      case CatalogTableType.VIEW => "v"
+      case CatalogTableType.EXTERNAL => "f"
+    }
     val sqlTexts =
       s"""
         |INSERT INTO $catalogDbName.pg_class VALUES(
-        |  %d, '%s', '%s', %d, %d, %s, 0, false, false, 0, false
+        |  $tableOid, '$tableName', '$tableTypeId', ${defaultSparkNamespace._1}, $userRoleOid,
+        |  null, 0, false, false, 0, false
         |)
-      """.format(
-        tableOid,
-        tableName,
-        tableType match {
-          case CatalogTableType.MANAGED => "r"
-          case CatalogTableType.VIEW => "v"
-          case CatalogTableType.EXTERNAL => "f"
-        },
-        defaultSparkNamespace._1,
-        userRoleOid,
-        "null"
-      ) +:
-      schema.zipWithIndex.map { case (field, index) =>
+      """ +: schema.zipWithIndex.map { case (field, index) =>
         val pgType = getPgType(field.dataType)
           s"""
-          |INSERT INTO $catalogDbName.pg_attribute VALUES(
-          |  %d, %d, '%s', %d, %b, true, %d, %d, %d, false
-          |)
-        """.format(
-          nextUnusedOid,
-          tableOid,
-          field.name,
-          pgType.oid,
-          !field.nullable,
-          0,
-          pgType.len,
-          1 + index
-        )
+            |INSERT INTO $catalogDbName.pg_attribute VALUES(
+            |  $nextUnusedOid, $tableOid, '${field.name}', ${pgType.oid}, ${!field.nullable}, true,
+            |  0, ${pgType.len}, ${1 + index}, false
+            |)
+          """
       }
 
     sqlTexts.foreach { sqlText =>

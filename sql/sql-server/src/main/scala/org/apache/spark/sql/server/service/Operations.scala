@@ -166,7 +166,7 @@ private[server] case class ExecuteStatementOperation(
         if (state == CANCELED) {
           logWarning(
             s"""Cancelled query with $statementId
-               | $statement
+               |$statement
              """.stripMargin)
           throw new SQLException(e.toString)
         } else {

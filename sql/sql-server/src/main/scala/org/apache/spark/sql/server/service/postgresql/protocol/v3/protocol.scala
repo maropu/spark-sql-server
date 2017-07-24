@@ -846,17 +846,14 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
     }
   }
 
-  private def buildRowConverter(schema: StructType, formats: Seq[Int] = Seq.empty)
+  private def buildRowConverter(schema: StructType, formatsOption: Option[Seq[Int]] = None)
     : (InternalRow) => Seq[Array[Byte]] = {
-    require(formats.isEmpty || schema.length == formats.size,
+    require(formatsOption.isEmpty || schema.length == formatsOption.get.size,
       "format must have the same length with schema")
     def toBytes(s: String) = s.getBytes("US-ASCII")
-    val outputFormats = if (formats.isEmpty) {
-      schema.map { field =>
-        binaryFormatTypes.find(_ == field.dataType).map(_ => 1).getOrElse(0)
-      }
-    } else {
-      formats
+    val outputFormats =  formatsOption.getOrElse {
+      // If `formatsOption` not defined, test mode enabled
+      Seq.fill(schema.length)(0)
     }
     val attrs = schema.toAttributes
     val fieldsConverter: Seq[InternalRow => Array[Byte]] = attrs.zipWithIndex.map {
@@ -870,7 +867,6 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
             }
           case (TimestampType, 0) =>
             val buf = new Array[Byte](8)
-            val writer = ByteBuffer.wrap(buf)
             (row: InternalRow) => {
               val field = proj(row)
               val timestamp = toJavaTimestamp(field.get(0, TimestampType).asInstanceOf[Long])
@@ -999,7 +995,8 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
       require(row.numFields == schema.length)
       (0 until row.numFields).map { index =>
         if (!row.isNullAt(index)) {
-          fieldsConverter(index)(row)
+          // We need to copy data from internal buffer
+          fieldsConverter(index)(row).clone()
         } else {
           Array.empty[Byte]
         }
@@ -1117,10 +1114,14 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
             val execState = cli.executeStatement(sessionState.id, boundQuery, isCursorMode)
             execState.run()
             sessionState.execState = execState
+            val schema = execState.schema
+            val outputFormats = schema.map { field =>
+              binaryFormatTypes.find(_ == field.dataType).map(_ => 1).getOrElse(0)
+            }
             // TODO: We could reuse this row converters in some cases?
             val newQueryState = queryState.copy(
-              rowConverter = Some(buildRowConverter(execState.schema, resultFormats)),
-              schema = Some(execState.schema)
+              rowConverter = Some(buildRowConverter(schema, Some(outputFormats))),
+              schema = Some(schema)
             )
             sessionState.queries(queryName) = newQueryState
             sessionState.portals(portalName) = PortalState(newQueryState)
@@ -1256,9 +1257,10 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
               // The response to a SELECT query (or other queries that return row sets, such as
               // EXPLAIN or SHOW) normally consists of RowDescription, zero or more DataRow
               // messages, and then CommandComplete.
-              ctx.write(RowDescription(execState.schema))
+              val schema = execState.schema
+              ctx.write(RowDescription(schema))
 
-              val rowConveter = buildRowConverter(execState.schema)
+              val rowConveter = buildRowConverter(schema)
               var numRows = 0
               execState.iterator().foreach { iter =>
                 ctx.write(DataRow(iter, rowConveter(iter)))
