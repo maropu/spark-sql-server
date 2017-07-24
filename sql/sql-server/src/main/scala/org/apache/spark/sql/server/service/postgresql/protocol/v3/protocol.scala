@@ -995,8 +995,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
       require(row.numFields == schema.length)
       (0 until row.numFields).map { index =>
         if (!row.isNullAt(index)) {
-          // We need to copy data from internal buffer
-          fieldsConverter(index)(row).clone()
+          fieldsConverter(index)(row)
         } else {
           Array.empty[Byte]
         }
