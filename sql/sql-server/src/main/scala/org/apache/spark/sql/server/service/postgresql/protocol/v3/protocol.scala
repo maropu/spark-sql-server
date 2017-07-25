@@ -17,7 +17,7 @@
 
 package org.apache.spark.sql.server.service.postgresql.protocol.v3
 
-import java.io.{CharArrayWriter, FileInputStream}
+import java.io.FileInputStream
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.security.{KeyStore, PrivilegedExceptionAction}
@@ -41,13 +41,11 @@ import org.ietf.jgss.{GSSContext, GSSCredential, GSSException, GSSManager, Oid}
 import org.apache.spark.SparkConf
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.{AttributeReference, UnsafeProjection}
-import org.apache.spark.sql.catalyst.json.{JacksonGenerator, JSONOptions}
 import org.apache.spark.sql.catalyst.parser.ParseException
-import org.apache.spark.sql.catalyst.util.DateTimeUtils._
 import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.service.{BEGIN, ExecuteStatementOperation, FETCH, SELECT, SessionService}
 import org.apache.spark.sql.server.service.postgresql.Metadata._
+import org.apache.spark.sql.server.service.postgresql.protocol.v3.PostgreSQLRowConverters._
 import org.apache.spark.sql.types._
 
 
@@ -81,6 +79,9 @@ object PostgreSQLWireProtocol {
     // TODO: Need to support a binary format for `TimestampType`
     // TimestampType
   )
+
+  // TODO: Makes buffer size parameterized
+  val messageBuffer = new Array[Byte](65536)
 
   /**
    * Message types received from clients.
@@ -442,21 +443,16 @@ object PostgreSQLWireProtocol {
    * If any command request (e.g., [[Query]] and [[Execute]]) is finished successfully and we have
    * result rows, we send the results as the [[DataRow]]s.
    */
-  def DataRow(row: InternalRow, rowInBytes: Seq[Array[Byte]]): Array[Byte] = {
-    require(row.numFields == rowInBytes.length)
-    val length = 6 + rowInBytes.map(_.length + 4).sum
-    val buf = ByteBuffer.allocate(1 + length)
-    buf.put('D'.toByte).putInt(length).putShort(row.numFields.toShort)
-    (0 until row.numFields).foreach { index =>
-      if (!row.isNullAt(index)) {
-        buf.putInt(rowInBytes(index).length)
-        buf.put(rowInBytes(index))
-      } else {
-        // '-1' indicates a NULL column value
-        buf.putInt(-1)
-      }
-    }
-    buf.array()
+  def DataRow(row: InternalRow, rowWriter: RowWriter): Array[Byte] = {
+    val messageWriter = ByteBuffer.wrap(messageBuffer)
+    messageWriter.position(7)
+    val rowLength = rowWriter(row, messageWriter)
+    messageWriter.flip()
+    messageWriter.put('D'.toByte).putInt(6 + rowLength).putShort(row.numFields.toShort)
+    val msgLength = 7 + rowLength
+    val buf = new Array[Byte](msgLength)
+    System.arraycopy(messageBuffer, 0, buf, 0, msgLength)
+    buf
   }
 
   /**
@@ -652,7 +648,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
   case class QueryState(
     str: String,
     paramIds: Seq[Int],
-    rowConverter: Option[InternalRow => Seq[Array[Byte]]] = None,
+    rowWriterOption: Option[RowWriter] = None,
     schema: Option[StructType] = None)
 
   case class PortalState(queryState: QueryState) {
@@ -957,13 +953,10 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
             execState.run()
             sessionState.execState = execState
             val schema = execState.schema
-            val outputFormats = schema.map { field =>
-              binaryFormatTypes.find(_ == field.dataType).map(_ => 1).getOrElse(0)
-            }
+            val outputFormats = schema.map { f => binaryFormatTypes.contains(f.dataType) }
             // TODO: We could reuse this row converters in some cases?
             val newQueryState = queryState.copy(
-              rowConverter =
-                Some(PostgreSQLRowConverters.buildRowConverter(schema, Some(outputFormats))),
+              rowWriterOption = Some(PostgreSQLRowConverters(schema, Some(outputFormats))),
               schema = Some(schema)
             )
             sessionState.queries(queryName) = newQueryState
@@ -1032,18 +1025,18 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
             val portalState = sessionState.portals.getOrElse(portalName, {
               throw new SQLException(s"Unknown portal specified: $portalName")
             })
-            val rowConveter = portalState.queryState.rowConverter.getOrElse {
+            val rowConveter = portalState.queryState.rowWriterOption.getOrElse {
               throw new SQLException(s"Row converter not initialized for $portalName")
             }
             var numRows = 0
             if (maxRows == 0) {
               sessionState.execState.iterator().foreach { iter =>
-                ctx.write(DataRow(iter, rowConveter(iter)))
+                ctx.write(DataRow(iter, rowConveter))
                 numRows = numRows + 1
               }
             } else {
               sessionState.execState.iterator().take(maxRows).foreach { iter =>
-                ctx.write(DataRow(iter, rowConveter(iter)))
+                ctx.write(DataRow(iter, rowConveter))
                 numRows = numRows + 1
               }
               // Accumulate fetched #rows in this query
@@ -1103,10 +1096,10 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
               val schema = execState.schema
               ctx.write(RowDescription(schema))
 
-              val rowConveter = PostgreSQLRowConverters.buildRowConverter(schema)
+              val rowWriter = PostgreSQLRowConverters(schema)
               var numRows = 0
               execState.iterator().foreach { iter =>
-                ctx.write(DataRow(iter, rowConveter(iter)))
+                ctx.write(DataRow(iter, rowWriter))
                 numRows += 1
               }
               ctx.write(CommandComplete(s"SELECT $numRows"))
