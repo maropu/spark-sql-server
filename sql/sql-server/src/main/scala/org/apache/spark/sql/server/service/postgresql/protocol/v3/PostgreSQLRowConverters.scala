@@ -19,6 +19,7 @@ package org.apache.spark.sql.server.service.postgresql.protocol.v3
 
 import java.io.CharArrayWriter
 import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
 import java.util.TimeZone
 
 import org.apache.spark.sql.catalyst.InternalRow
@@ -90,7 +91,7 @@ private class ColumnTextWriter(dataType: DataType, ordinal: Int) extends ColumnW
 
   override def nullSafeWriter(row: InternalRow, byteBuffer: ByteBuffer): Unit = {
     val value = row.get(ordinal, dataType)
-    val bytes = value.toString.getBytes("US-ASCII")
+    val bytes = value.toString.getBytes(StandardCharsets.UTF_8)
     byteBuffer.putInt(bytes.length)
     byteBuffer.put(bytes)
   }
@@ -202,7 +203,7 @@ private class DateColumnTextWriter(ordinal: Int) extends DateColumnWriter(ordina
 
   override def nullSafeWriter(row: InternalRow, byteBuffer: ByteBuffer): Unit = {
     val date = toJavaDate(row.getInt(ordinal))
-    val bytes = date.toString.getBytes("US-ASCII")
+    val bytes = date.toString.getBytes(StandardCharsets.UTF_8)
     byteBuffer.putInt(bytes.length)
     byteBuffer.put(bytes)
   }
@@ -223,7 +224,7 @@ private class TimestampColumnTextWriter(ordinal: Int) extends DateColumnWriter(o
 
   override def nullSafeWriter(row: InternalRow, byteBuffer: ByteBuffer): Unit = {
     val timestamp = toJavaTimestamp(row.getLong(ordinal))
-    val bytes = timestamp.toString.getBytes("US-ASCII")
+    val bytes = timestamp.toString.getBytes(StandardCharsets.UTF_8)
     byteBuffer.putInt(bytes.length)
     byteBuffer.put(bytes)
   }
@@ -286,7 +287,7 @@ private class ArrayColumnTextWriter(field: StructField, ordinal: Int)
       case s =>
         sys.error(s"Hit unexpected json format: $s")
     }
-    jsonString.getBytes("US-ASCII")
+    jsonString.getBytes(StandardCharsets.UTF_8)
   }
 }
 
@@ -301,7 +302,7 @@ private class MapColumnTextWriter(field: StructField, ordinal: Int)
       case extractInnerJson(json) => json
       case s => sys.error(s"Hit unexpected json format: $s")
     }
-    jsonString.getBytes("US-ASCII")
+    jsonString.getBytes(StandardCharsets.UTF_8)
   }
 }
 
@@ -314,7 +315,7 @@ private class StructColumnTextWriter(field: StructField, ordinal: Int)
       case extractInnerJson(json) => json
       case s => sys.error(s"Hit unexpected json format: $s")
     }
-    jsonString.getBytes("US-ASCII")
+    jsonString.getBytes(StandardCharsets.UTF_8)
   }
 }
 

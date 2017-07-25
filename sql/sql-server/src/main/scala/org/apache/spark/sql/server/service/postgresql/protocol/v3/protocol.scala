@@ -20,6 +20,7 @@ package org.apache.spark.sql.server.service.postgresql.protocol.v3
 import java.io.FileInputStream
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
 import java.security.{KeyStore, PrivilegedExceptionAction}
 import java.sql.SQLException
 import java.util.TimeZone
@@ -56,6 +57,149 @@ import org.apache.spark.sql.types._
  *
  * https://www.postgresql.org/docs/current/static/protocol.html
  */
+case class PostgreSQLWireProtocol(conf: SparkConf) {
+  import PostgreSQLWireProtocol._
+
+  private val messageBuffer = new Array[Byte](conf.sqlServerMessageBufferSizeInBytes)
+
+  private def withMessageBuffer(f: ByteBuffer => Int): Array[Byte] = {
+    val messageLen = f(ByteBuffer.wrap(messageBuffer))
+    messageBuffer.slice(0, messageLen)
+  }
+
+  /**
+   * Response messages sent back to clients (Parameterized messages only).
+   */
+
+  /**
+   * An ASCII code 'R' is an identifier of authentication messages.
+   * If we receive the `StartupMessage` message from a client and we have no failure,
+   * we send one of these messages for user's verification.
+   */
+  def AuthenticationGSSContinue(token: Array[Byte]): Array[Byte] = {
+    withMessageBuffer { buf =>
+      buf.put('R'.toByte).putInt(8 + token.size).putInt(8).put(token)
+      9 + token.size
+    }
+  }
+
+  /**
+   * An ASCII code 'K' is an identifier of this [[BackendKeyData]] message.
+   * If we receive the `CancelRequest` message from a client and we have no failure,
+   * we send this message to the client.
+   */
+  def BackendKeyData(channelId: Int, secretKey: Int): Array[Byte] = {
+    withMessageBuffer { buf =>
+      buf.put('K'.toByte).putInt(12).putInt(channelId).putInt(secretKey)
+      13
+    }
+  }
+
+  /**
+   * An ASCII code 'C' is an identifier of this [[CommandComplete]] message.
+   * If any command request (e.g., [[Query]] and [[Execute]]) is finished successfully,
+   * we send this message to the client.
+   */
+  def CommandComplete(tag: String): Array[Byte] = {
+    withMessageBuffer { buf =>
+      buf.put('C'.toByte)
+        .putInt(5 + tag.length)
+        .put(tag.getBytes(StandardCharsets.UTF_8))
+        .put(0.toByte)
+
+      6 + tag.length
+    }
+  }
+
+  /**
+   * An ASCII code 'D' is an identifier of this [[DataRow]] message.
+   * If any command request (e.g., [[Query]] and [[Execute]]) is finished successfully and we have
+   * result rows, we send the results as the [[DataRow]]s.
+   */
+  def DataRow(row: InternalRow, rowWriter: RowWriter): Array[Byte] = {
+    withMessageBuffer { buf =>
+      buf.position(7)
+      val rowLength = rowWriter(row, buf)
+      buf.flip()
+      buf.put('D'.toByte).putInt(6 + rowLength).putShort(row.numFields.toShort)
+      7 + rowLength
+    }
+  }
+
+  /**
+   * An ASCII code 'E' is an identifier of this [[ErrorResponse]] message.
+   * If we have any failure, we send this message to the client.
+   */
+  def ErrorResponse(msg: String): Array[Byte] = {
+    withMessageBuffer { buf =>
+      buf.put('E'.toByte)
+        .putInt(7 + msg.length)
+        // 'M' indicates a human-readable message
+        .put('M'.toByte)
+        .put(msg.getBytes(StandardCharsets.UTF_8))
+        .put(0.toByte)
+        .put(0.toByte)
+
+      8 + msg.length
+    }
+  }
+
+  /**
+   * An ASCII code 'V' is an identifier of this [[FunctionCallResponse]] message.
+   * If we receive the `FunctionCall` message from a client and we have no failure,
+   * we send this message to the client.
+   */
+  def FunctionCallResponse(result: Array[Byte]): Array[Byte] = {
+    withMessageBuffer { buf =>
+      buf.put('V'.toByte).putInt(8 + result.size).putInt(result.size).put(result)
+      9 + result.size
+    }
+  }
+
+  def ParameterStatus(key: String, value: String): Array[Byte] = {
+    withMessageBuffer { buf =>
+      val paramLen = key.length + value.length
+      buf.put('S'.toByte)
+        .putInt(6 + paramLen)
+        .put(key.getBytes(StandardCharsets.UTF_8)).put(0.toByte)
+        .put(value.getBytes(StandardCharsets.UTF_8)).put(0.toByte)
+
+      7 + paramLen
+    }
+  }
+
+  /**
+   * An ASCII code 'T' is an identifier of this [[RowDescription]] message.
+   * If we receive the [[Describe]] message from a client and we have no failure,
+   * we send this message to the client.
+   */
+  def RowDescription(schema: StructType): Array[Byte] = {
+    withMessageBuffer { buf =>
+      if (schema.size == 0) {
+        buf.put('T'.toByte).putInt(6).putShort(0)
+        7
+      } else {
+        val length = 6 + schema.map(_.name.length + 19).reduce(_ + _)
+        buf.put('T'.toByte).putInt(length).putShort(schema.size.toShort)
+        // Each column has length(field.name) + 19 bytes
+        schema.toSeq.zipWithIndex.map { case (field, index) =>
+          val sparkType = field.dataType
+          val pgType = getPgType(sparkType)
+          val mode = binaryFormatTypes.find(_ == sparkType).map(_ => 1).getOrElse(0)
+          buf.put(field.name.getBytes(StandardCharsets.UTF_8)).put(0.toByte) // field name
+            .putInt(0)                        // object ID of the table
+            .putShort((index + 1).toShort)    // attribute number of the column
+            .putInt(pgType.oid)               // object ID of the field's data type
+            .putShort(pgType.len.toShort)     // data type size
+            .putInt(0)                        // type modifier
+            .putShort(mode.toShort)           // 1 for binary; otherwise 0
+        }
+        1 + length
+      }
+    }
+  }
+}
+
 object PostgreSQLWireProtocol {
 
   /** An identifier for `StartupMessage`. */
@@ -80,8 +224,6 @@ object PostgreSQLWireProtocol {
     // TimestampType
   )
 
-  // TODO: Makes buffer size parameterized
-  val messageBuffer = new Array[Byte](65536)
 
   /**
    * Message types received from clients.
@@ -123,7 +265,7 @@ object PostgreSQLWireProtocol {
       msg.position(origPos)
       msg.get(localBuf, 0, len)
       msg.get()
-      new String(localBuf, "US-ASCII")
+      new String(localBuf, StandardCharsets.UTF_8)
     } else {
       ""
     }
@@ -241,7 +383,7 @@ object PostgreSQLWireProtocol {
       // Since a query string could contain several queries (separated by semicolons),
       // there might be several such response sequences before the backend finishes processing
       // the query string.
-      Query(new String(byteArray, "US-ASCII").split(";").init.map(_.trim))
+      Query(new String(byteArray, StandardCharsets.UTF_8).split(";").init.map(_.trim))
     },
 
     // An ASCII code of the `Sync` message is 'S'(83)
@@ -297,7 +439,7 @@ object PostgreSQLWireProtocol {
 
 
   /**
-   * Response messages sent back to clients.
+   * Response messages sent back to clients (Messages with no parameter only).
    */
 
   /**
@@ -314,12 +456,6 @@ object PostgreSQLWireProtocol {
   lazy val AuthenticationGSS = {
     val buf = ByteBuffer.allocate(9)
     buf.put('R'.toByte).putInt(8).putInt(7)
-    buf.array()
-  }
-
-  def AuthenticationGSSContinue(token: Array[Byte]): Array[Byte] = {
-    val buf = ByteBuffer.allocate(9 + token.size)
-    buf.put('R'.toByte).putInt(8 + token.size).putInt(8).put(token)
     buf.array()
   }
 
@@ -415,115 +551,6 @@ object PostgreSQLWireProtocol {
     buf.put('Z'.toByte).putInt(5).put('I'.toByte)
     buf.array()
   }
-
-  /**
-   * An ASCII code 'K' is an identifier of this [[BackendKeyData]] message.
-   * If we receive the `CancelRequest` message from a client and we have no failure,
-   * we send this message to the client.
-   */
-  def BackendKeyData(channelId: Int, secretKey: Int): Array[Byte] = {
-    val buf = ByteBuffer.allocate(13)
-    buf.put('K'.toByte).putInt(12).putInt(channelId).putInt(secretKey)
-    buf.array()
-  }
-
-  /**
-   * An ASCII code 'C' is an identifier of this [[CommandComplete]] message.
-   * If any command request (e.g., [[Query]] and [[Execute]]) is finished successfully,
-   * we send this message to the client.
-   */
-  def CommandComplete(tag: String): Array[Byte] = {
-    val buf = ByteBuffer.allocate(6 + tag.length)
-    buf.put('C'.toByte).putInt(5 + tag.length).put(tag.getBytes("US-ASCII")).put(0.toByte)
-    buf.array()
-  }
-
-  /**
-   * An ASCII code 'D' is an identifier of this [[DataRow]] message.
-   * If any command request (e.g., [[Query]] and [[Execute]]) is finished successfully and we have
-   * result rows, we send the results as the [[DataRow]]s.
-   */
-  def DataRow(row: InternalRow, rowWriter: RowWriter): Array[Byte] = {
-    val messageWriter = ByteBuffer.wrap(messageBuffer)
-    messageWriter.position(7)
-    val rowLength = rowWriter(row, messageWriter)
-    messageWriter.flip()
-    messageWriter.put('D'.toByte).putInt(6 + rowLength).putShort(row.numFields.toShort)
-    val msgLength = 7 + rowLength
-    val buf = new Array[Byte](msgLength)
-    System.arraycopy(messageBuffer, 0, buf, 0, msgLength)
-    buf
-  }
-
-  /**
-   * An ASCII code 'E' is an identifier of this [[ErrorResponse]] message.
-   * If we have any failure, we send this message to the client.
-   */
-  def ErrorResponse(msg: String): Array[Byte] = {
-    val buf = ByteBuffer.allocate(8 + msg.length)
-    buf.put('E'.toByte).putInt(7 + msg.length)
-      // 'M' indicates a human-readable message
-      // TODO: Need to support other types
-      .put('M'.toByte).put(msg.getBytes("US-ASCII")).put(0.toByte)
-      .put(0.toByte)
-    buf.array()
-  }
-
-  /**
-   * An ASCII code 'V' is an identifier of this [[FunctionCallResponse]] message.
-   * If we receive the `FunctionCall` message from a client and we have no failure,
-   * we send this message to the client.
-   */
-  def FunctionCallResponse(result: Array[Byte]): Array[Byte] = {
-    val buf = ByteBuffer.allocate(9 + result.size)
-    buf.put('V'.toByte).putInt(8 + result.size).putInt(result.size).put(result)
-    buf.array()
-  }
-
-  /**
-   * TODO: Support `NoticeResponse`, `NotificationResponse`, and `ParameterDescription`.
-   */
-
-  def ParameterStatus(key: String, value: String): Array[Byte] = {
-    val paramLen = key.length + value.length
-    val buf = ByteBuffer.allocate(7 + paramLen)
-    buf.put('S'.toByte)
-      .putInt(6 + paramLen)
-      .put(key.getBytes("US-ASCII")).put(0.toByte)
-      .put(value.getBytes("US-ASCII")).put(0.toByte)
-    buf.array()
-  }
-
-  /**
-   * An ASCII code 'T' is an identifier of this [[RowDescription]] message.
-   * If we receive the [[Describe]] message from a client and we have no failure,
-   * we send this message to the client.
-   */
-  def RowDescription(schema: StructType): Array[Byte] = {
-    if (schema.size == 0) {
-      val buf = ByteBuffer.allocate(7)
-      buf.put('T'.toByte).putInt(6).putShort(0)
-      buf.array()
-    } else {
-      val length = 6 + schema.map(_.name.length + 19).reduce(_ + _)
-      val buf = ByteBuffer.allocate(1 + length)
-      buf.put('T'.toByte).putInt(length).putShort(schema.size.toShort)
-      // Each column has length(field.name) + 19 bytes
-      schema.toSeq.zipWithIndex.map { case (field, index) =>
-        val sparkType = field.dataType
-        val pgType = getPgType(sparkType)
-        val mode = binaryFormatTypes.find(_ == sparkType).map(_ => 1).getOrElse(0)
-        buf.put(field.name.getBytes("US-ASCII")).put(0.toByte) // field name
-          .putInt(0)                        // object ID of the table
-          .putShort((index + 1).toShort)    // attribute number of the column
-          .putInt(pgType.oid)               // object ID of the field's data type
-          .putShort(pgType.len.toShort)     // data type size
-          .putInt(0)                        // type modifier
-          .putShort(mode.toShort)           // 1 for binary; otherwise 0
-      }
-      buf.array()
-    }
-  }
 }
 
 // scalastyle:off
@@ -617,6 +644,8 @@ private[v3] class SslRequestHandler() extends ChannelInboundHandlerAdapter with 
 private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkConf)
     extends SimpleChannelInboundHandler[Array[Byte]] with Logging {
 
+  private val v3Protocol = PostgreSQLWireProtocol(conf)
+  import v3Protocol._
   import PostgreSQLWireProtocol._
 
   // A format is like 'spark/fully.qualified.domain.name@YOUR-REALM.COM'
@@ -916,17 +945,17 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
               // TODO: Need to handle `Date` and `Timestamp` here
               // case (PgDateType.oid, _) =>
               //   val formatter = new SimpleDateFormat("yyyy-MM-dd")
-              //   s"${formatter.parse(new String(param, "US-ASCII"))}"
+              //   s"${formatter.parse(new String(param, StandardCharsets.UTF_8))}"
               // case (PgTimestampType.oid, _) =>
               //   val formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-              //   s"${formatter.parse(new String(param, "US-ASCII"))}"
+              //   s"${formatter.parse(new String(param, StandardCharsets.UTF_8))}"
               case (PgBoolType.oid, 1) =>
                 // '1' (49) means true; otherwise false
                 if (param(0) == 49) "true" else "false"
               case (PgNumericType.oid, 1) =>
-                s"${new String(param, "US-ASCII")}"
+                s"${new String(param, StandardCharsets.UTF_8)}"
               case (_, 0) =>
-                s"'${new String(param, "US-ASCII")}'"
+                s"'${new String(param, StandardCharsets.UTF_8)}'"
               case (PgInt2Type.oid, 1) =>
                 s"${ByteBuffer.wrap(param).getShort}"
               case (PgInt4Type.oid, 1) =>

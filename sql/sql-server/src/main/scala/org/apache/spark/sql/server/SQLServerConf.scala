@@ -115,12 +115,20 @@ object SQLServerConf {
     .createWithDefault(false)
 
   val SQLSERVER_IDLE_OPERATION_TIMEOUT = buildConf("spark.sql.server.idleOperationTimeout")
-      .doc("Operation will be closed when it's not accessed for this duration of time," +
-        " which can be disabled by setting to zero value. With positive value," +
-        " it's checked for operations in terminal state only (FINISHED, CANCELED, CLOSED, ERROR)." +
-        " With negative value, it's checked for all of the operations regardless of state.")
-      .longConf
-      .createWithDefault(3600 * 5)
+    .doc("Operation will be closed when it's not accessed for this duration of time," +
+      " which can be disabled by setting to zero value. With positive value," +
+      " it's checked for operations in terminal state only (FINISHED, CANCELED, CLOSED, ERROR)." +
+      " With negative value, it's checked for all of the operations regardless of state.")
+    .longConf
+    .createWithDefault(3600 * 5)
+
+  val SQLSERVER_MESSAGE_BUFFER_SIZE_IN_BYTES =
+    buildConf("spark.sql.server.messageBufferSizeInBytes")
+      .doc("Maximum bytes of a single record we assume when converting Spark internal rows " +
+        "into binary data in the PostgreSQL V3 protocol")
+      .internal()
+      .intConf
+      .createWithDefault(3 * 1024 * 1024)
 }
 
 class SQLServerConf(conf: SparkConf) {
@@ -153,4 +161,6 @@ class SQLServerConf(conf: SparkConf) {
   def sqlServerSingleSessionEnabled: Boolean = conf.get(SQLSERVER_SINGLE_SESSION_ENABLED)
 
   def sqlServerIdleOperationTimeout: Long = conf.get(SQLSERVER_IDLE_OPERATION_TIMEOUT)
+
+  def sqlServerMessageBufferSizeInBytes: Int = conf.get(SQLSERVER_MESSAGE_BUFFER_SIZE_IN_BYTES)
 }
