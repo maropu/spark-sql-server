@@ -53,7 +53,7 @@ object SQLServerConf {
     .createWithDefault(5432)
 
   val SQLSERVER_VERSION = buildConf("spark.sql.server.version")
-    .internal
+    .internal()
     .stringConf
     .createWithDefault("7.4")
 

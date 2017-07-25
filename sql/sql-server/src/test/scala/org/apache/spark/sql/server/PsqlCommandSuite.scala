@@ -243,6 +243,22 @@ class PsqlCommandV7_4Suite extends PostgreSQLJdbcTest with BeforeAndAfterAll {
       assert(3 === rs3.getInt(5))
       assert(!rs3.next())
       rs3.close()
+
+      val rs4 = statement.executeQuery(
+        s"""
+          |SELECT
+          |  c.oid::pg_catalog.regclass
+          |FROM
+          |  pg_catalog.pg_class c, pg_catalog.pg_inherits i
+          |WHERE
+          |  c.oid=i.inhparent AND i.inhrelid = '$relOid'
+          |ORDER BY
+          |  inhseqno
+         """.stripMargin
+      )
+
+      assert(!rs4.next())
+      rs4.close()
     }
   }
 
