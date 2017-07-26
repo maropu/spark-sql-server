@@ -141,5 +141,8 @@ class PostgreSQLDialectSuite extends SparkFunSuite with BeforeAndAfterAll {
     assert(sqlContext.sql("SELECT pg_catalog.pg_table_is_visible(0)").collect === Seq(Row(true)))
     assert(sqlContext.sql("SELECT pg_catalog.pg_function_is_visible(0)").collect === Seq(Row(true)))
     assert(sqlContext.sql("SELECT pg_catalog.pg_get_userbyid(0)").collect === Seq(Row("")))
+    assert(sqlContext.sql("SELECT pg_catalog.pg_get_function_arguments(0)").collect ===
+      Seq(Row("")))
+    assert(sqlContext.sql("SELECT pg_catalog.pg_get_function_result(0)").collect === Seq(Row("")))
   }
 }

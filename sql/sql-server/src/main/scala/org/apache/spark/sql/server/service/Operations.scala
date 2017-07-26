@@ -132,7 +132,6 @@ private[server] case class ExecuteStatementOperation(
   }
 
   override def run(): Unit = {
-    println("XXX:" + statement)
     logInfo(
       s"""Running query with $statementId;
          | $statement
