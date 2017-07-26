@@ -39,10 +39,11 @@ import io.netty.handler.ssl.util.SelfSignedCertificate
 import org.apache.hadoop.security.UserGroupInformation
 import org.ietf.jgss.{GSSContext, GSSCredential, GSSException, GSSManager, Oid}
 
-import org.apache.spark.SparkConf
+import org.apache.spark.{SparkConf, SparkException}
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.parser.ParseException
+import org.apache.spark.sql.server.SQLServerConf
 import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.service.{BEGIN, ExecuteStatementOperation, FETCH, SELECT, SessionService}
 import org.apache.spark.sql.server.service.postgresql.Metadata._
@@ -63,8 +64,16 @@ case class PostgreSQLWireProtocol(conf: SparkConf) {
   private val messageBuffer = new Array[Byte](conf.sqlServerMessageBufferSizeInBytes)
 
   private def withMessageBuffer(f: ByteBuffer => Int): Array[Byte] = {
-    val messageLen = f(ByteBuffer.wrap(messageBuffer))
-    messageBuffer.slice(0, messageLen)
+    try {
+      val messageLen = f(ByteBuffer.wrap(messageBuffer))
+      messageBuffer.slice(0, messageLen)
+    } catch {
+      case NonFatal(e) =>
+        throw new SparkException(
+          "Cannot generate a V3 protocol message because buffer is not enough for the message. " +
+            s"To avoid this exception, you might set higher value at " +
+            s"`${SQLServerConf.SQLSERVER_MESSAGE_BUFFER_SIZE_IN_BYTES.key}`")
+    }
   }
 
   /**

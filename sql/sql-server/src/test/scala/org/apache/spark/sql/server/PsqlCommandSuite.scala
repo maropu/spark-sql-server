@@ -139,7 +139,7 @@ class PsqlCommandV9_6Suite extends PostgreSQLJdbcTest(pgVersion = "9.6") with Be
     }
   }
 
-  test("""\d <table name>""") {
+  ignore("""\d <table name>""") {
     testJdbcStatement { statement =>
       val rs1 = statement.executeQuery(
         """
