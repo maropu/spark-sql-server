@@ -20,6 +20,7 @@ package org.apache.spark.sql.server.service.postgresql.protocol.v3
 import java.io.CharArrayWriter
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
+import java.sql.Date
 import java.util.TimeZone
 
 import org.apache.spark.sql.catalyst.InternalRow
@@ -101,7 +102,7 @@ private class BooleanColumnBinaryWriter(ordinal: Int) extends ColumnWriter(ordin
 
   override def nullSafeWriter(row: InternalRow, byteBuffer: ByteBuffer): Unit = {
     byteBuffer.putInt(1)
-    byteBuffer.put(row.getByte(ordinal))
+    byteBuffer.put(if (row.getBoolean(ordinal)) 1.toByte else 0.toByte)
   }
 }
 
@@ -202,7 +203,7 @@ private abstract class DateColumnWriter(ordinal: Int) extends ColumnWriter(ordin
 private class DateColumnTextWriter(ordinal: Int) extends DateColumnWriter(ordinal) {
 
   override def nullSafeWriter(row: InternalRow, byteBuffer: ByteBuffer): Unit = {
-    val date = toJavaDate(row.getInt(ordinal))
+    val date = fromJavaDate(row.get(ordinal, DateType).asInstanceOf[Date])
     val bytes = date.toString.getBytes(StandardCharsets.UTF_8)
     byteBuffer.putInt(bytes.length)
     byteBuffer.put(bytes)
@@ -319,7 +320,7 @@ private class StructColumnTextWriter(field: StructField, ordinal: Int)
   }
 }
 
-private object ColumnWriter {
+private[v3] object ColumnWriter {
 
   private def isPrimitive(dataType: DataType): Boolean = {
     Seq(BooleanType, ShortType, IntegerType, LongType, FloatType, DoubleType, ByteType)

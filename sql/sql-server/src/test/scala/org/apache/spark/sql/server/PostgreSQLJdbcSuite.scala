@@ -253,7 +253,7 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
 
       expectedRow.zipWithIndex.foreach { case (expected, index) =>
         val offset = index + 1
-        assert(s"col${index}" === rsMetaData.getColumnName(offset))
+        assert(s"col$index" === rsMetaData.getColumnName(offset))
         assert(expected === getTypedValue(offset))
       }
 
@@ -334,7 +334,7 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
             fail(s"Unexpected typed value detected: offset=$offset, " +
               s"typeId=$typeId, typeName=${rsMetaData.getColumnTypeName(offset)}")
         }
-        assert(s"_${elementTypeName}" === rsMetaData.getColumnTypeName(offset))
+        assert(s"_$elementTypeName" === rsMetaData.getColumnTypeName(offset))
         assert(elementTypeName === resultArray.getBaseTypeName)
         resultArray.getArray.asInstanceOf[scala.Array[Object]].toSeq
       }
