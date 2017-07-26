@@ -448,6 +448,7 @@ object Metadata extends Logging {
       s"""
         |CREATE TABLE $cTableName(
         |  oid INT,
+        |  reltablespace INT,
         |  relname STRING,
         |  relkind STRING,
         |  relnamespace INT,
@@ -570,7 +571,7 @@ object Metadata extends Logging {
     val sqlTexts =
       s"""
         |INSERT INTO $catalogDbName.pg_class VALUES(
-        |  $tableOid, '$tableName', '$tableTypeId', ${defaultSparkNamespace._1}, $userRoleOid,
+        |  $tableOid, 0, '$tableName', '$tableTypeId', ${defaultSparkNamespace._1}, $userRoleOid,
         |  null, 0, false, false, 0, false
         |)
       """ +: schema.zipWithIndex.map { case (field, index) =>
