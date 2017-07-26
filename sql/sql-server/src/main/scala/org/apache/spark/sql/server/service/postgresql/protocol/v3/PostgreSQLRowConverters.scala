@@ -178,7 +178,7 @@ private abstract class DateColumnWriter(ordinal: Int) extends ColumnWriter(ordin
   val timezone = TimeZone.getDefault
 
   // Converts the given java seconds to PostgreSQL seconds
-  def toPgSecs(secs: Long) = {
+  def toPgSecs(secs: Long): Long = {
     // java epoc to postgres epoc
     val pgSecs = secs - 946684800L
 
