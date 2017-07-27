@@ -20,13 +20,12 @@ package org.apache.spark.sql.server.service.postgresql.protocol.v3
 import java.io.CharArrayWriter
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
-import java.sql.Date
 import java.util.TimeZone
 
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.catalyst.json.{JacksonGenerator, JSONOptions}
-import org.apache.spark.sql.catalyst.util.DateTimeUtils._
+import org.apache.spark.sql.catalyst.util.DateTimeUtils
 import org.apache.spark.sql.types._
 
 
@@ -203,7 +202,7 @@ private abstract class DateColumnWriter(ordinal: Int) extends ColumnWriter(ordin
 private class DateColumnTextWriter(ordinal: Int) extends DateColumnWriter(ordinal) {
 
   override def nullSafeWriter(row: InternalRow, byteBuffer: ByteBuffer): Unit = {
-    val date = fromJavaDate(row.get(ordinal, DateType).asInstanceOf[Date])
+    val date = DateTimeUtils.toJavaDate(row.getInt(ordinal))
     val bytes = date.toString.getBytes(StandardCharsets.UTF_8)
     byteBuffer.putInt(bytes.length)
     byteBuffer.put(bytes)
@@ -213,7 +212,7 @@ private class DateColumnTextWriter(ordinal: Int) extends DateColumnWriter(ordina
 private class DateColumnBinaryWriter(ordinal: Int) extends DateColumnWriter(ordinal) {
 
   override def nullSafeWriter(row: InternalRow, byteBuffer: ByteBuffer): Unit = {
-    val date = toJavaDate(row.getInt(ordinal))
+    val date = DateTimeUtils.toJavaDate(row.getInt(ordinal))
     val millis = date.getTime + timezone.getOffset(date.getTime)
     val days = toPgSecs(millis / 1000) / 86400
     byteBuffer.putInt(4)
@@ -224,7 +223,7 @@ private class DateColumnBinaryWriter(ordinal: Int) extends DateColumnWriter(ordi
 private class TimestampColumnTextWriter(ordinal: Int) extends DateColumnWriter(ordinal) {
 
   override def nullSafeWriter(row: InternalRow, byteBuffer: ByteBuffer): Unit = {
-    val timestamp = toJavaTimestamp(row.getLong(ordinal))
+    val timestamp = DateTimeUtils.toJavaTimestamp(row.getLong(ordinal))
     val bytes = timestamp.toString.getBytes(StandardCharsets.UTF_8)
     byteBuffer.putInt(bytes.length)
     byteBuffer.put(bytes)
@@ -234,7 +233,7 @@ private class TimestampColumnTextWriter(ordinal: Int) extends DateColumnWriter(o
 private class TimestampColumnBinaryWriter(ordinal: Int) extends DateColumnWriter(ordinal) {
 
   override def nullSafeWriter(row: InternalRow, byteBuffer: ByteBuffer): Unit = {
-    val timestamp = toJavaTimestamp(row.getLong(ordinal))
+    val timestamp = DateTimeUtils.toJavaTimestamp(row.getLong(ordinal))
     val mills = timestamp.getTime + timezone.getOffset(timestamp.getTime)
     byteBuffer.putInt(8)
     byteBuffer.putLong(mills)

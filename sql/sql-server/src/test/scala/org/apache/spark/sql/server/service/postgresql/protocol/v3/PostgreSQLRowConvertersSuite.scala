@@ -19,10 +19,12 @@ package org.apache.spark.sql.server.service.postgresql.protocol.v3
 
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
+import java.sql.Date
+import java.sql.Timestamp
 
 import org.apache.spark.SparkFunSuite
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
-import org.apache.spark.sql.catalyst.util.{ArrayBasedMapData, ArrayData}
+import org.apache.spark.sql.catalyst.util.{ArrayBasedMapData, ArrayData, DateTimeUtils}
 import org.apache.spark.sql.types.{NullType, StructField}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.unsafe.types.UTF8String
@@ -41,12 +43,12 @@ class PostgreSQLRowConvertersSuite extends SparkFunSuite {
     ).foreach { case (data, tpe, readData) =>
       Seq(true, false).foreach { binaryMode =>
         val fieldType = StructType.fromDDL(s"a $tpe")(0)
-        val writer = ColumnWriter(fieldType, 0, isBinary = binaryMode)
         val inputRow = new GenericInternalRow(1)
         inputRow.update(0, data)
         val dataSize = if (binaryMode) fieldType.dataType.defaultSize else data.toString.length
         val buf = new Array[Byte](4 + dataSize)
         val byteBuffer = ByteBuffer.wrap(buf)
+        val writer = ColumnWriter(fieldType, 0, isBinary = binaryMode)
         writer.write(inputRow, byteBuffer)
         byteBuffer.rewind()
 
@@ -64,10 +66,10 @@ class PostgreSQLRowConvertersSuite extends SparkFunSuite {
 
   test("null") {
     val fieldType = StructField("a", NullType)
-    val writer = ColumnWriter(fieldType, 0, isBinary = false)
     val byteBuffer = ByteBuffer.allocate(1)
     val inputRow = new GenericInternalRow(1)
     inputRow.update(0, 0)
+    val writer = ColumnWriter(fieldType, 0, isBinary = false)
     val errMsg = intercept[UnsupportedOperationException] {
       writer.write(inputRow, byteBuffer)
     }.getMessage
@@ -76,11 +78,11 @@ class PostgreSQLRowConvertersSuite extends SparkFunSuite {
 
   test("decimal") {
     val fieldType = StructType.fromDDL("a DECIMAL")(0)
-    val writer = ColumnWriter(fieldType, 0, isBinary = false)
     val inputRow = new GenericInternalRow(1)
     inputRow.update(0, BigDecimal.decimal(3.0))
     val buf = new Array[Byte](7)
     val byteBuffer = ByteBuffer.wrap(buf)
+    val writer = ColumnWriter(fieldType, 0, isBinary = false)
     writer.write(inputRow, byteBuffer)
     byteBuffer.rewind()
 
@@ -97,13 +99,67 @@ class PostgreSQLRowConvertersSuite extends SparkFunSuite {
     assert(errMsg.contains("Cannot convert value: type=DecimalType(10,0), isBinary=true"))
   }
 
+  test("date") {
+    val fieldType = StructType.fromDDL("a DATE")(0)
+    val inputRow = new GenericInternalRow(1)
+    inputRow.update(0, DateTimeUtils.fromJavaDate(Date.valueOf("2017-08-04")))
+    val buf = new Array[Byte](14)
+    val byteBuffer = ByteBuffer.wrap(buf)
+
+    val textWriter = ColumnWriter(fieldType, 0, isBinary = false)
+    textWriter.write(inputRow, byteBuffer)
+    byteBuffer.rewind()
+
+    // Check the result with text mode
+    assert(byteBuffer.getInt === 10)
+    val actualData1 = buf.slice(4, 14)
+    assert(actualData1 === "2017-08-04".getBytes(StandardCharsets.UTF_8))
+    byteBuffer.rewind()
+
+    val binaryWriter = ColumnWriter(fieldType, 0, isBinary = true)
+    binaryWriter.write(inputRow, byteBuffer)
+    byteBuffer.rewind()
+
+    // Check the result with binary mode
+    assert(byteBuffer.getInt === 4)
+    val actualData2 = byteBuffer.getInt
+    assert(actualData2 === 6425)
+  }
+
+  test("timestamp") {
+    val fieldType = StructType.fromDDL("a TIMESTAMP")(0)
+    val inputRow = new GenericInternalRow(1)
+    inputRow.update(0, DateTimeUtils.fromJavaTimestamp(Timestamp.valueOf("2016-08-04 00:17:13")))
+    val buf = new Array[Byte](128)
+    val byteBuffer = ByteBuffer.wrap(buf)
+
+    val textWriter = ColumnWriter(fieldType, 0, isBinary = false)
+    textWriter.write(inputRow, byteBuffer)
+    byteBuffer.rewind()
+
+    // Check the result with text mode
+    assert(byteBuffer.getInt === 21)
+    val actualData1 = buf.slice(4, 25)
+    assert(actualData1 === "2016-08-04 00:17:13.0".getBytes(StandardCharsets.UTF_8))
+    byteBuffer.rewind()
+
+    val binaryWriter = ColumnWriter(fieldType, 0, isBinary = true)
+    binaryWriter.write(inputRow, byteBuffer)
+    byteBuffer.rewind()
+
+    // Check the result with binary mode
+    assert(byteBuffer.getInt === 8)
+    val actualData2 = byteBuffer.getLong
+    assert(actualData2 === 1470269833000L)
+  }
+
   test("array") {
     val fieldType = StructType.fromDDL("a ARRAY<INT>")(0)
-    val writer = ColumnWriter(fieldType, 0, isBinary = false)
     val inputRow = new GenericInternalRow(1)
     inputRow.update(0, ArrayData.toArrayData(Array(0, 1, 2, 3, 4)))
     val buf = new Array[Byte](15)
     val byteBuffer = ByteBuffer.wrap(buf)
+    val writer = ColumnWriter(fieldType, 0, isBinary = false)
     writer.write(inputRow, byteBuffer)
     byteBuffer.rewind()
 
@@ -122,13 +178,13 @@ class PostgreSQLRowConvertersSuite extends SparkFunSuite {
 
   test("map") {
     val fieldType = StructType.fromDDL("a MAP<STRING, INT>")(0)
-    val writer = ColumnWriter(fieldType, 0, isBinary = false)
     val inputRow = new GenericInternalRow(1)
     val keys = ArrayData.toArrayData(Array("k1", "k2", "k3"))
     val values = ArrayData.toArrayData(Array(1, 2, 3))
     inputRow.update(0, new ArrayBasedMapData(keys, values))
     val buf = new Array[Byte](26)
     val byteBuffer = ByteBuffer.wrap(buf)
+    val writer = ColumnWriter(fieldType, 0, isBinary = false)
     writer.write(inputRow, byteBuffer)
     byteBuffer.rewind()
 
@@ -148,7 +204,6 @@ class PostgreSQLRowConvertersSuite extends SparkFunSuite {
 
   test("struct") {
     val fieldType = StructType.fromDDL("a STRUCT<c0: INT, c1: STRING>")(0)
-    val writer = ColumnWriter(fieldType, 0, isBinary = false)
     val inputRow = new GenericInternalRow(1)
     val testData = new GenericInternalRow(2)
     testData.update(0, 7)
@@ -156,6 +211,7 @@ class PostgreSQLRowConvertersSuite extends SparkFunSuite {
     inputRow.update(0, new GenericInternalRow(Array[Any](testData)))
     val buf = new Array[Byte](23)
     val byteBuffer = ByteBuffer.wrap(buf)
+    val writer = ColumnWriter(fieldType, 0, isBinary = false)
     writer.write(inputRow, byteBuffer)
     byteBuffer.rewind()
 
