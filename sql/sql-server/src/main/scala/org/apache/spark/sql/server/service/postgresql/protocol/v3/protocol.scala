@@ -62,10 +62,11 @@ case class PostgreSQLWireProtocol(conf: SparkConf) {
   import PostgreSQLWireProtocol._
 
   private val messageBuffer = new Array[Byte](conf.sqlServerMessageBufferSizeInBytes)
+  private val messageWriter = ByteBuffer.wrap(messageBuffer)
 
   private def withMessageBuffer(f: ByteBuffer => Int): Array[Byte] = {
     try {
-      val messageLen = f(ByteBuffer.wrap(messageBuffer))
+      val messageLen = f(messageWriter)
       messageBuffer.slice(0, messageLen)
     } catch {
       case NonFatal(e) =>
@@ -73,6 +74,8 @@ case class PostgreSQLWireProtocol(conf: SparkConf) {
           "Cannot generate a V3 protocol message because buffer is not enough for the message. " +
             s"To avoid this exception, you might set higher value at " +
             s"`${SQLServerConf.SQLSERVER_MESSAGE_BUFFER_SIZE_IN_BYTES.key}`")
+    } finally {
+      messageWriter.rewind()
     }
   }
 
@@ -129,7 +132,7 @@ case class PostgreSQLWireProtocol(conf: SparkConf) {
     withMessageBuffer { buf =>
       buf.position(7)
       val rowLength = rowWriter(row, buf)
-      buf.flip()
+      buf.rewind()
       buf.put('D'.toByte).putInt(6 + rowLength).putShort(row.numFields.toShort)
       7 + rowLength
     }
@@ -890,7 +893,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
     uncheckedBuffer.put(state.pendingBytes)
     uncheckedBuffer.put(msgBuffer.array)
     state.pendingBytes = Array.empty
-    uncheckedBuffer.flip()
+    uncheckedBuffer.rewind()
     while (uncheckedBuffer.hasRemaining) {
       val (basePos, _) = (uncheckedBuffer.position(), uncheckedBuffer.get())
       if (uncheckedBuffer.remaining() >= 4) {
