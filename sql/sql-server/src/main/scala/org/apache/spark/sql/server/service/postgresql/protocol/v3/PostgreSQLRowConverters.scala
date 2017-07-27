@@ -101,6 +101,10 @@ private class BooleanColumnBinaryWriter(ordinal: Int) extends ColumnWriter(ordin
 
   override def nullSafeWriter(row: InternalRow, byteBuffer: ByteBuffer): Unit = {
     byteBuffer.putInt(1)
+    // scalastyle:off
+    // TODO: Reconsider this code because this behaivour depends on JVM implementations:
+    // https://stackoverflow.com/questions/8248925/internally-in-java-primitive-booleans-are-treated-like-1
+    // scalastyle:on
     byteBuffer.put(if (row.getBoolean(ordinal)) 1.toByte else 0.toByte)
   }
 }
