@@ -4,6 +4,12 @@ language: java
 jdk:
   - oraclejdk8
 
+# The tests in this repository intend to fail when `dist` is `trusty`
+# (this is the default since the 18th of July). So, we explicitly set `precise`).
+# See an URL below for details:
+#  - https://blog.travis-ci.com/2017-07-11-trusty-as-default-linux-is-coming?utm_source=web&utm_medium=banner&&utm_campaign=trusty-default
+dist: precise
+
 branches:
   only:
     - master
