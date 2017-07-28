@@ -209,13 +209,6 @@ class PsqlCommandV9_6Suite extends PostgreSQLJdbcTest(pgVersion = "9.6") with Be
       assert(!rs2.next())
       rs2.close()
 
-      // Spark-2.2 cannot process implicit cartesian product, so the following query below
-      // hits an exception below:
-      //
-      //  Exception detected in `Query`: org.apache.spark.sql.AnalysisException:
-      //    Detected cartesian product for INNER join between logical plans
-      //  ...
-      //  Use the CROSS JOIN syntax to allow cartesian products between these relations.
       val rs3 = statement.executeQuery(
         s"""
           |SELECT
@@ -241,7 +234,7 @@ class PsqlCommandV9_6Suite extends PostgreSQLJdbcTest(pgVersion = "9.6") with Be
           |FROM
           |  pg_catalog.pg_attribute a
           |WHERE
-          |  a.attrelid = '6211' AND a.attnum > 0 AND NOT a.attisdropped
+          |  a.attrelid = '$relOid' AND a.attnum > 0 AND NOT a.attisdropped
           |ORDER BY
           |  a.attnum
         """.stripMargin
@@ -264,6 +257,47 @@ class PsqlCommandV9_6Suite extends PostgreSQLJdbcTest(pgVersion = "9.6") with Be
       assert(3 === rs3.getInt(5))
       assert(!rs3.next())
       rs3.close()
+
+      // TODO: Spark-2.2 cannot handle SQL queries in function input
+      val rs4 = statement.executeQuery(
+        s"""
+          |SELECT
+          |  pol.polname,
+          |  CASE
+          |    WHEN pol.polroles = '{0}' THEN NULL
+          |    ELSE
+          |      array_to_string(
+          |        array(
+          |          select
+          |            rolname
+          |          from
+          |            pg_roles
+          |          where
+          |            oid = any (pol.polroles)
+          |          order by
+          |            1
+          |        ),
+          |      ',')
+          |  END,
+          |  pg_catalog.pg_get_expr(pol.polqual, pol.polrelid),
+          |  pg_catalog.pg_get_expr(pol.polwithcheck, pol.polrelid),
+          |  CASE pol.polcmd
+          |    WHEN 'r' THEN 'SELECT'
+          |    WHEN 'a' THEN 'INSERT'
+          |    WHEN 'w' THEN 'UPDATE'
+          |    WHEN 'd' THEN 'DELETE'
+          |    WHEN '*' THEN 'ALL'
+          |  END AS cmd
+          |FROM
+          |  pg_catalog.pg_policy pol
+          |WHERE
+          |  pol.polrelid = '$relOid'
+          |ORDER BY
+          |  1
+          """.stripMargin)
+
+      assert(!rs4.next())
+      rs4.close()
     }
   }
 

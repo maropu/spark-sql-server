@@ -20,13 +20,14 @@ package org.apache.spark.sql.server
 import java.util.concurrent.atomic.AtomicInteger
 
 import org.apache.spark.SparkConf
+import org.apache.spark.internal.Logging
 import org.apache.spark.sql.{SparkSession, SQLContext}
 import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.service.postgresql.PostgreSQLParser
 import org.apache.spark.util.Utils
 
 
-private[server] object SQLServerEnv {
+private[server] object SQLServerEnv extends Logging {
 
   private val nextSessionId = new AtomicInteger(0)
 
@@ -36,6 +37,7 @@ private[server] object SQLServerEnv {
     ctx.sparkContext.conf
   }.getOrElse {
     val sparkConf = new SparkConf(loadDefaults = true)
+
     // If user doesn't specify the appName, we want to get [SparkSQL::localHostName]
     // instead of the default appName [SQLServer].
     val maybeAppName = sparkConf
@@ -43,6 +45,13 @@ private[server] object SQLServerEnv {
       .filterNot(_ == classOf[SQLServer].getName)
     sparkConf.setAppName(
       maybeAppName.getOrElse(s"SparkSQL::${Utils.localHostName()}"))
+
+    // Set `true` at `spark.sql.crossJoin.enabled`
+    sparkConf.set("spark.sql.crossJoin.enabled", "true")
+    logInfo("Explicitly set `true` at `spark.sql.crossJoin.enabled` because PostgreSQL " +
+      "JDBC drivers handle metadata by using SQL queries with cross joins.")
+
+    sparkConf
   }
 
   lazy val sparkContext = sqlContext.sparkContext

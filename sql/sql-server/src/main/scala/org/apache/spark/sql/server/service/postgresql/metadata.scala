@@ -52,28 +52,29 @@ object Metadata extends Logging {
   // Catalog tables and they are immutable
   private val _catalogTables1 = Seq(
     // scalastyle:off
-    PgSystemTable(          2615, TableIdentifier(   "pg_namespace", Some(catalogDbName))),
-    PgSystemTable( nextUnusedOid, TableIdentifier(   "pg_namespace",               None)),
+    PgSystemTable( nextUnusedOid, TableIdentifier(   "pg_namespace",                None)),
     PgSystemTable(          1247, TableIdentifier(        "pg_type", Some(catalogDbName))),
-    PgSystemTable(         11631, TableIdentifier(       "pg_roles", Some(catalogDbName))),
-    PgSystemTable(         11642, TableIdentifier(        "pg_user", Some(catalogDbName))),
-    PgSystemTable(          2610, TableIdentifier(       "pg_index", Some(catalogDbName))),
-    PgSystemTable(          2609, TableIdentifier( "pg_description", Some(catalogDbName))),
-    PgSystemTable(          2608, TableIdentifier(      "pg_depend", Some(catalogDbName))),
-    PgSystemTable(          2606, TableIdentifier(  "pg_constraint", Some(catalogDbName))),
     PgSystemTable(          2604, TableIdentifier(     "pg_attrdef", Some(catalogDbName))),
+    PgSystemTable(          2606, TableIdentifier(  "pg_constraint", Some(catalogDbName))),
+    PgSystemTable(          2608, TableIdentifier(      "pg_depend", Some(catalogDbName))),
+    PgSystemTable(          2609, TableIdentifier( "pg_description", Some(catalogDbName))),
+    PgSystemTable(          2610, TableIdentifier(       "pg_index", Some(catalogDbName))),
     PgSystemTable(          2611, TableIdentifier(    "pg_inherits", Some(catalogDbName))),
-    PgSystemTable(          3456, TableIdentifier(   "pg_collation", Some(catalogDbName)))
+    PgSystemTable(          2615, TableIdentifier(   "pg_namespace", Some(catalogDbName))),
+    PgSystemTable(          3256, TableIdentifier(      "pg_policy", Some(catalogDbName))),
+    PgSystemTable(          3456, TableIdentifier(   "pg_collation", Some(catalogDbName))),
+    PgSystemTable(         11631, TableIdentifier(       "pg_roles", Some(catalogDbName))),
+    PgSystemTable(         11642, TableIdentifier(        "pg_user", Some(catalogDbName)))
     // scalastyle:on
   )
 
   // Catalog tables that are updated every databases/tables created
   private val _catalogTables2 = Seq(
     // scalastyle:off
-    PgSystemTable( 1262, TableIdentifier(  "pg_database", Some(catalogDbName))),
-    PgSystemTable( 1259, TableIdentifier(     "pg_class", Some(catalogDbName))),
     PgSystemTable( 1249, TableIdentifier( "pg_attribute", Some(catalogDbName))),
-    PgSystemTable( 1255, TableIdentifier(      "pg_proc", Some(catalogDbName)))
+    PgSystemTable( 1255, TableIdentifier(      "pg_proc", Some(catalogDbName))),
+    PgSystemTable( 1259, TableIdentifier(     "pg_class", Some(catalogDbName))),
+    PgSystemTable( 1262, TableIdentifier(  "pg_database", Some(catalogDbName)))
     // scalastyle:on
   )
 
@@ -411,6 +412,20 @@ object Metadata extends Logging {
             |CREATE TABLE $cTableName(
             |  oid INT,
             |  collname STRING
+            |)
+          """ ::
+          Nil
+        }
+
+        safeCreateCatalogTable("pg_policy", sqlContext) { cTableName =>
+          s"""
+            |CREATE TABLE $cTableName(
+            |  polname STRING,
+            |  polrelid INT,
+            |  polcmd STRING,
+            |  polroles STRING,
+            |  polqual STRING,
+            |  polwithcheck STRING
             |)
           """ ::
           Nil

@@ -261,6 +261,11 @@ private[sql] class SQLServer extends CompositeService with LeaderElectable {
   @volatile private var state = RecoveryState.STANDBY
 
   override def init(conf: SparkConf): Unit = {
+    if (conf.get("spark.sql.crossJoin.enabled") != "true") {
+      throw new IllegalArgumentException(
+        "`spark.sql.crossJoin.enabled` must be `true` because PostgreSQL JDBC drivers " +
+          "handle metadata by using SQL queries with cross joins.")
+    }
     val cliService = new SparkSQLSessionService(this)
     addService(cliService)
     addService(new PostgreSQLService(this, cliService))
