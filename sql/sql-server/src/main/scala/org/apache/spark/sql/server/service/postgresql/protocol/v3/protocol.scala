@@ -565,14 +565,14 @@ object PostgreSQLWireProtocol {
   }
 }
 
-// scalastyle:off
+// scalastyle:off line.size.limit
 /**
  * This is a special class to avoid a following exception;
  * "ByteArrayDecoder is not @Sharable handler, so can't be added or removed multiple times"
  *
  *  http://stackoverflow.com/questions/34068315/bytearraydecoder-is-not-sharable-handler-so-cant-be-added-or-removed-multiple
  */
-// scalastyle:on
+// scalastyle:on line.size.limit
 @ChannelHandler.Sharable
 private[v3] class SharableByteArrayDecode extends ByteArrayDecoder {}
 

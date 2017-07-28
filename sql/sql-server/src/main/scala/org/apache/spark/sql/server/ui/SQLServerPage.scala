@@ -123,7 +123,7 @@ private[ui] class SQLServerPage(parent: SQLServerTab)
         errorMessage
       })
     val details = if (isMultiline) {
-      // scalastyle:off
+      // scalastyle:off line.size.limit
       <span onclick="this.parentNode.querySelector('.stacktrace-details').classList.toggle('collapsed')"
             class="expand-details">
         + details
@@ -131,7 +131,7 @@ private[ui] class SQLServerPage(parent: SQLServerTab)
       <div class="stacktrace-details collapsed">
         <pre>{errorMessage}</pre>
       </div>
-      // scalastyle:on
+      // scalastyle:on line.size.limit
     } else {
       ""
     }
