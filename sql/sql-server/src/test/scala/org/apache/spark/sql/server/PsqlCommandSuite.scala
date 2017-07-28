@@ -258,7 +258,9 @@ class PsqlCommandV9_6Suite extends PostgreSQLJdbcTest(pgVersion = "9.6") with Be
       assert(!rs3.next())
       rs3.close()
 
-      // TODO: Spark-2.2 cannot handle SQL queries in function input
+      // In PostgreSQL, `ARRAY` is not a function but a syntax defined in parser definition
+      // (https://github.com/postgres/postgres/blob/master/src/backend/parser/gram.y#L13166).
+      // So, Spark-2.2 can't handle a query below:
       val rs4 = statement.executeQuery(
         s"""
           |SELECT
