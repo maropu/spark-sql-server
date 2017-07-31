@@ -52,8 +52,8 @@
     <test.java.home>${java.home}</test.java.home>
     <test.exclude.tags></test.exclude.tags>
 
-    <PermGen>64m</PermGen>
-    <MaxPermGen>512m</MaxPermGen>
+    <MetaspaceSize>64m</MetaspaceSize>
+    <MaxMetaspaceSize>512m</MaxMetaspaceSize>
     <CodeCacheSize>512m</CodeCacheSize>
   </properties>
 
@@ -179,8 +179,8 @@
           <jvmArgs>
             <jvmArg>-Xms1024m</jvmArg>
             <jvmArg>-Xmx1024m</jvmArg>
-            <jvmArg>-XX:PermSize=${PermGen}</jvmArg>
-            <jvmArg>-XX:MaxPermSize=${MaxPermGen}</jvmArg>
+            <jvmArg>-XX:MetaspaceSize=${MetaspaceSize}</jvmArg>
+            <jvmArg>-XX:MaxMetaspaceSize=${MaxMetaspaceSize}</jvmArg>
             <jvmArg>-XX:ReservedCodeCacheSize=${CodeCacheSize}</jvmArg>
           </jvmArgs>
           <javacArgs>
@@ -221,7 +221,7 @@
             <include>**/*Suite.java</include>
           </includes>
           <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
-          <argLine>-Xmx3g -Xss4096k -XX:MaxPermSize=${MaxPermGen} -XX:ReservedCodeCacheSize=512m</argLine>
+          <argLine>-Xmx3g -Xss4096k -XX:MaxMetaspaceSize=${MaxMetaspaceSize} -XX:ReservedCodeCacheSize=512m</argLine>
           <environmentVariables>
             <!--
               Setting SPARK_DIST_CLASSPATH is a simple way to make sure any child processes
@@ -270,7 +270,7 @@
           <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
           <junitxml>.</junitxml>
           <filereports>SparkTestSuite.txt</filereports>
-          <argLine>-ea -Xmx3g -XX:MaxPermSize=${MaxPermGen} -XX:ReservedCodeCacheSize=${CodeCacheSize}</argLine>
+          <argLine>-ea -Xmx3g -XX:MaxMetaspaceSize=${MaxMetaspaceSize} -XX:ReservedCodeCacheSize=${CodeCacheSize}</argLine>
           <stderr/>
           <environmentVariables>
             <!--
