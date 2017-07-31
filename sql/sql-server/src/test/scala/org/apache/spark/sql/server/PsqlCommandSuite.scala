@@ -56,7 +56,7 @@ class PsqlCommandV9_6Suite extends PostgreSQLJdbcTest(pgVersion = "9.6") with Be
     }
   }
 
-  test("""\l""") {
+  ignore("""\l""") {
     testJdbcStatement { statement =>
       val rs = statement.executeQuery(
         """
@@ -85,7 +85,7 @@ class PsqlCommandV9_6Suite extends PostgreSQLJdbcTest(pgVersion = "9.6") with Be
     }
   }
 
-  test("""\d""") {
+  ignore("""\d""") {
     testJdbcStatement { statement =>
       val rs = statement.executeQuery(
         """
@@ -124,7 +124,6 @@ class PsqlCommandV9_6Suite extends PostgreSQLJdbcTest(pgVersion = "9.6") with Be
       assert("table" === rs.getString(3))
       assert("" === rs.getString(4))
       assert(rs.next())
-
       assert("spark" === rs.getString(1))
       assert("t1" === rs.getString(2))
       assert("table" === rs.getString(3))
@@ -303,7 +302,7 @@ class PsqlCommandV9_6Suite extends PostgreSQLJdbcTest(pgVersion = "9.6") with Be
     }
   }
 
-  test("""\df""") {
+  ignore("""\df""") {
     testJdbcStatement { statement =>
       // Define a temporary function
       val jarPath = "src/test/resources/TestUDTF.jar"
@@ -448,7 +447,6 @@ class PsqlCommandV8_0Suite extends PostgreSQLJdbcTest(pgVersion = "8.0") with Be
       assert("table" === rs.getString(3))
       assert("" === rs.getString(4))
       assert(rs.next())
-
       assert("spark" === rs.getString(1))
       assert("t1" === rs.getString(2))
       assert("table" === rs.getString(3))
@@ -738,7 +736,6 @@ class PsqlCommandV7_4Suite extends PostgreSQLJdbcTest(pgVersion = "7.4") with Be
       assert("table" === rs.getString(3))
       assert("" === rs.getString(4))
       assert(rs.next())
-
       assert("spark" === rs.getString(1))
       assert("t1" === rs.getString(2))
       assert("table" === rs.getString(3))
