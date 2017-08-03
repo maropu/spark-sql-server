@@ -20,9 +20,9 @@ package org.apache.spark.sql.server.service.postgresql.protocol.v3
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 
-import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.{SparkException, SparkFunSuite}
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
+import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.unsafe.types.UTF8String
 

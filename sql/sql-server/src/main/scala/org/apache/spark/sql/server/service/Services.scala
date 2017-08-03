@@ -17,11 +17,10 @@
 
 package org.apache.spark.sql.server.service
 
-import org.apache.spark.sql.internal.SQLConf
-
 import scala.collection.mutable
 
 import org.apache.spark.internal.Logging
+import org.apache.spark.sql.internal.SQLConf
 
 
 private[server] abstract class Service extends Logging {
