@@ -56,7 +56,7 @@ class PsqlCommandV9_6Suite extends PostgreSQLJdbcTest(pgVersion = "9.6") with Be
     }
   }
 
-  ignore("""\l""") {
+  test("""\l""") {
     testJdbcStatement { statement =>
       val rs = statement.executeQuery(
         """
@@ -85,7 +85,7 @@ class PsqlCommandV9_6Suite extends PostgreSQLJdbcTest(pgVersion = "9.6") with Be
     }
   }
 
-  ignore("""\d""") {
+  test("""\d""") {
     testJdbcStatement { statement =>
       val rs = statement.executeQuery(
         """
@@ -302,7 +302,7 @@ class PsqlCommandV9_6Suite extends PostgreSQLJdbcTest(pgVersion = "9.6") with Be
     }
   }
 
-  ignore("""\df""") {
+  test("""\df""") {
     testJdbcStatement { statement =>
       // Define a temporary function
       val jarPath = "src/test/resources/TestUDTF.jar"
