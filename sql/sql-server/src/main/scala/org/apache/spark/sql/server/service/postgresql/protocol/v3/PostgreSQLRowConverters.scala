@@ -26,6 +26,7 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.catalyst.json.{JacksonGenerator, JSONOptions}
 import org.apache.spark.sql.catalyst.util.DateTimeUtils
+import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types._
 
 
@@ -36,7 +37,8 @@ private[v3] object PostgreSQLRowConverters {
 
   type RowWriter = (InternalRow, ByteBuffer) => Int
 
-  def apply(schema: StructType, formatsOption: Option[Seq[Boolean]] = None): RowWriter = {
+  def apply(schema: StructType, conf: SQLConf, formatsOption: Option[Seq[Boolean]] = None)
+    : RowWriter = {
     require(formatsOption.isEmpty || schema.length == formatsOption.get.size,
       "format must have the same length with schema")
     val outputFormats = formatsOption.getOrElse {
@@ -44,7 +46,7 @@ private[v3] object PostgreSQLRowConverters {
       Seq.fill(schema.length)(false)
     }
     val columnWriters = schema.fields.zipWithIndex.map { case (field, ordinal) =>
-      ColumnWriter(field, ordinal, outputFormats(ordinal))
+      ColumnWriter(field, ordinal, outputFormats(ordinal), conf)
     }
     (row: InternalRow, byteBuffer: ByteBuffer) => {
       require(row.numFields == schema.length)
@@ -177,9 +179,9 @@ private class BinaryColumnWriter(ordinal: Int) extends ColumnWriter(ordinal) {
   }
 }
 
-private abstract class DateColumnWriter(ordinal: Int) extends ColumnWriter(ordinal) {
+private abstract class DateColumnWriter(ordinal: Int, conf: SQLConf) extends ColumnWriter(ordinal) {
 
-  val timezone = TimeZone.getDefault
+  protected val timezone = TimeZone.getTimeZone(conf.sessionLocalTimeZone)
 
   // Converts the given java seconds to PostgreSQL seconds
   def toPgSecs(secs: Long): Long = {
@@ -203,7 +205,8 @@ private abstract class DateColumnWriter(ordinal: Int) extends ColumnWriter(ordin
   }
 }
 
-private class DateColumnTextWriter(ordinal: Int) extends DateColumnWriter(ordinal) {
+private class DateColumnTextWriter(ordinal: Int, conf: SQLConf)
+    extends DateColumnWriter(ordinal, conf) {
 
   override def nullSafeWriter(row: InternalRow, byteBuffer: ByteBuffer): Unit = {
     val date = DateTimeUtils.toJavaDate(row.getInt(ordinal))
@@ -213,7 +216,8 @@ private class DateColumnTextWriter(ordinal: Int) extends DateColumnWriter(ordina
   }
 }
 
-private class DateColumnBinaryWriter(ordinal: Int) extends DateColumnWriter(ordinal) {
+private class DateColumnBinaryWriter(ordinal: Int, conf: SQLConf)
+    extends DateColumnWriter(ordinal, conf) {
 
   override def nullSafeWriter(row: InternalRow, byteBuffer: ByteBuffer): Unit = {
     val date = DateTimeUtils.toJavaDate(row.getInt(ordinal))
@@ -224,7 +228,8 @@ private class DateColumnBinaryWriter(ordinal: Int) extends DateColumnWriter(ordi
   }
 }
 
-private class TimestampColumnTextWriter(ordinal: Int) extends DateColumnWriter(ordinal) {
+private class TimestampColumnTextWriter(ordinal: Int, conf: SQLConf)
+    extends DateColumnWriter(ordinal, conf) {
 
   override def nullSafeWriter(row: InternalRow, byteBuffer: ByteBuffer): Unit = {
     val timestamp = DateTimeUtils.toJavaTimestamp(row.getLong(ordinal))
@@ -234,7 +239,8 @@ private class TimestampColumnTextWriter(ordinal: Int) extends DateColumnWriter(o
   }
 }
 
-private class TimestampColumnBinaryWriter(ordinal: Int) extends DateColumnWriter(ordinal) {
+private class TimestampColumnBinaryWriter(ordinal: Int, conf: SQLConf)
+    extends DateColumnWriter(ordinal, conf) {
 
   override def nullSafeWriter(row: InternalRow, byteBuffer: ByteBuffer): Unit = {
     val timestamp = DateTimeUtils.toJavaTimestamp(row.getLong(ordinal))
@@ -244,7 +250,7 @@ private class TimestampColumnBinaryWriter(ordinal: Int) extends DateColumnWriter
   }
 }
 
-private abstract class ComplexTypeColumnTextWriter(field: StructField, ordinal: Int)
+private abstract class ComplexTypeColumnTextWriter(field: StructField, ordinal: Int, conf: SQLConf)
     extends ColumnWriter(ordinal) {
 
   private val writer = new CharArrayWriter
@@ -252,7 +258,7 @@ private abstract class ComplexTypeColumnTextWriter(field: StructField, ordinal: 
     val outputSchema = new StructType().add(field)
     // Set a timestamp format so that JDBC drivers can parse data
     val options = new JSONOptions(Map("timestampFormat" -> "yyyy-MM-dd HH:mm:ss"),
-      TimeZone.getDefault.getID)
+      conf.sessionLocalTimeZone)
     new JacksonGenerator(outputSchema, writer, options)
   }
 
@@ -275,8 +281,8 @@ private abstract class ComplexTypeColumnTextWriter(field: StructField, ordinal: 
   }
 }
 
-private class ArrayColumnTextWriter(field: StructField, ordinal: Int)
-    extends ComplexTypeColumnTextWriter(field, ordinal) {
+private class ArrayColumnTextWriter(field: StructField, ordinal: Int, conf: SQLConf)
+    extends ComplexTypeColumnTextWriter(field, ordinal, conf) {
 
   private val arrayRow = new GenericInternalRow(Array[Any](1))
 
@@ -295,8 +301,8 @@ private class ArrayColumnTextWriter(field: StructField, ordinal: Int)
   }
 }
 
-private class MapColumnTextWriter(field: StructField, ordinal: Int)
-    extends ComplexTypeColumnTextWriter(field, ordinal) {
+private class MapColumnTextWriter(field: StructField, ordinal: Int, conf: SQLConf)
+    extends ComplexTypeColumnTextWriter(field, ordinal, conf) {
 
   private val mapRow = new GenericInternalRow(Array[Any](1))
 
@@ -310,8 +316,8 @@ private class MapColumnTextWriter(field: StructField, ordinal: Int)
   }
 }
 
-private class StructColumnTextWriter(field: StructField, ordinal: Int)
-    extends ComplexTypeColumnTextWriter(field, ordinal) {
+private class StructColumnTextWriter(field: StructField, ordinal: Int, conf: SQLConf)
+    extends ComplexTypeColumnTextWriter(field, ordinal, conf) {
 
   override def convertRow(row: InternalRow): Array[Byte] = {
     val data = row.getStruct(ordinal, 1)
@@ -333,7 +339,7 @@ private[v3] object ColumnWriter {
   /**
    * Create an PostgreSQL V3 [[ColumnWriter]] given the type and ordinal of row.
    */
-  def apply(field: StructField, ordinal: Int, isBinary: Boolean): ColumnWriter = {
+  def apply(field: StructField, ordinal: Int, isBinary: Boolean, conf: SQLConf): ColumnWriter = {
     (field.dataType, isBinary) match {
       case (NullType, _) => new NullColumnWriter(ordinal)
       case (BooleanType, true) => new BooleanColumnBinaryWriter(ordinal)
@@ -345,16 +351,16 @@ private[v3] object ColumnWriter {
       case (ByteType, true) => new ByteColumnWriter(ordinal)
       case (StringType, _) => new UTF8StringColumnWriter(ordinal)
       case (BinaryType, _) => new BinaryColumnWriter(ordinal)
-      case (DateType, true) => new DateColumnBinaryWriter(ordinal)
-      case (TimestampType, true) => new TimestampColumnBinaryWriter(ordinal)
+      case (DateType, true) => new DateColumnBinaryWriter(ordinal, conf)
+      case (TimestampType, true) => new TimestampColumnBinaryWriter(ordinal, conf)
 
       case (tpe, false) if isPrimitive(tpe) => new ColumnTextWriter(tpe, ordinal)
       case (tpe: DecimalType, false) => new ColumnTextWriter(tpe, ordinal)
-      case (DateType, false) => new DateColumnTextWriter(ordinal)
-      case (TimestampType, false) => new TimestampColumnTextWriter(ordinal)
-      case (_: ArrayType, false) => new ArrayColumnTextWriter(field, ordinal)
-      case (_: MapType, false) => new MapColumnTextWriter(field, ordinal)
-      case (_: StructType, false) => new StructColumnTextWriter(field, ordinal)
+      case (DateType, false) => new DateColumnTextWriter(ordinal, conf)
+      case (TimestampType, false) => new TimestampColumnTextWriter(ordinal, conf)
+      case (_: ArrayType, false) => new ArrayColumnTextWriter(field, ordinal, conf)
+      case (_: MapType, false) => new MapColumnTextWriter(field, ordinal, conf)
+      case (_: StructType, false) => new StructColumnTextWriter(field, ordinal, conf)
 
       case _ => throw new UnsupportedOperationException(
         s"Cannot convert value: type=${field.dataType}, isBinary=$isBinary")

@@ -998,7 +998,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
             val outputFormats = schema.map { f => binaryFormatTypes.contains(f.dataType) }
             // TODO: We could reuse this row converters in some cases?
             val newQueryState = queryState.copy(
-              rowWriterOption = Some(PostgreSQLRowConverters(schema, Some(outputFormats))),
+              rowWriterOption = Some(PostgreSQLRowConverters(schema, conf, Some(outputFormats))),
               schema = Some(schema)
             )
             sessionState.queries(queryName) = newQueryState
@@ -1138,7 +1138,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
               val schema = execState.schema
               ctx.write(RowDescription(schema))
 
-              val rowWriter = PostgreSQLRowConverters(schema)
+              val rowWriter = PostgreSQLRowConverters(schema, conf)
               var numRows = 0
               execState.iterator().foreach { iter =>
                 ctx.write(DataRow(iter, rowWriter))

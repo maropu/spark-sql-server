@@ -36,7 +36,7 @@ class PostgreSQLWireProtocolSuite extends SparkFunSuite {
     row.update(0, 8)
     row.update(1, UTF8String.fromString("abcdefghij"))
     val schema = StructType.fromDDL("a INT, b STRING")
-    val rowConverters = PostgreSQLRowConverters(schema, Some(Seq(true, false)))
+    val rowConverters = PostgreSQLRowConverters(schema, conf, Some(Seq(true, false)))
     val data = v3Protocol.DataRow(row, rowConverters)
     val bytes = ByteBuffer.wrap(data)
     assert(bytes.get() === 'D'.toByte)
@@ -55,7 +55,7 @@ class PostgreSQLWireProtocolSuite extends SparkFunSuite {
     val row = new GenericInternalRow(1)
     row.update(0, UTF8String.fromString("abcdefghijk"))
     val schema = StructType.fromDDL("a STRING")
-    val rowConverters = PostgreSQLRowConverters(schema)
+    val rowConverters = PostgreSQLRowConverters(schema, conf)
     val errMsg = intercept[SparkException] {
       v3Protocol.DataRow(row, rowConverters)
     }.getMessage

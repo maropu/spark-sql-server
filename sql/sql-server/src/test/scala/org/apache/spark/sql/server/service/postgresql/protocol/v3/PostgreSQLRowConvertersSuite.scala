@@ -25,11 +25,14 @@ import java.sql.Timestamp
 import org.apache.spark.SparkFunSuite
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.catalyst.util.{ArrayBasedMapData, ArrayData, DateTimeUtils}
+import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types.{NullType, StructField}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.unsafe.types.UTF8String
 
 class PostgreSQLRowConvertersSuite extends SparkFunSuite {
+
+  private val conf = new SQLConf()
 
   test("primitive types") {
     Seq(
@@ -48,7 +51,7 @@ class PostgreSQLRowConvertersSuite extends SparkFunSuite {
         val dataSize = if (binaryMode) fieldType.dataType.defaultSize else data.toString.length
         val buf = new Array[Byte](4 + dataSize)
         val byteBuffer = ByteBuffer.wrap(buf)
-        val writer = ColumnWriter(fieldType, 0, isBinary = binaryMode)
+        val writer = ColumnWriter(fieldType, 0, isBinary = binaryMode, conf)
         writer.write(inputRow, byteBuffer)
         byteBuffer.rewind()
 
@@ -69,7 +72,7 @@ class PostgreSQLRowConvertersSuite extends SparkFunSuite {
     val byteBuffer = ByteBuffer.allocate(1)
     val inputRow = new GenericInternalRow(1)
     inputRow.update(0, 0)
-    val writer = ColumnWriter(fieldType, 0, isBinary = false)
+    val writer = ColumnWriter(fieldType, 0, isBinary = false, conf)
     val errMsg = intercept[UnsupportedOperationException] {
       writer.write(inputRow, byteBuffer)
     }.getMessage
@@ -82,7 +85,7 @@ class PostgreSQLRowConvertersSuite extends SparkFunSuite {
     inputRow.update(0, BigDecimal.decimal(3.0))
     val buf = new Array[Byte](7)
     val byteBuffer = ByteBuffer.wrap(buf)
-    val writer = ColumnWriter(fieldType, 0, isBinary = false)
+    val writer = ColumnWriter(fieldType, 0, isBinary = false, conf)
     writer.write(inputRow, byteBuffer)
     byteBuffer.rewind()
 
@@ -94,7 +97,7 @@ class PostgreSQLRowConvertersSuite extends SparkFunSuite {
     assert(actualData === "3.0".getBytes(StandardCharsets.UTF_8))
 
     val errMsg = intercept[UnsupportedOperationException] {
-      ColumnWriter(fieldType, 0, isBinary = true)
+      ColumnWriter(fieldType, 0, isBinary = true, conf)
     }.getMessage
     assert(errMsg.contains("Cannot convert value: type=DecimalType(10,0), isBinary=true"))
   }
@@ -106,7 +109,7 @@ class PostgreSQLRowConvertersSuite extends SparkFunSuite {
     val buf = new Array[Byte](14)
     val byteBuffer = ByteBuffer.wrap(buf)
 
-    val textWriter = ColumnWriter(fieldType, 0, isBinary = false)
+    val textWriter = ColumnWriter(fieldType, 0, isBinary = false, conf)
     textWriter.write(inputRow, byteBuffer)
     byteBuffer.rewind()
 
@@ -116,7 +119,7 @@ class PostgreSQLRowConvertersSuite extends SparkFunSuite {
     assert(actualData1 === "2017-08-04".getBytes(StandardCharsets.UTF_8))
     byteBuffer.rewind()
 
-    val binaryWriter = ColumnWriter(fieldType, 0, isBinary = true)
+    val binaryWriter = ColumnWriter(fieldType, 0, isBinary = true, conf)
     binaryWriter.write(inputRow, byteBuffer)
     byteBuffer.rewind()
 
@@ -133,7 +136,7 @@ class PostgreSQLRowConvertersSuite extends SparkFunSuite {
     val buf = new Array[Byte](128)
     val byteBuffer = ByteBuffer.wrap(buf)
 
-    val textWriter = ColumnWriter(fieldType, 0, isBinary = false)
+    val textWriter = ColumnWriter(fieldType, 0, isBinary = false, conf)
     textWriter.write(inputRow, byteBuffer)
     byteBuffer.rewind()
 
@@ -143,7 +146,7 @@ class PostgreSQLRowConvertersSuite extends SparkFunSuite {
     assert(actualData1 === "2016-08-04 00:17:13.0".getBytes(StandardCharsets.UTF_8))
     byteBuffer.rewind()
 
-    val binaryWriter = ColumnWriter(fieldType, 0, isBinary = true)
+    val binaryWriter = ColumnWriter(fieldType, 0, isBinary = true, conf)
     binaryWriter.write(inputRow, byteBuffer)
     byteBuffer.rewind()
 
@@ -159,7 +162,7 @@ class PostgreSQLRowConvertersSuite extends SparkFunSuite {
     inputRow.update(0, ArrayData.toArrayData(Array(0, 1, 2, 3, 4)))
     val buf = new Array[Byte](15)
     val byteBuffer = ByteBuffer.wrap(buf)
-    val writer = ColumnWriter(fieldType, 0, isBinary = false)
+    val writer = ColumnWriter(fieldType, 0, isBinary = false, conf)
     writer.write(inputRow, byteBuffer)
     byteBuffer.rewind()
 
@@ -171,7 +174,7 @@ class PostgreSQLRowConvertersSuite extends SparkFunSuite {
     assert(actualData === "{0,1,2,3,4}".getBytes(StandardCharsets.UTF_8))
 
     val errMsg = intercept[UnsupportedOperationException] {
-      ColumnWriter(fieldType, 0, isBinary = true)
+      ColumnWriter(fieldType, 0, isBinary = true, conf)
     }.getMessage
     assert(errMsg.contains("Cannot convert value: type=ArrayType(IntegerType,true), isBinary=true"))
   }
@@ -184,7 +187,7 @@ class PostgreSQLRowConvertersSuite extends SparkFunSuite {
     inputRow.update(0, new ArrayBasedMapData(keys, values))
     val buf = new Array[Byte](26)
     val byteBuffer = ByteBuffer.wrap(buf)
-    val writer = ColumnWriter(fieldType, 0, isBinary = false)
+    val writer = ColumnWriter(fieldType, 0, isBinary = false, conf)
     writer.write(inputRow, byteBuffer)
     byteBuffer.rewind()
 
@@ -196,7 +199,7 @@ class PostgreSQLRowConvertersSuite extends SparkFunSuite {
     assert(actualData ===  """{"k1":1,"k2":2,"k3":3}""".getBytes(StandardCharsets.UTF_8))
 
     val errMsg = intercept[UnsupportedOperationException] {
-      ColumnWriter(fieldType, 0, isBinary = true)
+      ColumnWriter(fieldType, 0, isBinary = true, conf)
     }.getMessage
     assert(errMsg.contains(
       "Cannot convert value: type=MapType(StringType,IntegerType,true), isBinary=true"))
@@ -211,7 +214,7 @@ class PostgreSQLRowConvertersSuite extends SparkFunSuite {
     inputRow.update(0, new GenericInternalRow(Array[Any](testData)))
     val buf = new Array[Byte](23)
     val byteBuffer = ByteBuffer.wrap(buf)
-    val writer = ColumnWriter(fieldType, 0, isBinary = false)
+    val writer = ColumnWriter(fieldType, 0, isBinary = false, conf)
     writer.write(inputRow, byteBuffer)
     byteBuffer.rewind()
 
@@ -223,7 +226,7 @@ class PostgreSQLRowConvertersSuite extends SparkFunSuite {
     assert(actualData ===  """{"c0":7,"c1":"abc"}""".getBytes(StandardCharsets.UTF_8))
 
     val errMsg = intercept[UnsupportedOperationException] {
-      ColumnWriter(fieldType, 0, isBinary = true)
+      ColumnWriter(fieldType, 0, isBinary = true, conf)
     }.getMessage
     assert(errMsg.contains(
       "Cannot convert value: type=StructType(StructField(c0,IntegerType,true), " +
