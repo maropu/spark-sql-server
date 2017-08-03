@@ -17,8 +17,8 @@
 
 package org.apache.spark.sql.server.service
 
-import org.apache.spark.SparkConf
 import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.server.{SQLServer, SQLServerEnv}
 import org.apache.spark.sql.server.SQLServerConf._
 
@@ -30,7 +30,7 @@ private[server] class SessionManager(pgServer: SQLServer) extends CompositeServi
 
   private var getSession: String => SQLContext = _
 
-  override def init(conf: SparkConf): Unit = {
+  override def init(conf: SQLConf): Unit = {
     getSession = if (conf.sqlServerSingleSessionEnabled) {
       (dbName: String) => {
         SQLServerEnv.sqlContext

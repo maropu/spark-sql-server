@@ -17,18 +17,16 @@
 
 package org.apache.spark.sql.server
 
-import org.apache.spark.SparkConf
-import org.apache.spark.internal.config.{ConfigBuilder, ConfigEntry}
+import org.apache.spark.internal.config.{ConfigBuilder, ConfigEntry, ConfigReader}
 import org.apache.spark.sql.internal.SQLConf
 
 
-/** A parameter set of a SQL JDBC/ODBC server. */
 object SQLServerConf {
 
   /**
    * Implicitly inject the [[SQLServerConf]] into [[SQLConf]].
    */
-  implicit def SQLConfToSQLServerConf(conf: SparkConf): SQLServerConf = new SQLServerConf(conf)
+  implicit def SQLConfToSQLServerConf(conf: SQLConf): SQLServerConf = new SQLServerConf(conf)
 
   private val sqlConfEntries = java.util.Collections.synchronizedMap(
     new java.util.HashMap[String, ConfigEntry[_]]())
@@ -131,36 +129,49 @@ object SQLServerConf {
       .createWithDefault(3 * 1024 * 1024)
 }
 
-class SQLServerConf(conf: SparkConf) {
+class SQLServerConf(conf: SQLConf) {
   import SQLServerConf._
 
-  def sqlServerPort: Int = conf.get(SQLSERVER_PORT)
+  private val reader = new ConfigReader(conf.settings)
 
-  def sqlServerVersion: String = conf.get(SQLSERVER_VERSION)
+  def sqlServerPort: Int = getConf(SQLSERVER_PORT)
 
-  def sqlServerWorkerThreads: Int = conf.get(SQLSERVER_WORKER_THREADS)
+  def sqlServerVersion: String = getConf(SQLSERVER_VERSION)
 
-  def sqlServerIncrementalCollectEnabled: Boolean = conf.get(SQLSERVER_INCREMENTAL_COLLECT_ENABLE)
+  def sqlServerWorkerThreads: Int = getConf(SQLSERVER_WORKER_THREADS)
 
-  def sqlServerRecoveryMode: Option[String] = conf.get(SQLSERVER_RECOVERY_MODE)
+  def sqlServerIncrementalCollectEnabled: Boolean = getConf(SQLSERVER_INCREMENTAL_COLLECT_ENABLE)
 
-  def sqlServerRecoveryDir: String = conf.get(SQLSERVER_RECOVERY_DIR)
+  def sqlServerRecoveryMode: Option[String] = getConf(SQLSERVER_RECOVERY_MODE)
 
-  def sqlServerSslEnabled: Boolean = conf.get(SQLSERVER_SSL_ENABLED)
+  def sqlServerRecoveryDir: String = getConf(SQLSERVER_RECOVERY_DIR)
 
-  def sqlServerSslKeyStorePath: Option[String] = conf.get(SQLSERVER_SSL_KEYSTORE_PATH)
+  def sqlServerSslEnabled: Boolean = getConf(SQLSERVER_SSL_ENABLED)
 
-  def sqlServerSslKeyStorePasswd: Option[String] = conf.get(SQLSERVER_SSL_KEYSTORE_PASSWD)
+  def sqlServerSslKeyStorePath: Option[String] = getConf(SQLSERVER_SSL_KEYSTORE_PATH)
 
-  def sqlServerPool: String = conf.get(SQLSERVER_POOL)
+  def sqlServerSslKeyStorePasswd: Option[String] = getConf(SQLSERVER_SSL_KEYSTORE_PASSWD)
 
-  def sqlServerUiStatementLimit: Int = conf.get(SQLSERVER_UI_STATEMENT_LIMIT)
+  def sqlServerPool: String = getConf(SQLSERVER_POOL)
 
-  def sqlServerUiSessionLimit: Int = conf.get(SQLSERVER_UI_SESSION_LIMIT)
+  def sqlServerUiStatementLimit: Int = getConf(SQLSERVER_UI_STATEMENT_LIMIT)
 
-  def sqlServerSingleSessionEnabled: Boolean = conf.get(SQLSERVER_SINGLE_SESSION_ENABLED)
+  def sqlServerUiSessionLimit: Int = getConf(SQLSERVER_UI_SESSION_LIMIT)
 
-  def sqlServerIdleOperationTimeout: Long = conf.get(SQLSERVER_IDLE_OPERATION_TIMEOUT)
+  def sqlServerSingleSessionEnabled: Boolean = getConf(SQLSERVER_SINGLE_SESSION_ENABLED)
 
-  def sqlServerMessageBufferSizeInBytes: Int = conf.get(SQLSERVER_MESSAGE_BUFFER_SIZE_IN_BYTES)
+  def sqlServerIdleOperationTimeout: Long = getConf(SQLSERVER_IDLE_OPERATION_TIMEOUT)
+
+  def sqlServerMessageBufferSizeInBytes: Int = getConf(SQLSERVER_MESSAGE_BUFFER_SIZE_IN_BYTES)
+
+  /** ********************** SQLConf functionality methods ************ */
+
+  /**
+   * Return the value of SQL server configuration property for the given key. If the key is not set
+   * yet, return `defaultValue` in [[ConfigEntry]].
+   */
+  private def getConf[T](entry: ConfigEntry[T]): T = {
+    require(sqlConfEntries.get(entry.key) == entry, s"$entry is not registered")
+    entry.readFrom(reader)
+  }
 }

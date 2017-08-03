@@ -20,7 +20,8 @@ package org.apache.spark.sql.server.service.postgresql.protocol.v3
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 
-import org.apache.spark.{SparkConf, SparkException, SparkFunSuite}
+import org.apache.spark.sql.internal.SQLConf
+import org.apache.spark.{SparkException, SparkFunSuite}
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.unsafe.types.UTF8String
@@ -28,7 +29,8 @@ import org.apache.spark.unsafe.types.UTF8String
 class PostgreSQLWireProtocolSuite extends SparkFunSuite {
 
   test("DataRow") {
-    val conf = new SparkConf(false).set("spark.sql.server.messageBufferSizeInBytes", "65536")
+    val conf = new SQLConf()
+    conf.setConfString("spark.sql.server.messageBufferSizeInBytes", "65536")
     val v3Protocol = new PostgreSQLWireProtocol(conf)
     val row = new GenericInternalRow(2)
     row.update(0, 8)
@@ -47,7 +49,8 @@ class PostgreSQLWireProtocolSuite extends SparkFunSuite {
   }
 
   test("Fails when message buffer overflowed") {
-    val conf = new SparkConf(false).set("spark.sql.server.messageBufferSizeInBytes", "4")
+    val conf = new SQLConf()
+    conf.setConfString("spark.sql.server.messageBufferSizeInBytes", "4")
     val v3Protocol = new PostgreSQLWireProtocol(conf)
     val row = new GenericInternalRow(1)
     row.update(0, UTF8String.fromString("abcdefghijk"))

@@ -20,12 +20,13 @@ package org.apache.spark.sql.server
 import scala.collection.mutable
 import scala.util.control.NonFatal
 
-import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.SparkContext
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.deploy.master.{LeaderElectable, MonarchyLeaderAgent, ZooKeeperLeaderElectionAgentAccessor}
 import org.apache.spark.internal.Logging
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd, SparkListenerJobStart}
 import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.service.{CompositeService, SparkSQLSessionService}
 import org.apache.spark.sql.server.service.postgresql.PostgreSQLService
@@ -43,7 +44,7 @@ object SQLServer extends Logging {
   var listener: SQLServerListener = _
 
   private def prepareWith(sqlServer: SQLServer): Unit = {
-    listener = new SQLServerListener(sqlServer, SQLServerEnv.sparkConf)
+    listener = new SQLServerListener(sqlServer, SQLServerEnv.sqlConf)
     uiTab = SQLServerEnv.sparkConf.getBoolean("spark.ui.enabled", true) match {
       case true => Some(new SQLServerTab(SQLServerEnv.sqlContext.sparkContext))
       case _ => None
@@ -65,7 +66,7 @@ object SQLServer extends Logging {
     val sqlServer = new SQLServer()
     prepareWith(sqlServer)
     // Initialize a Spark SQL server with given configurations
-    sqlServer.init(SQLServerEnv.sparkConf)
+    sqlServer.init(SQLServerEnv.sqlConf)
     sqlServer.start()
   }
 
@@ -76,7 +77,7 @@ object SQLServer extends Logging {
     prepareWith(sqlServer)
     try {
       // Initialize a Spark SQL server with given configurations
-      sqlServer.init(SQLServerEnv.sparkConf)
+      sqlServer.init(SQLServerEnv.sqlConf)
       sqlServer.start()
     } catch {
       case NonFatal(e) =>
@@ -136,7 +137,7 @@ object SQLServer extends Logging {
   /** An inner sparkListener called in sc.stop to clean up the SQLServer. */
   private[server] class SQLServerListener(
       val server: SQLServer,
-      val conf: SparkConf) extends SparkListener {
+      val conf: SQLConf) extends SparkListener {
 
     override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd): Unit = {
       server.stop()
@@ -252,16 +253,16 @@ object SQLServer extends Logging {
 
 private[sql] class SQLServer extends CompositeService with LeaderElectable {
 
-  private val RECOVERY_MODE = SQLServerEnv.sparkConf.sqlServerRecoveryMode
-  private val RECOVERY_DIR = SQLServerEnv.sparkConf.sqlServerRecoveryDir + "/leader_election"
+  private val RECOVERY_MODE = SQLServerEnv.sqlConf.sqlServerRecoveryMode
+  private val RECOVERY_DIR = SQLServerEnv.sqlConf.sqlServerRecoveryDir + "/leader_election"
 
   // A server state is tracked internally so that the server only attempts to shut down if it
   // successfully started, and then once only.
   @volatile private var started: Boolean = false
   @volatile private var state = RecoveryState.STANDBY
 
-  override def init(conf: SparkConf): Unit = {
-    if (conf.get("spark.sql.crossJoin.enabled") != "true") {
+  override def init(conf: SQLConf): Unit = {
+    if (conf.getConfString("spark.sql.crossJoin.enabled") != "true") {
       throw new IllegalArgumentException(
         "`spark.sql.crossJoin.enabled` must be `true` because PostgreSQL JDBC drivers " +
           "handle metadata by using SQL queries with cross joins.")

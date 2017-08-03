@@ -17,15 +17,16 @@
 
 package org.apache.spark.sql.server.service
 
+import org.apache.spark.sql.internal.SQLConf
+
 import scala.collection.mutable
 
-import org.apache.spark.SparkConf
 import org.apache.spark.internal.Logging
 
 
 private[server] abstract class Service extends Logging {
 
-  def init(conf: SparkConf): Unit
+  def init(conf: SQLConf): Unit
   def start(): Unit
   def stop(): Unit
 }
@@ -36,7 +37,7 @@ private[server] class CompositeService extends Service {
 
   protected[this] def addService(service: Service): Unit = services += service
 
-  override def init(conf: SparkConf): Unit = services.foreach(_.init(conf))
+  override def init(conf: SQLConf): Unit = services.foreach(_.init(conf))
   override def start(): Unit = services.foreach(_.start())
   override def stop(): Unit = services.foreach(_.stop())
 }

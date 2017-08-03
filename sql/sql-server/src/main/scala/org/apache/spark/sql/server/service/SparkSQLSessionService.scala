@@ -17,8 +17,8 @@
 
 package org.apache.spark.sql.server.service
 
-import org.apache.spark.SparkConf
 import org.apache.spark.deploy.SparkHadoopUtil
+import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.server.SQLServer
 
 
@@ -36,11 +36,11 @@ private[server] class SparkSQLSessionService(pgServer: SQLServer)
   private var sessionManager: SessionManager = _
   private var operationManager: OperationManager = _
 
-  override def init(conf: SparkConf) {
+  override def init(conf: SQLConf) {
     if (conf.contains("spark.yarn.keytab")) {
       // If you have enabled Kerberos, the following 2 params must be set
-      val principalName = conf.get("spark.yarn.keytab")
-      val keytabFilename = conf.get("spark.yarn.principal")
+      val principalName = conf.getConfString("spark.yarn.keytab")
+      val keytabFilename = conf.getConfString("spark.yarn.principal")
       SparkHadoopUtil.get.loginUserFromKeytab(principalName, keytabFilename)
     }
 

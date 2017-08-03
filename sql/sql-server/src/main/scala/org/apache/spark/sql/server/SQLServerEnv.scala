@@ -72,10 +72,10 @@ private[server] object SQLServerEnv extends Logging {
     // https://github.com/pgjdbc/pgjdbc/blob/master/pgjdbc/src/main/java/org/postgresql/core/ServerVersion.java
     // scalastyle:on line.size.limit
     val validNumers = Seq("7.4", "8.0", "9.6")
-    validNumers.find(_ == sparkConf.sqlServerVersion).getOrElse {
+    validNumers.find(_ == sqlConf.sqlServerVersion).getOrElse {
       throw new IllegalArgumentException(
         s"You need to select a server version from $validNumers, but got " +
-          sparkConf.sqlServerVersion)
+          sqlConf.sqlServerVersion)
     }
   }
 

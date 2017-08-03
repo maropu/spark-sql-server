@@ -39,10 +39,11 @@ import io.netty.handler.ssl.util.SelfSignedCertificate
 import org.apache.hadoop.security.UserGroupInformation
 import org.ietf.jgss.{GSSContext, GSSCredential, GSSException, GSSManager, Oid}
 
-import org.apache.spark.{SparkConf, SparkException}
+import org.apache.spark.SparkException
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.parser.ParseException
+import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.server.SQLServerConf
 import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.service.{BEGIN, ExecuteStatementOperation, FETCH, SELECT, SessionService}
@@ -58,7 +59,7 @@ import org.apache.spark.sql.types._
  *
  * https://www.postgresql.org/docs/current/static/protocol.html
  */
-case class PostgreSQLWireProtocol(conf: SparkConf) {
+case class PostgreSQLWireProtocol(conf: SQLConf) {
   import PostgreSQLWireProtocol._
 
   private val messageBuffer = new Array[Byte](conf.sqlServerMessageBufferSizeInBytes)
@@ -577,7 +578,7 @@ object PostgreSQLWireProtocol {
 private[v3] class SharableByteArrayDecode extends ByteArrayDecoder {}
 
 /** Creates a newly configured [[io.netty.channel.ChannelPipeline]] for a new channel. */
-private[service] class PostgreSQLV3MessageInitializer(cli: SessionService, conf: SparkConf)
+private[service] class PostgreSQLV3MessageInitializer(cli: SessionService, conf: SQLConf)
     extends ChannelInitializer[SocketChannel] with Logging {
 
   val msgDecoder = new SharableByteArrayDecode()
@@ -653,7 +654,7 @@ private[v3] class SslRequestHandler() extends ChannelInboundHandlerAdapter with 
 }
 
 @ChannelHandler.Sharable
-private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkConf)
+private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
     extends SimpleChannelInboundHandler[Array[Byte]] with Logging {
 
   private val v3Protocol = PostgreSQLWireProtocol(conf)
@@ -661,7 +662,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SparkCon
   import PostgreSQLWireProtocol._
 
   // A format is like 'spark/fully.qualified.domain.name@YOUR-REALM.COM'
-  private lazy val kerberosServerPrincipal = conf.get("spark.yarn.principal")
+  private lazy val kerberosServerPrincipal = conf.getConfString("spark.yarn.principal")
 
   /**
    * Manage cursor states in a session.

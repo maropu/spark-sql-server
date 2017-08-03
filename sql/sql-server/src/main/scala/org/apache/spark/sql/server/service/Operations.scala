@@ -58,7 +58,7 @@ object SELECT extends OperationType
 
 private[server] abstract class Operation {
 
-  private val timeout = SQLServerEnv.sparkConf.sqlServerIdleOperationTimeout
+  private val timeout = SQLServerEnv.sqlConf.sqlServerIdleOperationTimeout
 
   protected[this] var state: OperationState = INITIALIZED
   private var lastAccessTime: Long = System.currentTimeMillis()
@@ -154,7 +154,7 @@ private[server] case class ExecuteStatementOperation(
       logDebug(resultSet.queryExecution.toString())
       SQLServer.listener.onStatementParsed(statementId, resultSet.queryExecution.toString())
       rowIter = {
-        val useIncrementalCollect = SQLServerEnv.sparkConf.sqlServerIncrementalCollectEnabled
+        val useIncrementalCollect = SQLServerEnv.sqlConf.sqlServerIncrementalCollectEnabled
         if (useIncrementalCollect) {
           resultSet.queryExecution.executedPlan.executeToIterator()
         } else {
