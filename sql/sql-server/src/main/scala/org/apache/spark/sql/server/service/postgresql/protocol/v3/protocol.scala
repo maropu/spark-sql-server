@@ -377,7 +377,7 @@ object PostgreSQLWireProtocol {
       // Since a query string could contain several queries (separated by semicolons),
       // there might be several such response sequences before the backend finishes processing
       // the query string.
-      Query(new String(byteArray, StandardCharsets.UTF_8).split(";").init.map(_.trim))
+      Query(new String(byteArray, StandardCharsets.UTF_8).split(";").map(_.trim))
     },
 
     // An ASCII code of the `Sync` message is 'S'(83)
