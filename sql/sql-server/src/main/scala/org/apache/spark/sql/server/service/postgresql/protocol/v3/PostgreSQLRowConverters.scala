@@ -245,7 +245,8 @@ private class TimestampColumnBinaryWriter(ordinal: Int, conf: SQLConf)
   override def nullSafeWriter(row: InternalRow, byteBuffer: ByteBuffer): Unit = {
     val timestamp = DateTimeUtils.toJavaTimestamp(row.getLong(ordinal))
     val millis = timestamp.getTime + timezone.getRawOffset
-    val pgTime = toPgSecs(millis / 1000) * 1000000L
+    val nanos = timestamp.getNanos / 1000
+    val pgTime = toPgSecs(millis / 1000) * 1000000L + nanos
     byteBuffer.putInt(8)
     byteBuffer.putLong(pgTime)
   }
