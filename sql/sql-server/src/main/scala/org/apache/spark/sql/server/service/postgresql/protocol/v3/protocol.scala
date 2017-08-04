@@ -820,11 +820,16 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
   private def handleAuthenticationOk(ctx: ChannelHandlerContext, state: SessionV3State): Unit = {
     import state.v3Protocol.{BackendKeyData, ParameterStatus}
     ctx.write(AuthenticationOk)
-    ctx.write(ParameterStatus("application_name", "spark-sql-server"))
-    ctx.write(ParameterStatus("server_encoding", "UTF-8"))
-    ctx.write(ParameterStatus("server_version", conf.sqlServerVersion))
-    ctx.write(ParameterStatus("TimeZone", conf.sessionLocalTimeZone))
-    ctx.write(ParameterStatus("integer_datetimes", "on"))
+    // Pass server settings into a JDBC driver
+    Seq(
+      "application_name" -> "spark-sql-server",
+      "server_encoding" -> "UTF-8",
+      "server_version" -> conf.sqlServerVersion,
+      "TimeZone" -> conf.sessionLocalTimeZone,
+      "integer_datetimes" -> "on"
+    ).foreach { case (key, value) =>
+      ctx.write(ParameterStatus(key, value))
+    }
     ctx.write(BackendKeyData(getUniqueChannelId(ctx), state.secretKey))
     ctx.write(ReadyForQuery)
     ctx.flush()
