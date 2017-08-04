@@ -617,7 +617,7 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
     assert(e1.getMessage.contains("Unspecified type unsupported: format="))
 
     val e2 = intercept[SQLException] {
-      testJdbcPreparedStatement("SELECT * FROM test WHERE col7 = ?") { statement =>
+      testJdbcPreparedStatement("SELECT * FROM test WHERE col8 = ?") { statement =>
         statement.setTimestamp(1, Timestamp.valueOf("2016-08-04 00:17:13"))
         statement.executeQuery()
       }
