@@ -207,15 +207,16 @@ object PostgreSQLWireProtocol {
 
   // A type list for binary formats
   val binaryFormatTypes: Seq[AbstractDataType] = Seq(
-    BinaryType,
-    ShortType,
-    IntegerType,
-    LongType,
-    FloatType,
-    DoubleType,
-    DateType,
-    TimestampType
+    BinaryType, ShortType, IntegerType, LongType, FloatType, DoubleType, DateType, TimestampType
   )
+
+  def formatsInSimpleQueryMode(schema: StructType): Seq[Boolean] = {
+    Seq.fill(schema.length)(false)
+  }
+
+  def formatsInExtendedQueryMode(schema: StructType): Seq[Boolean] = {
+    schema.map { f => binaryFormatTypes.contains(f.dataType) }
+  }
 
 
   /**
@@ -953,6 +954,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
           }
 
           // Convert `params` to string parameters
+          // TODO: Make a class for type mapping here
           val strParams = params.zipWithIndex.map { case (param, i) =>
             val value = (queryState.paramIds(i), formats(i)) match {
               case (PgUnspecifiedType.oid, format) =>
@@ -997,10 +999,10 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
             execState.run()
             sessionState.execState = execState
             val schema = execState.schema
-            val outputFormats = schema.map { f => binaryFormatTypes.contains(f.dataType) }
+            val formats = formatsInExtendedQueryMode(schema)
             // TODO: We could reuse this row converters in some cases?
             val newQueryState = queryState.copy(
-              rowWriterOption = Some(PostgreSQLRowConverters(schema, conf, Some(outputFormats))),
+              rowWriterOption = Some(PostgreSQLRowConverters(conf, schema, formats)),
               schema = Some(schema)
             )
             sessionState.queries(queryName) = newQueryState
@@ -1141,7 +1143,8 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
               val schema = execState.schema
               ctx.write(RowDescription(schema))
 
-              val rowWriter = PostgreSQLRowConverters(schema, conf)
+              val formats = formatsInSimpleQueryMode(schema)
+              val rowWriter = PostgreSQLRowConverters(conf, schema, formats)
               var numRows = 0
               execState.iterator().foreach { iter =>
                 ctx.write(DataRow(iter, rowWriter))

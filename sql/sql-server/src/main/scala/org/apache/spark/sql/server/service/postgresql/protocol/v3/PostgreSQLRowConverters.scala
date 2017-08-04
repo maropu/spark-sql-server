@@ -37,14 +37,8 @@ private[v3] object PostgreSQLRowConverters {
 
   type RowWriter = (InternalRow, ByteBuffer) => Int
 
-  def apply(schema: StructType, conf: SQLConf, formatsOption: Option[Seq[Boolean]] = None)
-    : RowWriter = {
-    require(formatsOption.isEmpty || schema.length == formatsOption.get.size,
-      "format must have the same length with schema")
-    val outputFormats = formatsOption.getOrElse {
-      // If `formatsOption` not defined, we assume output as texts
-      Seq.fill(schema.length)(false)
-    }
+  def apply(conf: SQLConf, schema: StructType, outputFormats: Seq[Boolean]): RowWriter = {
+    require(schema.length == outputFormats.size, "format must have the same length with schema")
     val columnWriters = schema.fields.zipWithIndex.map { case (field, ordinal) =>
       ColumnWriter(field, ordinal, outputFormats(ordinal), conf)
     }
