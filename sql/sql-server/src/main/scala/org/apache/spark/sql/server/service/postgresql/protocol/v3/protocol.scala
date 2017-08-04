@@ -45,7 +45,7 @@ import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.server.SQLServerConf
 import org.apache.spark.sql.server.SQLServerConf._
-import org.apache.spark.sql.server.service.{BEGIN, ExecuteStatementOperation, FETCH, SELECT, SessionService}
+import org.apache.spark.sql.server.service.{BEGIN, ExecuteStatementOperation, FETCH, SELECT, SessionService, SessionState}
 import org.apache.spark.sql.server.service.postgresql.Metadata._
 import org.apache.spark.sql.server.service.postgresql.protocol.v3.PostgreSQLRowConverters._
 import org.apache.spark.sql.types._
@@ -58,10 +58,10 @@ import org.apache.spark.sql.types._
  *
  * https://www.postgresql.org/docs/current/static/protocol.html
  */
-case class PostgreSQLWireProtocol(conf: SQLConf) {
+case class PostgreSQLWireProtocol(msgBufferSizeInByte: Int) {
   import PostgreSQLWireProtocol._
 
-  private val messageBuffer = new Array[Byte](conf.sqlServerMessageBufferSizeInBytes)
+  private val messageBuffer = new Array[Byte](msgBufferSizeInByte)
   private val messageWriter = ByteBuffer.wrap(messageBuffer)
 
   private def withMessageBuffer(f: ByteBuffer => Int): Array[Byte] = {
@@ -433,7 +433,7 @@ object PostgreSQLWireProtocol {
 
 
   /**
-   * Response messages sent back to clients (Messages with no parameter only).
+   * Response messages sent back to clients (Messages with no parameter).
    */
 
   /**
@@ -651,6 +651,41 @@ private[v3] class SslRequestHandler() extends ChannelInboundHandlerAdapter with 
   }
 }
 
+// Manage cursor states in a session
+private case class QueryState(
+  str: String, paramIds: Seq[Int], rowWriterOption: Option[RowWriter] = None,
+  schema: Option[StructType] = None)
+
+private case class PortalState(queryState: QueryState) {
+  // Number of the rows that this portal state returns
+  var numFetched: Int = 0
+}
+
+private case class SessionV3State(v3Protocol: PostgreSQLWireProtocol, secretKey: Int)
+    extends SessionState {
+
+  // Holds multiple prepared statements inside a session
+  val queries: mutable.Map[String, QueryState] = mutable.Map.empty
+  val portals: mutable.Map[String, PortalState] = mutable.Map.empty
+
+  // Holds a current active state of query execution and this variable possibly accessed
+  // by asynchronous JDBC cancellation requests.
+  @volatile var execState: ExecuteStatementOperation = _
+
+  // Holds unprocessed bytes for a message parser
+  var pendingBytes: Array[Byte] = Array.empty
+
+  override def close(): Unit = {}
+}
+
+private object SessionV3State {
+
+  def resetPortalState(portalName: String, state: SessionV3State): Unit = {
+    state.portals.remove(portalName)
+    state.execState = null
+  }
+}
+
 /**
  * Since this handler class is shared between connections in `PostgreSQLV3MessageInitializer`,
  * this class is thread-safe. If multiple threads in a client shares a single JDBC
@@ -664,47 +699,20 @@ private[v3] class SslRequestHandler() extends ChannelInboundHandlerAdapter with 
 private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
     extends SimpleChannelInboundHandler[Array[Byte]] with Logging {
   import PostgreSQLWireProtocol._
+  import SessionV3State._
 
-  // Manage cursor states in a session
-  private case class QueryState(
-    str: String, paramIds: Seq[Int], rowWriterOption: Option[RowWriter] = None,
-    schema: Option[StructType] = None)
+  private val channelIdToSessionId = java.util.Collections.synchronizedMap(
+    new java.util.HashMap[Int, Int]())
 
-  private case class PortalState(queryState: QueryState) {
-    // Number of the rows that this portal state returns
-    var numFetched: Int = 0
-  }
-
-  private case class SessionState(sessionId: Int, secretKey: Int) {
-    // For marshalling
-    val v3Protocol = PostgreSQLWireProtocol(conf)
-
-    // Holds multiple prepared statements inside a session
-    val queries: mutable.Map[String, QueryState] = mutable.Map.empty
-    val portals: mutable.Map[String, PortalState] = mutable.Map.empty
-
-    // Holds a current active state of query execution and this variable possibly accessed
-    // by asynchronous JDBC cancellation requests.
-    @volatile var execState: ExecuteStatementOperation = _
-
-    // Holds unprocessed bytes for a message parser
-    var pendingBytes: Array[Byte] = Array.empty
-  }
+  private implicit def SessionStateToV3State(state: SessionState): SessionV3State =
+    state.asInstanceOf[SessionV3State]
 
   // A format is like 'spark/fully.qualified.domain.name@YOUR-REALM.COM'
   private lazy val kerberosServerPrincipal = conf.getConfString("spark.yarn.principal")
 
-  private def resetPortalState(portalName: String, state: SessionState): Unit = {
-    state.portals.remove(portalName)
-    state.execState = null
-  }
-
-  private val channelIdToSessionState = java.util.Collections.synchronizedMap(
-    new java.util.HashMap[Int, SessionState]())
-
   override def channelRead0(ctx: ChannelHandlerContext, msg: Array[Byte]): Unit = {
     val msgBuffer = ByteBuffer.wrap(msg)
-    if (!channelIdToSessionState.containsKey(getUniqueChannelId(ctx))) {
+    if (!channelIdToSessionId.containsKey(getUniqueChannelId(ctx))) {
       acceptStartupMessage(ctx, msgBuffer)
     } else {
       // Once the connection established, following messages are processed here
@@ -724,23 +732,23 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
     ctx.close()
   }
 
-  private def openSession(channelId: Int, secretKey: Int, userName: String, passwd: String,
-      hostAddr: String, dbName: String): SessionState = {
-    val sessionId = cli.openSession(userName, passwd, hostAddr, dbName)
-    val portalState = SessionState(sessionId, secretKey)
-    channelIdToSessionState.put(channelId, portalState)
+  private def openSession(
+      channelId: Int, secretKey: Int, userName: String, passwd: String, hostAddr: String,
+      dbName: String): SessionState = {
+    val v3Protocol = PostgreSQLWireProtocol(conf.sqlServerMessageBufferSizeInBytes)
+    val state = SessionV3State(v3Protocol, secretKey)
+    val sessionId = cli.openSession(userName, passwd, hostAddr, dbName, state)
+    channelIdToSessionId.put(channelId, sessionId)
     logInfo(s"Open a session (sessionId=$sessionId, channelId=$channelId " +
       s"userName=$userName hostAddr=$hostAddr)")
-    portalState
+    state
   }
 
   private def closeSession(channelId: Int): Unit = {
-    if (channelIdToSessionState.containsKey(channelId)) {
-      val portalState = channelIdToSessionState.get(channelId)
-      logInfo(s"Close the session (sessionId=${portalState.sessionId}, channelId=$channelId)")
-      cli.closeSession(portalState.sessionId)
-      channelIdToSessionState.remove(channelId)
-    }
+    require(channelIdToSessionId.containsKey(channelId))
+    val sessionId = channelIdToSessionId.remove(channelId)
+    logInfo(s"Close the session (sessionId=${sessionId}, channelId=$channelId)")
+    cli.closeSession(sessionId)
   }
 
   private def getUniqueChannelId(ctx: ChannelHandlerContext): Int = {
@@ -762,7 +770,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
   // An URL string in PostgreSQL JDBC drivers is something like
   // "jdbc:postgresql://[host]/[database]?user=[name]&kerberosServerName=spark"
   private def handleGSSAuthentication(
-      ctx: ChannelHandlerContext, state: SessionState, token: Array[Byte]): Boolean = {
+      ctx: ChannelHandlerContext, state: SessionV3State, token: Array[Byte]): Boolean = {
     UserGroupInformation.getCurrentUser()
         .doAs(new PrivilegedExceptionAction[Boolean] {
 
@@ -808,7 +816,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
     })
   }
 
-  private def handleAuthenticationOk(ctx: ChannelHandlerContext, state: SessionState): Unit = {
+  private def handleAuthenticationOk(ctx: ChannelHandlerContext, state: SessionV3State): Unit = {
     import state.v3Protocol.{BackendKeyData, ParameterStatus}
     ctx.write(AuthenticationOk)
     ctx.write(ParameterStatus("application_name", "spark-sql-server"))
@@ -839,14 +847,15 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
     } else if (magic == CANCEL_REQUEST_CODE) {
       val channelId = msgBuffer.getInt()
       val secretKey = msgBuffer.getInt()
-      val portal = Some(channelIdToSessionState.get(channelId)).getOrElse {
-        throw new SQLException(s"Unknown cancel request: channelId=$channelId")
-      }
-      if (portal.secretKey != secretKey) {
+      val sessionState = Some(channelIdToSessionId.get(channelId)).map(cli.getSessionState)
+        .getOrElse {
+          throw new SQLException(s"Unknown cancel request: channelId=$channelId")
+        }
+      if (sessionState.secretKey != secretKey) {
         throw new SQLException(s"Illegal secretKey: channelId=$channelId")
       }
       logWarning(s"Canceling the running query: channelId=$channelId")
-      portal.execState.cancel()
+      sessionState.execState.cancel()
       ctx.close()
       return
     } else if (magic != V3_PROTOCOL_VERSION) {
@@ -873,7 +882,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
     val hostAddr = ctx.channel().localAddress().asInstanceOf[InetSocketAddress].getHostName()
     val secretKey = new Random(System.currentTimeMillis).nextInt
     val dbName = props.getOrElse("database", "default")
-    val portalState = openSession(
+    val sessionState = openSession(
       getUniqueChannelId(ctx), secretKey, userName, passwd, hostAddr, dbName)
 
     // Check if Kerberos authentication is enabled
@@ -881,11 +890,11 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
       ctx.write(AuthenticationGSS)
       ctx.flush()
     } else {
-      handleAuthenticationOk(ctx, portalState)
+      handleAuthenticationOk(ctx, sessionState)
     }
   }
 
-  private def getBytesToProcess(msgBuffer: ByteBuffer, state: SessionState) = {
+  private def getBytesToProcess(msgBuffer: ByteBuffer, state: SessionV3State) = {
     // Since a message possibly spans over multiple in-coming data in `channelRead0` calls,
     // we need to check enough data to process first. We push complete messages into
     // `bytesToProcess`; otherwise it puts left data in `pendingBytes` for a next call.
@@ -925,7 +934,9 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
 
   private def handleV3Messages(ctx: ChannelHandlerContext, msgBuffer: ByteBuffer): Unit = {
     val channelId = getUniqueChannelId(ctx)
-    val sessionState = channelIdToSessionState.get(channelId)
+    val sessionId = channelIdToSessionId.get(channelId)
+    val sessionState = cli.getSessionState(sessionId).asInstanceOf[SessionV3State]
+
     import sessionState.v3Protocol.{CommandComplete, DataRow, RowDescription}
 
     val bytesToProcess = getBytesToProcess(msgBuffer, sessionState)
@@ -995,7 +1006,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
           logInfo(s"Bound query: $boundQuery")
 
           try {
-            val execState = cli.executeStatement(sessionState.sessionId, boundQuery, isCursorMode)
+            val execState = cli.executeStatement(sessionId, boundQuery, isCursorMode)
             execState.run()
             sessionState.execState = execState
             val schema = execState.schema
@@ -1022,19 +1033,16 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
         case Close(tpe, name) =>
           if (tpe == 83) { // Close a prepared statement
             sessionState.queries.remove(name)
-            logInfo(s"Close the '$name' prepared statement in this session "
-              + s"(id:${sessionState.sessionId})")
+            logInfo(s"Close the '$name' prepared statement in this session (id:$sessionId)")
           } else if (tpe == 80) { // Close a portal
             sessionState.portals.remove(name)
-            logInfo(s"Close the '$name' portal in this session "
-              + s"(id:${sessionState.sessionId})")
+            logInfo(s"Close the '$name' portal in this session (id:$sessionId)")
           } else {
             logWarning(s"Unknown type received in 'Close`: $tpe")
           }
         case Describe(tpe, name) =>
           if (tpe == 83) { // Describe a prepared statement
-            logInfo(s"Describe the '$name' prepared statement in this session "
-              + s"(id:${sessionState.sessionId})")
+            logInfo(s"Describe the '$name' prepared statement in this session (id:$sessionId)")
             // TODO: Make the logic to get a schema more smarter
             val schema = {
               val queryState = sessionState.queries.getOrElse(name, {
@@ -1045,8 +1053,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
                 case (_, i) => (i + 1) -> s"''"
               }
               val boundQuery = ParameterBinder.bind(queryState.str, defaultParams.toMap)
-              val execState = cli.executeStatement(
-                sessionState.sessionId, boundQuery, isCursor = false)
+              val execState = cli.executeStatement(sessionId, boundQuery, isCursor = false)
               try {
                 execState.run()
                 execState.schema()
@@ -1059,8 +1066,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
             }
             ctx.write(RowDescription(schema))
           } else if (tpe == 80) { // Describe a portal
-            logInfo(s"Describe the '$name' portal in this session "
-              + s"(id:${sessionState.sessionId})")
+            logInfo(s"Describe the '$name' portal in this session (id:$sessionId)")
             ctx.write(RowDescription(sessionState.execState.schema()))
           } else {
             throw new SQLException(s"Unknown type received in 'Describe`: $tpe")
@@ -1134,7 +1140,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
           } else {
             val query = queries.head
             try {
-              val execState = cli.executeStatement(sessionState.sessionId, query, isCursor = false)
+              val execState = cli.executeStatement(sessionId, query, isCursor = false)
               execState.run()
 
               // The response to a SELECT query (or other queries that return row sets, such as

@@ -24,7 +24,9 @@ import org.apache.spark.sql.server.SQLServer
 
 private[server] trait SessionService {
 
-  def openSession(userName: String, passwd: String, ipAddress: String, dbName: String): Int
+  def openSession(userName: String, passwd: String, ipAddress: String, dbName: String,
+    state: SessionState): Int
+  def getSessionState(sessionId: Int): SessionState
   def closeSession(sessionId: Int): Unit
   def executeStatement(sessionId: Int, statement: String, isCursor: Boolean)
     : ExecuteStatementOperation
@@ -51,9 +53,13 @@ private[server] class SparkSQLSessionService(pgServer: SQLServer)
     super.init(conf)
   }
 
-  override def openSession(
-      userName: String, passwd: String, ipAddress: String, dbName: String): Int = {
-    sessionManager.openSession(userName, passwd, ipAddress, dbName)
+  override def openSession(userName: String, passwd: String, ipAddress: String, dbName: String,
+      state: SessionState): Int = {
+    sessionManager.openSession(userName, passwd, ipAddress, dbName, state)
+  }
+
+  override def getSessionState(sessionId: Int): SessionState = {
+    sessionManager.getSession(sessionId)._2
   }
 
   override def closeSession(sessionId: Int): Unit = {
@@ -63,7 +69,7 @@ private[server] class SparkSQLSessionService(pgServer: SQLServer)
   override def executeStatement(sessionId: Int, statement: String, isCursor: Boolean)
     : ExecuteStatementOperation = {
     operationManager.newExecuteStatementOperation(
-      sessionManager.getSession(sessionId),
+      sessionManager.getSession(sessionId)._1,
       sessionId,
       statement,
       isCursor)

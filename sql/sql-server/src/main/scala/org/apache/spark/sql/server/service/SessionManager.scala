@@ -23,10 +23,16 @@ import org.apache.spark.sql.server.{SQLServer, SQLServerEnv}
 import org.apache.spark.sql.server.SQLServerConf._
 
 
+// This trait can be extended for each protocol implementation
+private[server] trait SessionState {
+  // For releasing associated resources
+  def close(): Unit = {}
+}
+
 private[server] class SessionManager(pgServer: SQLServer) extends CompositeService {
 
-  private val sessionIdToContext = java.util.Collections.synchronizedMap(
-    new java.util.HashMap[Int, SQLContext]())
+  private val sessionIdToState = java.util.Collections.synchronizedMap(
+    new java.util.HashMap[Int, (SQLContext, SessionState)]())
 
   private var getSession: String => SQLContext = _
 
@@ -50,27 +56,30 @@ private[server] class SessionManager(pgServer: SQLServer) extends CompositeServi
   override def start(): Unit = { require(SQLServerEnv.sqlContext != null) }
 
   override def stop(): Unit = {
-    if (sessionIdToContext.size() > 0) {
-      logWarning(s"this service stopped though, ${sessionIdToContext.size()} open sessions exist")
+    if (sessionIdToState.size() > 0) {
+      logWarning(s"this service stopped though, ${sessionIdToState.size()} open sessions exist")
     }
   }
 
-  def openSession(userName: String, passwd: String, ipAddress: String, dbName: String): Int = {
+  def openSession(userName: String, passwd: String, ipAddress: String, dbName: String,
+      state: SessionState): Int = {
     val sessionId = SQLServerEnv.newSessionId()
     SQLServer.listener.onSessionCreated(sessionId, userName, ipAddress)
     val sqlContext = getSession(dbName)
     sqlContext.sharedState.externalCatalog.setCurrentDatabase(dbName)
-    sessionIdToContext.put(sessionId, sqlContext)
+    sessionIdToState.put(sessionId, (sqlContext, state))
     sessionId
   }
 
   def closeSession(sessionId: Int): Unit = {
+    require(sessionIdToState.containsKey(sessionId))
     SQLServer.listener.onSessionClosed(sessionId)
-    sessionIdToContext.remove(sessionId)
+    val state = sessionIdToState.remove(sessionId)
+    state._2.close()
   }
 
-  def getSession(sessionId: Int): SQLContext = {
-    require(sessionIdToContext.containsKey(sessionId))
-    sessionIdToContext.get(sessionId)
+  def getSession(sessionId: Int): (SQLContext, SessionState) = {
+    require(sessionIdToState.containsKey(sessionId))
+    sessionIdToState.get(sessionId)
   }
 }

@@ -28,10 +28,10 @@ import org.apache.spark.unsafe.types.UTF8String
 
 class PostgreSQLWireProtocolSuite extends SparkFunSuite {
 
+  val conf = new SQLConf()
+
   test("DataRow") {
-    val conf = new SQLConf()
-    conf.setConfString("spark.sql.server.messageBufferSizeInBytes", "65536")
-    val v3Protocol = new PostgreSQLWireProtocol(conf)
+    val v3Protocol = new PostgreSQLWireProtocol(65536)
     val row = new GenericInternalRow(2)
     row.update(0, 8)
     row.update(1, UTF8String.fromString("abcdefghij"))
@@ -49,13 +49,11 @@ class PostgreSQLWireProtocolSuite extends SparkFunSuite {
   }
 
   test("Fails when message buffer overflowed") {
-    val conf = new SQLConf()
-    conf.setConfString("spark.sql.server.messageBufferSizeInBytes", "4")
-    val v3Protocol = new PostgreSQLWireProtocol(conf)
+    val v3Protocol = new PostgreSQLWireProtocol(4)
     val row = new GenericInternalRow(1)
     row.update(0, UTF8String.fromString("abcdefghijk"))
     val schema = StructType.fromDDL("a STRING")
-    val rowConverters = PostgreSQLRowConverters(conf, schema, Seq(false, false))
+    val rowConverters = PostgreSQLRowConverters(conf, schema, Seq(false))
     val errMsg = intercept[SparkException] {
       v3Protocol.DataRow(row, rowConverters)
     }.getMessage
