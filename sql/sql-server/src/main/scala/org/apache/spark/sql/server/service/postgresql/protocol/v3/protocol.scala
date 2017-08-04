@@ -232,9 +232,8 @@ object PostgreSQLWireProtocol {
     LongType,
     FloatType,
     DoubleType,
-    DateType
-    // TODO: Need to support a binary format for `TimestampType`
-    // TimestampType
+    DateType,
+    TimestampType
   )
 
 
@@ -815,6 +814,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
     ctx.write(ParameterStatus("server_encoding", "UTF-8"))
     ctx.write(ParameterStatus("server_version", conf.sqlServerVersion))
     ctx.write(ParameterStatus("TimeZone", conf.sessionLocalTimeZone))
+    ctx.write(ParameterStatus("integer_datetimes", "on"))
     ctx.write(BackendKeyData(getUniqueChannelId(ctx), state.secretKey))
     ctx.write(ReadyForQuery)
     ctx.flush()

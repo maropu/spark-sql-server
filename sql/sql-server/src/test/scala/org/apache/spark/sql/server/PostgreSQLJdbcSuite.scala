@@ -525,8 +525,7 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
       assert(8.9 === row.getDouble(6))
       assert("data1" === row.getString(7))
       assert(Date.valueOf("2016-08-04") === row.getDate(8))
-      // TODO: Need to support Timestamp
-      // assert(Timestamp.valueOf("2016-08-04 00:17:13") === row.getTimestamp(9))
+      assert(Timestamp.valueOf("2016-08-04 00:17:13") === row.getTimestamp(9))
       assert(BigDecimal.valueOf(29) === row.getBigDecimal(10))
     }
 
@@ -539,8 +538,7 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
       assert(8.9 === row.getDouble(6))
       assert("data2" === row.getString(7))
       assert(Date.valueOf("2016-08-04") === row.getDate(8))
-      // TODO: Need to support Timestamp
-      // assert(Timestamp.valueOf("2016-08-04 00:17:13") === row.getTimestamp(9))
+      assert(Timestamp.valueOf("2016-08-04 00:17:13") === row.getTimestamp(9))
       assert(BigDecimal.valueOf(29) === row.getBigDecimal(10))
     }
 
@@ -855,7 +853,7 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
 
   // This test often hangs and then times out, leaving the hanging processes.
   // Let's ignore it and improve the test.
-  ignore("jdbc cancellation") {
+  test("jdbc cancellation") {
     testJdbcStatement { statement =>
       Seq(
         "DROP TABLE IF EXISTS t",

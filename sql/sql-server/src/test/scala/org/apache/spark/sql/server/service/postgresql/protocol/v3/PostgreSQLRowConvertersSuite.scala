@@ -153,7 +153,7 @@ class PostgreSQLRowConvertersSuite extends SparkFunSuite {
     // Check the result with binary mode
     assert(byteBuffer.getInt === 8)
     val actualData2 = byteBuffer.getLong
-    assert(actualData2 === 1470269833000L)
+    assert(actualData2 === 523585033000000L)
   }
 
   test("array") {
