@@ -972,40 +972,9 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
           }
 
           // Convert `params` to string parameters
-          // TODO: Make a class for type mapping here
-          val strParams = params.zipWithIndex.map { case (param, i) =>
-            val value = (queryState.paramIds(i), formats(i)) match {
-              case (PgUnspecifiedType.oid, format) =>
-                throw new SQLException(s"Unspecified type unsupported: format=$format")
-              // TODO: Need to handle `Date` and `Timestamp` here
-              // case (PgDateType.oid, _) =>
-              //   val formatter = new SimpleDateFormat("yyyy-MM-dd")
-              //   s"${formatter.parse(new String(param, StandardCharsets.UTF_8))}"
-              // case (PgTimestampType.oid, _) =>
-              //   val formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-              //   s"${formatter.parse(new String(param, StandardCharsets.UTF_8))}"
-              case (PgBoolType.oid, 1) =>
-                // '1' (49) means true; otherwise false
-                if (param(0) == 49) "true" else "false"
-              case (PgNumericType.oid, 1) =>
-                s"${new String(param, StandardCharsets.UTF_8)}"
-              case (_, 0) =>
-                s"'${new String(param, StandardCharsets.UTF_8)}'"
-              case (PgInt2Type.oid, 1) =>
-                s"${ByteBuffer.wrap(param).getShort}"
-              case (PgInt4Type.oid, 1) =>
-                s"${ByteBuffer.wrap(param).getInt}"
-              case (PgInt8Type.oid, 1) =>
-                s"${ByteBuffer.wrap(param).getLong}"
-              case (PgFloat4Type.oid, 1) =>
-                s"${ByteBuffer.wrap(param).getFloat}"
-              case (PgFloat8Type.oid, 1) =>
-                s"${ByteBuffer.wrap(param).getDouble}"
-              case (paramId, format) =>
-                throw new SQLException(s"Cannot bind param: paramId=$paramId, format=$format")
-            }
-            logInfo(s"""Bind param: $$${i + 1} -> $value""")
-            (i + 1) -> value
+          val strParams = PostgreSQLParamConverters(params, queryState.paramIds, formats)
+          strParams.foreach { case (index, param) =>
+            logInfo(s"""Bind param: $$$index -> $param""")
           }
 
           // TODO: Make parameter bindings more smart, e.g., based on analyzed logical plans
