@@ -704,9 +704,6 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
   private val channelIdToSessionId = java.util.Collections.synchronizedMap(
     new java.util.HashMap[Int, Int]())
 
-  private implicit def SessionStateToV3State(state: SessionState): SessionV3State =
-    state.asInstanceOf[SessionV3State]
-
   // A format is like 'spark/fully.qualified.domain.name@YOUR-REALM.COM'
   private lazy val kerberosServerPrincipal = conf.getConfString("spark.yarn.principal")
 
@@ -742,6 +739,10 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
     logInfo(s"Open a session (sessionId=$sessionId, channelId=$channelId " +
       s"userName=$userName hostAddr=$hostAddr)")
     state
+  }
+
+  private def getSessionState(sessionId: Int): SessionV3State = {
+    cli.getSessionState(sessionId).asInstanceOf[SessionV3State]
   }
 
   private def closeSession(channelId: Int): Unit = {
@@ -847,7 +848,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
     } else if (magic == CANCEL_REQUEST_CODE) {
       val channelId = msgBuffer.getInt()
       val secretKey = msgBuffer.getInt()
-      val sessionState = Some(channelIdToSessionId.get(channelId)).map(cli.getSessionState)
+      val sessionState = Some(channelIdToSessionId.get(channelId)).map(getSessionState)
         .getOrElse {
           throw new SQLException(s"Unknown cancel request: channelId=$channelId")
         }
@@ -883,7 +884,8 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
     val secretKey = new Random(System.currentTimeMillis).nextInt
     val dbName = props.getOrElse("database", "default")
     val sessionState = openSession(
-      getUniqueChannelId(ctx), secretKey, userName, passwd, hostAddr, dbName)
+      getUniqueChannelId(ctx), secretKey, userName, passwd, hostAddr, dbName
+    ).asInstanceOf[SessionV3State]
 
     // Check if Kerberos authentication is enabled
     if (conf.contains("spark.yarn.keytab")) {
@@ -935,7 +937,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
   private def handleV3Messages(ctx: ChannelHandlerContext, msgBuffer: ByteBuffer): Unit = {
     val channelId = getUniqueChannelId(ctx)
     val sessionId = channelIdToSessionId.get(channelId)
-    val sessionState = cli.getSessionState(sessionId).asInstanceOf[SessionV3State]
+    val sessionState = getSessionState(sessionId)
 
     import sessionState.v3Protocol.{CommandComplete, DataRow, RowDescription}
 
