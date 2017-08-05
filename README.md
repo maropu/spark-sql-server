@@ -62,6 +62,44 @@ public class JdbcTest {
 }
 ```
 
+## Use the PostgreSQL libpq C library
+
+You can also use [`libpq`](https://www.postgresql.org/docs/current/static/libpq.html)
+to connect the SQL server from C clients:
+
+```
+#include <stdio.h>
+#include <stdlib.h>
+#include <libpq-fe.h>
+
+static void exit_nicely(PGconn *conn) {
+    PQfinish(conn);
+    exit(1);
+}
+
+int main(int argc, char **argv) {
+    // Connect to a 'default' database in the SPARK SQL server''
+    PGconn *conn = PQconnectdb("host=localhost port=5432 dbname=default");
+    if (PQstatus(conn) != CONNECTION_OK) {
+        exit_nicely(conn);
+    }
+
+    // Do something...
+    PGresult *res = PQexec(conn, "SELECT * FROM VALUES (1, 1), (1, 2) AS t(a, b)");
+    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+        PQclear(res);
+        exit_nicely(conn);
+    }
+    for (int i = 0; i < PQntuples(res); i++) {
+        printf("a=%s b=%s\n", PQgetvalue(res, i, 0), PQgetvalue(res, i, 1));
+    }
+
+    PQclear(res);
+    PQfinish(conn);
+    return 0;
+}
+```
+
 ## Cursor mode
 
 To enable a cursor mode on your JDBC driver, you make sure autocommit is off and you need to set fetch size
