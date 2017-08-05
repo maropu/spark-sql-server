@@ -747,10 +747,12 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
   }
 
   private def closeSession(channelId: Int): Unit = {
-    require(channelIdToSessionId.containsKey(channelId))
-    val sessionId = channelIdToSessionId.remove(channelId)
-    logInfo(s"Close the session (sessionId=${sessionId}, channelId=$channelId)")
-    cli.closeSession(sessionId)
+    // `exceptionCaught` possibly calls this function
+    if (channelIdToSessionId.containsKey(channelId)) {
+      val sessionId = channelIdToSessionId.remove(channelId)
+      logInfo(s"Close the session (sessionId=${sessionId}, channelId=$channelId)")
+      cli.closeSession(sessionId)
+    }
   }
 
   private def getUniqueChannelId(ctx: ChannelHandlerContext): Int = {
