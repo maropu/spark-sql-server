@@ -18,6 +18,12 @@ Now you can use a PostgreSQL `psql` command to test the SQL JDBC/ODBC server:
 
     $ psql -h localhost -d default
 
+If you have no `psql` command and you use the Amazon Linux AMI, you can run `sudo yum install postgresql95`
+to install PostgreSQL client programs. Since the SSL mode of this `psql` command is enabled by default,
+you need to turn off the SSL mode to connect the SQL server:
+
+    $ psql postgresql://localhost:5432/default?sslmode=disable
+
 ## Use PostgreSQL JDBC drivers
 
 To connect the SQL server, you can use mature and widely-used [PostgreSQL JDBC drivers](https://jdbc.postgresql.org/).
