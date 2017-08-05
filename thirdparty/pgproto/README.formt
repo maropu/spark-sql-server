@@ -1,0 +1,39 @@
+About the protocol data file format definition.
+
+- A messge should be described with in a line.
+
+- There are 3 types of data.
+
+  - single character. must be quoted by single quote pairs. e.g. 'P'
+
+  - string. must be quoted by double quote pairs. e.g. "a string"
+
+  - number. no quotation is neccessary. e.g. 1234
+
+  - binary string. starts with "B'" and must be ended with "'". The
+    binary must be represented in hexa decimal formt. e.g. B'12fa67'
+    [not implemented yet]
+
+- Each data is separated by one or more tab characters.
+
+  If you need to include a tab character in data, it must be escaped
+  by "\" (back slash). Backslash itself can be denoted by doubling
+  it. e.g. "\\" [not impremented yet]
+
+- A message must start with the message type field in a character
+  type. e.g. 'B'
+
+- You should ommit the message size field. It must be caliculated by
+  the program.
+
+-  You can use an empty line or a line starting with '#' for readbility
+   sake.
+
+- If the message type does not have any message data, the line should
+  end with a message type field.
+
+- Otherwise, starts with a message type field, a tab, then end with
+  the message data.
+
+- For frontend to read a message from backend till "ready for query"
+  received, use 'Y'.

@@ -115,6 +115,12 @@
       <version>9.4.1208.jre7</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.xerial.snappy</groupId>
+      <artifactId>snappy-java</artifactId>
+      <version>1.1.2.6</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>

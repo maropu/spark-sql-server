@@ -552,12 +552,13 @@ object PostgreSQLWireProtocol {
    */
   def ErrorResponse(msg: String): Array[Byte] = {
     // Since this function is placed in many places, we put this companion object
-    val buf = ByteBuffer.allocate(8 + msg.length)
+    val errMsg = if (msg != null) msg else ""
+    val buf = ByteBuffer.allocate(8 + errMsg.length)
     buf.put('E'.toByte)
-      .putInt(7 + msg.length)
+      .putInt(7 + errMsg.length)
       // 'M' indicates a human-readable message
       .put('M'.toByte)
-      .put(msg.getBytes(StandardCharsets.UTF_8))
+      .put(errMsg.getBytes(StandardCharsets.UTF_8))
       .put(0.toByte)
       .put(0.toByte)
     buf.array()
@@ -1100,7 +1101,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
           return
         case Parse(queryName, query, objIds) =>
           sessionState.queries(queryName) = QueryState(query, objIds)
-          logWarning(s"Parse: queryName=$queryName query=$query objIds=$objIds")
+          logInfo(s"Parse: queryName=$queryName query=$query objIds=$objIds")
           ctx.write(ParseComplete)
           ctx.flush()
         case Query(queries) =>
