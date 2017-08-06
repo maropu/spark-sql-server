@@ -1107,50 +1107,53 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
           ctx.write(ParseComplete)
           ctx.flush()
         case Query(queries) =>
-          require(queries.size > 0)
-          logDebug(s"input queries are ${queries.mkString(", ")}")
-          // If a completely empty (no contents other than whitespace) query string is received,
-          // the response is EmptyQueryResponse followed by ReadyForQuery.
-          if (queries.length == 1 && queries(0).isEmpty) {
-            ctx.write(EmptyQueryResponse)
-          } else if (queries.size > 1) {
-            // TODO: Support multiple queries
-            throw new SQLException(s"multi-query execution unsupported: ${queries.mkString(", ")}")
-          } else {
-            val query = queries.head
-            try {
-              val execState = cli.executeStatement(sessionId, query, isCursor = false)
-              execState.run()
+          if (queries.size > 0) {
+            logDebug(s"input queries are ${queries.mkString(", ")}")
+            // If a completely empty (no contents other than whitespace) query string is received,
+            // the response is EmptyQueryResponse followed by ReadyForQuery.
+            if (queries.length == 1 && queries(0).isEmpty) {
+              ctx.write(EmptyQueryResponse)
+            } else if (queries.size > 1) {
+              // TODO: Support multiple queries
+              throw new SQLException(s"multi-query execution unsupported: ${queries.mkString(", ")}")
+            } else {
+              val query = queries.head
+              try {
+                val execState = cli.executeStatement(sessionId, query, isCursor = false)
+                execState.run()
 
-              // The response to a SELECT query (or other queries that return row sets, such as
-              // EXPLAIN or SHOW) normally consists of RowDescription, zero or more DataRow
-              // messages, and then CommandComplete.
-              val schema = execState.schema
-              ctx.write(RowDescription(schema))
+                // The response to a SELECT query (or other queries that return row sets, such as
+                // EXPLAIN or SHOW) normally consists of RowDescription, zero or more DataRow
+                // messages, and then CommandComplete.
+                val schema = execState.schema
+                ctx.write(RowDescription(schema))
 
-              val formats = formatsInSimpleQueryMode(schema)
-              val rowWriter = PostgreSQLRowConverters(conf, schema, formats)
-              var numRows = 0
-              execState.iterator().foreach { iter =>
-                ctx.write(DataRow(iter, rowWriter))
-                numRows += 1
+                val formats = formatsInSimpleQueryMode(schema)
+                val rowWriter = PostgreSQLRowConverters(conf, schema, formats)
+                var numRows = 0
+                execState.iterator().foreach { iter =>
+                  ctx.write(DataRow(iter, rowWriter))
+                  numRows += 1
+                }
+                ctx.write(CommandComplete(s"SELECT $numRows"))
+              } catch {
+                // In case of the parsing exception, we put explicit error messages
+                // to make users understood.
+                case e: ParseException if e.command.isDefined =>
+                  handleException(ctx, s"Cannot handle command ${e.command.get} in `Query`: $e")
+                  return
+                case NonFatal(e) =>
+                  handleException(ctx, s"Exception detected in `Query`: $e")
+                  return
               }
-              ctx.write(CommandComplete(s"SELECT $numRows"))
-            } catch {
-              // In case of the parsing exception, we put explicit error messages
-              // to make users understood.
-              case e: ParseException if e.command.isDefined =>
-                handleException(ctx, s"Cannot handle command ${e.command.get} in `Query`: $e")
-                return
-              case NonFatal(e) =>
-                handleException(ctx, s"Exception detected in `Query`: $e")
-                return
             }
+            // ReadyForQuery is issued when the entire string has been processed
+            // and the backend is ready to accept a new query string.
+            ctx.write(ReadyForQuery)
+            ctx.flush()
+          } else {
+            handleException(ctx, "Empty query detected in `Query`")
           }
-          // ReadyForQuery is issued when the entire string has been processed
-          // and the backend is ready to accept a new query string.
-          ctx.write(ReadyForQuery)
-          ctx.flush()
         case Sync() =>
           ctx.write(ReadyForQuery)
           ctx.flush()
