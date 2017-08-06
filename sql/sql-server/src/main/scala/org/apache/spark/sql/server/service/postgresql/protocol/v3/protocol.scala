@@ -1115,7 +1115,8 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
               ctx.write(EmptyQueryResponse)
             } else if (queries.size > 1) {
               // TODO: Support multiple queries
-              throw new SQLException(s"multi-query execution unsupported: ${queries.mkString(", ")}")
+              throw new SQLException(
+                s"multi-query execution unsupported: ${queries.mkString(", ")}")
             } else {
               val query = queries.head
               try {

@@ -607,7 +607,8 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
       rs2.close()
     }
 
-    // Check unsupported operations
+    // The PostgreSQL JDBC drivers send `Date` and `Timestamp` data with Oid.UNSPECIFIED, so
+    // the SQL server can't handle these data types now (it can't check the types in a server side).
     val e1 = intercept[SQLException] {
       testJdbcPreparedStatement("SELECT * FROM test WHERE col7 = ?") { statement =>
         statement.setDate(1, Date.valueOf("2016-08-04"))
