@@ -26,7 +26,7 @@ import org.apache.spark.sql.server.service.postgresql.Metadata._
 
 /**
  * A [[PostgreSQLParamConverters]] is used to convert binary in the [[Bind]] message
- * into strings to bind them in a parepared statement.
+ * into strings to bind them in a prepared statement.
  */
 private[v3] object PostgreSQLParamConverters {
 
@@ -35,34 +35,29 @@ private[v3] object PostgreSQLParamConverters {
       val value = (types(i), formats(i)) match {
         case (PgUnspecifiedType.oid, format) =>
           throw new SQLException(s"Unspecified type unsupported: format=$format")
-        // TODO: Need to handle `Date` and `Timestamp` here
-        // case (PgDateType.oid, _) =>
-        //   val formatter = new SimpleDateFormat("yyyy-MM-dd")
-        //   s"${formatter.parse(new String(param, StandardCharsets.UTF_8))}"
-        // case (PgTimestampType.oid, _) =>
-        //   val formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-        //   s"${formatter.parse(new String(param, StandardCharsets.UTF_8))}"
+        case (_, 0) =>
+          // If text mode given, prints input as a single-quoted string
+          s"'${new String(param, StandardCharsets.UTF_8)}'"
         case (PgBoolType.oid, 1) =>
           // '1' (49) means true; otherwise false
           if (param(0) == 49) "true" else "false"
         case (PgNumericType.oid, 1) =>
-          s"${new String(param, StandardCharsets.UTF_8)}"
-        case (_, 0) =>
-          s"'${new String(param, StandardCharsets.UTF_8)}'"
+          new String(param, StandardCharsets.UTF_8)
         case (PgInt2Type.oid, 1) =>
-          s"${ByteBuffer.wrap(param).getShort}"
+          ByteBuffer.wrap(param).getShort
         case (PgInt4Type.oid, 1) =>
-          s"${ByteBuffer.wrap(param).getInt}"
+          ByteBuffer.wrap(param).getInt
         case (PgInt8Type.oid, 1) =>
-          s"${ByteBuffer.wrap(param).getLong}"
+          ByteBuffer.wrap(param).getLong
         case (PgFloat4Type.oid, 1) =>
-          s"${ByteBuffer.wrap(param).getFloat}"
+          ByteBuffer.wrap(param).getFloat
         case (PgFloat8Type.oid, 1) =>
-          s"${ByteBuffer.wrap(param).getDouble}"
+          ByteBuffer.wrap(param).getDouble
+        // TODO: Need to support other types, e.g., `Date` and `Timestamp`
         case (paramId, format) =>
           throw new SQLException(s"Cannot bind param: paramId=$paramId, format=$format")
       }
-      (i + 1) -> value
+      (i + 1) -> value.toString
     }
   }
 }

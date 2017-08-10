@@ -87,8 +87,8 @@ private[server] abstract class Operation {
 private[server] case class ExecuteStatementOperation(
     sessionId: Int,
     statement: String,
-    isCursor: Boolean)
-   (sqlContext: SQLContext,
+    isCursor: Boolean)(
+    sqlContext: SQLContext,
     activePools: java.util.Map[Int, String]) extends Operation with Logging {
 
   private val sqlParser = SQLServerEnv.sqlParser

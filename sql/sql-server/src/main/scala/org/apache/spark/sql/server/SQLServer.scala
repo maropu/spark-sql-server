@@ -137,7 +137,8 @@ object SQLServer extends Logging {
   /** An inner sparkListener called in sc.stop to clean up the SQLServer. */
   private[server] class SQLServerListener(
       val server: SQLServer,
-      val conf: SQLConf) extends SparkListener {
+      val conf: SQLConf)
+    extends SparkListener {
 
     override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd): Unit = {
       server.stop()

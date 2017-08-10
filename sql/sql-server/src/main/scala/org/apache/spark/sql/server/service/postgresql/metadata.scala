@@ -47,7 +47,7 @@ object Metadata extends Logging {
   // Since multiple threads possibly access this variable, we use atomic one
   private val _nextUnusedOid = new AtomicInteger(baseUnusedOid)
 
-  private def nextUnusedOid = _nextUnusedOid.getAndIncrement()
+  private def nextUnusedOid = _nextUnusedOid.getAndIncrement
 
   // Catalog tables and they are immutable
   private val _catalogTables1 = Seq(
@@ -202,11 +202,12 @@ object Metadata extends Logging {
   private val pgSystemFunctionNameMap: Map[String, PgSystemFunction] =
     pgSystemFunctions.map(f => f.func.unquotedString.toLowerCase -> f).toMap
 
-  private def safeCreateCatalogTable(name: String, sqlContext: SQLContext)(f: String => Seq[String])
-    : Unit = {
+  private def safeCreateCatalogTable(
+      name: String,
+      sqlContext: SQLContext)(
+      f: String => Seq[String]): Unit = {
     assert(catalogTables.exists { case PgSystemTable(oid, table) => table.identifier == name })
-    val sqlTexts = s"DROP TABLE IF EXISTS $catalogDbName.$name" +:
-      f(s"$catalogDbName.$name")
+    val sqlTexts = s"DROP TABLE IF EXISTS $catalogDbName.$name" +: f(s"$catalogDbName.$name")
     sqlTexts.foreach { sqlText =>
       sqlContext.sql(sqlText.stripMargin)
     }
@@ -588,17 +589,22 @@ object Metadata extends Logging {
     }.contains(identifier)
   }
 
-  def registerTable(dbName: String, tableName: String, schema: StructType,
-    tableType: CatalogTableType, sqlContext: SQLContext)
-    : Unit = {
+  def registerTable(
+      dbName: String,
+      tableName: String,
+      schema: StructType,
+      tableType: CatalogTableType,
+      sqlContext: SQLContext): Unit = {
     require(!isReservedName(tableName, dbName), s"$tableName is reserved for system use")
     doRegisterTable(dbName, tableName, schema, tableType, sqlContext)
   }
 
   private def doRegisterTable(
-      dbName: String, tableName: String, schema: StructType, tableType: CatalogTableType,
-      sqlContext: SQLContext)
-    : Unit = {
+      dbName: String,
+      tableName: String,
+      schema: StructType,
+      tableType: CatalogTableType,
+      sqlContext: SQLContext): Unit = {
     logInfo(s"Registering a table `$dbName.$tableName(${schema.sql}})` " +
       "in a system catalog `pg_class`")
     val tableOid = nextUnusedOid
@@ -633,8 +639,10 @@ object Metadata extends Logging {
     doRegisterFunction(FunctionIdentifier(funcName, Option(dbName)), nextUnusedOid, sqlContext)
   }
 
-  private def doRegisterFunction(func: FunctionIdentifier, oid: Int, sqlContext: SQLContext)
-    : Unit = {
+  private def doRegisterFunction(
+      func: FunctionIdentifier,
+      oid: Int,
+      sqlContext: SQLContext): Unit = {
     logInfo(s"Registering a function `$func` in a system catalog `pg_proc`")
     val sqlText =
       s"""

@@ -24,4 +24,4 @@ private[spark] class ZooKeeperLeaderElectionAgentAccessor(
     override val masterInstance: LeaderElectable,
     conf: SparkConf,
     override val WORKING_DIR: String)
-  extends ZooKeeperLeaderElectionAgent(masterInstance, conf)
+  extends ZooKeeperLeaderElectionAgent(masterInstance, conf) {}

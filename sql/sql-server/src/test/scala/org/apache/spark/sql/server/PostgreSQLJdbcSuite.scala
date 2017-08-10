@@ -615,7 +615,7 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
         statement.executeQuery()
       }
     }
-    assert(e1.getMessage.contains("Unspecified type unsupported: format="))
+    assert(e1.getMessage.contains("Unspecified type unsupported: format=0"))
 
     val e2 = intercept[SQLException] {
       testJdbcPreparedStatement("SELECT * FROM test WHERE col8 = ?") { statement =>
@@ -623,7 +623,7 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
         statement.executeQuery()
       }
     }
-    assert(e2.getMessage.contains("Unspecified type unsupported: format="))
+    assert(e2.getMessage.contains("Unspecified type unsupported: format=0"))
   }
 
   test("Checks Hive version via SET -v") {

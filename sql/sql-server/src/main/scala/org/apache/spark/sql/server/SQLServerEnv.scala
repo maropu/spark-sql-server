@@ -33,9 +33,7 @@ private[server] object SQLServerEnv extends Logging {
 
   private var _sqlContext: Option[SQLContext] = None
 
-  lazy val sparkConf = _sqlContext.map { ctx =>
-    ctx.sparkContext.conf
-  }.getOrElse {
+  lazy val sparkConf = _sqlContext.map(_.sparkContext.conf).getOrElse {
     val sparkConf = new SparkConf(loadDefaults = true)
 
     // If user doesn't specify the appName, we want to get [SparkSQL::localHostName]
@@ -85,7 +83,7 @@ private[server] object SQLServerEnv extends Logging {
     _sqlContext = Option(sqlContext)
   }
 
-  def newSessionId(): Int = nextSessionId.getAndIncrement()
+  def newSessionId(): Int = nextSessionId.getAndIncrement
 
   def cleanup() {
     _sqlContext.map(_.sparkContext.stop())

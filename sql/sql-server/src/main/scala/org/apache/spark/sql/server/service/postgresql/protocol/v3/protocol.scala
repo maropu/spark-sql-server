@@ -574,10 +574,10 @@ object PostgreSQLWireProtocol {
  */
 // scalastyle:on line.size.limit
 @ChannelHandler.Sharable
-private[v3] class SharableByteArrayDecode extends ByteArrayDecoder {}
+class SharableByteArrayDecode extends ByteArrayDecoder {}
 
 /** Creates a newly configured [[io.netty.channel.ChannelPipeline]] for a new channel. */
-private[service] class PostgreSQLV3MessageInitializer(cli: SessionService, conf: SQLConf)
+class PostgreSQLV3MessageInitializer(cli: SessionService, conf: SQLConf)
     extends ChannelInitializer[SocketChannel] with Logging {
 
   private val msgDecoder = new SharableByteArrayDecode()
@@ -618,7 +618,7 @@ private[service] class PostgreSQLV3MessageInitializer(cli: SessionService, conf:
 }
 
 // This SSL handler class is built for each connection in `PostgreSQLV3MessageInitializer`
-private[v3] class SslRequestHandler() extends ChannelInboundHandlerAdapter with Logging {
+class SslRequestHandler() extends ChannelInboundHandlerAdapter with Logging {
   import PostgreSQLWireProtocol._
 
   // Once SSL established, the handler passes through following messages
@@ -653,16 +653,18 @@ private[v3] class SslRequestHandler() extends ChannelInboundHandlerAdapter with 
 }
 
 // Manage cursor states in a session
-private case class QueryState(
-  str: String, paramIds: Seq[Int], rowWriterOption: Option[RowWriter] = None,
+case class QueryState(
+  queryStatement: String,
+  paramIds: Seq[Int],
+  rowWriterOption: Option[RowWriter] = None,
   schema: Option[StructType] = None)
 
-private case class PortalState(queryState: QueryState) {
+case class PortalState(queryState: QueryState) {
   // Number of the rows that this portal state returns
   var numFetched: Int = 0
 }
 
-private case class SessionV3State(v3Protocol: PostgreSQLWireProtocol, secretKey: Int)
+case class SessionV3State(v3Protocol: PostgreSQLWireProtocol, secretKey: Int)
     extends SessionState {
 
   // Holds multiple prepared statements inside a session
@@ -679,8 +681,7 @@ private case class SessionV3State(v3Protocol: PostgreSQLWireProtocol, secretKey:
   override def close(): Unit = {}
 }
 
-private object SessionV3State {
-
+object SessionV3State {
   def resetPortalState(portalName: String, state: SessionV3State): Unit = {
     state.portals.remove(portalName)
     state.execState = null
@@ -697,7 +698,7 @@ private object SessionV3State {
  *  https://jdbc.postgresql.org/documentation/92/thread.html
  */
 @ChannelHandler.Sharable
-private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
+class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
     extends SimpleChannelInboundHandler[Array[Byte]] with Logging {
   import PostgreSQLWireProtocol._
   import SessionV3State._
@@ -731,7 +732,11 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
   }
 
   private def openSession(
-      channelId: Int, secretKey: Int, userName: String, passwd: String, hostAddr: String,
+      channelId: Int,
+      secretKey: Int,
+      userName: String,
+      passwd: String,
+      hostAddr: String,
       dbName: String): SessionState = {
     val v3Protocol = PostgreSQLWireProtocol(conf.sqlServerMessageBufferSizeInBytes)
     val state = SessionV3State(v3Protocol, secretKey)
@@ -774,7 +779,9 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
   // An URL string in PostgreSQL JDBC drivers is something like
   // "jdbc:postgresql://[host]/[database]?user=[name]&kerberosServerName=spark"
   private def handleGSSAuthentication(
-      ctx: ChannelHandlerContext, state: SessionV3State, token: Array[Byte]): Boolean = {
+      ctx: ChannelHandlerContext,
+      state: SessionV3State,
+      token: Array[Byte]): Boolean = {
     UserGroupInformation.getCurrentUser()
         .doAs(new PrivilegedExceptionAction[Boolean] {
 
@@ -981,7 +988,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
           }
 
           // TODO: Make parameter bindings more smart, e.g., based on analyzed logical plans
-          val boundQuery = ParameterBinder.bind(queryState.str, strParams.toMap)
+          val boundQuery = ParameterBinder.bind(queryState.queryStatement, strParams.toMap)
           logInfo(s"Bound query: $boundQuery")
 
           try {
@@ -1031,7 +1038,7 @@ private[v3] class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
               val defaultParams = queryState.paramIds.zipWithIndex.map {
                 case (_, i) => (i + 1) -> s"''"
               }
-              val boundQuery = ParameterBinder.bind(queryState.str, defaultParams.toMap)
+              val boundQuery = ParameterBinder.bind(queryState.queryStatement, defaultParams.toMap)
               val execState = cli.executeStatement(sessionId, boundQuery, isCursor = false)
               try {
                 execState.run()
