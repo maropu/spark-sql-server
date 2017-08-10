@@ -24,12 +24,12 @@ import org.apache.spark.sql.server.SQLServerConf._
 
 
 // This trait can be extended for each protocol implementation
-private[server] trait SessionState {
+trait SessionState {
   // For releasing associated resources
   def close(): Unit = {}
 }
 
-private[server] class SessionManager(pgServer: SQLServer) extends CompositeService {
+private[service] class SessionManager(pgServer: SQLServer) extends CompositeService {
 
   private val sessionIdToState = java.util.Collections.synchronizedMap(
     new java.util.HashMap[Int, (SQLContext, SessionState)]())

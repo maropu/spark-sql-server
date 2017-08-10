@@ -33,7 +33,7 @@ import org.apache.spark.sql.types._
 /**
  * A [[PostgreSQLRowConverters]] is used to convert [[InternalRow]]s into PostgreSQL V3 records.
  */
-private[v3] object PostgreSQLRowConverters {
+object PostgreSQLRowConverters {
 
   type RowWriter = (InternalRow, ByteBuffer) => Int
 
@@ -57,7 +57,7 @@ private[v3] object PostgreSQLRowConverters {
 /**
  * Interface for converting InternalRows to a byte array.
  */
-private abstract class ColumnWriter(ordinal: Int) {
+abstract class ColumnWriter(ordinal: Int) {
 
   private val NULL = -1
 
@@ -72,7 +72,7 @@ private abstract class ColumnWriter(ordinal: Int) {
   }
 }
 
-private class NullColumnWriter(ordinal: Int) extends ColumnWriter(ordinal) {
+class NullColumnWriter(ordinal: Int) extends ColumnWriter(ordinal) {
 
   override def nullSafeWriter(row: InternalRow, byteBuffer: ByteBuffer): Unit = {
     throw new UnsupportedOperationException("Invalid call to nullSafeWriter on NullColumnWriter")
@@ -83,7 +83,7 @@ private class NullColumnWriter(ordinal: Int) extends ColumnWriter(ordinal) {
  * Special class for primitive types with a text mode enabled. This class converts input to strings
  * without special cares.
  */
-private class ColumnTextWriter(dataType: DataType, ordinal: Int) extends ColumnWriter(ordinal) {
+class ColumnTextWriter(dataType: DataType, ordinal: Int) extends ColumnWriter(ordinal) {
 
   override def nullSafeWriter(row: InternalRow, byteBuffer: ByteBuffer): Unit = {
     val value = row.get(ordinal, dataType)
@@ -93,7 +93,7 @@ private class ColumnTextWriter(dataType: DataType, ordinal: Int) extends ColumnW
   }
 }
 
-private class BooleanColumnBinaryWriter(ordinal: Int) extends ColumnWriter(ordinal) {
+class BooleanColumnBinaryWriter(ordinal: Int) extends ColumnWriter(ordinal) {
 
   override def nullSafeWriter(row: InternalRow, byteBuffer: ByteBuffer): Unit = {
     byteBuffer.putInt(1)
@@ -105,7 +105,7 @@ private class BooleanColumnBinaryWriter(ordinal: Int) extends ColumnWriter(ordin
   }
 }
 
-private class ShortColumnBinaryWriter(ordinal: Int) extends ColumnWriter(ordinal) {
+class ShortColumnBinaryWriter(ordinal: Int) extends ColumnWriter(ordinal) {
 
   override def nullSafeWriter(row: InternalRow, byteBuffer: ByteBuffer): Unit = {
     byteBuffer.putInt(2)
@@ -113,7 +113,7 @@ private class ShortColumnBinaryWriter(ordinal: Int) extends ColumnWriter(ordinal
   }
 }
 
-private class IntegerColumnBinaryWriter(ordinal: Int) extends ColumnWriter(ordinal) {
+class IntegerColumnBinaryWriter(ordinal: Int) extends ColumnWriter(ordinal) {
 
   override def nullSafeWriter(row: InternalRow, byteBuffer: ByteBuffer): Unit = {
     byteBuffer.putInt(4)
@@ -121,7 +121,7 @@ private class IntegerColumnBinaryWriter(ordinal: Int) extends ColumnWriter(ordin
   }
 }
 
-private class LongColumnBinaryWriter(ordinal: Int) extends ColumnWriter(ordinal) {
+class LongColumnBinaryWriter(ordinal: Int) extends ColumnWriter(ordinal) {
 
   override def nullSafeWriter(row: InternalRow, byteBuffer: ByteBuffer): Unit = {
     byteBuffer.putInt(8)
@@ -129,7 +129,7 @@ private class LongColumnBinaryWriter(ordinal: Int) extends ColumnWriter(ordinal)
   }
 }
 
-private class FloatColumnBinaryWriter(ordinal: Int) extends ColumnWriter(ordinal) {
+class FloatColumnBinaryWriter(ordinal: Int) extends ColumnWriter(ordinal) {
 
   override def nullSafeWriter(row: InternalRow, byteBuffer: ByteBuffer): Unit = {
     byteBuffer.putInt(4)
@@ -137,7 +137,7 @@ private class FloatColumnBinaryWriter(ordinal: Int) extends ColumnWriter(ordinal
   }
 }
 
-private class DoubleColumnBinaryWriter(ordinal: Int) extends ColumnWriter(ordinal) {
+class DoubleColumnBinaryWriter(ordinal: Int) extends ColumnWriter(ordinal) {
 
   override def nullSafeWriter(row: InternalRow, byteBuffer: ByteBuffer): Unit = {
     byteBuffer.putInt(8)
@@ -145,7 +145,7 @@ private class DoubleColumnBinaryWriter(ordinal: Int) extends ColumnWriter(ordina
   }
 }
 
-private class ByteColumnWriter(ordinal: Int) extends ColumnWriter(ordinal) {
+class ByteColumnWriter(ordinal: Int) extends ColumnWriter(ordinal) {
 
   override def nullSafeWriter(row: InternalRow, byteBuffer: ByteBuffer): Unit = {
     byteBuffer.putInt(1)
@@ -153,7 +153,7 @@ private class ByteColumnWriter(ordinal: Int) extends ColumnWriter(ordinal) {
   }
 }
 
-private class UTF8StringColumnWriter(ordinal: Int) extends ColumnWriter(ordinal) {
+class UTF8StringColumnWriter(ordinal: Int) extends ColumnWriter(ordinal) {
 
   override def nullSafeWriter(row: InternalRow, byteBuffer: ByteBuffer): Unit = {
     val utf8string = row.getUTF8String(ordinal)
@@ -163,7 +163,7 @@ private class UTF8StringColumnWriter(ordinal: Int) extends ColumnWriter(ordinal)
   }
 }
 
-private class BinaryColumnWriter(ordinal: Int) extends ColumnWriter(ordinal) {
+class BinaryColumnWriter(ordinal: Int) extends ColumnWriter(ordinal) {
 
   override def nullSafeWriter(row: InternalRow, byteBuffer: ByteBuffer): Unit = {
     val bytes = row.getBinary(ordinal)
@@ -173,7 +173,7 @@ private class BinaryColumnWriter(ordinal: Int) extends ColumnWriter(ordinal) {
   }
 }
 
-private abstract class DateColumnWriter(ordinal: Int, conf: SQLConf) extends ColumnWriter(ordinal) {
+abstract class DateColumnWriter(ordinal: Int, conf: SQLConf) extends ColumnWriter(ordinal) {
 
   protected val timezone = TimeZone.getTimeZone(conf.sessionLocalTimeZone)
 
@@ -199,7 +199,7 @@ private abstract class DateColumnWriter(ordinal: Int, conf: SQLConf) extends Col
   }
 }
 
-private class DateColumnTextWriter(ordinal: Int, conf: SQLConf)
+class DateColumnTextWriter(ordinal: Int, conf: SQLConf)
     extends DateColumnWriter(ordinal, conf) {
 
   override def nullSafeWriter(row: InternalRow, byteBuffer: ByteBuffer): Unit = {
@@ -210,7 +210,7 @@ private class DateColumnTextWriter(ordinal: Int, conf: SQLConf)
   }
 }
 
-private class DateColumnBinaryWriter(ordinal: Int, conf: SQLConf)
+class DateColumnBinaryWriter(ordinal: Int, conf: SQLConf)
     extends DateColumnWriter(ordinal, conf) {
 
   override def nullSafeWriter(row: InternalRow, byteBuffer: ByteBuffer): Unit = {
@@ -222,7 +222,7 @@ private class DateColumnBinaryWriter(ordinal: Int, conf: SQLConf)
   }
 }
 
-private class TimestampColumnTextWriter(ordinal: Int, conf: SQLConf)
+class TimestampColumnTextWriter(ordinal: Int, conf: SQLConf)
     extends DateColumnWriter(ordinal, conf) {
 
   override def nullSafeWriter(row: InternalRow, byteBuffer: ByteBuffer): Unit = {
@@ -233,7 +233,7 @@ private class TimestampColumnTextWriter(ordinal: Int, conf: SQLConf)
   }
 }
 
-private class TimestampColumnBinaryWriter(ordinal: Int, conf: SQLConf)
+class TimestampColumnBinaryWriter(ordinal: Int, conf: SQLConf)
     extends DateColumnWriter(ordinal, conf) {
 
   override def nullSafeWriter(row: InternalRow, byteBuffer: ByteBuffer): Unit = {
@@ -247,7 +247,7 @@ private class TimestampColumnBinaryWriter(ordinal: Int, conf: SQLConf)
   }
 }
 
-private abstract class ComplexTypeColumnTextWriter(field: StructField, ordinal: Int, conf: SQLConf)
+abstract class ComplexTypeColumnTextWriter(field: StructField, ordinal: Int, conf: SQLConf)
     extends ColumnWriter(ordinal) {
 
   private val writer = new CharArrayWriter
@@ -278,7 +278,7 @@ private abstract class ComplexTypeColumnTextWriter(field: StructField, ordinal: 
   }
 }
 
-private class ArrayColumnTextWriter(field: StructField, ordinal: Int, conf: SQLConf)
+class ArrayColumnTextWriter(field: StructField, ordinal: Int, conf: SQLConf)
     extends ComplexTypeColumnTextWriter(field, ordinal, conf) {
 
   private val arrayRow = new GenericInternalRow(Array[Any](1))
@@ -298,7 +298,7 @@ private class ArrayColumnTextWriter(field: StructField, ordinal: Int, conf: SQLC
   }
 }
 
-private class MapColumnTextWriter(field: StructField, ordinal: Int, conf: SQLConf)
+class MapColumnTextWriter(field: StructField, ordinal: Int, conf: SQLConf)
     extends ComplexTypeColumnTextWriter(field, ordinal, conf) {
 
   private val mapRow = new GenericInternalRow(Array[Any](1))
@@ -313,7 +313,7 @@ private class MapColumnTextWriter(field: StructField, ordinal: Int, conf: SQLCon
   }
 }
 
-private class StructColumnTextWriter(field: StructField, ordinal: Int, conf: SQLConf)
+class StructColumnTextWriter(field: StructField, ordinal: Int, conf: SQLConf)
     extends ComplexTypeColumnTextWriter(field, ordinal, conf) {
 
   override def convertRow(row: InternalRow): Array[Byte] = {
@@ -326,7 +326,7 @@ private class StructColumnTextWriter(field: StructField, ordinal: Int, conf: SQL
   }
 }
 
-private[v3] object ColumnWriter {
+object ColumnWriter {
 
   private def isPrimitive(dataType: DataType): Boolean = {
     Seq(BooleanType, ShortType, IntegerType, LongType, FloatType, DoubleType, ByteType)

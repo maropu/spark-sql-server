@@ -252,7 +252,7 @@ object SQLServer extends Logging {
   }
 }
 
-private[sql] class SQLServer extends CompositeService with LeaderElectable {
+class SQLServer extends CompositeService with LeaderElectable {
 
   private val RECOVERY_MODE = SQLServerEnv.sqlConf.sqlServerRecoveryMode
   private val RECOVERY_DIR = SQLServerEnv.sqlConf.sqlServerRecoveryDir + "/leader_election"

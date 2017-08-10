@@ -31,8 +31,7 @@ import org.apache.spark.ui.UIUtils._
 
 
 /** Page for Spark Web UI that shows statistics of the SQL gateway server */
-private[ui] class SQLServerPage(parent: SQLServerTab)
-    extends WebUIPage("") with Logging {
+private[ui] class SQLServerPage(parent: SQLServerTab) extends WebUIPage("") with Logging {
 
   private val listener = parent.listener
   private val startTime = Calendar.getInstance().getTime()

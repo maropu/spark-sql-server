@@ -15,13 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.server
+package org.apache.spark.sql.server.service.postgresql
 
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.spark.SparkFunSuite
 import org.apache.spark.sql.{Dataset, Row}
 import org.apache.spark.sql.hive.test.TestHive
+import org.apache.spark.sql.server.SQLServerEnv
 import org.apache.spark.sql.server.service.postgresql.Metadata._
 
 class PostgreSQLDialectSuite extends SparkFunSuite with BeforeAndAfterAll {

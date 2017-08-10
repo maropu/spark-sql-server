@@ -28,8 +28,13 @@ import org.apache.spark.sql.catalyst.catalog.CatalogTableType
 import org.apache.spark.sql.types._
 
 
-/** This is the PostgreSQL system information such as catalog tables and functions. */
-object Metadata extends Logging {
+/**
+ * This is the PostgreSQL system information such as catalog tables and functions.
+ *
+ * TODO: This access qualifier should be `postgresql`, but currently cannot be because this object
+ * is used in `o.a.s.sql.server.service`.
+ */
+private[service] object Metadata extends Logging {
 
   // Since v7.3, all the catalog tables have been moved in a `pg_catalog` database
   private[sql] val catalogDbName = "pg_catalog"

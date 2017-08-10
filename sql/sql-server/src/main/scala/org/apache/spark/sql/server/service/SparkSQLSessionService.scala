@@ -22,7 +22,7 @@ import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.server.SQLServer
 
 
-private[server] trait SessionService {
+trait SessionService {
 
   def openSession(userName: String, passwd: String, ipAddress: String, dbName: String,
     state: SessionState): Int

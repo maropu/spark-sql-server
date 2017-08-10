@@ -21,7 +21,7 @@ import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.server.SQLServer
 
 
-private[server] class OperationManager(pgServer: SQLServer) extends CompositeService {
+private[service] class OperationManager(pgServer: SQLServer) extends CompositeService {
 
   private val sessionIdToOperations = java.util.Collections.synchronizedMap(
     new java.util.HashMap[Int, java.util.ArrayList[Operation]]())

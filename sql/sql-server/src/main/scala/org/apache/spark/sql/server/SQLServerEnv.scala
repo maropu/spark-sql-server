@@ -27,7 +27,7 @@ import org.apache.spark.sql.server.service.postgresql.PostgreSQLParser
 import org.apache.spark.util.Utils
 
 
-private[server] object SQLServerEnv extends Logging {
+object SQLServerEnv extends Logging {
 
   private val nextSessionId = new AtomicInteger(0)
 

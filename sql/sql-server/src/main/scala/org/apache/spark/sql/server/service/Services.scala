@@ -23,14 +23,14 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.sql.internal.SQLConf
 
 
-private[server] abstract class Service extends Logging {
+abstract class Service extends Logging {
 
   def init(conf: SQLConf): Unit
   def start(): Unit
   def stop(): Unit
 }
 
-private[server] class CompositeService extends Service {
+class CompositeService extends Service {
 
   private val services = new mutable.ArrayBuffer[Service]()
 

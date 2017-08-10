@@ -56,23 +56,23 @@ object FETCH extends OperationType
 object SELECT extends OperationType
 
 
-private[server] abstract class Operation {
+abstract class Operation {
 
   private val timeout = SQLServerEnv.sqlConf.sqlServerIdleOperationTimeout
 
-  protected[this] var state: OperationState = INITIALIZED
+  protected var state: OperationState = INITIALIZED
   private var lastAccessTime: Long = System.currentTimeMillis()
 
   def run(): Unit
   def cancel(): Unit
   def close(): Unit
 
-  protected[this] def setState(newState: OperationState): Unit = {
+  protected def setState(newState: OperationState): Unit = {
     lastAccessTime = System.currentTimeMillis()
     state = newState
   }
 
-  private[service] def isTimeOut(current: Long): Boolean = {
+  def isTimeOut(current: Long): Boolean = {
     if (timeout == 0) {
       true
     } else if (timeout > 0) {
@@ -84,7 +84,7 @@ private[server] abstract class Operation {
   }
 }
 
-private[server] case class ExecuteStatementOperation(
+private[service] case class ExecuteStatementOperation(
     sessionId: Int,
     statement: String,
     isCursor: Boolean)(
@@ -92,9 +92,7 @@ private[server] case class ExecuteStatementOperation(
     activePools: java.util.Map[Int, String]) extends Operation with Logging {
 
   private val sqlParser = SQLServerEnv.sqlParser
-
   private val statementId = UUID.randomUUID().toString()
-
   private var resultSet: DataFrame = _
   private var rowIter: Iterator[InternalRow] = _
 

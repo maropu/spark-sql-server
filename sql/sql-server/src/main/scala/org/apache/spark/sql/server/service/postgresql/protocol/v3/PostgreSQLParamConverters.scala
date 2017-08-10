@@ -28,7 +28,7 @@ import org.apache.spark.sql.server.service.postgresql.Metadata._
  * A [[PostgreSQLParamConverters]] is used to convert binary in the [[Bind]] message
  * into strings to bind them in a prepared statement.
  */
-private[v3] object PostgreSQLParamConverters {
+object PostgreSQLParamConverters {
 
   def apply(params: Seq[Array[Byte]], types: Seq[Int], formats: Seq[Int]): Seq[(Int, String)] = {
     params.zipWithIndex.map { case (param, i) =>

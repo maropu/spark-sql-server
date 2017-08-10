@@ -40,15 +40,15 @@ import org.apache.spark.sql.types._
  * TODO: We just copy Spark parser files into `org.apache.spark.sql.server.parser.*` and build
  * a new parser for PostgreSQL. So, we should fix this in a pluggable way.
  */
-class PostgreSQLParser(conf: SQLConf) extends SparkSqlParser(conf) {
-
+private[server] class PostgreSQLParser(conf: SQLConf) extends SparkSqlParser(conf) {
   override val astBuilder = new PostgreSqlAstBuilder(conf)
 }
 
 /**
  * Builder that converts an ANTLR ParseTree into a LogicalPlan/Expression/TableIdentifier.
  */
-class PostgreSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) with PredicateHelper {
+private[postgresql] class PostgreSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf)
+    with PredicateHelper {
   import org.apache.spark.sql.catalyst.parser.ParserUtils._
 
   override def visitBeginTransaction(ctx: BeginTransactionContext): LogicalPlan = {
@@ -170,42 +170,44 @@ class PostgreSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) with 
     UnresolvedTableValuedFunction("range", args)
   }
 
-  override def visitSubstringInternalFunc(ctx: SubstringInternalFuncContext)
-    : Expression = withOrigin(ctx) {
-    val expr = expression(ctx.primaryExpression)
-    val pos = Literal(0, IntegerType)
-    val forNum = ctx.INTEGER_VALUE().asScala.toList match { case from :: Nil => from }
-    val len = Literal(forNum, IntegerType)
-    Substring(expr, pos, len)
+  override def visitSubstringInternalFunc(ctx: SubstringInternalFuncContext): Expression = {
+    withOrigin(ctx) {
+      val expr = expression(ctx.primaryExpression)
+      val pos = Literal(0, IntegerType)
+      val forNum = ctx.INTEGER_VALUE().asScala.toList match { case from :: Nil => from }
+      val len = Literal(forNum, IntegerType)
+      Substring(expr, pos, len)
+    }
   }
 
-  override def visitTableValuedFunction(ctx: TableValuedFunctionContext)
-    : LogicalPlan = withOrigin(ctx) {
-    val funcPlan = (ctx.identifier(0).getText, ctx.expression.asScala.map(expression)) match {
-      case ("generate_series", Buffer(start, end)) => toSparkRange(start, end, None)
-      case ("generate_series", Buffer(start, end, step)) => toSparkRange(start, end, Some(step))
-      case _ => super.visitTableValuedFunction(ctx)
-    }
-    if (ctx.identifier().size > 1) {
-      val prefix = ctx.identifier(1).getText
-      // This workaround is needed to parse a SQL syntax below:
-      //
-      // SELECT
-      //   s.r, (current_schemas(false))[s.r] AS nspname
-      // FROM
-      //   generate_series(1, array_upper(current_schemas(false), 1)) AS s(r)
-      //
-      if (ctx.identifierList != null) {
-        val aliases = visitIdentifierList(ctx.identifierList)
-        // TODO: Since there is currently one table function `range`, we just assign an output name
-        // here. But, we need to make this logic more general in future.
-        val projectList = Alias(UnresolvedAttribute("id"), aliases.head)() :: Nil
-        SubqueryAlias(prefix, Project(projectList, funcPlan))
-      } else {
-        SubqueryAlias(prefix, funcPlan)
+  override def visitTableValuedFunction(ctx: TableValuedFunctionContext): LogicalPlan = {
+    withOrigin(ctx) {
+      val funcPlan = (ctx.identifier(0).getText, ctx.expression.asScala.map(expression)) match {
+        case ("generate_series", Buffer(start, end)) => toSparkRange(start, end, None)
+        case ("generate_series", Buffer(start, end, step)) => toSparkRange(start, end, Some(step))
+        case _ => super.visitTableValuedFunction(ctx)
       }
-    } else {
-      funcPlan
+      if (ctx.identifier().size > 1) {
+        val prefix = ctx.identifier(1).getText
+        // This workaround is needed to parse a SQL syntax below:
+        //
+        // SELECT
+        //   s.r, (current_schemas(false))[s.r] AS nspname
+        // FROM
+        //   generate_series(1, array_upper(current_schemas(false), 1)) AS s(r)
+        //
+        if (ctx.identifierList != null) {
+          val aliases = visitIdentifierList(ctx.identifierList)
+          // TODO: Since there is currently one table function `range`, we just assign an output
+          // name here. But, we need to make this logic more general in future.
+          val projectList = Alias(UnresolvedAttribute("id"), aliases.head)() :: Nil
+          SubqueryAlias(prefix, Project(projectList, funcPlan))
+        } else {
+          SubqueryAlias(prefix, funcPlan)
+        }
+      } else {
+        funcPlan
+      }
     }
   }
 }
