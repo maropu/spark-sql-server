@@ -193,7 +193,7 @@ with the same ZooKeeper configuration (ZooKeeper URL and directory) as follows;
 
     $ ./sbin/start-sql-server.sh \
         --conf spark.sql.server.recoveryMode=ZOOKEEPER \
-        --conf spark.deploy.zookeeper.url=<ZooKeeper URL>
+        --conf spark.deploy.zookeeper.url=<ZooKeeper URL> \
         --conf spark.deploy.zookeeper.dir=<ZooKeeper directory to store recovery state>
 
 ## Bug reports
