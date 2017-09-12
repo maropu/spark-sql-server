@@ -28,7 +28,7 @@ import org.apache.spark.ui.{SparkUI, SparkUITab}
  * Spark Web UI tab that shows statistics of jobs running in the SQL server.
  * This assumes the given SparkContext has enabled its SparkUI.
  */
-private[server] class SQLServerTab(sparkContext: SparkContext)
+class SQLServerTab(sparkContext: SparkContext)
   extends SparkUITab(getSparkUI(sparkContext), "sqlserver") with Logging {
 
   override val name = "JDBC/ODBC Server"
@@ -45,7 +45,7 @@ private[server] class SQLServerTab(sparkContext: SparkContext)
   }
 }
 
-private[server] object SQLServerTab {
+object SQLServerTab {
   def getSparkUI(sparkContext: SparkContext): SparkUI = {
     sparkContext.ui.getOrElse {
       throw new SparkException("Parent SparkUI to attach this tab to not found!")

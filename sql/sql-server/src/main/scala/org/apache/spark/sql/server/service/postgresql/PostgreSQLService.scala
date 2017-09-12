@@ -24,12 +24,22 @@ import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioServerSocketChannel
 import io.netty.handler.logging.{LoggingHandler, LogLevel}
 
+import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.server.SQLServer
 import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.SQLServerEnv
-import org.apache.spark.sql.server.service.{CompositeService, SessionService}
+import org.apache.spark.sql.server.service.{CompositeService, SessionInitializer, SessionService}
 import org.apache.spark.sql.server.service.postgresql.protocol.v3.PostgreSQLV3MessageInitializer
+
+
+private[server] class PostgreSQLSessionInitializer extends SessionInitializer {
+
+  override def apply(dbName: String, sqlContext: SQLContext): Unit = {
+    Metadata.initSystemFunctions(sqlContext)
+    Metadata.initSessionCatalogTables(sqlContext, dbName)
+  }
+}
 
 private[server] class PostgreSQLService(pgServer: SQLServer, cli: SessionService)
     extends CompositeService {
@@ -50,9 +60,9 @@ private[server] class PostgreSQLService(pgServer: SQLServer, cli: SessionService
     // Load system catalogs for the PostgreSQL v3 protocol
     Metadata.initSystemCatalogTables(SQLServerEnv.sqlContext)
     if (SQLServerEnv.sqlConf.sqlServerSingleSessionEnabled) {
-      Metadata.initSystemFunctions(SQLServerEnv.sqlContext)
-      // TODO: In a single-session mode, we just load catalog entries from a 'default` database
-      Metadata.initSessionCatalogTables(SQLServerEnv.sqlContext, "default")
+      val init = new PostgreSQLSessionInitializer()
+      // In a single-session mode, we just load catalog entries from a 'default` database
+      init("default", SQLServerEnv.sqlContext)
     }
 
     val bossGroup = new NioEventLoopGroup(1)

@@ -28,12 +28,13 @@ trait SessionService {
     state: SessionState): Int
   def getSessionState(sessionId: Int): SessionState
   def closeSession(sessionId: Int): Unit
-  def executeStatement(sessionId: Int, statement: String, isCursor: Boolean)
-    : ExecuteStatementOperation
+  def executeStatement(sessionId: Int, statement: String, isCursor: Boolean): Operation
 }
 
-private[server] class SparkSQLSessionService(pgServer: SQLServer)
-    extends CompositeService with SessionService {
+private[server] class SparkSQLSessionService(
+    sqlServer: SQLServer,
+    executor: OperationExecutor,
+    initializer: SessionInitializer) extends CompositeService with SessionService {
 
   private var sessionManager: SessionManager = _
   private var operationManager: OperationManager = _
@@ -46,9 +47,9 @@ private[server] class SparkSQLSessionService(pgServer: SQLServer)
       SparkHadoopUtil.get.loginUserFromKeytab(principalName, keytabFilename)
     }
 
-    sessionManager = new SessionManager(pgServer)
+    sessionManager = new SessionManager(sqlServer, initializer)
     addService(sessionManager)
-    operationManager = new OperationManager(pgServer)
+    operationManager = new OperationManager(sqlServer, executor)
     addService(operationManager)
     super.init(conf)
   }
@@ -66,8 +67,7 @@ private[server] class SparkSQLSessionService(pgServer: SQLServer)
     sessionManager.closeSession(sessionId)
   }
 
-  override def executeStatement(sessionId: Int, statement: String, isCursor: Boolean)
-    : ExecuteStatementOperation = {
+  override def executeStatement(sessionId: Int, statement: String, isCursor: Boolean): Operation = {
     operationManager.newExecuteStatementOperation(
       sessionManager.getSession(sessionId)._1,
       sessionId,

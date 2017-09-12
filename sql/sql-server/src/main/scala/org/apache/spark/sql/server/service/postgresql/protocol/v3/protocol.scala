@@ -45,7 +45,7 @@ import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.server.SQLServerConf
 import org.apache.spark.sql.server.SQLServerConf._
-import org.apache.spark.sql.server.service.{BEGIN, ExecuteStatementOperation, FETCH, SELECT, SessionService, SessionState}
+import org.apache.spark.sql.server.service.{BEGIN, FETCH, Operation, SELECT, SessionService, SessionState}
 import org.apache.spark.sql.server.service.postgresql.Metadata._
 import org.apache.spark.sql.server.service.postgresql.protocol.v3.PostgreSQLRowConverters._
 import org.apache.spark.sql.types._
@@ -673,7 +673,10 @@ case class SessionV3State(v3Protocol: PostgreSQLWireProtocol, secretKey: Int)
 
   // Holds a current active state of query execution and this variable possibly accessed
   // by asynchronous JDBC cancellation requests.
-  @volatile var execState: ExecuteStatementOperation = _
+  @volatile var execState: Operation = _
+
+  // Holds an iterator of operations results
+  var resultRowIter: Iterator[InternalRow] = _
 
   // Holds unprocessed bytes for a message parser
   var pendingBytes: Array[Byte] = Array.empty
@@ -993,9 +996,9 @@ class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
 
           try {
             val execState = cli.executeStatement(sessionId, boundQuery, isCursorMode)
-            execState.run()
             sessionState.execState = execState
-            val schema = execState.schema
+            sessionState.resultRowIter = execState.run()
+            val schema = execState.outputSchema()
             val formats = formatsInExtendedQueryMode(schema)
             // TODO: We could reuse this row converters in some cases?
             val newQueryState = queryState.copy(
@@ -1041,8 +1044,8 @@ class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
               val boundQuery = ParameterBinder.bind(queryState.queryStatement, defaultParams.toMap)
               val execState = cli.executeStatement(sessionId, boundQuery, isCursor = false)
               try {
-                execState.run()
-                execState.schema()
+                sessionState.resultRowIter = execState.run()
+                execState.outputSchema()
               } catch {
                 case NonFatal(_) =>
                   throw new SQLException("Cannot get schema in 'Describe'")
@@ -1053,7 +1056,7 @@ class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
             ctx.write(RowDescription(schema))
           } else if (tpe == 80) { // Describe a portal
             logInfo(s"Describe the '$name' portal in this session (id:$sessionId)")
-            ctx.write(RowDescription(sessionState.execState.schema()))
+            ctx.write(RowDescription(sessionState.execState.outputSchema()))
           } else {
             throw new SQLException(s"Unknown type received in 'Describe`: $tpe")
           }
@@ -1069,12 +1072,12 @@ class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
             }
             var numRows = 0
             if (maxRows == 0) {
-              sessionState.execState.iterator().foreach { iter =>
+              sessionState.resultRowIter.foreach { iter =>
                 ctx.write(DataRow(iter, rowConveter))
                 numRows = numRows + 1
               }
             } else {
-              sessionState.execState.iterator().take(maxRows).foreach { iter =>
+              sessionState.resultRowIter.take(maxRows).foreach { iter =>
                 ctx.write(DataRow(iter, rowConveter))
                 numRows = numRows + 1
               }
@@ -1128,18 +1131,18 @@ class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
               val query = queries.head
               try {
                 val execState = cli.executeStatement(sessionId, query, isCursor = false)
-                execState.run()
+                val resultRowIter = execState.run()
 
                 // The response to a SELECT query (or other queries that return row sets, such as
                 // EXPLAIN or SHOW) normally consists of RowDescription, zero or more DataRow
                 // messages, and then CommandComplete.
-                val schema = execState.schema
+                val schema = execState.outputSchema()
                 ctx.write(RowDescription(schema))
 
                 val formats = formatsInSimpleQueryMode(schema)
                 val rowWriter = PostgreSQLRowConverters(conf, schema, formats)
                 var numRows = 0
-                execState.iterator().foreach { iter =>
+                resultRowIter.foreach { iter =>
                   ctx.write(DataRow(iter, rowWriter))
                   numRows += 1
                 }

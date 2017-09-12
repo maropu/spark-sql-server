@@ -23,13 +23,16 @@ import org.apache.spark.sql.server.{SQLServer, SQLServerEnv}
 import org.apache.spark.sql.server.SQLServerConf._
 
 
-// This trait can be extended for each protocol implementation
 trait SessionState {
-  // For releasing associated resources
   def close(): Unit = {}
 }
 
-private[service] class SessionManager(pgServer: SQLServer) extends CompositeService {
+trait SessionInitializer {
+  def apply(dbName: String, sqlContext: SQLContext): Unit
+}
+
+private[service] class SessionManager(pgServer: SQLServer, init: SessionInitializer)
+    extends CompositeService {
 
   private val sessionIdToState = java.util.Collections.synchronizedMap(
     new java.util.HashMap[Int, (SQLContext, SessionState)]())
@@ -44,9 +47,7 @@ private[service] class SessionManager(pgServer: SQLServer) extends CompositeServ
     } else {
       (dbName: String) => {
         val sqlContext = SQLServerEnv.sqlContext.newSession()
-        // TODO: Re-think the design
-        postgresql.Metadata.initSystemFunctions(sqlContext)
-        postgresql.Metadata.initSessionCatalogTables(sqlContext, dbName)
+        init(dbName, sqlContext)
         sqlContext
       }
     }

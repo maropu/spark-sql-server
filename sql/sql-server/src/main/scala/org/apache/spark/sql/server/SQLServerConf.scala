@@ -50,9 +50,16 @@ object SQLServerConf {
     .intConf
     .createWithDefault(5432)
 
+  // scalastyle:off line.size.limit
+  // `server_version` decides how to handle metadata between jdbc clients and servers.
+  // See an URL below for valid version numbers:
+  // https://github.com/pgjdbc/pgjdbc/blob/master/pgjdbc/src/main/java/org/postgresql/core/ServerVersion.java
+  // scalastyle:on line.size.limit
   val SQLSERVER_VERSION = buildConf("spark.sql.server.version")
     .internal()
     .stringConf
+    .checkValue(version => Seq("7.4", "8.0", "9.6").contains(version),
+      "The server version must be 7.4, 8.0, or 9.6")
     .createWithDefault("7.4")
 
   val SQLSERVER_WORKER_THREADS = buildConf("spark.sql.server.worker.threads")

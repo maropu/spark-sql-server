@@ -27,7 +27,7 @@ import org.apache.spark.sql.server.service.postgresql.Metadata._
 
 class PostgreSQLDialectSuite extends SparkFunSuite with BeforeAndAfterAll {
 
-  lazy val parser = SQLServerEnv.sqlParser
+  lazy val parser = new PostgreSQLParser(SQLServerEnv.sqlConf)
   lazy val sqlContext = TestHive
 
   override protected def beforeAll() : Unit = {

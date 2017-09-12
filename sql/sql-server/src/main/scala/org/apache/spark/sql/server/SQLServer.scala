@@ -29,7 +29,7 @@ import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.service.{CompositeService, SparkSQLSessionService}
-import org.apache.spark.sql.server.service.postgresql.PostgreSQLService
+import org.apache.spark.sql.server.service.postgresql.{PostgreSQLExecutor, PostgreSQLService, PostgreSQLSessionInitializer}
 import org.apache.spark.sql.server.ui.SQLServerTab
 import org.apache.spark.util.{ShutdownHookManager, Utils}
 
@@ -263,20 +263,18 @@ class SQLServer extends CompositeService with LeaderElectable {
   @volatile private var state = RecoveryState.STANDBY
 
   override def init(conf: SQLConf): Unit = {
-    if (conf.getConfString("spark.sql.crossJoin.enabled") != "true") {
-      throw new IllegalArgumentException(
-        "`spark.sql.crossJoin.enabled` must be `true` because PostgreSQL JDBC drivers " +
-          "handle metadata by using SQL queries with cross joins.")
-    }
-    val cliService = new SparkSQLSessionService(this)
+    require(conf.getConfString("spark.sql.crossJoin.enabled") == "true",
+      "`spark.sql.crossJoin.enabled` must be `true` because general DBMS-like engines can " +
+        "handle cross joins in SQL queries.")
+    // Attaches PostgreSQL-specific services here
+    val cliService = new SparkSQLSessionService(
+      this, new PostgreSQLExecutor(), new PostgreSQLSessionInitializer())
     addService(cliService)
     addService(new PostgreSQLService(this, cliService))
     super.init(conf)
   }
 
   override def start(): Unit = {
-    require(SQLServerEnv.serverVersion.nonEmpty)
-    logInfo(s"Try to start the Spark SQL server with version=${SQLServerEnv.serverVersion}...")
     RECOVERY_MODE match {
       case Some("ZOOKEEPER") =>
         logInfo("Recovery mode 'ZOOKEEPER' enabled and wait for leader election")

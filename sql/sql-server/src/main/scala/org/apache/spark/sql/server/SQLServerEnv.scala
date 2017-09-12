@@ -22,8 +22,6 @@ import java.util.concurrent.atomic.AtomicInteger
 import org.apache.spark.SparkConf
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.{SparkSession, SQLContext}
-import org.apache.spark.sql.server.SQLServerConf._
-import org.apache.spark.sql.server.service.postgresql.PostgreSQLParser
 import org.apache.spark.util.Utils
 
 
@@ -41,15 +39,9 @@ object SQLServerEnv extends Logging {
     val maybeAppName = sparkConf
       .getOption("spark.app.name")
       .filterNot(_ == classOf[SQLServer].getName)
-    sparkConf.setAppName(
-      maybeAppName.getOrElse(s"SparkSQL::${Utils.localHostName()}"))
-
-    // Set `true` at `spark.sql.crossJoin.enabled`
-    sparkConf.set("spark.sql.crossJoin.enabled", "true")
-    logInfo("Explicitly set `true` at `spark.sql.crossJoin.enabled` because PostgreSQL " +
-      "JDBC drivers handle metadata by using SQL queries with cross joins.")
-
     sparkConf
+      .setAppName(maybeAppName.getOrElse(s"SparkSQL::${Utils.localHostName()}"))
+      .set("spark.sql.crossJoin.enabled", "true")
   }
 
   lazy val sparkContext = sqlContext.sparkContext
@@ -60,22 +52,6 @@ object SQLServerEnv extends Logging {
   }
 
   lazy val sqlConf = sqlContext.conf
-
-  lazy val sqlParser = new PostgreSQLParser(sqlConf)
-
-  lazy val serverVersion = {
-    // scalastyle:off line.size.limit
-    // `server_version` decides how to handle metadata between jdbc clients and servers.
-    // See an URL below for valid version numbers:
-    // https://github.com/pgjdbc/pgjdbc/blob/master/pgjdbc/src/main/java/org/postgresql/core/ServerVersion.java
-    // scalastyle:on line.size.limit
-    val validNumers = Seq("7.4", "8.0", "9.6")
-    validNumers.find(_ == sqlConf.sqlServerVersion).getOrElse {
-      throw new IllegalArgumentException(
-        s"You need to select a server version from $validNumers, but got " +
-          sqlConf.sqlServerVersion)
-    }
-  }
 
   def withSQLContext(sqlContext: SQLContext): Unit = {
     require(sqlContext != null)

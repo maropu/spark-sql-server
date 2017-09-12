@@ -40,7 +40,7 @@ import org.apache.spark.sql.types._
  * TODO: We just copy Spark parser files into `org.apache.spark.sql.server.parser.*` and build
  * a new parser for PostgreSQL. So, we should fix this in a pluggable way.
  */
-private[server] class PostgreSQLParser(conf: SQLConf) extends SparkSqlParser(conf) {
+private[postgresql] class PostgreSQLParser(conf: SQLConf) extends SparkSqlParser(conf) {
   override val astBuilder = new PostgreSqlAstBuilder(conf)
 }
 
