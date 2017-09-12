@@ -69,22 +69,22 @@ download_app() {
 # Determine the Maven version from the root pom.xml file and
 # install maven under the build/ folder if needed.
 install_mvn() {
-  local MVN_VERSION=`grep "<maven.version>" "${_DIR}/../pom.xml" | head -n1 | awk -F '[<>]' '{print $3}'`
+  local mvn_version=`grep "<maven.version>" "${_DIR}/../pom.xml" | head -n1 | awk -F '[<>]' '{print $3}'`
   MVN_BIN="$(command -v mvn)"
   if [ "$MVN_BIN" ]; then
     local MVN_DETECTED_VERSION="$(mvn --version | head -n1 | awk '{print $3}')"
   fi
   # See simple version normalization: http://stackoverflow.com/questions/16989598/bash-comparing-version-numbers
   function version { echo "$@" | awk -F. '{ printf("%03d%03d%03d\n", $1,$2,$3); }'; }
-  if [ $(version $MVN_DETECTED_VERSION) -lt $(version $MVN_VERSION) ]; then
+  if [ $(version $MVN_DETECTED_VERSION) -lt $(version $mvn_version) ]; then
     local APACHE_MIRROR=${APACHE_MIRROR:-'https://www.apache.org/dyn/closer.lua?action=download&filename='}
 
     install_app \
-      "${APACHE_MIRROR}/maven/maven-3/${MVN_VERSION}/binaries" \
-      "apache-maven-${MVN_VERSION}-bin.tar.gz" \
-      "apache-maven-${MVN_VERSION}/bin/mvn"
+      "${APACHE_MIRROR}/maven/maven-3/${mvn_version}/binaries" \
+      "apache-maven-${mvn_version}-bin.tar.gz" \
+      "apache-maven-${mvn_version}/bin/mvn"
 
-    MVN_BIN="${_DIR}/apache-maven-${MVN_VERSION}/bin/mvn"
+    MVN_BIN="${_DIR}/apache-maven-${mvn_version}/bin/mvn"
   fi
 }
 
@@ -92,10 +92,10 @@ install_mvn() {
 install_zinc() {
   local zinc_path="zinc-0.3.9/bin/zinc"
   [ ! -f "${_DIR}/${zinc_path}" ] && ZINC_INSTALL_FLAG=1
-  local TYPESAFE_MIRROR=${TYPESAFE_MIRROR:-https://downloads.typesafe.com}
+  local typesafe_mirror=${TYPESAFE_MIRROR:-https://downloads.typesafe.com}
 
   install_app \
-    "${TYPESAFE_MIRROR}/zinc/0.3.9" \
+    "${typesafe_mirror}/zinc/0.3.9" \
     "zinc-0.3.9.tgz" \
     "${zinc_path}"
   ZINC_BIN="${_DIR}/${zinc_path}"
@@ -107,31 +107,29 @@ install_zinc() {
 install_scala() {
   # determine the Scala version used in Spark
   local scala_version=`grep "scala.version" "${_DIR}/../pom.xml" | head -n1 | awk -F '[<>]' '{print $3}'`
-  local scala_bin="${_DIR}/scala-${scala_version}/bin/scala"
-  local TYPESAFE_MIRROR=${TYPESAFE_MIRROR:-https://downloads.typesafe.com}
+  local typesafe_mirror=${TYPESAFE_MIRROR:-https://downloads.typesafe.com}
 
   install_app \
-    "${TYPESAFE_MIRROR}/scala/${scala_version}" \
+    "${typesafe_mirror}/scala/${scala_version}" \
     "scala-${scala_version}.tgz" \
     "scala-${scala_version}/bin/scala"
 
-  SCALA_COMPILER="$(cd "$(dirname "${scala_bin}")/../lib" && pwd)/scala-compiler.jar"
-  SCALA_LIBRARY="$(cd "$(dirname "${scala_bin}")/../lib" && pwd)/scala-library.jar"
-  SCALA_BIN="${scala_bin}"
+  SCALA_DIR="${_DIR}/../thirdparty/scala-${scala_version}"
+  SCALA_BIN="${SCALA_DIR}/bin/scala"
 }
 
 # Determine the Spark version from the root pom.xml file and
 # install Spark under the bin/ folder if needed.
 install_spark() {
-  local SPARK_VERSION=`grep "<spark.version>" "${_DIR}/../pom.xml" | head -n1 | awk -F '[<>]' '{print $3}'`
-  local HADOOP_VERSION=`grep "<hadoop.binary.version>" "${_DIR}/../pom.xml" | head -n1 | awk -F '[<>]' '{print $3}'`
-  local APACHE_MIRROR=${APACHE_MIRROR:-'http://d3kbcqa49mib13.cloudfront.net'}
+  local spark_version=`grep "<spark.version>" "${_DIR}/../pom.xml" | head -n1 | awk -F '[<>]' '{print $3}'`
+  local hadoop_version=`grep "<hadoop.binary.version>" "${_DIR}/../pom.xml" | head -n1 | awk -F '[<>]' '{print $3}'`
+  local apache_mirror=${APACHE_MIRROR:-'http://d3kbcqa49mib13.cloudfront.net'}
 
   install_app \
-    "${APACHE_MIRROR}" \
-    "spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz" \
-    "spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}/bin/spark-shell"
+    "${apache_mirror}" \
+    "spark-${spark_version}-bin-hadoop${hadoop_version}.tgz" \
+    "spark-${spark_version}-bin-hadoop${hadoop_version}/bin/spark-shell"
 
-  SPARK_DIR="${_DIR}/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}"
+  SPARK_DIR="${_DIR}/spark-${spark_version}-bin-hadoop${hadoop_version}"
   SPARK_SUBMIT="${SPARK_DIR}/bin/spark-submit"
 }

@@ -27,9 +27,6 @@ _CALLING_DIR="$(pwd)"
 . ${_DIR}/../thirdparty/install.sh
 install_spark
 
-# Set the dir at SPARK_HOME
-export SPARK_HOME=${SPARK_DIR}
-
 # Reset the current working directory
 cd "${_CALLING_DIR}"
 
