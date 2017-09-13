@@ -99,36 +99,41 @@ private[postgresql] class PostgreSqlAstBuilder(conf: SQLConf) extends SparkSqlAs
       // ORDER BY
       //   a.attnum;
       //
-      case p @ Project(ne :: Nil, child) if ne.find(_.isInstanceOf[AggregateFunction]).isEmpty =>
-        val attr = ne.find(_.isInstanceOf[UnresolvedAttribute]).get
-        val first = First(attr, ignoreNullsExpr = Literal(true))
-        val newChild = child.transform {
-          case f @ Filter(cond, _) =>
-            val origPreds = splitConjunctivePredicates(cond)
-            val (newPreds, droppedPreds) = origPreds.partition { expr =>
-              expr.isInstanceOf[EqualTo] || expr.isInstanceOf[EqualNullSafe]
-            }
-            if (droppedPreds.nonEmpty) {
-              logWarning(
-                s"""
-                   |Spark-2.2 does not allow correlated sub-queries to have non-equal predicates,
-                   |so we drop non-supported predicates to pass JDBC metadata operations.
-                   |The dropped predicates are:
-                   |${droppedPreds.mkString(" ")}
-                 """.stripMargin)
-            }
-            f.copy(condition = newPreds.reduce(And))
+      case p @ Project(ne :: Nil, child) if ne.find { e =>
+            e.isInstanceOf[AggregateFunction] || e.isInstanceOf[UnresolvedFunction]
+          }.isEmpty =>
+        ne.find(_.isInstanceOf[UnresolvedAttribute]).map { attr =>
+          val first = First(attr, ignoreNullsExpr = Literal(true))
+          val newChild = child.transform {
+            case f @ Filter(cond, _) =>
+              val origPreds = splitConjunctivePredicates(cond)
+              val (newPreds, droppedPreds) = origPreds.partition { expr =>
+                expr.isInstanceOf[EqualTo] || expr.isInstanceOf[EqualNullSafe]
+              }
+              if (droppedPreds.nonEmpty) {
+                logWarning(
+                  s"""
+                     |Spark-2.2 does not allow correlated sub-queries to have non-equal predicates,
+                     |so we drop non-supported predicates to pass JDBC metadata operations.
+                     |The dropped predicates are:
+                     |${droppedPreds.mkString(" ")}
+                   """.stripMargin)
+              }
+              f.copy(condition = newPreds.reduce(And))
+          }
+          val projWithAggregate = Aggregate(
+            groupingExpressions = Nil,
+            aggregateExpressions = UnresolvedAlias(first.toAggregateExpression()) :: Nil,
+            child = newChild)
+          logWarning(
+            s"""
+               |Found a sub-query without aggregate, so we add `First` in the projection:
+               |$projWithAggregate
+             """.stripMargin)
+          projWithAggregate
+        }.getOrElse {
+          p
         }
-        val projWithAggregate = Aggregate(
-          groupingExpressions = Nil,
-          aggregateExpressions = UnresolvedAlias(first.toAggregateExpression()) :: Nil,
-          child = newChild)
-        logWarning(
-          s"""
-             |Found a sub-query without aggregate, so we add `First` in the projection:
-             |$projWithAggregate
-           """.stripMargin)
-        projWithAggregate
     }
     ScalarSubquery(proj)
   }
