@@ -208,11 +208,11 @@ Then, launches the SQL server with a Spark standalone mode:
     $ ./sbin/start-sql-server.sh \
         --conf spark.master=local[*] \
         --conf spark.driver.extraJavaOptions=-XX:+UseG1GC \
-        --conf spark.driver.memory=8g \
+        --conf spark.driver.memory=8g
 
 Finally, runs TPC-DS queries against the SQL server:
 
-    $ ./sbin/run-tpcds-benchmark /tmp/spark-tpcds-data
+    $ ./sbin/run-tpcds-benchmark --data-location /tmp/spark-tpcds-data
 
 ## Bug reports
 
