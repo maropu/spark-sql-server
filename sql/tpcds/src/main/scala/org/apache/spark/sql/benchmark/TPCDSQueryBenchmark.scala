@@ -23,13 +23,15 @@ import java.util.Properties
 
 import scala.collection.mutable
 
+import org.apache.commons.lang3.StringUtils
+
 
 /**
  * Benchmark to measure TPCDS query performance.
  * To run this:
  *  scala -cp <this test jar> org.apache.spark.sql.server.benchmark.TPCDSQueryBenchmark
  */
-object TPCDSQueryBenchmark {
+object TPCDSQueryBenchmark extends Logging {
 
   // scalastyle:off classforname
   /** Preferred alternative to Class.forName(className) */
@@ -54,10 +56,146 @@ object TPCDSQueryBenchmark {
 
     private def doSql[T](sql: String)(f: ResultSet => T): Seq[T] = {
       val results = new mutable.ArrayBuffer[T]()
+      val logs = new mutable.ArrayBuffer[Seq[Any]]()
       val rs = statement.executeQuery(sql)
+      val rsMetaData = rs.getMetaData
+
+      def getTypedValue(offset: Int): Any = {
+        rsMetaData.getColumnType(offset) match {
+          case java.sql.Types.BIT => rs.getBoolean(offset)
+          case java.sql.Types.SMALLINT => rs.getShort(offset)
+          case java.sql.Types.INTEGER => rs.getInt(offset)
+          case java.sql.Types.BIGINT => rs.getLong(offset)
+          case java.sql.Types.REAL => rs.getFloat(offset)
+          case java.sql.Types.DOUBLE => rs.getDouble(offset)
+          case java.sql.Types.VARCHAR => rs.getString(offset)
+          case java.sql.Types.DATE => rs.getDate(offset)
+          case java.sql.Types.TIMESTAMP => rs.getTimestamp(offset)
+          case java.sql.Types.NUMERIC => rs.getBigDecimal(offset)
+          case _ => "unknown"
+        }
+      }
+
+      def logResultRows(_numRows: Int, truncate: Int = 20, vertical: Boolean = false): Unit = {
+        val numRows = _numRows.max(0)
+        val hasMoreData = logs.length > numRows
+        val data = logs.take(numRows)
+
+        // For array values, replace Seq and Array with square brackets
+        // For cells that are beyond `truncate` characters, replace it with the
+        // first `truncate-3` and "..."
+        val fieldNames = (1 to rsMetaData.getColumnCount).map(rsMetaData.getColumnName)
+        val rows: Seq[Seq[String]] = fieldNames +: data.map { row =>
+          row.map { cell =>
+            val str = cell match {
+              case null => "null"
+              case binary: Array[Byte] => binary.map("%02X".format(_)).mkString("[", " ", "]")
+              case array: Array[_] => array.mkString("[", ", ", "]")
+              case seq: Seq[_] => seq.mkString("[", ", ", "]")
+              case _ => cell.toString
+            }
+            if (truncate > 0 && str.length > truncate) {
+              // do not show ellipses for strings shorter than 4 characters.
+              if (truncate < 4) str.substring(0, truncate)
+              else str.substring(0, truncate - 3) + "..."
+            } else {
+              str
+            }
+          }: Seq[String]
+        }
+
+        val sb = new StringBuilder
+        val numCols = rsMetaData.getColumnCount
+        // We set a minimum column width at '3'
+        val minimumColWidth = 3
+
+        if (!vertical) {
+          // Initialise the width of each column to a minimum value
+          val colWidths = Array.fill(numCols)(minimumColWidth)
+
+          // Compute the width of each column
+          for (row <- rows) {
+            for ((cell, i) <- row.zipWithIndex) {
+              colWidths(i) = math.max(colWidths(i), cell.length)
+            }
+          }
+
+          // Create SeparateLine
+          val sep: String = colWidths.map("-" * _).addString(sb, "+", "+", "+\n").toString()
+
+          // column names
+          rows.head.zipWithIndex.map { case (cell, i) =>
+            if (truncate > 0) {
+              StringUtils.leftPad(cell, colWidths(i))
+            } else {
+              StringUtils.rightPad(cell, colWidths(i))
+            }
+          }.addString(sb, "|", "|", "|\n")
+
+          sb.append(sep)
+
+          // data
+          rows.tail.foreach {
+            _.zipWithIndex.map { case (cell, i) =>
+              if (truncate > 0) {
+                StringUtils.leftPad(cell.toString, colWidths(i))
+              } else {
+                StringUtils.rightPad(cell.toString, colWidths(i))
+              }
+            }.addString(sb, "|", "|", "|\n")
+          }
+
+          sb.append(sep)
+        } else {
+          // Extended display mode enabled
+          val fieldNames = rows.head
+          val dataRows = rows.tail
+
+          // Compute the width of field name and data columns
+          val fieldNameColWidth = fieldNames.foldLeft(minimumColWidth) { case (curMax, fieldName) =>
+            math.max(curMax, fieldName.length)
+          }
+          val dataColWidth = dataRows.foldLeft(minimumColWidth) { case (curMax, row) =>
+            math.max(curMax, row.map(_.length).reduceLeftOption[Int] { case (cellMax, cell) =>
+              math.max(cellMax, cell)
+            }.getOrElse(0))
+          }
+
+          dataRows.zipWithIndex.foreach { case (row, i) =>
+            // "+ 5" in size means a character length except for padded names and data
+            val rowHeader = StringUtils.rightPad(
+              s"-RECORD $i", fieldNameColWidth + dataColWidth + 5, "-")
+            sb.append(rowHeader).append("\n")
+            row.zipWithIndex.map { case (cell, j) =>
+              val fieldName = StringUtils.rightPad(fieldNames(j), fieldNameColWidth)
+              val data = StringUtils.rightPad(cell, dataColWidth)
+              s" $fieldName | $data "
+            }.addString(sb, "", "\n", "\n")
+          }
+        }
+
+        // Print a footer
+        if (vertical && data.isEmpty) {
+          // In a vertical mode, print an empty row set explicitly
+          sb.append("(0 rows)\n")
+        } else if (hasMoreData) {
+          // For Data that has more than "numRows" records
+          val rowsString = if (numRows == 1) "row" else "rows"
+          sb.append(s"only showing top $numRows $rowsString\n")
+        }
+
+        logInfo(s"\n${sb.toString()}")
+      }
+
       while (rs.next()) {
+        if (log.isInfoEnabled) {
+          val row = (1 to rsMetaData.getColumnCount).map(getTypedValue)
+          logs.append(row)
+        }
         results.append(f(rs))
       }
+
+      logResultRows(_numRows = 10, truncate = 20, vertical = true)
       rs.close()
       results.toSeq
     }
