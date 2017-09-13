@@ -119,7 +119,7 @@ object TPCDSQueryBenchmark {
       // scalastyle:off
       println(
         s"""
-           |Usage: scala -cp <this test jar> <this class> <TPCDS data location>
+           |Usage: scala -cp <this test jar> <this class> <TPCDS data location> [<server URL>] [<query filter>]
            |
            |In order to run this benchmark, the value of <TPCDS data location> needs to be set
            |to the location where the generated TPCDS data is stored.
@@ -141,14 +141,26 @@ object TPCDSQueryBenchmark {
       "q81", "q82", "q83", "q84", "q85", "q86", "q87", "q88", "q89", "q90",
       "q91", "q92", "q93", "q94", "q95", "q96", "q97", "q98", "q99")
 
+    val queryFilter = args.drop(2).headOption.map(_.split(",").map(_.trim).toSet)
+    val queriesToRun = if (queryFilter.nonEmpty) {
+      val queries = tpcdsAllQueries.filter { case queryName => queryFilter.contains(queryName) }
+      if (queries.isEmpty) {
+        throw new RuntimeException("Bad query name filter: " + queryFilter)
+      }
+      queries
+    } else {
+      tpcdsAllQueries
+    }
+
     val props = new Properties()
     props.put("user", System.getProperty("user.name"))
     props.put("password", "")
-    val conn = DriverManager.getConnection("jdbc:postgresql://localhost:5432/default", props)
+    val servUrl = args.drop(1).headOption.getOrElse("localhost:5432")
+    val conn = DriverManager.getConnection(s"jdbc:postgresql://$servUrl/default", props)
     conn.setAutoCommit(false)
     val stmt = conn.createStatement()
     stmt.setFetchSize(100000)
-    val tpcdsQueries = TpcdsQueries(stmt, tpcdsAllQueries, dataLocation = args.head)
+    val tpcdsQueries = TpcdsQueries(stmt, queriesToRun, dataLocation = args.head)
     tpcdsQueries.run()
   }
 }
