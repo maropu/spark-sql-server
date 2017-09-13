@@ -32,11 +32,12 @@ import org.apache.spark.util.Utils
 
 class PostgreSQLV3ProtocolTest extends PostgreSQLJdbcTest {
 
+  // TODO: Replace `snappy-java` with `commons.lang3.SystemUtils`
   private val isOsSupported = Seq("Linux", "Mac").contains(OSInfo.getOSName)
   private val isArchSupported = Seq("x86_64").contains(OSInfo.getArchName)
 
-  private val tempDirPath = Utils.createTempDir().getCanonicalPath
-  private val cmdPath = {
+  private lazy val tempDirPath = Utils.createTempDir().getCanonicalPath
+  private lazy val cmdPath = {
     val resourcePath = s"pgproto/${OSInfo.getOSName}/${OSInfo.getArchName}/pgproto"
     val classLoader = Thread.currentThread().getContextClassLoader
     val _cmdPath = classLoader.getResource(resourcePath).getPath
