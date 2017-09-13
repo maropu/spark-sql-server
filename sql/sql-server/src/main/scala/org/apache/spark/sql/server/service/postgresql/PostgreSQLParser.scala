@@ -99,9 +99,14 @@ private[postgresql] class PostgreSqlAstBuilder(conf: SQLConf) extends SparkSqlAs
       // ORDER BY
       //   a.attnum;
       //
-      case p @ Project(ne :: Nil, child) if ne.find { e =>
-            e.isInstanceOf[AggregateFunction] || e.isInstanceOf[UnresolvedFunction]
-          }.isEmpty =>
+      case p @ Project(ne :: Nil, child)
+        if ne.find(_.isInstanceOf[AggregateFunction]).isEmpty &&
+          ne.find {
+            case uf: UnresolvedFunction =>
+              uf.name.funcName == "pg_get_expr"
+            case e =>
+              false
+          }.isDefined =>
         ne.find(_.isInstanceOf[UnresolvedAttribute]).map { attr =>
           val first = First(attr, ignoreNullsExpr = Literal(true))
           val newChild = child.transform {
