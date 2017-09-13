@@ -21,6 +21,8 @@ import org.apache.log4j.{Level, LogManager, PropertyConfigurator}
 import org.slf4j.{Logger, LoggerFactory}
 import org.slf4j.impl.StaticLoggerBinder
 
+import org.apache.spark.sql.benchmark.Utils._
+
 /**
  * Utility trait for classes that want to log data. Creates a SLF4J logger for the class and allows
  * logging messages at different levels using methods that only evaluate parameters lazily if the
@@ -121,7 +123,7 @@ trait Logging {
       if (!log4j12Initialized) {
         Logging.defaultSparkLog4jConfig = true
         val defaultLogProps = "org/apache/spark/log4j-defaults.properties"
-        Option(Logging.getSparkClassLoader.getResource(defaultLogProps)) match {
+        Option(getSparkClassLoader.getResource(defaultLogProps)) match {
           case Some(url) =>
             PropertyConfigurator.configure(url)
             if (!silent) {
@@ -165,17 +167,6 @@ private[spark] object Logging {
   @volatile private var initialized = false
   @volatile private var defaultRootLevel: Level = null
   @volatile private var defaultSparkLog4jConfig = false
-
-  private def getSparkClassLoader: ClassLoader = getClass.getClassLoader
-
-  private def getContextOrSparkClassLoader: ClassLoader =
-    Option(Thread.currentThread().getContextClassLoader).getOrElse(getSparkClassLoader)
-
-  // scalastyle:off classforname
-  private def classForName(className: String): Class[_] = {
-    Class.forName(className, true, getContextOrSparkClassLoader)
-    // scalastyle:on classforname
-  }
 
   val initLock = new Object()
   try {

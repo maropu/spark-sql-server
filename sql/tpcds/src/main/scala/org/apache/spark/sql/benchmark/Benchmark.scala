@@ -17,15 +17,16 @@
 
 package org.apache.spark.sql.benchmark
 
-import java.io.{File, InputStream, OutputStream, PrintStream}
+import java.io.{OutputStream, PrintStream}
 
 import scala.collection.mutable
 import scala.concurrent.duration._
-import scala.io.Source
 import scala.util.Try
 
 import org.apache.commons.io.output.TeeOutputStream
 import org.apache.commons.lang3.SystemUtils
+
+import org.apache.spark.sql.benchmark.Utils._
 
 /**
  * Utility class to benchmark components. An example of how to use this is:
@@ -191,67 +192,6 @@ private[benchmark] object Benchmark {
   case class Case(name: String, fn: Timer => Unit, numIters: Int)
   case class Result(avgMs: Double, bestRate: Double, bestMs: Double)
 
-  /**
-   * Return and start a daemon thread that processes the content of the input stream line by line.
-   */
-  def processStreamByLine(
-      threadName: String,
-      inputStream: InputStream,
-      processLine: String => Unit): Thread = {
-    val t = new Thread(threadName) {
-      override def run() {
-        for (line <- Source.fromInputStream(inputStream).getLines()) {
-          processLine(line)
-        }
-      }
-    }
-    t.setDaemon(true)
-    t.start()
-    t
-  }
-
-  /**
-   * Execute a command and return the process running the command.
-   */
-  private def executeCommand(
-      command: Seq[String],
-      workingDir: File = new File("."),
-      extraEnvironment: Map[String, String] = Map.empty,
-      redirectStderr: Boolean = true): Process = {
-    val builder = new ProcessBuilder(command: _*).directory(workingDir)
-    val environment = builder.environment()
-    for ((key, value) <- extraEnvironment) {
-      environment.put(key, value)
-    }
-    val process = builder.start()
-    if (redirectStderr) {
-      val threadName = "redirect stderr for command " + command(0)
-      def log(s: String): Unit = {}
-      processStreamByLine(threadName, process.getErrorStream, log)
-    }
-    process
-  }
-
-  /**
-   * Execute a command and get its output, throwing an exception if it yields a code other than 0.
-   */
-  private def executeAndGetOutput(
-      command: Seq[String],
-      workingDir: File = new File("."),
-      extraEnvironment: Map[String, String] = Map.empty,
-      redirectStderr: Boolean = true): String = {
-    val process = executeCommand(command, workingDir, extraEnvironment, redirectStderr)
-    val output = new StringBuilder
-    val threadName = "read stdout for " + command(0)
-    def appendToOutput(s: String): Unit = output.append(s).append("\n")
-    val stdoutThread = processStreamByLine(threadName, process.getInputStream, appendToOutput)
-    val exitCode = process.waitFor()
-    stdoutThread.join()   // Wait for it to finish reading output
-    if (exitCode != 0) {
-      throw new RuntimeException(s"Process $command exited with code $exitCode")
-    }
-    output.toString
-  }
 
   /**
    * This should return a user helpful processor information. Getting at this depends on the OS.
