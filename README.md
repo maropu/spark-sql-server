@@ -201,7 +201,7 @@ with the same ZooKeeper configuration (ZooKeeper URL and directory) as follows;
 You first need to generate test data for TPC-DS queries:
 
     $ git clone https://github.com/maropu/spark-tpcds-datagen.git
-    $ ./bin/dsdgen /tmp/spark-tpcds-data
+    $ ./bin/dsdgen --output-location /tmp/spark-tpcds-data
 
 Then, launches the SQL server with a Spark standalone mode:
 
