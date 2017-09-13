@@ -196,6 +196,24 @@ with the same ZooKeeper configuration (ZooKeeper URL and directory) as follows;
         --conf spark.deploy.zookeeper.url=<ZooKeeper URL> \
         --conf spark.deploy.zookeeper.dir=<ZooKeeper directory to store recovery state>
 
+# Run TPC-DS queries in Spark via the SQL server
+
+You first need to generate test data for TPC-DS queries:
+
+    $ git clone https://github.com/maropu/spark-tpcds-datagen.git
+    $ ./bin/dsdgen /tmp/spark-tpcds-data
+
+Then, launches the SQL server with a Spark standalone mode:
+
+    $ ./sbin/start-sql-server.sh \
+        --conf spark.master=local[*] \
+        --conf spark.driver.extraJavaOptions=-XX:+UseG1GC \
+        --conf spark.driver.memory=8g \
+
+Finally, runs TPC-DS queries against the SQL server:
+
+    $ ./sbin/run-tpcds-benchmark /tmp/spark-tpcds-data
+
 ## Bug reports
 
 If you hit some bugs and requests, please leave some comments on [Issues](https://github.com/maropu/spark-sql-server/issues)
