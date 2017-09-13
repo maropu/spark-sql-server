@@ -196,7 +196,7 @@ with the same ZooKeeper configuration (ZooKeeper URL and directory) as follows;
         --conf spark.deploy.zookeeper.url=<ZooKeeper URL> \
         --conf spark.deploy.zookeeper.dir=<ZooKeeper directory to store recovery state>
 
-# Run TPC-DS queries in Spark via the SQL server
+## Run TPC-DS queries in Spark via the SQL server
 
 You first need to generate test data for TPC-DS queries:
 
