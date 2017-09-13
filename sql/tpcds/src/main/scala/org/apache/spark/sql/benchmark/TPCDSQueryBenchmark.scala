@@ -142,6 +142,7 @@ object TPCDSQueryBenchmark {
       "q91", "q92", "q93", "q94", "q95", "q96", "q97", "q98", "q99")
 
     val queryFilter = args.drop(2).headOption.map(_.split(",").map(_.trim).toSet)
+      .getOrElse(Set.empty)
     val queriesToRun = if (queryFilter.nonEmpty) {
       val queries = tpcdsAllQueries.filter { case queryName => queryFilter.contains(queryName) }
       if (queries.isEmpty) {
