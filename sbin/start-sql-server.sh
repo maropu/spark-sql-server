@@ -61,7 +61,7 @@ function find_resource {
   local scala_version=`grep "<scala.binary.version>" "${_DIR}/../pom.xml" | head -n1 | awk -F '[<>]' '{print $3}'`
   local jar_file="sql-server_${scala_version}-${spark_version}-SNAPSHOT-with-dependencies.jar"
   local built_jar="$_DIR/../target/${jar_file}"
-  if [ -e $built_jar]; then
+  if [ -e $built_jar ]; then
     RESOURCES=$built_jar
   else
     RESOURCES="$_DIR/../assembly/${jar_file}"
