@@ -214,6 +214,9 @@ Finally, runs TPC-DS queries against the SQL server:
 
     $ ./sbin/run-tpcds-benchmark --data-location /tmp/spark-tpcds-data
 
+[This benchmark code](./sql/tpcds/src/main/scala/org/apache/spark/sql/benchmark/TPCDSQueryBenchmark.scala)
+is a good example about how to connect the SQL server with the Postgre JDBC driver.
+
 ## Bug reports
 
 If you hit some bugs and requests, please leave some comments on [Issues](https://github.com/maropu/spark-sql-server/issues)
