@@ -77,7 +77,7 @@ object TPCDSQueryBenchmark extends Logging {
       if (log.isInfoEnabled) {
         val fieldNames = (1 to rsMetaData.getColumnCount).map(rsMetaData.getColumnName)
         val logOutput = showString(logs, fieldNames, _numRows = 10, truncate = 60, vertical = true)
-        logInfo(s"\n$logOutput}")
+        logInfo(s"\n$logOutput")
       }
 
       rs.close()
