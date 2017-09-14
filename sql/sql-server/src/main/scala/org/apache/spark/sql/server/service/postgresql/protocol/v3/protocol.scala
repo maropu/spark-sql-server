@@ -758,7 +758,7 @@ class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
     // `exceptionCaught` possibly calls this function
     if (channelIdToSessionId.containsKey(channelId)) {
       val sessionId = channelIdToSessionId.remove(channelId)
-      logInfo(s"Close the session (sessionId=${sessionId}, channelId=$channelId)")
+      logInfo(s"Close the session (sessionId=$sessionId, channelId=$channelId)")
       cli.closeSession(sessionId)
     }
   }
@@ -992,7 +992,7 @@ class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
 
           // TODO: Make parameter bindings more smart, e.g., based on analyzed logical plans
           val boundQuery = ParameterBinder.bind(queryState.queryStatement, strParams.toMap)
-          logInfo(s"Bound query: $boundQuery")
+          logInfo(s"Bound query:\n$boundQuery")
 
           try {
             val execState = cli.executeStatement(sessionId, boundQuery, isCursorMode)

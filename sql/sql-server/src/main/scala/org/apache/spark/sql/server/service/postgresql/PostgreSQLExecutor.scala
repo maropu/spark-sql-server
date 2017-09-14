@@ -56,9 +56,9 @@ private[postgresql] case class PostgreSQLOperation(
   }
 
   override def cancel(): Unit = {
-    logInfo(
-      s"""Cancelling query with $statementId;
-         | $statement
+    logInfo(s"""
+         |Cancelling query with $statementId;
+         |$statement
        """.stripMargin)
     if (statementId != null) {
       sqlContext.sparkContext.cancelJobGroup(statementId)
@@ -79,9 +79,9 @@ private[postgresql] case class PostgreSQLOperation(
   }
 
   override def run(): Iterator[InternalRow] = {
-    logInfo(
-      s"""Running query with $statementId;
-         | $statement
+    logInfo(s"""
+         |Running query with $statementId;
+         |$statement
        """.stripMargin)
     setState(RUNNING)
 
