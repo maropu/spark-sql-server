@@ -21,10 +21,10 @@ import java.sql.{DriverManager, ResultSet, Statement}
 import java.util.Properties
 
 import scala.collection.mutable
-
-import org.apache.commons.lang3.StringUtils
+import scala.util.control.NonFatal
 
 import org.apache.spark.sql.benchmark.Utils._
+
 
 /**
  * Benchmark to measure TPCDS query performance.
@@ -108,7 +108,10 @@ object TPCDSQueryBenchmark extends Logging {
         benchmark.addCase(name) { i =>
           doSql[Long](queryString) { _ => 1}
         }
-        benchmark.run()
+        try { benchmark.run() } catch {
+          case NonFatal(e) =>
+            logWarning(s"Skip the query $name because: ${e.getMessage}")
+        }
       }
     }
   }
