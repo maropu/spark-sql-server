@@ -31,3 +31,4 @@ install_spark
 cd "${_CALLING_DIR}"
 
 echo "Install \`spark\` in ${SPARK_DIR}" 1>&2
+

@@ -56,22 +56,25 @@ if [[ "$@" = *--help ]] || [[ "$@" = *-h ]]; then
 fi
 
 # Resolve a jar location for the SQL server
-_SPARK_VERSION=`grep "<spark.version>" "${_DIR}/../pom.xml" | head -n1 | awk -F '[<>]' '{print $3}'`
-_SCALA_VERSION=`grep "<scala.binary.version>" "${_DIR}/../pom.xml" | head -n1 | awk -F '[<>]' '{print $3}'`
-_JAR_FILE="sql-server_${_SCALA_VERSION}-${_SPARK_VERSION}-SNAPSHOT-with-dependencies.jar"
-_BUILT_JAR="$_DIR/../target/${_JAR_FILE}"
-if [ -e $_BUILT_JAR ]; then
-  RESOURCES=$_BUILT_JAR
-else
-  RESOURCES="$_DIR/../assembly/${_JAR_FILE}"
-  echo "${_BUILT_JAR} not found, so use pre-compiled ${RESOURCES}"
-fi
+function find_resource {
+  local spark_version=`grep "<spark.version>" "${_DIR}/../pom.xml" | head -n1 | awk -F '[<>]' '{print $3}'`
+  local scala_version=`grep "<scala.binary.version>" "${_DIR}/../pom.xml" | head -n1 | awk -F '[<>]' '{print $3}'`
+  local jar_file="sql-server_${scala_version}-${spark_version}-SNAPSHOT-with-dependencies.jar"
+  local built_jar="$_DIR/../target/${jar_file}"
+  if [ -e $built_jar]; then
+    RESOURCES=$built_jar
+  else
+    RESOURCES="$_DIR/../assembly/${jar_file}"
+    echo "${built_jar} not found, so use pre-compiled ${RESOURCES}"
+  fi
+}
+
+# Do preparations before launcing spark-submit
+find_resource
 
 echo "Using \`spark-submit\` from path: $SPARK_DIR" 1>&2
-
-# An entry point for the SQL server
 CLASS="org.apache.spark.sql.server.SQLServer"
 PROPERTY_FILE=${_DIR}/../conf/spark-defaults.conf
 APP_NAME="Spark SQL Server"
-
 exec "${SPARK_DIR}"/sbin/spark-daemon.sh submit $CLASS 1 --name "${APP_NAME}" --properties-file ${PROPERTY_FILE} "$@" ${RESOURCES}
+

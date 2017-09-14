@@ -37,3 +37,4 @@ else
 fi
 
 "${SPARK_DIR}/sbin"/spark-daemon.sh stop org.apache.spark.sql.server.SQLServer 1
+

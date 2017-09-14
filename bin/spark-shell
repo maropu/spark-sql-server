@@ -35,6 +35,5 @@ else
 fi
 
 echo "Using \`spark-shell\` from path: $SPARK_DIR" 1>&2
-
-# Last, call the `spark-shell` command as usual
 ${SPARK_DIR}/bin/spark-shell --properties-file ${_DIR}/../conf/spark-defaults.conf "$@"
+

@@ -24,21 +24,26 @@
 _DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Resolve a jar location for the TPCDS benchmark
-_SPARK_SQL_SERVER_VERSION=`grep "<version>" "${_DIR}/../pom.xml" | head -n2 | tail -n1 | awk -F '[<>]' '{print $3}'`
-_SCALA_VERSION=`grep "<scala.binary.version>" "${_DIR}/../pom.xml" | head -n1 | awk -F '[<>]' '{print $3}'`
-_JAR_FILE="tpcds_${_SCALA_VERSION}-${_SPARK_SQL_SERVER_VERSION}-with-dependencies.jar"
-_BUILT_JAR="$_DIR/../target/${_JAR_FILE}"
-if [ -e $_BUILT_JAR ]; then
-  RESOURCES=$_BUILT_JAR
-else
-  RESOURCES="$_DIR/../assembly/${_JAR_FILE}"
-  echo "${_BUILT_JAR} not found, so use pre-compiled ${RESOURCES}" 1>&2
-fi
+function find_resource {
+  local spark_sql_server_version=`grep "<version>" "${_DIR}/../pom.xml" | head -n2 | tail -n1 | awk -F '[<>]' '{print $3}'`
+  local scala_version=`grep "<scala.binary.version>" "${_DIR}/../pom.xml" | head -n1 | awk -F '[<>]' '{print $3}'`
+  local jar_file="tpcds_${scala_version}-${spark_sql_server_version}-with-dependencies.jar"
+  local built_jar="$_DIR/../target/${jar_file}"
+  if [ -e "$built_jar" ]; then
+    RESOURCES=$built_jar
+  else
+    RESOURCES="$_DIR/../assembly/${jar_file}"
+    echo "${built_jar} not found, so use pre-compiled ${RESOURCES}" 1>&2
+  fi
+}
 
-# Install the proper version of Scala for running TPCDS queries
+# Install the proper version of Scala for lanching benchmarks
 . ${_DIR}/../thirdparty/install.sh
 install_scala
 
-# An entry point for the TPCDS data generator
-CLASS="org.apache.spark.sql.benchmark.TPCDSQueryBenchmark"
-exec "${SCALA_BIN}" -cp ${RESOURCES} ${CLASS} "$@"
+# Do preparations before rinning TPCDS quries
+find_resource
+
+# Run TPCDS queries
+exec "${SCALA_BIN}" -cp ${RESOURCES} org.apache.spark.sql.benchmark.TPCDSQueryBenchmark "$@"
+
