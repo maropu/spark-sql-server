@@ -184,7 +184,10 @@ private[postgresql] class PostgreSqlAstBuilder(conf: SQLConf) extends SparkSqlAs
     withOrigin(ctx) {
       val expr = expression(ctx.primaryExpression)
       val pos = Literal(0, IntegerType)
-      val forNum = ctx.INTEGER_VALUE().asScala.toList match { case from :: Nil => from }
+      val forNum = ctx.INTEGER_VALUE().asScala.toList match {
+        case from :: Nil => from
+        case _ => throw new ParseException("substring has not an enough parameter for `from`", ctx)
+      }
       val len = Literal(forNum, IntegerType)
       Substring(expr, pos, len)
     }

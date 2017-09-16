@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql.server
 
+import scala.language.implicitConversions
+
 import org.apache.spark.internal.config.{ConfigBuilder, ConfigEntry, ConfigReader}
 import org.apache.spark.sql.internal.SQLConf
 

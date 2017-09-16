@@ -889,7 +889,7 @@ class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
     // (Optionally, the startup message can include additional settings for run-time parameters.)
     val byteArray = new Array[Byte](msgBuffer.remaining)
     msgBuffer.get(byteArray)
-    val propStr = new String(byteArray).split('\0')
+    val propStr = new String(byteArray).split('\u0000')
     val (keys, values) = propStr.zipWithIndex.partition(_._2 % 2 == 0) match {
       case (a, b) => (a.map(_._1), b.map(_._1))
     }
