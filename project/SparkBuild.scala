@@ -28,6 +28,7 @@ import sbt.Classpaths.publishTask
 import sbt.Keys._
 import sbtunidoc.Plugin.UnidocKeys.unidocGenjavadocVersion
 import com.simplytyped.Antlr4Plugin._
+import com.sksamuel.scapegoat.sbt.ScapegoatSbtPlugin.autoImport.scapegoatVersion
 import com.typesafe.sbt.pom.{PomBuild, SbtPomKeys}
 import com.typesafe.tools.mima.plugin.MimaKeys
 import org.scalastyle.sbt.ScalastylePlugin.autoImport._
@@ -36,6 +37,8 @@ import org.scalastyle.sbt.Tasks
 import spray.revolver.RevolverPlugin._
 
 object BuildCommons {
+
+  val scalaBinaryVersion = "2.11"
 
   private val buildLocation = file(".").getAbsoluteFile.getParentFile
 
@@ -84,6 +87,14 @@ object SparkBuild extends PomBuild {
     scalacOptions ++= Seq(
       "-P:genjavadoc:out=" + (target.value / "java"),
       "-P:genjavadoc:strictVisibility=true" // hide package private types
+    )
+  )
+
+  lazy val sparkScapegoatSettings: Seq[sbt.Def.Setting[_]] = Seq(
+    libraryDependencies += compilerPlugin(
+      "com.sksamuel.scapegoat" %% "scalac-scapegoat-plugin" % scapegoatVersion.value % Compile.name),
+    scalacOptions ++= Seq(
+      "-P:scapegoat:dataDir=/tmp"
     )
   )
 
@@ -167,7 +178,7 @@ object SparkBuild extends PomBuild {
     }
   )
 
-  lazy val sharedSettings = sparkGenjavadocSettings ++
+  lazy val sharedSettings = sparkGenjavadocSettings ++ sparkScapegoatSettings ++
       (if (sys.env.contains("NOLINT_ON_COMPILE")) Nil else enableScalaStyle) ++ Seq(
     exportJars in Compile := true,
     exportJars in Test := false,
@@ -341,8 +352,6 @@ object CopyDependencies {
 
 object TestSettings {
   import BuildCommons._
-
-  private val scalaBinaryVersion = "2.11"
 
   lazy val settings = Seq (
     // Fork new JVMs for tests and set Java options for those
