@@ -19,8 +19,9 @@ package org.apache.spark.sql.server.service.postgresql.protocol.v3
 
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
+import java.sql.SQLException
 
-import org.apache.spark.{SparkException, SparkFunSuite}
+import org.apache.spark.SparkFunSuite
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types.StructType
@@ -54,7 +55,7 @@ class PostgreSQLWireProtocolSuite extends SparkFunSuite {
     row.update(0, UTF8String.fromString("abcdefghijk"))
     val schema = StructType.fromDDL("a STRING")
     val rowConverters = PostgreSQLRowConverters(conf, schema, Seq(false))
-    val errMsg = intercept[SparkException] {
+    val errMsg = intercept[SQLException] {
       v3Protocol.DataRow(row, rowConverters)
     }.getMessage
     assert(errMsg.contains(

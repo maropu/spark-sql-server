@@ -995,7 +995,7 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
     testJdbcStatement { statement =>
       Seq("COMMIT", "ROLLBACK"). foreach { cmd =>
         val e = intercept[SQLException] { statement.execute(cmd) }
-        assert(e.getMessage.contains(s"Cannot handle command $cmd in `Bind`"))
+        assert(e.getMessage.contains(s"Operation not allowed: $cmd"))
       }
     }
   }

@@ -38,7 +38,6 @@ import io.netty.handler.ssl.util.SelfSignedCertificate
 import org.apache.hadoop.security.UserGroupInformation
 import org.ietf.jgss.{GSSContext, GSSCredential, GSSException, GSSManager, Oid}
 
-import org.apache.spark.SparkException
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.parser.ParseException
@@ -49,6 +48,7 @@ import org.apache.spark.sql.server.service.{BEGIN, FETCH, Operation, SELECT, Ses
 import org.apache.spark.sql.server.service.postgresql.Metadata._
 import org.apache.spark.sql.server.service.postgresql.protocol.v3.PostgreSQLRowConverters._
 import org.apache.spark.sql.types._
+import org.apache.spark.util.Utils._
 
 
 /**
@@ -70,7 +70,7 @@ case class PostgreSQLWireProtocol(msgBufferSizeInByte: Int) {
       messageBuffer.slice(0, messageLen)
     } catch {
       case NonFatal(e) =>
-        throw new SparkException(
+        throw new SQLException(
           "Cannot generate a V3 protocol message because buffer is not enough for the message. " +
             s"To avoid this exception, you might set higher value at " +
             s"`${SQLServerConf.SQLSERVER_MESSAGE_BUFFER_SIZE_IN_BYTES.key}`")
@@ -685,9 +685,16 @@ case class SessionV3State(v3Protocol: PostgreSQLWireProtocol, secretKey: Int)
 }
 
 object SessionV3State {
-  def resetPortalState(portalName: String, state: SessionV3State): Unit = {
-    state.portals.remove(portalName)
+
+  def resetState(
+      state: SessionV3State,
+      queryName: Option[String] = None,
+      portalName: Option[String] = None): Unit = {
+    queryName.foreach(state.queries.remove)
+    portalName.foreach(state.portals.remove)
     state.execState = null
+    state.resultRowIter = null
+    state.pendingBytes = Array.empty
   }
 }
 
@@ -723,7 +730,7 @@ class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
   }
 
   override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): Unit = {
-    logError(s"Exception detected: ${cause.getMessage}")
+    logError(s"Exception detected: ${exceptionString(cause)}")
     handleException(ctx, cause.getMessage)
     closeSession(channelId = getUniqueChannelId(ctx))
     ctx.close()
@@ -773,7 +780,7 @@ class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
     // In an exception happens, ErrorResponse is issued followed by ReadyForQuery.
     // All further processing of the query string is aborted by ErrorResponse (even if more
     // queries remained in it).
-    logWarning(errMsg)
+    logError(errMsg)
     ctx.write(ErrorResponse(errMsg))
     ctx.write(ReadyForQuery)
     ctx.flush()
@@ -816,7 +823,8 @@ class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
           }
         } catch {
           case e: GSSException =>
-            throw new SQLException(s"Kerberos authentication failed: $e")
+            handleException(ctx, s"Kerberos authentication failed: ${exceptionString(e)}")
+            false
         } finally {
           if (gssContext != null) {
             try {
@@ -866,12 +874,13 @@ class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
     } else if (magic == CANCEL_REQUEST_CODE) {
       val channelId = msgBuffer.getInt()
       val secretKey = msgBuffer.getInt()
-      val sessionState = Some(channelIdToSessionId.get(channelId)).map(getSessionState)
-        .getOrElse {
-          throw new SQLException(s"Unknown cancel request: channelId=$channelId")
+      val sessionState = Some(channelIdToSessionId.get(channelId)).map(getSessionState).getOrElse {
+          handleException(ctx, s"Unknown cancel request: channelId=$channelId")
+          return
         }
       if (sessionState.secretKey != secretKey) {
-        throw new SQLException(s"Illegal secretKey: channelId=$channelId")
+        handleException(ctx, s"Illegal secretKey: channelId=$channelId")
+        return
       }
       logWarning(s"Canceling the running query: channelId=$channelId")
       sessionState.execState.cancel()
@@ -881,7 +890,8 @@ class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
       // The protocol version number. The most significant 16 bits are the major version number
       // (3 for the protocol described here). The least significant 16 bits are
       // the minor version number (0 for the protocol described here).
-      throw new SQLException(s"Protocol version $magic unsupported")
+      handleException(ctx, s"Protocol version $magic unsupported")
+      return
     }
 
     // This message includes the names of the user and of the database the user wants to
@@ -964,19 +974,23 @@ class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
       val message = try {
         extractClientMessageType(ByteBuffer.wrap(msg))
       } catch {
-        case NonFatal(e) => handleException(ctx, e.getMessage)
+        case NonFatal(e) =>
+          handleException(ctx, e.getMessage)
+          resetState(sessionState)
+          return
       }
       message match {
         case PasswordMessage(token) =>
           if (handleGSSAuthentication(ctx, sessionState, token)) {
             handleAuthenticationOk(ctx, sessionState)
           }
-          return
         case Bind(portalName, queryName, formats, params, resultFormats) =>
           logInfo(s"Bind: portalName=$portalName queryName=$queryName formats=$formats "
             + s"params=$params resultFormats=$resultFormats")
           val queryState = sessionState.queries.getOrElse(queryName, {
-            throw new SQLException(s"Unknown query specified: $queryName")
+            handleException(ctx, s"Unknown query specified: $queryName")
+            resetState(sessionState)
+            return
           })
 
           val isCursorMode = !portalName.isEmpty()
@@ -1008,13 +1022,9 @@ class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
             sessionState.queries(queryName) = newQueryState
             sessionState.portals(portalName) = PortalState(newQueryState)
           } catch {
-            // In case of the parsing exception, we put explicit error messages
-            // to make users understood.
-            case e: ParseException if e.command.isDefined =>
-              handleException(ctx, s"Cannot handle command ${e.command.get} in `Bind`: $e")
-              return
             case NonFatal(e) =>
-              handleException(ctx, s"Exception detected in `Bind`: $e")
+              handleException(ctx, s"Exception detected in `Bind`: ${exceptionString(e)}")
+              resetState(sessionState, portalName = Some(portalName))
               return
           }
           ctx.write(BindComplete)
@@ -1032,43 +1042,48 @@ class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
         case Describe(tpe, name) =>
           if (tpe == 83) { // Describe a prepared statement
             logInfo(s"Describe the '$name' prepared statement in this session (id:$sessionId)")
-            // TODO: Make the logic to get a schema more smarter
-            val schema = {
-              val queryState = sessionState.queries.getOrElse(name, {
-                throw new SQLException(s"Unknown query specified: $name")
-              })
-              // To get a schema, run a query with default params
-              val defaultParams = queryState.paramIds.zipWithIndex.map {
-                case (_, i) => (i + 1) -> s"''"
-              }
-              val boundQuery = ParameterBinder.bind(queryState.queryStatement, defaultParams.toMap)
-              val execState = cli.executeStatement(sessionId, boundQuery, isCursor = false)
-              try {
-                sessionState.resultRowIter = execState.run()
-                execState.outputSchema()
-              } catch {
-                case NonFatal(_) =>
-                  throw new SQLException("Cannot get schema in 'Describe'")
-              } finally {
-                execState.close()
-              }
+            val queryState = sessionState.queries.getOrElse(name, {
+              handleException(ctx, s"Unknown query specified: $name")
+              resetState(sessionState)
+              return
+            })
+            // To get a schema, run a query with default params
+            val defaultParams = queryState.paramIds.zipWithIndex.map {
+              case (_, i) => (i + 1) -> s"''"
             }
-            ctx.write(RowDescription(schema))
+            val boundQuery = ParameterBinder.bind(queryState.queryStatement, defaultParams.toMap)
+            val execState = cli.executeStatement(sessionId, boundQuery, isCursor = false)
+            try {
+              sessionState.resultRowIter = execState.run()
+              ctx.write(execState.outputSchema())
+            } catch {
+              case NonFatal(e) =>
+                handleException(ctx, s"Exception detected in `Bind`: ${e.getMessage}")
+                resetState(sessionState)
+                return
+            }
+            ctx.flush()
           } else if (tpe == 80) { // Describe a portal
             logInfo(s"Describe the '$name' portal in this session (id:$sessionId)")
             ctx.write(RowDescription(sessionState.execState.outputSchema()))
+            ctx.flush()
           } else {
-            throw new SQLException(s"Unknown type received in 'Describe`: $tpe")
+            handleException(ctx, s"Unknown type received in 'Describe`: $tpe")
+            resetState(sessionState)
+            return
           }
-          ctx.flush()
         case Execute(portalName, maxRows) =>
           logInfo(s"Execute: portalName=$portalName, maxRows=$maxRows")
           try {
             val portalState = sessionState.portals.getOrElse(portalName, {
-              throw new SQLException(s"Unknown portal specified: $portalName")
+              handleException(ctx, s"Unknown portal specified: $portalName")
+              resetState(sessionState)
+              return
             })
             val rowConveter = portalState.queryState.rowWriterOption.getOrElse {
-              throw new SQLException(s"Row converter not initialized for $portalName")
+              handleException(ctx, s"Row converter not initialized for $portalName")
+              resetState(sessionState)
+              return
             }
             var numRows = 0
             if (maxRows == 0) {
@@ -1089,27 +1104,29 @@ class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
                 ctx.write(CommandComplete(s"BEGIN"))
               case SELECT =>
                 ctx.write(CommandComplete(s"SELECT $numRows"))
-                resetPortalState(portalName, sessionState)
+                resetState(sessionState, portalName = Some(portalName))
               case FETCH =>
                 if (numRows == 0) {
                   ctx.write(CommandComplete(s"FETCH ${portalState.numFetched}"))
-                  resetPortalState(portalName, sessionState)
+                  resetState(sessionState, portalName = Some(portalName))
                 } else {
                   ctx.write(PortalSuspended)
                 }
             }
+            ctx.flush()
           } catch {
             case NonFatal(e) =>
-              handleException(ctx, s"Exception detected in `Execute`: $e")
-              resetPortalState(portalName, sessionState)
+              handleException(ctx, s"Exception detected in `Execute`: ${exceptionString(e)}")
+              resetState(sessionState, portalName = Some(portalName))
               return
           }
-          ctx.flush()
         case FunctionCall(objId, formats, params, resultFormat) =>
           handleException(ctx, "Message 'FunctionCall' not supported")
+          resetState(sessionState)
           return
         case Flush() =>
           handleException(ctx, "Message 'Flush' not supported")
+          resetState(sessionState)
           return
         case Parse(queryName, query, objIds) =>
           sessionState.queries(queryName) = QueryState(query, objIds)
@@ -1125,8 +1142,9 @@ class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
               ctx.write(EmptyQueryResponse)
             } else if (queries.size > 1) {
               // TODO: Support multiple queries
-              throw new SQLException(
-                s"multi-query execution unsupported: ${queries.mkString(", ")}")
+              handleException(ctx, s"multi-query execution unsupported: ${queries.mkString(", ")}")
+              resetState(sessionState)
+              return
             } else {
               val query = queries.head
               try {
@@ -1148,13 +1166,10 @@ class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
                 }
                 ctx.write(CommandComplete(s"SELECT $numRows"))
               } catch {
-                // In case of the parsing exception, we put explicit error messages
-                // to make users understood.
-                case e: ParseException if e.command.isDefined =>
-                  handleException(ctx, s"Cannot handle command ${e.command.get} in `Query`: $e")
-                  return
                 case NonFatal(e) =>
-                  handleException(ctx, s"Exception detected in `Query`: $e")
+                  handleException(ctx,
+                    s"Exception detected in `Query`: ${exceptionString(e)}")
+                  resetState(sessionState)
                   return
               }
             }
@@ -1164,6 +1179,8 @@ class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
             ctx.flush()
           } else {
             handleException(ctx, "Empty query detected in `Query`")
+            resetState(sessionState)
+            return
           }
         case Sync() =>
           ctx.write(ReadyForQuery)
@@ -1173,6 +1190,7 @@ class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
           return
         case msg =>
           handleException(ctx, s"Unsupported message: $msg")
+          resetState(sessionState)
           return
       }
     }

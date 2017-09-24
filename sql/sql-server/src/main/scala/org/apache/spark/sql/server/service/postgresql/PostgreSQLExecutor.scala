@@ -56,8 +56,8 @@ private[postgresql] case class PostgreSQLOperation(
   }
 
   override def cancel(): Unit = {
-    logInfo(s"""
-         |Cancelling query with $statementId;
+    logInfo(
+      s"""Cancelling query with $statementId:
          |$statement
        """.stripMargin)
     if (statementId != null) {
@@ -79,8 +79,8 @@ private[postgresql] case class PostgreSQLOperation(
   }
 
   override def run(): Iterator[InternalRow] = {
-    logInfo(s"""
-         |Running query with $statementId;
+    logInfo(
+      s"""Running query with $statementId:
          |$statement
        """.stripMargin)
     setState(RUNNING)
@@ -153,21 +153,24 @@ private[postgresql] case class PostgreSQLOperation(
     } catch {
       case NonFatal(e) =>
         if (state == CANCELED) {
-          logWarning(
+          val errMsg =
             s"""Cancelled query with $statementId
                |$statement
-             """.stripMargin)
-          throw new SQLException(e.toString)
+             """.stripMargin
+          logWarning(errMsg)
+          throw new SQLException(errMsg)
         } else {
-          logError(
-            s"""Error executing query with with $statementId
-               | $statement
-             """.stripMargin)
+          val exceptionString = SparkUtils.exceptionString(e)
+          val errMsg =
+            s"""Caught an error executing query with with $statementId:
+               |$statement
+               |Exception message:
+               |$exceptionString
+             """.stripMargin
+          logError(errMsg)
           setState(ERROR)
-          SQLServer.listener.onStatementError(
-            statementId, e.getMessage, SparkUtils.exceptionString(e))
-          // In this case, pass through the exception
-          throw e
+          SQLServer.listener.onStatementError(statementId, e.getMessage, exceptionString)
+          throw new SQLException(errMsg)
         }
     }
 
