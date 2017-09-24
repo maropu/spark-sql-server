@@ -36,7 +36,10 @@ object TPCDSQueryBenchmark extends Logging {
   // Register a JDBC driver for PostgreSQL
   classForName(classOf[org.postgresql.Driver].getCanonicalName)
 
-  case class TpcdsQueries(statement: Statement, queries: Seq[String], dataLocation: String) {
+  case class TpcdsQueries(
+      statement: Statement,
+      queries: Seq[(String, Seq[String])],
+      dataLocation: String) {
 
     private val tables = Seq("catalog_page", "catalog_returns", "customer", "customer_address",
       "customer_demographics", "date_dim", "household_demographics", "inventory", "item",
@@ -100,10 +103,14 @@ object TPCDSQueryBenchmark extends Logging {
 
     def run(): Unit = {
       val tableSizes = setupTables(dataLocation)
-      queries.foreach { name =>
+      queries.foreach { case (name, queryRelations) =>
         val queryString = resourceToString(s"tpcds/$name.sql")
-        // TODO: How to check input #rows from `tableSizes`
-        val numRows = 1
+        val numRows = queryRelations.map { r =>
+          tableSizes.getOrElse(r, {
+            logWarning(s"$r does not exist in TPCDS tables")
+            0L
+          })
+        }.sum
         val benchmark = new Benchmark(s"TPCDS Snappy", numRows, 5)
         benchmark.addCase(name) { i =>
           doSql[Long](queryString) { _ => 1}
@@ -121,20 +128,116 @@ object TPCDSQueryBenchmark extends Logging {
 
     // List of all TPC-DS queries
     val tpcdsAllQueries = Seq(
-      "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11",
-      "q12", "q13", "q14a", "q14b", "q15", "q16", "q17", "q18", "q19", "q20",
-      "q21", "q22", "q23a", "q23b", "q24a", "q24b", "q25", "q26", "q27", "q28", "q29", "q30",
-      "q31", "q32", "q33", "q34", "q35", "q36", "q37", "q38", "q39a", "q39b", "q40",
-      "q41", "q42", "q43", "q44", "q45", "q46", "q47", "q48", "q49", "q50",
-      "q51", "q52", "q53", "q54", "q55", "q56", "q57", "q58", "q59", "q60",
-      "q61", "q62", "q63", "q64", "q65", "q66", "q67", "q68", "q69", "q70",
-      "q71", "q72", "q73", "q74", "q75", "q76", "q77", "q78", "q79", "q80",
-      "q81", "q82", "q83", "q84", "q85", "q86", "q87", "q88", "q89", "q90",
-      "q91", "q92", "q93", "q94", "q95", "q96", "q97", "q98", "q99")
+      // scalastyle:off line.size.limit
+      ("q1", Seq("date_dim", "store", "store_returns", "customer")),
+      ("q2", Seq("web_sales", "date_dim", "catalog_sales")),
+      ("q3", Seq("item", "date_dim", "store_sales")),
+      ("q4", Seq("web_sales", "date_dim", "catalog_sales", "customer", "store_sales")),
+      ("q5", Seq("web_sales", "date_dim", "store", "web_site", "catalog_sales", "store_returns", "catalog_page", "catalog_returns", "web_returns", "store_sales")),
+      ("q6", Seq("item", "customer_address", "date_dim", "customer", "store_sales")),
+      ("q7", Seq("item", "date_dim", "customer_demographics", "promotion", "store_sales")),
+      ("q8", Seq("customer_address", "date_dim", "store", "customer", "store_sales")),
+      ("q9", Seq("reason", "store_sales")),
+      ("q10", Seq("web_sales", "date_dim", "customer_address", "catalog_sales", "customer_demographics", "customer", "store_sales")),
+      ("q11", Seq("web_sales", "date_dim", "customer", "store_sales")),
+      ("q12", Seq("item", "web_sales", "date_dim")),
+      ("q13", Seq("customer_address", "date_dim", "store", "customer_demographics", "household_demographics", "store_sales")),
+      ("q14a", Seq("item", "web_sales", "date_dim", "catalog_sales", "store_sales")),
+      ("q14b", Seq("item", "web_sales", "date_dim", "catalog_sales", "store_sales")),
+      ("q15", Seq("customer_address", "date_dim", "catalog_sales", "customer")),
+      ("q16", Seq("customer_address", "date_dim", "catalog_sales", "catalog_returns", "call_center")),
+      ("q17", Seq("item", "date_dim", "store", "catalog_sales", "store_returns", "store_sales")),
+      ("q18", Seq("item", "customer_address", "date_dim", "catalog_sales", "customer_demographics", "customer")),
+      ("q19", Seq("item", "customer_address", "date_dim", "store", "customer", "store_sales")),
+      ("q20", Seq("item", "date_dim", "catalog_sales")),
+      ("q21", Seq("item", "date_dim", "warehouse", "inventory")),
+      ("q22", Seq("item", "date_dim", "warehouse", "inventory")),
+      ("q23a", Seq("item", "web_sales", "date_dim", "catalog_sales", "customer", "store_sales")),
+      ("q23b", Seq("item", "web_sales", "date_dim", "catalog_sales", "customer", "store_sales")),
+      ("q24a", Seq("item", "customer_address", "store", "store_returns", "customer", "store_sales")),
+      ("q24b", Seq("item", "customer_address", "store", "store_returns", "customer", "store_sales")),
+      ("q25", Seq("item", "date_dim", "store", "catalog_sales", "store_returns", "store_sales")),
+      ("q26", Seq("item", "date_dim", "catalog_sales", "customer_demographics", "promotion")),
+      ("q27", Seq("item", "date_dim", "store", "customer_demographics", "store_sales")),
+      ("q28", Seq("store_sales")),
+      ("q29", Seq("item", "date_dim", "store", "catalog_sales", "store_returns", "store_sales")),
+      ("q30", Seq("customer_address", "date_dim", "customer", "web_returns")),
+      ("q31", Seq("customer_address", "date_dim", "web_sales", "store_sales")),
+      ("q32", Seq("item", "date_dim", "catalog_sales")),
+      ("q33", Seq("item", "customer_address", "date_dim", "web_sales", "catalog_sales", "store_sales")),
+      ("q34", Seq("date_dim", "store", "customer", "household_demographics", "store_sales")),
+      ("q35", Seq("web_sales", "date_dim", "customer_address", "catalog_sales", "customer_demographics", "customer", "store_sales")),
+      ("q36", Seq("item", "date_dim", "store", "store_sales")),
+      ("q37", Seq("item", "date_dim", "catalog_sales", "inventory")),
+      ("q38", Seq("web_sales", "date_dim", "catalog_sales", "customer", "store_sales")),
+      ("q39a", Seq("item", "date_dim", "warehouse", "inventory")),
+      ("q39b", Seq("item", "date_dim", "warehouse", "inventory")),
+      ("q40", Seq("item", "date_dim", "warehouse", "catalog_sales", "catalog_returns")),
+      ("q41", Seq("item")),
+      ("q42", Seq("item", "date_dim", "store_sales")),
+      ("q43", Seq("date_dim", "store", "store_sales")),
+      ("q44", Seq("item", "store_sales")),
+      ("q45", Seq("item", "web_sales", "customer_address", "date_dim", "customer")),
+      ("q46", Seq("customer_address", "date_dim", "store", "customer", "household_demographics", "store_sales")),
+      ("q47", Seq("item", "date_dim", "store", "store_sales")),
+      ("q48", Seq("customer_address", "date_dim", "store", "customer_demographics", "store_sales")),
+      ("q49", Seq("web_sales", "date_dim", "catalog_sales", "store_returns", "catalog_returns", "web_returns", "store_sales")),
+      ("q50", Seq("date_dim", "store", "store_returns", "store_sales")),
+      ("q51", Seq("web_sales", "date_dim", "store_sales")),
+      ("q52", Seq("item", "date_dim", "store_sales")),
+      ("q53", Seq("item", "date_dim", "store", "store_sales")),
+      ("q54", Seq("item", "web_sales", "date_dim", "customer_address", "store", "catalog_sales", "customer", "store_sales")),
+      ("q55", Seq("item", "date_dim", "store_sales")),
+      ("q56", Seq("item", "customer_address", "date_dim", "web_sales", "catalog_sales", "store_sales")),
+      ("q57", Seq("item", "date_dim", "catalog_sales", "call_center")),
+      ("q58", Seq("item", "web_sales", "date_dim", "catalog_sales", "store_sales")),
+      ("q59", Seq("date_dim", "store", "store_sales")),
+      ("q60", Seq("item", "customer_address", "date_dim", "web_sales", "catalog_sales", "store_sales")),
+      ("q61", Seq("item", "customer_address", "date_dim", "store", "promotion", "customer", "store_sales")),
+      ("q62", Seq("ship_mode", "web_sales", "web_site", "warehouse", "date_dim")),
+      ("q63", Seq("item", "date_dim", "store", "store_sales")),
+      ("q64", Seq("customer_address", "catalog_sales", "customer_demographics", "income_band", "store_sales", "item", "date_dim", "store", "store_returns", "customer", "promotion", "catalog_returns", "household_demographics")),
+      ("q65", Seq("item", "date_dim", "store", "store_sales")),
+      ("q66", Seq("ship_mode", "web_sales", "date_dim", "warehouse", "catalog_sales", "time_dim")),
+      ("q67", Seq("item", "date_dim", "store", "store_sales")),
+      ("q68", Seq("customer_address", "date_dim", "store", "customer", "household_demographics", "store_sales")),
+      ("q69", Seq("web_sales", "date_dim", "customer_address", "catalog_sales", "customer_demographics", "customer", "store_sales")),
+      ("q70", Seq("date_dim", "store", "store_sales")),
+      ("q71", Seq("item", "web_sales", "date_dim", "catalog_sales", "time_dim", "store_sales")),
+      ("q72", Seq("item", "date_dim", "warehouse", "catalog_sales", "customer_demographics", "promotion", "inventory", "catalog_returns", "household_demographics")),
+      ("q73", Seq("date_dim", "store", "customer", "household_demographics", "store_sales")),
+      ("q74", Seq("web_sales", "date_dim", "customer", "store_sales")),
+      ("q75", Seq("item", "web_sales", "date_dim", "catalog_sales", "store_returns", "catalog_returns", "web_returns", "store_sales")),
+      ("q76", Seq("item", "web_sales", "date_dim", "catalog_sales", "store_sales")),
+      ("q77", Seq("catalog_sales", "web_returns", "store_sales", "web_page", "web_sales", "date_dim", "store", "store_returns", "catalog_returns")),
+      ("q78", Seq("web_sales", "date_dim", "catalog_sales", "store_returns", "catalog_returns", "web_returns", "store_sales")),
+      ("q79", Seq("date_dim", "store", "customer", "household_demographics", "store_sales")),
+      ("q80", Seq("catalog_sales", "web_returns", "store_sales", "item", "web_sales", "date_dim", "store", "web_site", "store_returns", "promotion", "catalog_page", "catalog_returns")),
+      ("q81", Seq("customer_address", "date_dim", "customer", "catalog_returns")),
+      ("q82", Seq("item", "date_dim", "inventory", "store_sales")),
+      ("q83", Seq("item", "date_dim", "store_returns", "catalog_returns", "web_returns")),
+      ("q84", Seq("customer_address", "customer_demographics", "store_returns", "customer", "income_band", "household_demographics")),
+      ("q85", Seq("web_page", "web_sales", "customer_address", "date_dim", "customer_demographics", "reason", "web_returns")),
+      ("q86", Seq("item", "web_sales", "date_dim")),
+      ("q87", Seq("web_sales", "date_dim", "catalog_sales", "customer", "store_sales")),
+      ("q88", Seq("store", "time_dim", "household_demographics", "store_sales")),
+      ("q89", Seq("item", "date_dim", "store", "store_sales")),
+      ("q90", Seq("web_page", "web_sales", "time_dim", "household_demographics")),
+      ("q91", Seq("customer_address", "date_dim", "customer_demographics", "customer", "catalog_returns", "call_center", "household_demographics")),
+      ("q92", Seq("item", "web_sales", "date_dim")),
+      ("q93", Seq("reason", "store_returns", "store_sales")),
+      ("q94", Seq("web_sales", "date_dim", "customer_address", "web_site", "web_returns")),
+      ("q95", Seq("web_sales", "date_dim", "customer_address", "web_site", "web_returns")),
+      ("q96", Seq("store", "time_dim", "household_demographics", "store_sales")),
+      ("q97", Seq("date_dim", "catalog_sales", "store_sales")),
+      ("q98", Seq("item", "date_dim", "store_sales")),
+      ("q99", Seq("ship_mode", "date_dim", "warehouse", "catalog_sales", "call_center"))
+      // scalastyle:on line.size.limit
+    )
 
     // If `--query-filter` defined, filters the queries that this option selects
     val queriesToRun = if (benchmarkArgs.queryFilter.nonEmpty) {
-      val queries = tpcdsAllQueries.filter { case queryName =>
+      val queries = tpcdsAllQueries.filter { case (queryName, _) =>
         benchmarkArgs.queryFilter.contains(queryName)
       }
       if (queries.isEmpty) {
