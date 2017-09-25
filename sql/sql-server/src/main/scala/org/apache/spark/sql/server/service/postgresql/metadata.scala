@@ -20,12 +20,15 @@ package org.apache.spark.sql.server.service.postgresql
 import java.sql.SQLException
 import java.util.concurrent.atomic.AtomicInteger
 
+import scala.util.control.NonFatal
+
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.catalyst.FunctionIdentifier
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTableType
 import org.apache.spark.sql.types._
+import org.apache.spark.util.Utils._
 
 
 /**
@@ -437,14 +440,14 @@ private[postgresql] object Metadata extends Logging {
           Nil
         }
       } catch {
-        case e: Throwable =>
+        case NonFatal(e) =>
           val sqlTexts = catalogTables.map { case PgSystemTable(_, TableIdentifier(name, _)) =>
             s"DROP TABLE IF EXISTS $catalogDbName.$name"
           } :+ s"DROP DATABASE IF EXISTS $catalogDbName"
           sqlTexts.foreach { sqlText =>
             sqlContext.sql(sqlText)
           }
-          throw e
+          throw new SQLException(exceptionString(e))
       } finally {
         require(_catalogTables1.forall { case PgSystemTable(_, table) =>
           sqlContext.sessionState.catalog.tableExists(table)

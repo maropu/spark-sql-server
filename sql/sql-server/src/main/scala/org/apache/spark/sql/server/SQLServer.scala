@@ -31,7 +31,8 @@ import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.service.{CompositeService, SparkSQLSessionService}
 import org.apache.spark.sql.server.service.postgresql.{PostgreSQLExecutor, PostgreSQLService, PostgreSQLSessionInitializer}
 import org.apache.spark.sql.server.ui.SQLServerTab
-import org.apache.spark.util.{ShutdownHookManager, Utils}
+import org.apache.spark.util.ShutdownHookManager
+import org.apache.spark.util.Utils._
 
 
 /**
@@ -71,7 +72,7 @@ object SQLServer extends Logging {
   }
 
   def main(args: Array[String]) {
-    Utils.initDaemon(log)
+    initDaemon(log)
 
     val sqlServer = new SQLServer()
     prepareWith(sqlServer)
