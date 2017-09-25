@@ -23,11 +23,11 @@ class PostgreSQLV3ProtocolScenarioSuite extends PostgreSQLV3ProtocolTest {
   testIfSupported("simple query") {
     checkV3Protocol(
       messages = s"""
-         |'Q' "SELECT * FROM VALUES (1, 1), (2, 2)"
+         |'Q' "SELECT * FROM VALUES (1, 1), (2, 2);"
          |'Y'
        """.stripMargin,
       expected = s"""
-         |FE=> Query(query="SELECT * FROM VALUES (1, 1), (2, 2)")
+         |FE=> Query(query="SELECT * FROM VALUES (1, 1), (2, 2);")
          |<= BE RowDescription
          |<= BE DataRow
          |<= BE DataRow

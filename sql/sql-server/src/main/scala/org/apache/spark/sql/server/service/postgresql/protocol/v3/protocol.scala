@@ -42,10 +42,11 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.internal.SQLConf
-import org.apache.spark.sql.server.SQLServerConf
+import org.apache.spark.sql.server.{SQLServerConf, SQLServerEnv}
 import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.service.{BEGIN, FETCH, Operation, SELECT, SessionService, SessionState}
 import org.apache.spark.sql.server.service.postgresql.Metadata._
+import org.apache.spark.sql.server.service.postgresql.PostgreSQLParser
 import org.apache.spark.sql.server.service.postgresql.protocol.v3.PostgreSQLRowConverters._
 import org.apache.spark.sql.types._
 import org.apache.spark.util.Utils._
@@ -377,7 +378,7 @@ object PostgreSQLWireProtocol {
       // Since a query string could contain several queries (separated by semicolons),
       // there might be several such response sequences before the backend finishes processing
       // the query string.
-      Query(new String(byteArray, StandardCharsets.UTF_8).split(";").map(_.trim))
+      Query(new String(byteArray, StandardCharsets.UTF_8).split(";").map(_.trim).init)
     },
 
     // An ASCII code of the `Sync` message is 'S'(83)
@@ -713,6 +714,7 @@ class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
   import PostgreSQLWireProtocol._
   import SessionV3State._
 
+  private val sqlParser = new PostgreSQLParser(SQLServerEnv.sqlConf)
   private val channelIdToSessionId = java.util.Collections.synchronizedMap(
     new java.util.HashMap[Int, Int]())
 
@@ -1058,7 +1060,7 @@ class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
               ctx.write(execState.outputSchema())
             } catch {
               case NonFatal(e) =>
-                handleException(ctx, s"Exception detected in `Bind`: ${e.getMessage}")
+                handleException(ctx, s"Exception detected in `Bind`: ${exceptionString(e)}")
                 resetState(sessionState)
                 return
             }
@@ -1127,7 +1129,18 @@ class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
           resetState(sessionState)
           return
         case Parse(queryName, query, objIds) =>
-          // TODO: Need to check if `PostgreSQLParser` can parse this input query
+          // Checks if `PostgreSqlParser` can parse the input query
+          try { sqlParser.parsePlan(query) } catch {
+            case e: ParseException if e.command.isDefined =>
+              handleException(ctx,
+                s"Cannot handle command ${e.command.get} in `Parse`: ${exceptionString(e)}")
+              resetState(sessionState)
+              return
+            case NonFatal(e) =>
+              handleException(ctx, s"Exception detected in `Parse`: ${exceptionString(e)}")
+              resetState(sessionState)
+              return
+          }
           sessionState.queries(queryName) = QueryState(query, objIds)
           logInfo(s"Parse: queryName=$queryName query=$query objIds=$objIds")
           ctx.write(ParseComplete)
@@ -1146,6 +1159,21 @@ class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
               return
             } else {
               val query = queries.head
+
+              // Checks if `PostgreSqlParser` can parse the input query
+              try { sqlParser.parsePlan(query) } catch {
+                case e: ParseException if e.command.isDefined =>
+                  handleException(ctx,
+                    s"Cannot handle command ${e.command.get} in `Parse`: ${exceptionString(e)}")
+                  resetState(sessionState)
+                  return
+                case NonFatal(e) =>
+                  handleException(ctx, s"Exception detected in `Parse`: ${exceptionString(e)}")
+                  resetState(sessionState)
+                  return
+              }
+
+              // Then, executes the query in `PostgreSQLExecutor`
               try {
                 val execState = cli.executeStatement(sessionId, query, isCursor = false)
                 val resultRowIter = execState.run()
