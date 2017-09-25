@@ -1104,11 +1104,9 @@ class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
                 ctx.write(CommandComplete(s"BEGIN"))
               case SELECT =>
                 ctx.write(CommandComplete(s"SELECT $numRows"))
-                resetState(sessionState, portalName = Some(portalName))
               case FETCH =>
                 if (numRows == 0) {
                   ctx.write(CommandComplete(s"FETCH ${portalState.numFetched}"))
-                  resetState(sessionState, portalName = Some(portalName))
                 } else {
                   ctx.write(PortalSuspended)
                 }
