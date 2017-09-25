@@ -1127,6 +1127,7 @@ class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
           resetState(sessionState)
           return
         case Parse(queryName, query, objIds) =>
+          // TODO: Need to check if `PostgreSQLParser` can parse this input query
           sessionState.queries(queryName) = QueryState(query, objIds)
           logInfo(s"Parse: queryName=$queryName query=$query objIds=$objIds")
           ctx.write(ParseComplete)
