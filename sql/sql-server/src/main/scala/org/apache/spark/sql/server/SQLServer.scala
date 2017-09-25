@@ -23,6 +23,7 @@ import scala.util.control.NonFatal
 import org.apache.spark.SparkContext
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.deploy.master.{LeaderElectable, MonarchyLeaderAgent, ZooKeeperLeaderElectionAgentAccessor}
+import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.internal.Logging
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd, SparkListenerJobStart}
 import org.apache.spark.sql.SQLContext
@@ -267,6 +268,15 @@ class SQLServer extends CompositeService with LeaderElectable {
     require(conf.getConfString("spark.sql.crossJoin.enabled") == "true",
       "`spark.sql.crossJoin.enabled` must be `true` because general DBMS-like engines can " +
         "handle cross joins in SQL queries.")
+
+    // Check if Kerberos enabled
+    if (conf.contains("spark.yarn.keytab")) {
+      // In this authentication, the following 2 params must be set
+      val principalName = conf.getConfString("spark.yarn.keytab")
+      val keytabFilename = conf.getConfString("spark.yarn.principal")
+      SparkHadoopUtil.get.loginUserFromKeytab(principalName, keytabFilename)
+    }
+
     // Attaches PostgreSQL-specific services here
     val cliService = new SparkSQLSessionService(
       this, new PostgreSQLExecutor(), new PostgreSQLSessionInitializer())
