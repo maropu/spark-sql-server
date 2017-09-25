@@ -991,7 +991,7 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
     }
   }
 
-  test("Unsupported SQL strings") {
+  test("unsupported SQL strings") {
     testJdbcStatement { statement =>
       Seq("COMMIT", "ROLLBACK"). foreach { cmd =>
         val e = intercept[SQLException] { statement.execute(cmd) }

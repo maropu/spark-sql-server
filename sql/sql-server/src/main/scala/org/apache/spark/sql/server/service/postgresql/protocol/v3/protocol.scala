@@ -1164,11 +1164,11 @@ class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
               try { sqlParser.parsePlan(query) } catch {
                 case e: ParseException if e.command.isDefined =>
                   handleException(ctx,
-                    s"Cannot handle command ${e.command.get} in `Parse`: ${exceptionString(e)}")
+                    s"Cannot handle command ${e.command.get} in `Query`: ${exceptionString(e)}")
                   resetState(sessionState)
                   return
                 case NonFatal(e) =>
-                  handleException(ctx, s"Exception detected in `Parse`: ${exceptionString(e)}")
+                  handleException(ctx, s"Exception detected in `Query`: ${exceptionString(e)}")
                   resetState(sessionState)
                   return
               }

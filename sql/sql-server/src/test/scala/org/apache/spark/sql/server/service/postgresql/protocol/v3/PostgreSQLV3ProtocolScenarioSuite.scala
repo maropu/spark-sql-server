@@ -37,6 +37,32 @@ class PostgreSQLV3ProtocolScenarioSuite extends PostgreSQLV3ProtocolTest {
     )
   }
 
+  testIfSupported("unsupported SQL strings") {
+    Seq("COMMIT", "ROLLBACK").foreach { cmd =>
+      val e1 = intercept[Exception] {
+        checkV3Protocol(
+          messages = s"""
+             |'Q' "$cmd;"
+             |'Y'
+           """.stripMargin,
+          expected = ""
+        )
+      }
+      assert(e1.getMessage.contains(s"Cannot handle command $cmd in `Query`"))
+
+      val e2 = intercept[Exception] {
+        checkV3Protocol(
+          messages = s"""
+             |'P' "s1" "$cmd" 0
+             |'Y'
+           """.stripMargin,
+          expected = ""
+        )
+      }
+      assert(e2.getMessage.contains(s"Cannot handle command $cmd in `Parse`"))
+    }
+  }
+
   testIfSupported("extended query") {
     checkV3Protocol(
       messages = s"""

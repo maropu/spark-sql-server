@@ -41,7 +41,7 @@ class PostgreSQLV3ProtocolTest extends PostgreSQLJdbcTest {
     val resourcePath = s"pgproto/${OSInfo.getOSName}/${OSInfo.getArchName}/pgproto"
     val classLoader = Thread.currentThread().getContextClassLoader
     val _cmdPath = classLoader.getResource(resourcePath).getPath
-    // Set a executable flag explicitly here
+    // Set an executable flag explicitly here
     new File(_cmdPath).setExecutable(true)
     _cmdPath
   }
