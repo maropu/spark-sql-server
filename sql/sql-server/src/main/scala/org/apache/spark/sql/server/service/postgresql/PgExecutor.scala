@@ -26,31 +26,31 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.sql.{Dataset, SQLContext}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.catalog.CatalogTableType
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.datasources.CreateTable
 import org.apache.spark.sql.server.{SQLServer, SQLServerConf, SQLServerEnv}
 import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.service._
 import org.apache.spark.sql.server.service.{Operation, OperationExecutor, OperationType}
-import org.apache.spark.sql.server.service.postgresql.{PgMetadata => PgMetadata}
+import org.apache.spark.sql.server.service.postgresql.execution.command.BeginCommand
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.{Utils => SparkUtils}
 
 
 private[postgresql] case class PgOperation(
     sessionId: Int,
-    statement: String,
+    query: (String, LogicalPlan),
     isCursor: Boolean)(
     sqlContext: SQLContext,
     activePools: java.util.Map[Int, String]) extends Operation with Logging {
 
   private val sqlParser = new PgParser(SQLServerEnv.sqlConf)
   private val statementId = UUID.randomUUID().toString()
-
   private var outputSchemaOption: Option[StructType] = None
 
-  override val queryType: OperationType = statement match {
-    case s if s.contains("BEGIN") => BEGIN
+  override val queryType: OperationType = query._2 match {
+    case BeginCommand() => BEGIN
     case _ if isCursor => FETCH
     case _ => SELECT
   }
@@ -58,7 +58,7 @@ private[postgresql] case class PgOperation(
   override def cancel(): Unit = {
     logInfo(
       s"""Cancelling query with $statementId:
-         |$statement
+         |${query._2}
        """.stripMargin)
     if (statementId != null) {
       sqlContext.sparkContext.cancelJobGroup(statementId)
@@ -81,15 +81,15 @@ private[postgresql] case class PgOperation(
   override def run(): Iterator[InternalRow] = {
     logInfo(
       s"""Running query with $statementId:
-         |$statement
+         |${query._1}
        """.stripMargin)
     setState(RUNNING)
 
     // Always use the latest class loader provided by SQLContext's state.
     Thread.currentThread().setContextClassLoader(sqlContext.sharedState.jarClassLoader)
 
-    SQLServer.listener.onStatementStart(statementId, sessionId, statement, statementId)
-    sqlContext.sparkContext.setJobGroup(statementId, statement, true)
+    SQLServer.listener.onStatementStart(statementId, sessionId, query._1, statementId)
+    sqlContext.sparkContext.setJobGroup(statementId, query._1, true)
 
     if (activePools.containsKey(sessionId)) {
       val pool = activePools.get(sessionId)
@@ -97,7 +97,7 @@ private[postgresql] case class PgOperation(
     }
 
     val resultRowIterator = try {
-      val df = Dataset.ofRows(sqlContext.sparkSession, sqlParser.parsePlan(statement))
+      val df = Dataset.ofRows(sqlContext.sparkSession, sqlParser.parsePlan(query._1))
       logDebug(df.queryExecution.toString())
       SQLServer.listener.onStatementParsed(statementId, df.queryExecution.toString())
 
@@ -112,7 +112,7 @@ private[postgresql] case class PgOperation(
       outputSchemaOption = Some(df.schema)
 
       // Based on the assumption that DDL commands succeed, we then update internal states
-      df.queryExecution.logical match {
+      query._2 match {
         case SetCommand(Some((SQLServerConf.SQLSERVER_POOL.key, Some(value)))) =>
           logInfo(s"Setting spark.scheduler.pool=$value for future statements in this session.")
           activePools.put(sessionId, value)
@@ -155,7 +155,7 @@ private[postgresql] case class PgOperation(
         if (state == CANCELED) {
           val errMsg =
             s"""Cancelled query with $statementId
-               |$statement
+               |${query._1}
              """.stripMargin
           logWarning(errMsg)
           throw new SQLException(errMsg)
@@ -163,7 +163,7 @@ private[postgresql] case class PgOperation(
           val exceptionString = SparkUtils.exceptionString(e)
           val errMsg =
             s"""Caught an error executing query with with $statementId:
-               |$statement
+               |${query._1}
                |Exception message:
                |$exceptionString
              """.stripMargin
@@ -182,13 +182,13 @@ private[postgresql] case class PgOperation(
 
 private[server] class PgExecutor extends OperationExecutor {
 
-  /** Create a new instance for service-specific operations. */
+  // Create a new instance for service-specific operations
   override def newOperation(
       sessionId: Int,
-      statement: String,
+      plan: (String, LogicalPlan),
       isCursor: Boolean)(
       sqlContext: SQLContext,
       activePools: java.util.Map[Int, String]): Operation = {
-    new PgOperation(sessionId, statement, isCursor)(sqlContext, activePools)
+    new PgOperation(sessionId, plan, isCursor)(sqlContext, activePools)
   }
 }

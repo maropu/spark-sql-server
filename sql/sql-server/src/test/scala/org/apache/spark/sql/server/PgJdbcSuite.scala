@@ -993,7 +993,8 @@ abstract class PgJdbcSuite(pgVersion: String)
     testJdbcStatement { statement =>
       Seq("COMMIT", "ROLLBACK"). foreach { cmd =>
         val e = intercept[SQLException] { statement.execute(cmd) }
-        assert(e.getMessage.contains(s"Cannot handle command $cmd in `Parse`"))
+        assert(e.getMessage.contains(
+          s"Exception detected in `Parse`: java.sql.SQLException: Cannot handle command $cmd"))
       }
     }
   }

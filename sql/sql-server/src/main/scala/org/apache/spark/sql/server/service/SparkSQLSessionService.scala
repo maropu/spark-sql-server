@@ -18,6 +18,7 @@
 package org.apache.spark.sql.server.service
 
 import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.server.{SQLServer, SQLServerEnv}
 import org.apache.spark.sql.server.SQLServerConf._
@@ -36,7 +37,7 @@ trait SessionService {
     state: SessionState): Int
   def getSessionState(sessionId: Int): SessionState
   def closeSession(sessionId: Int): Unit
-  def executeStatement(sessionId: Int, statement: String, isCursor: Boolean): Operation
+  def executeStatement(sessionId: Int, plan: (String, LogicalPlan), isCursor: Boolean): Operation
 }
 
 private[service] class SessionManager(pgServer: SQLServer, init: SessionInitializer)
@@ -122,11 +123,12 @@ private[server] class SparkSQLSessionService(
     sessionManager.closeSession(sessionId)
   }
 
-  override def executeStatement(sessionId: Int, statement: String, isCursor: Boolean): Operation = {
+  override def executeStatement(
+      sessionId: Int, plan: (String, LogicalPlan), isCursor: Boolean): Operation = {
     operationManager.newExecuteStatementOperation(
       sessionManager.getSession(sessionId)._1,
       sessionId,
-      statement,
+      plan,
       isCursor)
   }
 }

@@ -19,6 +19,7 @@ package org.apache.spark.sql.server.service
 
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.server.{SQLServer, SQLServerEnv}
 import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.types.StructType
@@ -77,7 +78,7 @@ trait OperationExecutor {
   // Create a new instance for service-specific operations
   def newOperation(
     sessionId: Int,
-    statement: String,
+    plan: (String, LogicalPlan),
     isCursor: Boolean)(
     sqlContext: SQLContext,
     activePools: java.util.Map[Int, String]): Operation
@@ -94,15 +95,13 @@ private[service] class OperationManager(pgServer: SQLServer, executor: Operation
   def newExecuteStatementOperation(
       sqlContext: SQLContext,
       sessionId: Int,
-      statement: String,
+      plan: (String, LogicalPlan),
       isCursor: Boolean): Operation = {
-    val operation = executor.newOperation(
-      sessionId, statement, isCursor)(sqlContext, sessionIdToActivePool)
+    val op = executor.newOperation(sessionId, plan, isCursor)(sqlContext, sessionIdToActivePool)
     if (!sessionIdToOperations.containsKey(sessionId)) {
       sessionIdToOperations.put(sessionId, new java.util.ArrayList())
     }
-    sessionIdToOperations.get(sessionId).add(operation)
-    logDebug(s"Created Operation for $statement with sessionId=$sessionId")
-    operation
+    sessionIdToOperations.get(sessionId).add(op)
+    op
   }
 }

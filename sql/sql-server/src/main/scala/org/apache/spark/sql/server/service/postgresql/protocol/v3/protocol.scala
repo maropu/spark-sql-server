@@ -23,6 +23,8 @@ import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.security.{KeyStore, PrivilegedExceptionAction}
 import java.sql.SQLException
+import java.util.{HashMap => jHashMap}
+import java.util.Collections.{synchronizedMap => jSyncMap}
 import javax.net.ssl.{KeyManagerFactory, SSLContext}
 
 import scala.collection.mutable
@@ -41,6 +43,7 @@ import org.ietf.jgss.{GSSContext, GSSCredential, GSSException, GSSManager, Oid}
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.parser.ParseException
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.server.{SQLServerConf, SQLServerEnv}
 import org.apache.spark.sql.server.SQLServerConf._
@@ -59,10 +62,9 @@ import org.apache.spark.util.Utils._
  *
  * https://www.postgresql.org/docs/current/static/protocol.html
  */
-case class PgWireProtocol(msgBufferSizeInByte: Int) {
-  import PgWireProtocol._
+case class PgWireProtocol(bufferSizeInBytes: Int) {
 
-  private val messageBuffer = new Array[Byte](msgBufferSizeInByte)
+  private val messageBuffer = new Array[Byte](bufferSizeInBytes)
   private val messageWriter = ByteBuffer.wrap(messageBuffer)
 
   private def withMessageBuffer(f: ByteBuffer => Int): Array[Byte] = {
@@ -110,7 +112,7 @@ case class PgWireProtocol(msgBufferSizeInByte: Int) {
 
   /**
    * An ASCII code 'C' is an identifier of this [[CommandComplete]] message.
-   * If any command request (e.g., [[Query]] and [[Execute]]) is finished successfully,
+   * If any command request (e.g., `Query` and `Execute`) is finished successfully,
    * we send this message to the client.
    */
   def CommandComplete(tag: String): Array[Byte] = {
@@ -126,7 +128,7 @@ case class PgWireProtocol(msgBufferSizeInByte: Int) {
 
   /**
    * An ASCII code 'D' is an identifier of this [[DataRow]] message.
-   * If any command request (e.g., [[Query]] and [[Execute]]) is finished successfully and we have
+   * If any command request (e.g., `Query` and `Execute`) is finished successfully and we have
    * result rows, we send the results as the [[DataRow]]s.
    */
   def DataRow(row: InternalRow, rowWriter: RowWriter): Array[Byte] = {
@@ -165,7 +167,7 @@ case class PgWireProtocol(msgBufferSizeInByte: Int) {
 
   /**
    * An ASCII code 'T' is an identifier of this [[RowDescription]] message.
-   * If we receive the [[Describe]] message from a client and we have no failure,
+   * If we receive the `Describe` message from a client and we have no failure,
    * we send this message to the client.
    */
   def RowDescription(schema: StructType): Array[Byte] = {
@@ -180,7 +182,7 @@ case class PgWireProtocol(msgBufferSizeInByte: Int) {
         schema.toSeq.zipWithIndex.map { case (field, index) =>
           val sparkType = field.dataType
           val pgType = getPgType(sparkType)
-          val mode = binaryFormatTypes.find(_ == sparkType).map(_ => 1).getOrElse(0)
+          val mode = PgWireProtocol.binaryFormatTypes.find(_ == sparkType).map(_ => 1).getOrElse(0)
           buf.put(field.name.getBytes(StandardCharsets.UTF_8)).put(0.toByte) // field name
             .putInt(0)                        // object ID of the table
             .putShort((index + 1).toShort)    // attribute number of the column
@@ -195,15 +197,15 @@ case class PgWireProtocol(msgBufferSizeInByte: Int) {
   }
 }
 
-object PgWireProtocol {
+object PgWireProtocol extends Logging {
 
-  /** An identifier for `StartupMessage`. */
+  // An identifier for `StartupMessage`
   val V3_PROTOCOL_VERSION: Int = 196608
 
-  /** An identifier for `SSLRequest`. */
+  // An identifier for `SSLRequest`
   val SSL_REQUEST_CODE: Int = 80877103
 
-  /** An identifier for `CancelRequest`. */
+  // An identifier for `CancelRequest`
   val CANCEL_REQUEST_CODE: Int = 80877102
 
   // A type list for binary formats
@@ -211,38 +213,13 @@ object PgWireProtocol {
     BinaryType, ShortType, IntegerType, LongType, FloatType, DoubleType, DateType, TimestampType
   )
 
-  def formatsInSimpleQueryMode(schema: StructType): Seq[Boolean] = {
+  private def formatsInSimpleQueryMode(schema: StructType): Seq[Boolean] = {
     Seq.fill(schema.length)(false)
   }
 
-  def formatsInExtendedQueryMode(schema: StructType): Seq[Boolean] = {
+  private def formatsInExtendedQueryMode(schema: StructType): Seq[Boolean] = {
     schema.map { f => binaryFormatTypes.contains(f.dataType) }
   }
-
-
-  /**
-   * Message types received from clients.
-   * NOTE: We need special handling for the three messages: `CancelRequest`, `SSLRequest`,
-   * and `StartupMessage`.
-   */
-  sealed trait ClientMessageType
-
-  case class Bind(portalName: String, queryName: String, formats: Seq[Int],
-    params: Seq[Array[Byte]], resultFormats: Seq[Int]) extends ClientMessageType
-  case class Close(tpe: Int, name: String) extends ClientMessageType
-  case class CopyData(data: Array[Byte]) extends ClientMessageType
-  case class CopyDone() extends ClientMessageType
-  case class CopyFail(cause: String) extends ClientMessageType
-  case class Describe(tpe: Int, name: String) extends ClientMessageType
-  case class Execute(portalName: String, maxRows: Int) extends ClientMessageType
-  case class Flush() extends ClientMessageType
-  case class FunctionCall(objId: Int, formats: Seq[Int], params: Seq[Array[Byte]],
-    resultFormat: Int) extends ClientMessageType
-  case class Parse(name: String, query: String, objIds: Seq[Int]) extends ClientMessageType
-  case class PasswordMessage(token: Array[Byte]) extends ClientMessageType
-  case class Query(queries: Seq[String]) extends ClientMessageType
-  case class Sync() extends ClientMessageType
-  case class Terminate() extends ClientMessageType
 
   /**
    * A string in messages is a null-terminated one (C-style string) and there is no specific
@@ -266,10 +243,65 @@ object PgWireProtocol {
     }
   }
 
+  // An URL string in PostgreSQL JDBC drivers is something like
+  // "jdbc:postgresql://[host]/[database]?user=[name]&kerberosServerName=spark"
+  private def doGSSAuthentication(
+      ctx: ChannelHandlerContext,
+      state: SessionV3State,
+      serverPrincipal: String,
+      token: Array[Byte]): Boolean = {
+    UserGroupInformation.getCurrentUser()
+        .doAs(new PrivilegedExceptionAction[Boolean] {
+
+      override def run(): Boolean = {
+        import state.v3Protocol.AuthenticationGSSContinue
+
+        // Get own Kerberos credentials for accepting connection
+        val manager = GSSManager.getInstance()
+        var gssContext: GSSContext = null
+        try {
+          // This Oid for Kerberos GSS-API mechanism
+          val kerberosMechOid = new Oid("1.2.840.113554.1.2.2")
+          // Oid for kerberos principal name
+          val krb5PrincipalOid = new Oid("1.2.840.113554.1.2.2.1")
+
+          val serverName = manager.createName(serverPrincipal, krb5PrincipalOid)
+          val serverCreds = manager.createCredential(
+            serverName, GSSCredential.DEFAULT_LIFETIME, kerberosMechOid,
+            GSSCredential.ACCEPT_ONLY)
+
+          gssContext = manager.createContext(serverCreds)
+
+          val outToken = gssContext.acceptSecContext(token, 0, token.length)
+          if (!gssContext.isEstablished) {
+            ctx.write(AuthenticationGSSContinue(outToken))
+            ctx.flush()
+            false
+          } else {
+            true
+          }
+        } catch {
+          case e: GSSException => throw e
+        } finally {
+          if (gssContext != null) {
+            try {
+              gssContext.dispose()
+            } catch {
+              case NonFatal(_) => // No-op
+            }
+          }
+        }
+      }
+    })
+  }
+
+  // TODO: Needs to change `Any` into `Unit`
+  private type MessageProcessorType = (ChannelHandlerContext, Int, SessionV3State) => Any
+
   /**
-   * Internal registry of Message parsers.
+   * Internal registry of client message processors.
    */
-  private val messageParsers: Map[Int, ByteBuffer => ClientMessageType] = Map(
+  private val messageProcessors: Map[Int, ByteBuffer => (String, MessageProcessorType)] = Map(
     // An ASCII code of the `Bind` message is 'B'(66)
     66 -> { msg =>
       val portalName = extractString(msg)
@@ -305,22 +337,152 @@ object PgWireProtocol {
       } else {
         Seq.empty[Int]
       }
-      Bind(portalName, queryName, formats, params, resultFormats)
+
+      logInfo(s"Bind: portalName='$portalName' queryName='$queryName' formats=$formats "
+        + s"params=$params resultFormats=$resultFormats")
+
+      ("Bind", (ctx: ChannelHandlerContext, sessionId: Int, sessionState: SessionV3State) => {
+        import sessionState._
+        val queryState = sessionState.queries(queryName)
+
+        // Convert `params` to string parameters
+        val strParams = PgParamConverters(params, queryState.paramIds, formats)
+        strParams.foreach { case (index, param) =>
+          logInfo( s"""Bind param: $$$index -> $param""")
+        }
+        val boundQuery = ParameterBinder.bind(queryState.statement, strParams.toMap)
+        val boundPlan = queryState.logicalPlan
+        logInfo(s"Bound plan:\n$boundPlan")
+
+        val plan = (boundQuery, boundPlan)
+        // val plan = (queryState.statement, boundPlan)
+        val execState = cli.executeStatement(sessionId, plan, !portalName.isEmpty)
+
+        sessionState.resultRowIter = execState.run()
+        val schema = execState.outputSchema()
+        val outputFormats = formatsInExtendedQueryMode(schema)
+        val newQueryState = queryState.copy(
+          rowWriterOption = Some(PgRowConverters(conf, schema, outputFormats)),
+          schema = Some(schema)
+        )
+        sessionState.queries(queryName) = newQueryState
+        sessionState.portals(portalName) = PortalState(newQueryState)
+        sessionState.execState = execState
+        sessionState.isCursorMode = !portalName.isEmpty()
+        if (sessionState.isCursorMode) {
+          logInfo(s"Cursor mode enabled: portalName='$portalName'")
+        }
+
+        ctx.write(BindComplete)
+        ctx.flush()
+      })
     },
 
     // An ASCII code of the `Close` message is 'C'(67)
     67 -> { msg =>
-      Close(msg.get(), extractString(msg))
+      val (tpe, name) = (msg.get(), extractString(msg))
+
+      ("Close", (ctx: ChannelHandlerContext, sessionId: Int, sessionState: SessionV3State) => {
+        if (tpe == 83) { // Close a prepared statement
+          sessionState.queries.remove(name)
+          logInfo(s"Close the '$name' prepared statement in this session (id:$sessionId)")
+        } else if (tpe == 80) { // Close a portal
+          sessionState.portals.remove(name)
+          logInfo(s"Close the '$name' portal in this session (id:$sessionId)")
+        } else {
+          logWarning(s"Unknown type received in 'Close`: $tpe")
+        }
+      })
     },
 
     // An ASCII code of the `Describe` message is 'D'(68)
     68 -> { msg =>
-      Describe(msg.get(), extractString(msg))
+      val (tpe, name) = (msg.get(), extractString(msg))
+
+      ("Describe", (ctx: ChannelHandlerContext, sessionId: Int, sessionState: SessionV3State) => {
+        import sessionState.v3Protocol._
+        import sessionState._
+
+        if (tpe == 83) { // Describe a prepared statement
+          logInfo(s"Describe the '$name' prepared statement in this session (id:$sessionId)")
+          val queryState = sessionState.queries(name)
+
+          // To get a schema, run a query with default params
+          val defaultParams = queryState.paramIds.zipWithIndex.map {
+            case (_, i) => (i + 1) -> s"''"
+          }
+          val boundQuery = ParameterBinder.bind(queryState.statement, defaultParams.toMap)
+          val execState = cli.executeStatement(sessionId, (boundQuery, null), false)
+          execState.run()
+          ctx.write(RowDescription(execState.outputSchema()))
+
+          // ctx.write(RowDescription(queryState.logicalPlan.schema))
+          ctx.flush()
+        } else if (tpe == 80) { // Describe a portal
+          require(sessionState.execState != null)
+          logInfo(s"Describe the '$name' portal in this session (id:$sessionId)")
+          ctx.write(RowDescription(sessionState.execState.outputSchema()))
+          ctx.flush()
+        } else {
+          logWarning(s"Unknown type received in 'Describe`: $tpe")
+        }
+      })
     },
 
     // An ASCII code of the `Execute` message is 'E'(69)
     69 -> { msg =>
-      Execute(extractString(msg), msg.getInt())
+      val (portalName, maxRows) = (extractString(msg), msg.getInt())
+
+      logInfo(s"Execute: portalName='$portalName', maxRows=$maxRows")
+
+      ("Execute", (ctx: ChannelHandlerContext, sessionId: Int, sessionState: SessionV3State) => {
+        try {
+          import sessionState.v3Protocol._
+
+          val portalState = sessionState.portals(portalName)
+          val rowConveter = portalState.queryState.rowWriterOption.get
+          val rowIter = if (portalState.numFetched == 0) {
+            // val iter = sessionState.execState.run()
+            // sessionState.resultRowIter = iter
+            // iter
+            sessionState.resultRowIter
+          } else {
+            sessionState.resultRowIter
+          }
+
+          var numRows = 0
+          if (maxRows == 0) {
+            rowIter.foreach { iter =>
+              ctx.write(DataRow(iter, rowConveter))
+              numRows += 1
+            }
+          } else {
+            rowIter.take(maxRows).foreach { iter =>
+              ctx.write(DataRow(iter, rowConveter))
+              numRows += 1
+            }
+            // Accumulate fetched #rows in this query
+            portalState.numFetched += numRows
+          }
+          sessionState.execState.queryType match {
+            case BEGIN =>
+              ctx.write(CommandComplete(s"BEGIN"))
+            case SELECT =>
+              ctx.write(CommandComplete(s"SELECT $numRows"))
+            case FETCH =>
+              if (numRows == 0) {
+                ctx.write(CommandComplete(s"FETCH ${portalState.numFetched}"))
+              } else {
+                ctx.write(PortalSuspended)
+              }
+          }
+          ctx.flush()
+        } catch {
+          case NonFatal(e) =>
+            sessionState.portals.remove(portalName)
+            throw e
+        }
+      })
     },
 
     // An ASCII code of the `FunctionCall` message is 'F'(70)
@@ -348,17 +510,23 @@ object PgWireProtocol {
         Seq.empty[Array[Byte]]
       }
       val resultFormat = msg.getShort()
-      FunctionCall(objId, formats, params, resultFormat)
+
+      ("FunctionCall",
+          (ctx: ChannelHandlerContext, sessionId: Int, sessionState: SessionV3State) => {
+        throw new UnsupportedOperationException("Not supported yet")
+      })
     },
 
     // An ASCII code of the `Flush` message is 'H'(72)
     72 -> { msg =>
-      Flush()
+      ("Flush", (ctx: ChannelHandlerContext, sessionId: Int, sessionState: SessionV3State) => {
+        throw new UnsupportedOperationException("Not supported yet")
+      })
     },
 
     // An ASCII code of the `Parse` message is 'P'(80)
     80 -> { msg =>
-      val portalName = extractString(msg)
+      val queryName = extractString(msg)
       val query = extractString(msg)
       val numParams = msg.getShort()
       val params = if (numParams > 0) {
@@ -368,7 +536,16 @@ object PgWireProtocol {
       } else {
         Seq.empty[Int]
       }
-      Parse(portalName, query, params.toSeq)
+
+      logInfo(s"Parse: queryName='$queryName' query='$query' objIds=$params")
+
+      ("Parse", (ctx: ChannelHandlerContext, sessionId: Int, sessionState: SessionV3State) => {
+        // Checks if `PostgreSqlParser` can parse the input query
+        val analyzedPlan = PgV3MessageHandler.analyzePlan(query)
+        sessionState.queries(queryName) = QueryState(query, analyzedPlan, params)
+        ctx.write(ParseComplete)
+        ctx.flush()
+      })
     },
 
     // An ASCII code of the `Query` message is 'Q'(81)
@@ -378,58 +555,121 @@ object PgWireProtocol {
       // Since a query string could contain several queries (separated by semicolons),
       // there might be several such response sequences before the backend finishes processing
       // the query string.
-      Query(new String(byteArray, StandardCharsets.UTF_8).split(";").map(_.trim).init)
+      val statements = new String(byteArray, StandardCharsets.UTF_8).split(";").map(_.trim).init
+
+      ("Query", (ctx: ChannelHandlerContext, sessionId: Int, sessionState: SessionV3State) => {
+        import sessionState.v3Protocol._
+        import sessionState._
+
+        if (statements.size > 0) {
+          logDebug(s"input queries are ${statements.mkString(", ")}")
+          // If a completely empty (no contents other than whitespace) query string is received,
+          // the response is EmptyQueryResponse followed by ReadyForQuery.
+          if (statements.length == 1 && statements(0).isEmpty) {
+            ctx.write(EmptyQueryResponse)
+          } else if (statements.size > 1) {
+            // TODO: Support multiple queries
+            throw new UnsupportedOperationException(
+              s"multi-query execution unsupported: ${statements.mkString(", ")}")
+          } else {
+            val query = statements.head
+
+            // Checks if `PostgreSqlParser` can parse the input query and executes the query
+            // in `PostgreSQLExecutor`.
+            val analyzedPlan = PgV3MessageHandler.analyzePlan(query)
+            val plan = (query, analyzedPlan)
+            val execState = cli.executeStatement(sessionId, plan, false)
+            val resultRowIter = execState.run()
+
+            // The response to a SELECT query (or other queries that return row sets, such as
+            // EXPLAIN or SHOW) normally consists of RowDescription, zero or more DataRow
+            // messages, and then CommandComplete.
+            val schema = execState.outputSchema()
+            ctx.write(RowDescription(schema))
+
+            val formats = formatsInSimpleQueryMode(schema)
+            val rowWriter = PgRowConverters(conf, schema, formats)
+            var numRows = 0
+            resultRowIter.foreach { iter =>
+              ctx.write(DataRow(iter, rowWriter))
+              numRows += 1
+            }
+            ctx.write(CommandComplete(s"SELECT $numRows"))
+          }
+        }
+        ctx.write(ReadyForQuery)
+        ctx.flush()
+      })
     },
 
     // An ASCII code of the `Sync` message is 'S'(83)
     83 -> { msg =>
-      Sync()
+      ("Sync", (ctx: ChannelHandlerContext, sessionId: Int, sessionState: SessionV3State) => {
+        ctx.write(ReadyForQuery)
+        ctx.flush()
+      })
     },
 
     // An ASCII code of the `Terminate` message is 'X'(88)
     88 -> { msg =>
-      Terminate()
+      ("Terminate", (ctx: ChannelHandlerContext, sessionId: Int, sessionState: SessionV3State) => {
+        ctx.close()
+      })
     },
 
     // An ASCII code of the `CopyDone` message is 'c'(99)
     99 -> { msg =>
-      CopyDone()
+      ("CopyDone", (ctx: ChannelHandlerContext, sessionId: Int, sessionState: SessionV3State) => {
+        throw new UnsupportedOperationException("Not supported yet")
+      })
     },
 
     // An ASCII code of the `CopyData` message is 'd'(100)
     100 -> { msg =>
-      val byteArray = new Array[Byte](msg.getInt())
-      msg.get(byteArray)
-      CopyData(byteArray)
+      val data = new Array[Byte](msg.getInt())
+      msg.get(data)
+
+      ("CopyData", (ctx: ChannelHandlerContext, sessionId: Int, sessionState: SessionV3State) => {
+        throw new UnsupportedOperationException("Not supported yet")
+      })
     },
 
     // An ASCII code of the `CopyFail` message is 'f'(102)
     102 -> { msg =>
-      CopyFail(extractString(msg))
+      ("CopyFail", (ctx: ChannelHandlerContext, sessionId: Int, sessionState: SessionV3State) => {
+        throw new UnsupportedOperationException("Not supported yet")
+      })
     },
 
     // An ASCII code of the `PasswordMessage` message is 'p'(112)
     112 -> { msg =>
-      val byteArray = new Array[Byte](msg.remaining)
-      msg.get(byteArray)
-      PasswordMessage(byteArray)
+      val token = new Array[Byte](msg.remaining)
+      msg.get(token)
+
+      ("PasswordMessage",
+          (ctx: ChannelHandlerContext, sessionId: Int, sessionState: SessionV3State) => {
+        val principal = PgV3MessageHandler.kerberosServerPrincipal
+        if (doGSSAuthentication(ctx, sessionState, principal, token)) {
+          sendAuthenticationOk(ctx, sessionState)
+        }
+      })
     }
   )
 
   /**
-   * Extract a single client message from a current position in given `msgBuffer`.
-   * Since `msgBuffer` could have multiple client messages, we update the position to point
-   * to a next message.
+   * Get a pair of a single client message type name and the processor from a current position
+   * in given `msgBuffer`. Since `msgBuffer` could have multiple client messages,
+   * we update the position to point to a next message.
    */
-  def extractClientMessageType(msgBuffer: ByteBuffer): ClientMessageType = {
+  def extractClientMessageProcessor(msgBuffer: ByteBuffer): (String, MessageProcessorType) = {
     val messageId = msgBuffer.get().toInt
     val basePos = msgBuffer.position()
     val msgLen = msgBuffer.getInt()
-    val message = messageParsers.get(messageId).map(_(msgBuffer)).getOrElse {
+    val (msgTypeName, func) = messageProcessors.get(messageId).map(_(msgBuffer)).getOrElse {
       throw new SQLException(s"Unknown message type: $messageId")
     }
     msgBuffer.position(basePos + msgLen)
-    message
+    (msgTypeName, func)
   }
 
 
@@ -446,6 +686,26 @@ object PgWireProtocol {
     val buf = ByteBuffer.allocate(9)
     buf.put('R'.toByte).putInt(8).putInt(0)
     buf.array()
+  }
+
+  def sendAuthenticationOk(ctx: ChannelHandlerContext, sessionState: SessionV3State): Unit = {
+    import sessionState.v3Protocol._
+    import sessionState._
+
+    ctx.write(AuthenticationOk)
+    // Pass server settings into a JDBC driver
+    Seq(
+      "application_name" -> "spark-sql-server",
+      "server_encoding" -> "UTF-8",
+      "server_version" -> conf.sqlServerVersion,
+      "TimeZone" -> conf.sessionLocalTimeZone,
+      "integer_datetimes" -> "on"
+    ).foreach { case (key, value) =>
+      ctx.write(ParameterStatus(key, value))
+    }
+    ctx.write(BackendKeyData(PgV3MessageHandler.getUniqueChannelId(ctx), sessionState.secretKey))
+    ctx.write(ReadyForQuery)
+    ctx.flush()
   }
 
   lazy val AuthenticationGSS = {
@@ -473,7 +733,7 @@ object PgWireProtocol {
 
   /**
    * An ASCII code '2' is an identifier of this [[BindComplete]] message.
-   * If we receive the [[Bind]] message from a client and we have no failure,
+   * If we receive the `Bind` message from a client and we have no failure,
    * we send this message to the client.
    */
   lazy val BindComplete = {
@@ -484,7 +744,7 @@ object PgWireProtocol {
 
   /**
    * An ASCII code '3' is an identifier of this [[CloseComplete]] message.
-   * If we receive the [[Close]] message from a client and we have no failure,
+   * If we receive the `Close` message from a client and we have no failure,
    * we send this message to the client.
    */
   lazy val CloseComplete = {
@@ -506,7 +766,7 @@ object PgWireProtocol {
 
   /**
    * An ASCII code 'n' is an identifier of this [[NoData]] message.
-   * If any command request (e.g., [[Query]] and [[Execute]]) is finished successfully and
+   * If any command request (e.g., `Query` and `Execute`) is finished successfully and
    * it has no result row, we send this message to the client.
    */
   lazy val NoData = {
@@ -517,7 +777,7 @@ object PgWireProtocol {
 
   /**
    * An ASCII code '1' is an identifier of this [[ParseComplete]] message.
-   * If we receive the [[Parse]] message from a client and we have no failure,
+   * If we receive the `Parse` message from a client and we have no failure,
    * we send this message to the client.
    */
   lazy val ParseComplete = {
@@ -529,7 +789,7 @@ object PgWireProtocol {
   /**
    * An ASCII code 's' is an identifier of this [[PortalSuspended]] message.
    * This is the message as a portal-suspended indicator.
-   * Note this only appears if an [[Execute]] message's row-count limit was reached.
+   * Note this only appears if an `Execute` message's row-count limit was reached.
    */
   lazy val PortalSuspended = {
     val buf = ByteBuffer.allocate(5)
@@ -655,18 +915,23 @@ class SslRequestHandler() extends ChannelInboundHandlerAdapter with Logging {
 
 // Manage cursor states in a session
 case class QueryState(
-  queryStatement: String,
+  statement: String,
+  logicalPlan: LogicalPlan,
   paramIds: Seq[Int],
   rowWriterOption: Option[RowWriter] = None,
   schema: Option[StructType] = None)
 
 case class PortalState(queryState: QueryState) {
+
   // Number of the rows that this portal state returns
   var numFetched: Int = 0
 }
 
-case class SessionV3State(v3Protocol: PgWireProtocol, secretKey: Int)
-    extends SessionState {
+case class SessionV3State(
+    cli: SessionService,
+    conf: SQLConf,
+    v3Protocol: PgWireProtocol,
+    secretKey: Int) extends SessionState {
 
   // Holds multiple prepared statements inside a session
   val queries: mutable.Map[String, QueryState] = mutable.Map.empty
@@ -677,7 +942,10 @@ case class SessionV3State(v3Protocol: PgWireProtocol, secretKey: Int)
   @volatile var execState: Operation = _
 
   // Holds an iterator of operations results
-  var resultRowIter: Iterator[InternalRow] = _
+  var resultRowIter: Iterator[InternalRow] = Iterator.empty
+
+  // Whether a cursor mode is enabled
+  var isCursorMode: Boolean = false
 
   // Holds unprocessed bytes for a message parser
   var pendingBytes: Array[Byte] = Array.empty
@@ -687,14 +955,9 @@ case class SessionV3State(v3Protocol: PgWireProtocol, secretKey: Int)
 
 object SessionV3State {
 
-  def resetState(
-      state: SessionV3State,
-      queryName: Option[String] = None,
-      portalName: Option[String] = None): Unit = {
-    queryName.foreach(state.queries.remove)
-    portalName.foreach(state.portals.remove)
+  def resetState(state: SessionV3State): Unit = {
     state.execState = null
-    state.resultRowIter = null
+    state.resultRowIter = Iterator.empty
     state.pendingBytes = Array.empty
   }
 }
@@ -711,15 +974,10 @@ object SessionV3State {
 @ChannelHandler.Sharable
 class PgV3MessageHandler(cli: SessionService, conf: SQLConf)
     extends SimpleChannelInboundHandler[Array[Byte]] with Logging {
+  import PgV3MessageHandler._
   import PgWireProtocol._
-  import SessionV3State._
 
-  private val sqlParser = new PgParser(SQLServerEnv.sqlConf)
-  private val channelIdToSessionId = java.util.Collections.synchronizedMap(
-    new java.util.HashMap[Int, Int]())
-
-  // A format is like 'spark/fully.qualified.domain.name@YOUR-REALM.COM'
-  private lazy val kerberosServerPrincipal = conf.getConfString("spark.yarn.principal")
+  private val channelIdToSessionId = jSyncMap(new jHashMap[Int, Int]())
 
   override def channelRead0(ctx: ChannelHandlerContext, msg: Array[Byte]): Unit = {
     val msgBuffer = ByteBuffer.wrap(msg)
@@ -751,16 +1009,12 @@ class PgV3MessageHandler(cli: SessionService, conf: SQLConf)
       hostAddr: String,
       dbName: String): SessionState = {
     val v3Protocol = PgWireProtocol(conf.sqlServerMessageBufferSizeInBytes)
-    val state = SessionV3State(v3Protocol, secretKey)
+    val state = SessionV3State(cli, conf, v3Protocol, secretKey)
     val sessionId = cli.openSession(userName, passwd, hostAddr, dbName, state)
     channelIdToSessionId.put(channelId, sessionId)
     logInfo(s"Open a session (sessionId=$sessionId, channelId=$channelId " +
       s"userName=$userName hostAddr=$hostAddr)")
     state
-  }
-
-  private def getSessionState(sessionId: Int): SessionV3State = {
-    cli.getSessionState(sessionId).asInstanceOf[SessionV3State]
   }
 
   private def closeSession(channelId: Int): Unit = {
@@ -772,10 +1026,13 @@ class PgV3MessageHandler(cli: SessionService, conf: SQLConf)
     }
   }
 
-  private def getUniqueChannelId(ctx: ChannelHandlerContext): Int = {
-    // A netty developer said we could use `Channel#hashCode()` as an unique id in:
-    //  http://stackoverflow.com/questions/18262926/howto-get-some-id-for-a-netty-channel
-    ctx.channel().hashCode()
+  private def getSessionId(ctx: ChannelHandlerContext): Int = {
+    val channelId = getUniqueChannelId(ctx)
+    channelIdToSessionId.get(channelId)
+  }
+
+  private def getSessionState(sessionId: Int): SessionV3State = {
+    cli.getSessionState(sessionId).asInstanceOf[SessionV3State]
   }
 
   private def handleException(ctx: ChannelHandlerContext, errMsg: String): Unit = {
@@ -784,76 +1041,6 @@ class PgV3MessageHandler(cli: SessionService, conf: SQLConf)
     // queries remained in it).
     logError(errMsg)
     ctx.write(ErrorResponse(errMsg))
-    ctx.write(ReadyForQuery)
-    ctx.flush()
-  }
-
-  // An URL string in PostgreSQL JDBC drivers is something like
-  // "jdbc:postgresql://[host]/[database]?user=[name]&kerberosServerName=spark"
-  private def handleGSSAuthentication(
-      ctx: ChannelHandlerContext,
-      state: SessionV3State,
-      token: Array[Byte]): Boolean = {
-    UserGroupInformation.getCurrentUser()
-        .doAs(new PrivilegedExceptionAction[Boolean] {
-
-      override def run(): Boolean = {
-        import state.v3Protocol.AuthenticationGSSContinue
-        // Get own Kerberos credentials for accepting connection
-        val manager = GSSManager.getInstance()
-        var gssContext: GSSContext = null
-        try {
-          // This Oid for Kerberos GSS-API mechanism
-          val kerberosMechOid = new Oid("1.2.840.113554.1.2.2")
-          // Oid for kerberos principal name
-          val krb5PrincipalOid = new Oid("1.2.840.113554.1.2.2.1")
-
-          val serverName = manager.createName(kerberosServerPrincipal, krb5PrincipalOid)
-          val serverCreds = manager.createCredential(
-            serverName, GSSCredential.DEFAULT_LIFETIME, kerberosMechOid,
-            GSSCredential.ACCEPT_ONLY)
-
-          gssContext = manager.createContext(serverCreds)
-
-          val outToken = gssContext.acceptSecContext(token, 0, token.length)
-          if (!gssContext.isEstablished) {
-            ctx.write(AuthenticationGSSContinue(outToken))
-            ctx.flush()
-            false
-          } else {
-            true
-          }
-        } catch {
-          case e: GSSException =>
-            handleException(ctx, s"Kerberos authentication failed: ${exceptionString(e)}")
-            false
-        } finally {
-          if (gssContext != null) {
-            try {
-              gssContext.dispose()
-            } catch {
-              case NonFatal(_) => // No-op
-            }
-          }
-        }
-      }
-    })
-  }
-
-  private def handleAuthenticationOk(ctx: ChannelHandlerContext, state: SessionV3State): Unit = {
-    import state.v3Protocol.{BackendKeyData, ParameterStatus}
-    ctx.write(AuthenticationOk)
-    // Pass server settings into a JDBC driver
-    Seq(
-      "application_name" -> "spark-sql-server",
-      "server_encoding" -> "UTF-8",
-      "server_version" -> conf.sqlServerVersion,
-      "TimeZone" -> conf.sessionLocalTimeZone,
-      "integer_datetimes" -> "on"
-    ).foreach { case (key, value) =>
-      ctx.write(ParameterStatus(key, value))
-    }
-    ctx.write(BackendKeyData(getUniqueChannelId(ctx), state.secretKey))
     ctx.write(ReadyForQuery)
     ctx.flush()
   }
@@ -922,7 +1109,7 @@ class PgV3MessageHandler(cli: SessionService, conf: SQLConf)
       ctx.write(AuthenticationGSS)
       ctx.flush()
     } else {
-      handleAuthenticationOk(ctx, sessionState)
+      sendAuthenticationOk(ctx, sessionState)
     }
   }
 
@@ -965,261 +1152,48 @@ class PgV3MessageHandler(cli: SessionService, conf: SQLConf)
   }
 
   private def handleV3Messages(ctx: ChannelHandlerContext, msgBuffer: ByteBuffer): Unit = {
-    val channelId = getUniqueChannelId(ctx)
-    val sessionId = channelIdToSessionId.get(channelId)
+    val sessionId = getSessionId(ctx)
     val sessionState = getSessionState(sessionId)
-
-    import sessionState.v3Protocol.{CommandComplete, DataRow, RowDescription}
-
     val bytesToProcess = getBytesToProcess(msgBuffer, sessionState)
     for (msg <- bytesToProcess) {
-      val message = try {
-        extractClientMessageType(ByteBuffer.wrap(msg))
+      val (msgTypeName, processor) = try {
+        extractClientMessageProcessor(ByteBuffer.wrap(msg))
       } catch {
         case NonFatal(e) =>
-          handleException(ctx, e.getMessage)
-          resetState(sessionState)
+          handleException(ctx, exceptionString(e))
+          SessionV3State.resetState(sessionState)
           return
       }
-      message match {
-        case PasswordMessage(token) =>
-          if (handleGSSAuthentication(ctx, sessionState, token)) {
-            handleAuthenticationOk(ctx, sessionState)
-          }
-        case Bind(portalName, queryName, formats, params, resultFormats) =>
-          logInfo(s"Bind: portalName=$portalName queryName=$queryName formats=$formats "
-            + s"params=$params resultFormats=$resultFormats")
-          val queryState = sessionState.queries.getOrElse(queryName, {
-            handleException(ctx, s"Unknown query specified: $queryName")
-            resetState(sessionState)
-            return
-          })
-
-          val isCursorMode = !portalName.isEmpty()
-          if (isCursorMode) {
-            logInfo(s"Cursor mode enabled: portalName=$portalName")
-          }
-
-          // Convert `params` to string parameters
-          val strParams = PgParamConverters(params, queryState.paramIds, formats)
-          strParams.foreach { case (index, param) =>
-            logInfo(s"""Bind param: $$$index -> $param""")
-          }
-
-          // TODO: Make parameter bindings more smart, e.g., based on analyzed logical plans
-          val boundQuery = ParameterBinder.bind(queryState.queryStatement, strParams.toMap)
-          logInfo(s"Bound query:\n$boundQuery")
-
-          try {
-            val execState = cli.executeStatement(sessionId, boundQuery, isCursorMode)
-            sessionState.execState = execState
-            sessionState.resultRowIter = execState.run()
-            val schema = execState.outputSchema()
-            val formats = formatsInExtendedQueryMode(schema)
-            // TODO: We could reuse this row converters in some cases?
-            val newQueryState = queryState.copy(
-              rowWriterOption = Some(PgRowConverters(conf, schema, formats)),
-              schema = Some(schema)
-            )
-            sessionState.queries(queryName) = newQueryState
-            sessionState.portals(portalName) = PortalState(newQueryState)
-          } catch {
-            case NonFatal(e) =>
-              handleException(ctx, s"Exception detected in `Bind`: ${exceptionString(e)}")
-              resetState(sessionState, portalName = Some(portalName))
-              return
-          }
-          ctx.write(BindComplete)
-          ctx.flush()
-        case Close(tpe, name) =>
-          if (tpe == 83) { // Close a prepared statement
-            sessionState.queries.remove(name)
-            logInfo(s"Close the '$name' prepared statement in this session (id:$sessionId)")
-          } else if (tpe == 80) { // Close a portal
-            sessionState.portals.remove(name)
-            logInfo(s"Close the '$name' portal in this session (id:$sessionId)")
-          } else {
-            logWarning(s"Unknown type received in 'Close`: $tpe")
-          }
-        case Describe(tpe, name) =>
-          if (tpe == 83) { // Describe a prepared statement
-            logInfo(s"Describe the '$name' prepared statement in this session (id:$sessionId)")
-            val queryState = sessionState.queries.getOrElse(name, {
-              handleException(ctx, s"Unknown query specified: $name")
-              resetState(sessionState)
-              return
-            })
-            // To get a schema, run a query with default params
-            val defaultParams = queryState.paramIds.zipWithIndex.map {
-              case (_, i) => (i + 1) -> s"''"
-            }
-            val boundQuery = ParameterBinder.bind(queryState.queryStatement, defaultParams.toMap)
-            val execState = cli.executeStatement(sessionId, boundQuery, isCursor = false)
-            try {
-              sessionState.resultRowIter = execState.run()
-              ctx.write(execState.outputSchema())
-            } catch {
-              case NonFatal(e) =>
-                handleException(ctx, s"Exception detected in `Bind`: ${exceptionString(e)}")
-                resetState(sessionState)
-                return
-            }
-            ctx.flush()
-          } else if (tpe == 80) { // Describe a portal
-            logInfo(s"Describe the '$name' portal in this session (id:$sessionId)")
-            ctx.write(RowDescription(sessionState.execState.outputSchema()))
-            ctx.flush()
-          } else {
-            handleException(ctx, s"Unknown type received in 'Describe`: $tpe")
-            resetState(sessionState)
-            return
-          }
-        case Execute(portalName, maxRows) =>
-          logInfo(s"Execute: portalName=$portalName, maxRows=$maxRows")
-          try {
-            val portalState = sessionState.portals.getOrElse(portalName, {
-              handleException(ctx, s"Unknown portal specified: $portalName")
-              resetState(sessionState)
-              return
-            })
-            val rowConveter = portalState.queryState.rowWriterOption.getOrElse {
-              handleException(ctx, s"Row converter not initialized for $portalName")
-              resetState(sessionState)
-              return
-            }
-            var numRows = 0
-            if (maxRows == 0) {
-              sessionState.resultRowIter.foreach { iter =>
-                ctx.write(DataRow(iter, rowConveter))
-                numRows = numRows + 1
-              }
-            } else {
-              sessionState.resultRowIter.take(maxRows).foreach { iter =>
-                ctx.write(DataRow(iter, rowConveter))
-                numRows = numRows + 1
-              }
-              // Accumulate fetched #rows in this query
-              portalState.numFetched += numRows
-            }
-            sessionState.execState.queryType match {
-              case BEGIN =>
-                ctx.write(CommandComplete(s"BEGIN"))
-              case SELECT =>
-                ctx.write(CommandComplete(s"SELECT $numRows"))
-              case FETCH =>
-                if (numRows == 0) {
-                  ctx.write(CommandComplete(s"FETCH ${portalState.numFetched}"))
-                } else {
-                  ctx.write(PortalSuspended)
-                }
-            }
-            ctx.flush()
-          } catch {
-            case NonFatal(e) =>
-              handleException(ctx, s"Exception detected in `Execute`: ${exceptionString(e)}")
-              resetState(sessionState, portalName = Some(portalName))
-              return
-          }
-        case FunctionCall(objId, formats, params, resultFormat) =>
-          handleException(ctx, "Message 'FunctionCall' not supported")
-          resetState(sessionState)
-          return
-        case Flush() =>
-          handleException(ctx, "Message 'Flush' not supported")
-          resetState(sessionState)
-          return
-        case Parse(queryName, query, objIds) =>
-          // Checks if `PostgreSqlParser` can parse the input query
-          try { sqlParser.parsePlan(query) } catch {
-            case e: ParseException if e.command.isDefined =>
-              handleException(ctx,
-                s"Cannot handle command ${e.command.get} in `Parse`: ${exceptionString(e)}")
-              resetState(sessionState)
-              return
-            case NonFatal(e) =>
-              handleException(ctx, s"Exception detected in `Parse`: ${exceptionString(e)}")
-              resetState(sessionState)
-              return
-          }
-          sessionState.queries(queryName) = QueryState(query, objIds)
-          logInfo(s"Parse: queryName=$queryName query=$query objIds=$objIds")
-          ctx.write(ParseComplete)
-          ctx.flush()
-        case Query(queries) =>
-          if (queries.size > 0) {
-            logDebug(s"input queries are ${queries.mkString(", ")}")
-            // If a completely empty (no contents other than whitespace) query string is received,
-            // the response is EmptyQueryResponse followed by ReadyForQuery.
-            if (queries.length == 1 && queries(0).isEmpty) {
-              ctx.write(EmptyQueryResponse)
-            } else if (queries.size > 1) {
-              // TODO: Support multiple queries
-              handleException(ctx, s"multi-query execution unsupported: ${queries.mkString(", ")}")
-              resetState(sessionState)
-              return
-            } else {
-              val query = queries.head
-
-              // Checks if `PostgreSqlParser` can parse the input query
-              try { sqlParser.parsePlan(query) } catch {
-                case e: ParseException if e.command.isDefined =>
-                  handleException(ctx,
-                    s"Cannot handle command ${e.command.get} in `Query`: ${exceptionString(e)}")
-                  resetState(sessionState)
-                  return
-                case NonFatal(e) =>
-                  handleException(ctx, s"Exception detected in `Query`: ${exceptionString(e)}")
-                  resetState(sessionState)
-                  return
-              }
-
-              // Then, executes the query in `PostgreSQLExecutor`
-              try {
-                val execState = cli.executeStatement(sessionId, query, isCursor = false)
-                val resultRowIter = execState.run()
-
-                // The response to a SELECT query (or other queries that return row sets, such as
-                // EXPLAIN or SHOW) normally consists of RowDescription, zero or more DataRow
-                // messages, and then CommandComplete.
-                val schema = execState.outputSchema()
-                ctx.write(RowDescription(schema))
-
-                val formats = formatsInSimpleQueryMode(schema)
-                val rowWriter = PgRowConverters(conf, schema, formats)
-                var numRows = 0
-                resultRowIter.foreach { iter =>
-                  ctx.write(DataRow(iter, rowWriter))
-                  numRows += 1
-                }
-                ctx.write(CommandComplete(s"SELECT $numRows"))
-              } catch {
-                case NonFatal(e) =>
-                  handleException(ctx,
-                    s"Exception detected in `Query`: ${exceptionString(e)}")
-                  resetState(sessionState)
-                  return
-              }
-            }
-            // ReadyForQuery is issued when the entire string has been processed
-            // and the backend is ready to accept a new query string.
-            ctx.write(ReadyForQuery)
-            ctx.flush()
-          } else {
-            handleException(ctx, "Empty query detected in `Query`")
-            resetState(sessionState)
-            return
-          }
-        case Sync() =>
-          ctx.write(ReadyForQuery)
-          ctx.flush()
-        case Terminate() =>
-          closeSession(channelId)
-          return
-        case msg =>
-          handleException(ctx, s"Unsupported message: $msg")
-          resetState(sessionState)
+      try { processor(ctx, sessionId, sessionState) } catch {
+        case NonFatal(e) =>
+          handleException(ctx, s"Exception detected in `$msgTypeName`: ${exceptionString(e)}")
+          SessionV3State.resetState(sessionState)
           return
       }
     }
+  }
+}
+
+object PgV3MessageHandler {
+
+  private val conf = SQLServerEnv.sqlConf
+  private val parser = new PgParser(conf)
+  private val analyzer = SQLServerEnv.sqlContext.sessionState.analyzer
+
+  // Returns Kerberos principal like 'spark/fully.qualified.domain.name@YOUR-REALM.COM'
+  def kerberosServerPrincipal: String = conf.getConfString("spark.yarn.principal")
+
+  def analyzePlan(query: String): LogicalPlan = try {
+    // analyzer.execute(parser.parsePlan(query))
+    parser.parsePlan(query)
+  } catch {
+    case e: ParseException if e.command.isDefined =>
+      throw new SQLException(s"Cannot handle command ${e.command.get}")
+  }
+
+  def getUniqueChannelId(ctx: ChannelHandlerContext): Int = {
+    // A netty developer said we could use `Channel#hashCode()` as an unique id in:
+    //  http://stackoverflow.com/questions/18262926/howto-get-some-id-for-a-netty-channel
+    ctx.channel().hashCode()
   }
 }
