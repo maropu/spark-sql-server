@@ -39,7 +39,7 @@ class FaultToleranceSuite extends SparkFunSuite with BeforeAndAfterAll with Befo
   private val envVarNameForEnablingTests = "ENABLE_FAULT_TOLERANCE_TESTS"
 
   private val conf = new SparkConf()
-  private val servers = mutable.ListBuffer[SparkPostgreSQLServerTest]()
+  private val servers = mutable.ListBuffer[SparkPgSQLServerTest]()
 
   private var zkTestServer: TestingServer = _
 
@@ -158,7 +158,7 @@ class FaultToleranceSuite extends SparkFunSuite with BeforeAndAfterAll with Befo
       "spark.deploy.zookeeper.url" -> zkTestServer.getConnectString
     )
     (1 to num).foreach { _ =>
-      val serv = new SparkPostgreSQLServerTest(
+      val serv = new SparkPgSQLServerTest(
         name = s"fault-tolrance-test-${_servCounter}",
         pgVersion = "9.6",
         ssl = false,
@@ -170,7 +170,7 @@ class FaultToleranceSuite extends SparkFunSuite with BeforeAndAfterAll with Befo
     }
   }
 
-  private def getLeader: SparkPostgreSQLServerTest = {
+  private def getLeader: SparkPgSQLServerTest = {
     val leaders = servers.filter { serv =>
       val bufferSrc = Source.fromFile(serv.logPath)
       Utils.tryWithSafeFinally {

@@ -26,11 +26,11 @@ import scala.sys.process._
 import com.google.common.io.Files
 import org.xerial.snappy.OSInfo
 
-import org.apache.spark.sql.server.PostgreSQLJdbcTest
+import org.apache.spark.sql.server.PgJdbcTest
 import org.apache.spark.util.Utils
 
 
-class PostgreSQLV3ProtocolTest extends PostgreSQLJdbcTest {
+class PgV3ProtocolTest extends PgJdbcTest {
 
   // TODO: Replace `snappy-java` with `commons.lang3.SystemUtils`
   private val isOsSupported = Seq("Linux", "Mac").contains(OSInfo.getOSName)

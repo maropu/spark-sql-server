@@ -30,18 +30,18 @@ import org.apache.spark.sql.server.SQLServer
 import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.SQLServerEnv
 import org.apache.spark.sql.server.service.{CompositeService, SessionInitializer, SessionService}
-import org.apache.spark.sql.server.service.postgresql.protocol.v3.PostgreSQLV3MessageInitializer
+import org.apache.spark.sql.server.service.postgresql.protocol.v3.PgV3MessageInitializer
 
 
-private[server] class PostgreSQLSessionInitializer extends SessionInitializer {
+private[server] class PgSessionInitializer extends SessionInitializer {
 
   override def apply(dbName: String, sqlContext: SQLContext): Unit = {
-    Metadata.initSystemFunctions(sqlContext)
-    Metadata.initSessionCatalogTables(sqlContext, dbName)
+    PgMetadata.initSystemFunctions(sqlContext)
+    PgMetadata.initSessionCatalogTables(sqlContext, dbName)
   }
 }
 
-private[server] class PostgreSQLService(pgServer: SQLServer, cli: SessionService)
+private[server] class PgService(pgServer: SQLServer, cli: SessionService)
     extends CompositeService {
 
   var port: Int = _
@@ -51,16 +51,16 @@ private[server] class PostgreSQLService(pgServer: SQLServer, cli: SessionService
   override def init(conf: SQLConf): Unit = {
     port = conf.sqlServerPort
     workerThreads = conf.sqlServerWorkerThreads
-    msgHandlerInitializer = new PostgreSQLV3MessageInitializer(cli, conf)
+    msgHandlerInitializer = new PgV3MessageInitializer(cli, conf)
   }
 
   override def start(): Unit = {
     require(SQLServerEnv.sqlContext != null)
 
     // Load system catalogs for the PostgreSQL v3 protocol
-    Metadata.initSystemCatalogTables(SQLServerEnv.sqlContext)
+    PgMetadata.initSystemCatalogTables(SQLServerEnv.sqlContext)
     if (SQLServerEnv.sqlConf.sqlServerSingleSessionEnabled) {
-      val init = new PostgreSQLSessionInitializer()
+      val init = new PgSessionInitializer()
       // In a single-session mode, we just load catalog entries from a 'default` database
       init("default", SQLServerEnv.sqlContext)
     }
@@ -79,7 +79,7 @@ private[server] class PostgreSQLService(pgServer: SQLServer, cli: SessionService
       val f = b.bind(port).sync()
 
       // Blocked until the server socket is closed
-      logInfo(s"Start running the SQL server (port=${port}, workerThreads=${workerThreads})")
+      logInfo(s"Start running the SQL server (port=$port, workerThreads=$workerThreads)")
       f.channel().closeFuture().sync();
     } finally {
       bossGroup.shutdownGracefully()

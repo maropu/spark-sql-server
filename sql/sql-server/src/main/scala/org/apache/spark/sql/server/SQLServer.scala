@@ -30,7 +30,7 @@ import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.service.{CompositeService, SparkSQLSessionService}
-import org.apache.spark.sql.server.service.postgresql.{PostgreSQLExecutor, PostgreSQLService, PostgreSQLSessionInitializer}
+import org.apache.spark.sql.server.service.postgresql.{PgExecutor, PgService, PgSessionInitializer}
 import org.apache.spark.sql.server.ui.SQLServerTab
 import org.apache.spark.util.ShutdownHookManager
 import org.apache.spark.util.Utils._
@@ -279,9 +279,9 @@ class SQLServer extends CompositeService with LeaderElectable {
 
     // Attaches PostgreSQL-specific services here
     val cliService = new SparkSQLSessionService(
-      this, new PostgreSQLExecutor(), new PostgreSQLSessionInitializer())
+      this, new PgExecutor(), new PgSessionInitializer())
     addService(cliService)
-    addService(new PostgreSQLService(this, cliService))
+    addService(new PgService(this, cliService))
     super.init(conf)
   }
 

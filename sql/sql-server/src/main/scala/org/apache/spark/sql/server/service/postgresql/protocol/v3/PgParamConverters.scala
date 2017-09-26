@@ -21,14 +21,14 @@ import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.sql.SQLException
 
-import org.apache.spark.sql.server.service.postgresql.Metadata._
+import org.apache.spark.sql.server.service.postgresql.PgMetadata._
 
 
 /**
- * A [[PostgreSQLParamConverters]] is used to convert binary in the [[Bind]] message
+ * A [[PgParamConverters]] is used to convert binary in the [[Bind]] message
  * into strings to bind them in a prepared statement.
  */
-object PostgreSQLParamConverters {
+object PgParamConverters {
 
   def apply(params: Seq[Array[Byte]], types: Seq[Int], formats: Seq[Int]): Seq[(Int, String)] = {
     params.zipWithIndex.map { case (param, i) =>

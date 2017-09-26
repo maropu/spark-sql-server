@@ -28,8 +28,6 @@ import scala.concurrent.duration._
 import scala.io.Source
 import scala.sys.process.BasicIO
 
-import org.postgresql.util.PGTimestamp
-
 import org.apache.spark.SparkException
 import org.apache.spark.util.{ThreadUtils, Utils}
 
@@ -55,12 +53,12 @@ class ProcessOutputCapturer(stream: InputStream, capture: String => Unit) extend
   }
 }
 
-class PostgreSQLV9_6JdbcSuite extends PostgreSQLJdbcSuite("9.6")
-class PostgreSQLV8_0JdbcSuite extends PostgreSQLJdbcSuite("8.0")
-class PostgreSQLV7_4JdbcSuite extends PostgreSQLJdbcSuite("7.4")
+class PgV9_6JdbcSuite extends PgJdbcSuite("9.6")
+class PgV8_0JdbcSuite extends PgJdbcSuite("8.0")
+class PgV7_4JdbcSuite extends PgJdbcSuite("7.4")
 
-abstract class PostgreSQLJdbcSuite(pgVersion: String)
-  extends PostgreSQLJdbcTest(pgVersion = pgVersion, ssl = false) {
+abstract class PgJdbcSuite(pgVersion: String)
+  extends PgJdbcTest(pgVersion = pgVersion, ssl = false) {
 
   val hiveVersion = "1.2.1"
 
@@ -1002,7 +1000,7 @@ abstract class PostgreSQLJdbcSuite(pgVersion: String)
 }
 
 // To check cursor-mode enabled in log strings, we put the test in this individual suite
-class PostgreSQLJdbcCursorModeSuite extends PostgreSQLJdbcTest(ssl = true) {
+class PgJdbcCursorModeSuite extends PgJdbcTest(ssl = true) {
 
   test("cursor mode") {
     testJdbcStatementWitConf("autoCommitModeEnabled" -> "false", "fetchSize" -> "2") { statement =>
@@ -1050,7 +1048,7 @@ class PostgreSQLJdbcCursorModeSuite extends PostgreSQLJdbcTest(ssl = true) {
   }
 }
 
-class PostgreSQLJdbcWithSslSuite extends PostgreSQLJdbcTest(ssl = true) {
+class PgJdbcWithSslSuite extends PgJdbcTest(ssl = true) {
 
   test("query execution via SSL") {
     testJdbcStatement { statement =>
@@ -1081,7 +1079,7 @@ class PostgreSQLJdbcWithSslSuite extends PostgreSQLJdbcTest(ssl = true) {
   }
 }
 
-class PostgreSQLJdbcSingleSessionSuite extends PostgreSQLJdbcTest(singleSession = true) {
+class PgJdbcSingleSessionSuite extends PgJdbcTest(singleSession = true) {
 
   test("share the temporary functions across JDBC connections") {
     testMultipleConnectionJdbcStatement(

@@ -45,9 +45,9 @@ import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.server.{SQLServerConf, SQLServerEnv}
 import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.service.{BEGIN, FETCH, Operation, SELECT, SessionService, SessionState}
-import org.apache.spark.sql.server.service.postgresql.Metadata._
-import org.apache.spark.sql.server.service.postgresql.PostgreSQLParser
-import org.apache.spark.sql.server.service.postgresql.protocol.v3.PostgreSQLRowConverters._
+import org.apache.spark.sql.server.service.postgresql.PgMetadata._
+import org.apache.spark.sql.server.service.postgresql.PgParser
+import org.apache.spark.sql.server.service.postgresql.protocol.v3.PgRowConverters._
 import org.apache.spark.sql.types._
 import org.apache.spark.util.Utils._
 
@@ -59,8 +59,8 @@ import org.apache.spark.util.Utils._
  *
  * https://www.postgresql.org/docs/current/static/protocol.html
  */
-case class PostgreSQLWireProtocol(msgBufferSizeInByte: Int) {
-  import PostgreSQLWireProtocol._
+case class PgWireProtocol(msgBufferSizeInByte: Int) {
+  import PgWireProtocol._
 
   private val messageBuffer = new Array[Byte](msgBufferSizeInByte)
   private val messageWriter = ByteBuffer.wrap(messageBuffer)
@@ -195,7 +195,7 @@ case class PostgreSQLWireProtocol(msgBufferSizeInByte: Int) {
   }
 }
 
-object PostgreSQLWireProtocol {
+object PgWireProtocol {
 
   /** An identifier for `StartupMessage`. */
   val V3_PROTOCOL_VERSION: Int = 196608
@@ -578,12 +578,12 @@ object PostgreSQLWireProtocol {
 class SharableByteArrayDecode extends ByteArrayDecoder {}
 
 /** Creates a newly configured [[io.netty.channel.ChannelPipeline]] for a new channel. */
-class PostgreSQLV3MessageInitializer(cli: SessionService, conf: SQLConf)
+class PgV3MessageInitializer(cli: SessionService, conf: SQLConf)
     extends ChannelInitializer[SocketChannel] with Logging {
 
   private val msgDecoder = new SharableByteArrayDecode()
   private val msgEncoder = new ByteArrayEncoder()
-  private val msgHandler = new PostgreSQLV3MessageHandler(cli, conf)
+  private val msgHandler = new PgV3MessageHandler(cli, conf)
 
   // SSL configuration variables
   private val keyStorePathOption = conf.sqlServerSslKeyStorePath
@@ -620,7 +620,7 @@ class PostgreSQLV3MessageInitializer(cli: SessionService, conf: SQLConf)
 
 // This SSL handler class is built for each connection in `PostgreSQLV3MessageInitializer`
 class SslRequestHandler() extends ChannelInboundHandlerAdapter with Logging {
-  import PostgreSQLWireProtocol._
+  import PgWireProtocol._
 
   // Once SSL established, the handler passes through following messages
   private var isEstablished: Boolean = false
@@ -665,7 +665,7 @@ case class PortalState(queryState: QueryState) {
   var numFetched: Int = 0
 }
 
-case class SessionV3State(v3Protocol: PostgreSQLWireProtocol, secretKey: Int)
+case class SessionV3State(v3Protocol: PgWireProtocol, secretKey: Int)
     extends SessionState {
 
   // Holds multiple prepared statements inside a session
@@ -709,12 +709,12 @@ object SessionV3State {
  *  https://jdbc.postgresql.org/documentation/92/thread.html
  */
 @ChannelHandler.Sharable
-class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
+class PgV3MessageHandler(cli: SessionService, conf: SQLConf)
     extends SimpleChannelInboundHandler[Array[Byte]] with Logging {
-  import PostgreSQLWireProtocol._
+  import PgWireProtocol._
   import SessionV3State._
 
-  private val sqlParser = new PostgreSQLParser(SQLServerEnv.sqlConf)
+  private val sqlParser = new PgParser(SQLServerEnv.sqlConf)
   private val channelIdToSessionId = java.util.Collections.synchronizedMap(
     new java.util.HashMap[Int, Int]())
 
@@ -750,7 +750,7 @@ class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
       passwd: String,
       hostAddr: String,
       dbName: String): SessionState = {
-    val v3Protocol = PostgreSQLWireProtocol(conf.sqlServerMessageBufferSizeInBytes)
+    val v3Protocol = PgWireProtocol(conf.sqlServerMessageBufferSizeInBytes)
     val state = SessionV3State(v3Protocol, secretKey)
     val sessionId = cli.openSession(userName, passwd, hostAddr, dbName, state)
     channelIdToSessionId.put(channelId, sessionId)
@@ -1001,7 +1001,7 @@ class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
           }
 
           // Convert `params` to string parameters
-          val strParams = PostgreSQLParamConverters(params, queryState.paramIds, formats)
+          val strParams = PgParamConverters(params, queryState.paramIds, formats)
           strParams.foreach { case (index, param) =>
             logInfo(s"""Bind param: $$$index -> $param""")
           }
@@ -1018,7 +1018,7 @@ class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
             val formats = formatsInExtendedQueryMode(schema)
             // TODO: We could reuse this row converters in some cases?
             val newQueryState = queryState.copy(
-              rowWriterOption = Some(PostgreSQLRowConverters(conf, schema, formats)),
+              rowWriterOption = Some(PgRowConverters(conf, schema, formats)),
               schema = Some(schema)
             )
             sessionState.queries(queryName) = newQueryState
@@ -1185,7 +1185,7 @@ class PostgreSQLV3MessageHandler(cli: SessionService, conf: SQLConf)
                 ctx.write(RowDescription(schema))
 
                 val formats = formatsInSimpleQueryMode(schema)
-                val rowWriter = PostgreSQLRowConverters(conf, schema, formats)
+                val rowWriter = PgRowConverters(conf, schema, formats)
                 var numRows = 0
                 resultRowIter.foreach { iter =>
                   ctx.write(DataRow(iter, rowWriter))

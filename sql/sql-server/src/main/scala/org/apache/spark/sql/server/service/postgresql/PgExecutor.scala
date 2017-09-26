@@ -32,19 +32,19 @@ import org.apache.spark.sql.server.{SQLServer, SQLServerConf, SQLServerEnv}
 import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.service._
 import org.apache.spark.sql.server.service.{Operation, OperationExecutor, OperationType}
-import org.apache.spark.sql.server.service.postgresql.{Metadata => PgMetadata}
+import org.apache.spark.sql.server.service.postgresql.{PgMetadata => PgMetadata}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.{Utils => SparkUtils}
 
 
-private[postgresql] case class PostgreSQLOperation(
+private[postgresql] case class PgOperation(
     sessionId: Int,
     statement: String,
     isCursor: Boolean)(
     sqlContext: SQLContext,
     activePools: java.util.Map[Int, String]) extends Operation with Logging {
 
-  private val sqlParser = new PostgreSQLParser(SQLServerEnv.sqlConf)
+  private val sqlParser = new PgParser(SQLServerEnv.sqlConf)
   private val statementId = UUID.randomUUID().toString()
 
   private var outputSchemaOption: Option[StructType] = None
@@ -180,7 +180,7 @@ private[postgresql] case class PostgreSQLOperation(
   }
 }
 
-private[server] class PostgreSQLExecutor extends OperationExecutor {
+private[server] class PgExecutor extends OperationExecutor {
 
   /** Create a new instance for service-specific operations. */
   override def newOperation(
@@ -189,6 +189,6 @@ private[server] class PostgreSQLExecutor extends OperationExecutor {
       isCursor: Boolean)(
       sqlContext: SQLContext,
       activePools: java.util.Map[Int, String]): Operation = {
-    new PostgreSQLOperation(sessionId, statement, isCursor)(sqlContext, activePools)
+    new PgOperation(sessionId, statement, isCursor)(sqlContext, activePools)
   }
 }

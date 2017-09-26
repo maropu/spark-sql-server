@@ -31,9 +31,9 @@ import org.apache.spark.sql.types._
 
 
 /**
- * A [[PostgreSQLRowConverters]] is used to convert [[InternalRow]]s into PostgreSQL V3 records.
+ * A [[PgRowConverters]] is used to convert [[InternalRow]]s into PostgreSQL V3 records.
  */
-object PostgreSQLRowConverters {
+object PgRowConverters {
 
   type RowWriter = (InternalRow, ByteBuffer) => Int
 

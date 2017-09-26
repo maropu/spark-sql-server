@@ -24,7 +24,7 @@ import org.scalatest.BeforeAndAfterAll
  * See an URL below for detailed options;
  *  https://www.postgresql.org/docs/9.6/static/app-psql.html
  */
-class PsqlCommandsV9_6Suite extends PostgreSQLJdbcTest(pgVersion = "9.6") with BeforeAndAfterAll {
+class PsqlCommandsV9_6Suite extends PgJdbcTest(pgVersion = "9.6") with BeforeAndAfterAll {
 
   override protected def beforeAll() : Unit = {
     super.beforeAll()
@@ -349,7 +349,7 @@ class PsqlCommandsV9_6Suite extends PostgreSQLJdbcTest(pgVersion = "9.6") with B
   }
 }
 
-class PsqlCommandsV8_0Suite extends PostgreSQLJdbcTest(pgVersion = "8.0") with BeforeAndAfterAll {
+class PsqlCommandsV8_0Suite extends PgJdbcTest(pgVersion = "8.0") with BeforeAndAfterAll {
 
   override protected def beforeAll() : Unit = {
     super.beforeAll()
@@ -638,7 +638,7 @@ class PsqlCommandsV8_0Suite extends PostgreSQLJdbcTest(pgVersion = "8.0") with B
   }
 }
 
-class PsqlCommandsV7_4Suite extends PostgreSQLJdbcTest(pgVersion = "7.4") with BeforeAndAfterAll {
+class PsqlCommandsV7_4Suite extends PgJdbcTest(pgVersion = "7.4") with BeforeAndAfterAll {
 
   override protected def beforeAll() : Unit = {
     super.beforeAll()

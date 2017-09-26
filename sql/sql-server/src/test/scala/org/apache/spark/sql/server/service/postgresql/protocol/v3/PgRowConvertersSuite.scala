@@ -30,7 +30,7 @@ import org.apache.spark.sql.types.{NullType, StructField}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.unsafe.types.UTF8String
 
-class PostgreSQLRowConvertersSuite extends SparkFunSuite {
+class PgRowConvertersSuite extends SparkFunSuite {
 
   private val conf = new SQLConf()
 

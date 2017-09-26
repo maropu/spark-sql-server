@@ -41,14 +41,14 @@ import org.apache.spark.sql.types._
  * TODO: We just copy Spark parser files into `org.apache.spark.sql.server.parser.*` and build
  * a new parser for PostgreSQL. So, we should fix this in a pluggable way.
  */
-private[postgresql] class PostgreSQLParser(conf: SQLConf) extends SparkSqlParser(conf) {
-  override val astBuilder = new PostgreSqlAstBuilder(conf)
+private[postgresql] class PgParser(conf: SQLConf) extends SparkSqlParser(conf) {
+  override val astBuilder = new PgAstBuilder(conf)
 }
 
 /**
  * Builder that converts an ANTLR ParseTree into a LogicalPlan/Expression/TableIdentifier.
  */
-private[postgresql] class PostgreSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf)
+private[postgresql] class PgAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf)
     with PredicateHelper {
   import org.apache.spark.sql.catalyst.parser.ParserUtils._
 
@@ -122,8 +122,7 @@ private[postgresql] class PostgreSqlAstBuilder(conf: SQLConf) extends SparkSqlAs
               }
               if (droppedPreds.nonEmpty) {
                 logWarning(
-                  s"""
-                     |Spark-2.2 does not allow correlated sub-queries to have non-equal predicates,
+                  s"""Spark-2.2 does not allow correlated sub-queries to have non-equal predicates,
                      |so we drop non-supported predicates to pass JDBC metadata operations.
                      |The dropped predicates are:
                      |${droppedPreds.mkString(" ")}
@@ -136,8 +135,7 @@ private[postgresql] class PostgreSqlAstBuilder(conf: SQLConf) extends SparkSqlAs
             aggregateExpressions = UnresolvedAlias(first.toAggregateExpression()) :: Nil,
             child = newChild)
           logWarning(
-            s"""
-               |Found a sub-query without aggregate, so we add `First` in the projection:
+            s"""Found a sub-query without aggregate, so we add `First` in the projection:
                |$projWithAggregate
              """.stripMargin)
           projWithAggregate

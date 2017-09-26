@@ -27,17 +27,17 @@ import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.unsafe.types.UTF8String
 
-class PostgreSQLWireProtocolSuite extends SparkFunSuite {
+class PgWireProtocolSuite extends SparkFunSuite {
 
   val conf = new SQLConf()
 
   test("DataRow") {
-    val v3Protocol = new PostgreSQLWireProtocol(65536)
+    val v3Protocol = new PgWireProtocol(65536)
     val row = new GenericInternalRow(2)
     row.update(0, 8)
     row.update(1, UTF8String.fromString("abcdefghij"))
     val schema = StructType.fromDDL("a INT, b STRING")
-    val rowConverters = PostgreSQLRowConverters(conf, schema, Seq(true, false))
+    val rowConverters = PgRowConverters(conf, schema, Seq(true, false))
     val data = v3Protocol.DataRow(row, rowConverters)
     val bytes = ByteBuffer.wrap(data)
     assert(bytes.get() === 'D'.toByte)
@@ -50,11 +50,11 @@ class PostgreSQLWireProtocolSuite extends SparkFunSuite {
   }
 
   test("Fails when message buffer overflowed") {
-    val v3Protocol = new PostgreSQLWireProtocol(4)
+    val v3Protocol = new PgWireProtocol(4)
     val row = new GenericInternalRow(1)
     row.update(0, UTF8String.fromString("abcdefghijk"))
     val schema = StructType.fromDDL("a STRING")
-    val rowConverters = PostgreSQLRowConverters(conf, schema, Seq(false))
+    val rowConverters = PgRowConverters(conf, schema, Seq(false))
     val errMsg = intercept[SQLException] {
       v3Protocol.DataRow(row, rowConverters)
     }.getMessage

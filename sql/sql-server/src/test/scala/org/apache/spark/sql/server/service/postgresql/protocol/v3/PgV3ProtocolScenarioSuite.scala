@@ -18,7 +18,7 @@
 package org.apache.spark.sql.server.service.postgresql.protocol.v3
 
 
-class PostgreSQLV3ProtocolScenarioSuite extends PostgreSQLV3ProtocolTest {
+class PgV3ProtocolScenarioSuite extends PgV3ProtocolTest {
 
   testIfSupported("simple query") {
     checkV3Protocol(

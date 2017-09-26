@@ -74,7 +74,7 @@ trait Operation {
 
 trait OperationExecutor {
 
-  /** Create a new instance for service-specific operations. */
+  // Create a new instance for service-specific operations
   def newOperation(
     sessionId: Int,
     statement: String,

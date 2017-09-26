@@ -36,19 +36,19 @@ import org.apache.spark.SparkFunSuite
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.{ThreadUtils, Utils}
 
-class PostgreSQLJdbcTest(
+class PgJdbcTest(
     pgVersion: String = "9.6",
     ssl: Boolean = false,
     singleSession: Boolean = false)
-  extends SQLServerTest(pgVersion, ssl, singleSession) with PostgreSQLJdbcTestBase {
+  extends SQLServerTest(pgVersion, ssl, singleSession) with PgJdbcTestBase {
 
-  override def serverInstance: SparkPostgreSQLServerTest = server
+  override def serverInstance: SparkPgSQLServerTest = server
 }
 
 abstract class SQLServerTest(pgVersion: String, ssl: Boolean, singleSession: Boolean)
   extends SparkFunSuite with BeforeAndAfterAll with Logging {
 
-  protected val server = new SparkPostgreSQLServerTest(
+  protected val server = new SparkPgSQLServerTest(
     this.getClass.getSimpleName, pgVersion = pgVersion, ssl = ssl, singleSession = singleSession)
 
   override protected def beforeAll(): Unit = {
@@ -67,7 +67,7 @@ abstract class SQLServerTest(pgVersion: String, ssl: Boolean, singleSession: Boo
   }
 }
 
-class SparkPostgreSQLServerTest(
+class SparkPgSQLServerTest(
     name: String,
     pgVersion: String,
     val ssl: Boolean,
@@ -78,7 +78,7 @@ class SparkPostgreSQLServerTest(
   private val className = SQLServer.getClass.getCanonicalName.stripSuffix("$")
   private val logFileMask = s"starting $className, logging to "
   private val successStartLines = Set(
-    "PostgreSQLService: Start running the SQL server",
+    "PgService: Start running the SQL server",
     "Recovery mode 'ZOOKEEPER' enabled"
   )
   private val startScript = "../../sbin/start-sql-server.sh".split("/").mkString(File.separator)
@@ -242,24 +242,24 @@ class SparkPostgreSQLServerTest(
     logError(
       s"""
          |=====================================
-         |PostgreSQLJdbcSuite  failure output
+         |PgJdbcSuite  failure output
          |=====================================
          |${diagnosisBuffer.mkString("\n")}
          |=========================================
-         |End PostgreSQLJdbcSuite failure output
+         |End PgJdbcSuite failure output
          |=========================================
        """.stripMargin)
   }
 }
 
-trait PostgreSQLJdbcTestBase {
+trait PgJdbcTestBase {
 
   // Register a JDBC driver for PostgreSQL
   Utils.classForName(classOf[org.postgresql.Driver].getCanonicalName)
 
   private lazy val jdbcUri = s"jdbc:postgresql://localhost:${serverInstance.listeningPort}/default"
 
-  def serverInstance: SparkPostgreSQLServerTest
+  def serverInstance: SparkPgSQLServerTest
 
   protected def getJdbcConnect(): Connection = {
     val props = new Properties()

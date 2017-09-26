@@ -23,11 +23,11 @@ import org.apache.spark.SparkFunSuite
 import org.apache.spark.sql.{Dataset, Row}
 import org.apache.spark.sql.hive.test.TestHive
 import org.apache.spark.sql.server.SQLServerEnv
-import org.apache.spark.sql.server.service.postgresql.Metadata._
+import org.apache.spark.sql.server.service.postgresql.PgMetadata._
 
-class PostgreSQLDialectSuite extends SparkFunSuite with BeforeAndAfterAll {
+class PgDialectSuite extends SparkFunSuite with BeforeAndAfterAll {
 
-  lazy val parser = new PostgreSQLParser(SQLServerEnv.sqlConf)
+  lazy val parser = new PgParser(SQLServerEnv.sqlConf)
   lazy val sqlContext = TestHive
 
   override protected def beforeAll() : Unit = {
