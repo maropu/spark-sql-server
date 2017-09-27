@@ -37,7 +37,7 @@ trait SessionService {
     state: SessionState): Int
   def getSessionState(sessionId: Int): SessionState
   def closeSession(sessionId: Int): Unit
-  def executeStatement(sessionId: Int, plan: (String, LogicalPlan), isCursor: Boolean): Operation
+  def executeStatement(sessionId: Int, plan: (String, LogicalPlan)): Operation
 }
 
 private[service] class SessionManager(pgServer: SQLServer, init: SessionInitializer)
@@ -123,12 +123,10 @@ private[server] class SparkSQLSessionService(
     sessionManager.closeSession(sessionId)
   }
 
-  override def executeStatement(
-      sessionId: Int, plan: (String, LogicalPlan), isCursor: Boolean): Operation = {
+  override def executeStatement(sessionId: Int, plan: (String, LogicalPlan)): Operation = {
     operationManager.newExecuteStatementOperation(
       sessionManager.getSession(sessionId)._1,
       sessionId,
-      plan,
-      isCursor)
+      plan)
   }
 }

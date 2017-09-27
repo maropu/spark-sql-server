@@ -50,6 +50,7 @@ import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.service.{BEGIN, FETCH, Operation, SELECT, SessionService, SessionState}
 import org.apache.spark.sql.server.service.postgresql.PgMetadata._
 import org.apache.spark.sql.server.service.postgresql.PgParser
+import org.apache.spark.sql.server.service.postgresql.execution.command.BeginCommand
 import org.apache.spark.sql.server.service.postgresql.protocol.v3.PgRowConverters._
 import org.apache.spark.sql.types._
 import org.apache.spark.util.Utils._
@@ -356,7 +357,7 @@ object PgWireProtocol extends Logging {
 
         val plan = (boundQuery, boundPlan)
         // val plan = (queryState.statement, boundPlan)
-        val execState = cli.executeStatement(sessionId, plan, !portalName.isEmpty)
+        val execState = cli.executeStatement(sessionId, plan)
 
         val rowIter = execState.run()
         val schema = execState.outputSchema()
@@ -411,7 +412,7 @@ object PgWireProtocol extends Logging {
             case (_, i) => (i + 1) -> s"''"
           }
           val boundQuery = ParameterBinder.bind(queryState.statement, defaultParams.toMap)
-          val execState = cli.executeStatement(sessionId, (boundQuery, null), false)
+          val execState = cli.executeStatement(sessionId, (boundQuery, null))
           execState.run()
           ctx.write(RowDescription(execState.outputSchema()))
           // ctx.write(RowDescription(queryState.logicalPlan.schema))
@@ -462,12 +463,15 @@ object PgWireProtocol extends Logging {
             // Accumulate fetched #rows in this query
             portalState.numFetched += numRows
           }
-          portalState.execState.queryType match {
-            case BEGIN =>
+
+          // Sends back a complete message depending on a portal state
+          val logicalPlan = portalState.queryState.logicalPlan
+          logicalPlan match {
+            case BeginCommand() =>
               ctx.write(CommandComplete(s"BEGIN"))
-            case SELECT =>
+            case _ if !portalState.isCursorMode =>
               ctx.write(CommandComplete(s"SELECT $numRows"))
-            case FETCH =>
+            case _ =>
               if (numRows == 0) {
                 ctx.write(CommandComplete(s"FETCH ${portalState.numFetched}"))
               } else {
@@ -576,7 +580,7 @@ object PgWireProtocol extends Logging {
             // in `PostgreSQLExecutor`.
             val analyzedPlan = PgV3MessageHandler.analyzePlan(query)
             val plan = (query, analyzedPlan)
-            val execState = cli.executeStatement(sessionId, plan, false)
+            val execState = cli.executeStatement(sessionId, plan)
             val resultRowIter = execState.run()
 
             // The response to a SELECT query (or other queries that return row sets, such as

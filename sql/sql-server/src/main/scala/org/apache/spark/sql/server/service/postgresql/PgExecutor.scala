@@ -18,7 +18,7 @@
 package org.apache.spark.sql.server.service.postgresql
 
 import java.sql.SQLException
-import java.util.UUID
+import java.util.{Map => jMap, UUID}
 import javax.annotation.concurrent.ThreadSafe
 
 import scala.util.control.NonFatal
@@ -33,8 +33,7 @@ import org.apache.spark.sql.execution.datasources.CreateTable
 import org.apache.spark.sql.server.{SQLServer, SQLServerConf, SQLServerEnv}
 import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.service._
-import org.apache.spark.sql.server.service.{Operation, OperationExecutor, OperationType}
-import org.apache.spark.sql.server.service.postgresql.execution.command.BeginCommand
+import org.apache.spark.sql.server.service.{Operation, OperationExecutor}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.{Utils => SparkUtils}
 
@@ -43,20 +42,15 @@ import org.apache.spark.util.{Utils => SparkUtils}
 @ThreadSafe
 private[postgresql] case class PgOperation(
     sessionId: Int,
-    query: (String, LogicalPlan),
-    isCursor: Boolean)(
+    query: (String, LogicalPlan))(
     sqlContext: SQLContext,
     activePools: java.util.Map[Int, String]) extends Operation with Logging {
 
   private val sqlParser = new PgParser(SQLServerEnv.sqlConf)
   private val statementId = UUID.randomUUID().toString()
-  private var outputSchemaOption: Option[StructType] = None
 
-  override val queryType: OperationType = query._2 match {
-    case BeginCommand() => BEGIN
-    case _ if isCursor => FETCH
-    case _ => SELECT
-  }
+  // TODO: Remove this variable for thread safety
+  private var outputSchemaOption: Option[StructType] = None
 
   override def cancel(): Unit = {
     logInfo(
@@ -187,11 +181,10 @@ private[server] class PgExecutor extends OperationExecutor {
 
   // Create a new instance for service-specific operations
   override def newOperation(
+      sqlContext: SQLContext,
       sessionId: Int,
       plan: (String, LogicalPlan),
-      isCursor: Boolean)(
-      sqlContext: SQLContext,
-      activePools: java.util.Map[Int, String]): Operation = {
-    new PgOperation(sessionId, plan, isCursor)(sqlContext, activePools)
+      activePools: jMap[Int, String]): Operation = {
+    new PgOperation(sessionId, plan)(sqlContext, activePools)
   }
 }

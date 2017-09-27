@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql.server.service
 
+import java.util.{Map => jMap}
 import javax.annotation.concurrent.ThreadSafe
 
 import org.apache.spark.sql.SQLContext
@@ -53,7 +54,7 @@ trait Operation {
 
   protected var state: OperationState = INITIALIZED
 
-  def queryType(): OperationType
+  // TODO: Remove this IF because I think we could get a query schema before running queries
   def outputSchema(): StructType
   def run(): Iterator[InternalRow]
   def cancel(): Unit
@@ -80,11 +81,10 @@ trait OperationExecutor {
 
   // Create a new instance for service-specific operations
   def newOperation(
-    sessionId: Int,
-    plan: (String, LogicalPlan),
-    isCursor: Boolean)(
     sqlContext: SQLContext,
-    activePools: java.util.Map[Int, String]): Operation
+    sessionId: Int,
+    plan: (String, LogicalPlan), // (query statement, analyzed logical plan)
+    activePools: jMap[Int, String]): Operation
 }
 
 private[service] class OperationManager(pgServer: SQLServer, executor: OperationExecutor)
@@ -98,9 +98,8 @@ private[service] class OperationManager(pgServer: SQLServer, executor: Operation
   def newExecuteStatementOperation(
       sqlContext: SQLContext,
       sessionId: Int,
-      plan: (String, LogicalPlan),
-      isCursor: Boolean): Operation = {
-    val op = executor.newOperation(sessionId, plan, isCursor)(sqlContext, sessionIdToActivePool)
+      plan: (String, LogicalPlan)): Operation = {
+    val op = executor.newOperation(sqlContext, sessionId, plan, sessionIdToActivePool)
     if (!sessionIdToOperations.containsKey(sessionId)) {
       sessionIdToOperations.put(sessionId, new java.util.ArrayList())
     }
