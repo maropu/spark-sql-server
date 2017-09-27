@@ -38,6 +38,9 @@ class PgV3ProtocolScenarioSuite extends PgV3ProtocolTest {
   }
 
   testIfSupported("unsupported SQL strings") {
+    def expectedErrorMessage(message: String, cmd: String): String =
+      s"Exception detected in `$message`: java.sql.SQLException: Cannot handle command $cmd"
+
     Seq("COMMIT", "ROLLBACK").foreach { cmd =>
       val e1 = intercept[Exception] {
         checkV3Protocol(
@@ -47,8 +50,8 @@ class PgV3ProtocolScenarioSuite extends PgV3ProtocolTest {
            """.stripMargin,
           expected = ""
         )
-      }
-      assert(e1.getMessage.contains(s"Cannot handle command $cmd in `Query`"))
+      }.getMessage
+      assert(e1.contains(expectedErrorMessage("Query", cmd)))
 
       val e2 = intercept[Exception] {
         checkV3Protocol(
@@ -58,8 +61,8 @@ class PgV3ProtocolScenarioSuite extends PgV3ProtocolTest {
            """.stripMargin,
           expected = ""
         )
-      }
-      assert(e2.getMessage.contains(s"Cannot handle command $cmd in `Parse`"))
+      }.getMessage
+      assert(e2.contains(expectedErrorMessage("Parse", cmd)))
     }
   }
 

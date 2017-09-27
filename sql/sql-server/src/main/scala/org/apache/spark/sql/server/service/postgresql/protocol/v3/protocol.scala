@@ -47,7 +47,7 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.server.{SQLServerConf, SQLServerEnv}
 import org.apache.spark.sql.server.SQLServerConf._
-import org.apache.spark.sql.server.service.{BEGIN, FETCH, Operation, SELECT, SessionService, SessionState}
+import org.apache.spark.sql.server.service.{Operation, SessionService, SessionState}
 import org.apache.spark.sql.server.service.postgresql.PgMetadata._
 import org.apache.spark.sql.server.service.postgresql.PgParser
 import org.apache.spark.sql.server.service.postgresql.execution.command.BeginCommand
