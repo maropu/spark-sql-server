@@ -57,7 +57,7 @@ private[postgresql] class PgAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder
   }
 
   override def visitParamPlaceHolder(ctx: ParamPlaceHolderContext): Expression = withOrigin(ctx) {
-    ParameterPlaceHolder()
+    ParameterPlaceHolder(ctx.INTEGER_VALUE.getText.toInt)
   }
 
   override def visitPrimitiveDataType(ctx: PrimitiveDataTypeContext): DataType = withOrigin(ctx) {

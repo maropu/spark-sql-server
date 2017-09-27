@@ -17,26 +17,33 @@
 
 package org.apache.spark.sql.server.service.postgresql.protocol.v3
 
-import scala.util.matching.Regex
+import java.sql.SQLException
+
+import org.apache.spark.sql.catalyst.expressions.Literal
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.server.catalyst.expressions.ParameterPlaceHolder
 
 
 /**
  * A helper class that binds parameters using numbers like `$1`, `$2`, ...
  */
-object ParameterBinder {
+object ParamBinder {
 
-  val REF_RE = "\\$([1-9][0-9]*)".r
-
-  def bind(input: String, params: Map[Int, String]): String = {
-    if (input != null) {
-      REF_RE.replaceAllIn(input, { m =>
-        val refNumber = m.group(1).toInt
-        params.get(refNumber).map(Regex.quoteReplacement).getOrElse {
-          throw new IllegalArgumentException(s"A value of the param $refNumber does not exist")
-        }
-      })
-    } else {
-      input
+  def bind(logicalPlan: LogicalPlan, params: Map[Int, Literal]): LogicalPlan = {
+    val boundPlan = logicalPlan.transformAllExpressions {
+      case ParameterPlaceHolder(id) if params.contains(id) =>
+        params(id)
     }
+    val unresolvedParams = boundPlan.flatMap { plan =>
+      plan.expressions.flatMap { _.flatMap {
+        case ParameterPlaceHolder(id) => Some(id)
+        case _ => None
+      }}
+    }
+    if (unresolvedParams.nonEmpty) {
+      throw new SQLException("Unresolved parameters found: " +
+        unresolvedParams.map(n => s"$$$n").mkString(", "))
+    }
+    boundPlan
   }
 }

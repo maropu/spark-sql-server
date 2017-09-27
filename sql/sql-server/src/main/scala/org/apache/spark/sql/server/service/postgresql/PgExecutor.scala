@@ -34,7 +34,6 @@ import org.apache.spark.sql.server.{SQLServer, SQLServerConf, SQLServerEnv}
 import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.service._
 import org.apache.spark.sql.server.service.{Operation, OperationExecutor}
-import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.{Utils => SparkUtils}
 
 
@@ -48,24 +47,17 @@ private[postgresql] case class PgOperation(
   import sqlContext._
   import SQLServer.{listener => servListener}
 
-  private val sqlParser = new PgParser(SQLServerEnv.sqlConf)
   private val statementId = UUID.randomUUID().toString()
-
-  // TODO: Remove this variable for thread safety
-  private var outputSchemaOption: Option[StructType] = None
 
   override def cancel(): Unit = {
     logInfo(
       s"""Cancelling query with $statementId:
+         |${query._1}
          |${query._2}
        """.stripMargin)
     sparkContext.cancelJobGroup(statementId)
     servListener.onStatementCanceled(statementId)
     setState(CANCELED)
-  }
-
-  override def outputSchema(): StructType = {
-    outputSchemaOption.getOrElse(StructType(Seq.empty))
   }
 
   override def close(): Unit = {
@@ -83,6 +75,7 @@ private[postgresql] case class PgOperation(
       logInfo(
         s"""Running query with $statementId:
            |${query._1}
+           |${query._2}
          """.stripMargin)
 
       // Always use the latest class loader provided by SQLContext's state.
@@ -97,7 +90,7 @@ private[postgresql] case class PgOperation(
       }
 
       val resultRowIterator = try {
-        val df = Dataset.ofRows(sqlContext.sparkSession, sqlParser.parsePlan(query._1))
+        val df = Dataset.ofRows(sqlContext.sparkSession, query._2)
         logDebug(df.queryExecution.toString())
         servListener.onStatementParsed(statementId, df.queryExecution.toString())
 
@@ -107,9 +100,6 @@ private[postgresql] case class PgOperation(
         } else {
           df.queryExecution.executedPlan.executeCollect().iterator
         }
-
-        // If query suceeds, set the output schema
-        outputSchemaOption = Some(df.schema)
 
         // Based on the assumption that DDL commands succeed, we then update internal states
         query._2 match {
@@ -156,6 +146,7 @@ private[postgresql] case class PgOperation(
             val errMsg =
               s"""Cancelled query with $statementId
                  |${query._1}
+                 |${query._2}
                """.stripMargin
             logWarning(errMsg)
             throw new SQLException(errMsg)
@@ -164,6 +155,7 @@ private[postgresql] case class PgOperation(
             val errMsg =
               s"""Caught an error executing query with with $statementId:
                  |${query._1}
+                 |${query._2}
                  |Exception message:
                  |$exceptionString
                """.stripMargin

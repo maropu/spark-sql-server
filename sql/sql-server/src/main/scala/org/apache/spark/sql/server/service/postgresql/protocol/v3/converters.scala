@@ -20,15 +20,79 @@ package org.apache.spark.sql.server.service.postgresql.protocol.v3
 import java.io.CharArrayWriter
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
+import java.sql.SQLException
 import java.util.TimeZone
 
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
+import org.apache.spark.sql.catalyst.expressions.{GenericInternalRow, Literal}
 import org.apache.spark.sql.catalyst.json.{JacksonGenerator, JSONOptions}
 import org.apache.spark.sql.catalyst.util.DateTimeUtils
 import org.apache.spark.sql.internal.SQLConf
+import org.apache.spark.sql.server.service.postgresql.PgMetadata._
 import org.apache.spark.sql.types._
+import org.apache.spark.unsafe.types.UTF8String
 
+
+/**
+ * A [[PgParamConverters]] is used to convert binary in the `Bind` message into [[Literal]] to
+ * bind them in a prepared statement.
+ */
+object PgParamConverters {
+
+  def apply(params: Seq[Array[Byte]], types: Seq[Int], formats: Seq[Int]): Seq[(Int, Literal)] = {
+    params.zipWithIndex.map { case (param, i) =>
+      val value = (types(i), formats(i)) match {
+        case (PgUnspecifiedType.oid, format) =>
+          throw new SQLException(s"Unspecified type unsupported: format=$format")
+        case (PgBoolType.oid, 0) =>
+          // '1' (49) means true; otherwise false
+          Literal(if (param(0) == 49) true else false, BooleanType)
+        case (PgBoolType.oid, 1) =>
+          Literal(if (param(0) == 1) true else false, BooleanType)
+        case (PgNumericType.oid, 0) =>
+          val value = Decimal(new String(param, StandardCharsets.UTF_8))
+          Literal(value, new DecimalType())
+        case (PgInt2Type.oid, 0) =>
+          val value = new String(param, StandardCharsets.UTF_8).toShort
+          Literal(value, ShortType)
+        case (PgInt2Type.oid, 1) =>
+          val value = ByteBuffer.wrap(param).getShort
+          Literal(value, ShortType)
+        case (PgInt4Type.oid, 0) =>
+          val value = new String(param, StandardCharsets.UTF_8).toInt
+          Literal(value, IntegerType)
+        case (PgInt4Type.oid, 1) =>
+          val value = ByteBuffer.wrap(param).getInt
+          Literal(value, IntegerType)
+        case (PgInt8Type.oid, 0) =>
+          val value = new String(param, StandardCharsets.UTF_8).toLong
+          Literal(value, LongType)
+        case (PgInt8Type.oid, 1) =>
+          val value = ByteBuffer.wrap(param).getLong
+          Literal(value, LongType)
+        case (PgFloat4Type.oid, 0) =>
+          val value = new String(param, StandardCharsets.UTF_8).toFloat
+          Literal(value, FloatType)
+        case (PgFloat4Type.oid, 1) =>
+          val value = ByteBuffer.wrap(param).getFloat
+          Literal(value, FloatType)
+        case (PgFloat8Type.oid, 0) =>
+          val value = new String(param, StandardCharsets.UTF_8).toDouble
+          Literal(value, DoubleType)
+        case (PgFloat8Type.oid, 1) =>
+          val value = ByteBuffer.wrap(param).getDouble
+          Literal(value, DoubleType)
+        case (PgVarCharType.oid, _) =>
+          val value = UTF8String.fromBytes(param)
+          Literal(value, StringType)
+        // TODO: Need to support other types, e.g., `Date` and `Timestamp`
+        case (paramId, format) =>
+          throw new SQLException(s"Cannot bind param: paramId=$paramId, format=$format")
+      }
+      (i + 1) -> value
+    }
+  }
+}
 
 /**
  * A [[PgRowConverters]] is used to convert [[InternalRow]]s into PostgreSQL V3 records.
@@ -75,7 +139,7 @@ abstract class ColumnWriter(ordinal: Int) {
 class NullColumnWriter(ordinal: Int) extends ColumnWriter(ordinal) {
 
   override def nullSafeWriter(row: InternalRow, byteBuffer: ByteBuffer): Unit = {
-    throw new UnsupportedOperationException("Invalid call to nullSafeWriter on NullColumnWriter")
+    throw new SQLException("Invalid call to nullSafeWriter on NullColumnWriter")
   }
 }
 
@@ -359,7 +423,7 @@ object ColumnWriter {
       case (_: MapType, false) => new MapColumnTextWriter(field, ordinal, conf)
       case (_: StructType, false) => new StructColumnTextWriter(field, ordinal, conf)
 
-      case _ => throw new UnsupportedOperationException(
+      case _ => throw new SQLException(
         s"Cannot convert value: type=${field.dataType}, isBinary=$isBinary")
     }
   }

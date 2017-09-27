@@ -17,13 +17,16 @@
 
 package org.apache.spark.sql.server.catalyst.expressions
 
-import org.apache.spark.sql.catalyst.expressions.{LeafExpression, Unevaluable}
+import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
+import org.apache.spark.sql.catalyst.expressions.LeafExpression
 import org.apache.spark.sql.types.{DataType, NullType}
 
 
 /** A dummy expression node for prepared statements */
-case class ParameterPlaceHolder() extends LeafExpression with Unevaluable {
-  override lazy val resolved: Boolean = false
-  override def nullable: Boolean = true
+case class ParameterPlaceHolder(id: Int) extends LeafExpression with CodegenFallback {
+  override lazy val resolved: Boolean = true
+  override def nullable: Boolean = false
   override def dataType: DataType = NullType
+  override def eval(input: InternalRow): Any = input
 }

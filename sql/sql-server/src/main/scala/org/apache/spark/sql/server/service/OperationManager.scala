@@ -54,8 +54,6 @@ trait Operation {
 
   protected var state: OperationState = INITIALIZED
 
-  // TODO: Remove this IF because I think we could get a query schema before running queries
-  def outputSchema(): StructType
   def run(): Iterator[InternalRow]
   def cancel(): Unit
   def close(): Unit

@@ -540,7 +540,7 @@ predicate
 
 valueExpression
     : primaryExpression                                                                      #valueExpressionDefault
-    | PARAM_PLACEHOLDER                                                                      #paramPlaceHolder
+    | '$' INTEGER_VALUE                                                                      #paramPlaceHolder
     | operator=(MINUS | PLUS | TILDE) valueExpression                                        #arithmeticUnary
     | left=valueExpression operator=(ASTERISK | SLASH | PERCENT | DIV) right=valueExpression #arithmeticBinary
     | left=valueExpression operator=(PLUS | MINUS) right=valueExpression                     #arithmeticBinary
@@ -982,10 +982,6 @@ SUBSTRING: 'SUBSTRING';
 STRING
     : 'E'? '\'' ( ~('\''|'\\') | ('\\' .) )* '\''
     | 'E'? '"' ( ~('"'|'\\') | ('\\' .) )* '"'
-    ;
-
-PARAM_PLACEHOLDER
-    : '$' INTEGER_VALUE
     ;
 
 BIGINT_LITERAL

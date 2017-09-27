@@ -17,6 +17,9 @@
 
 package org.apache.spark.sql.server.service
 
+import java.util.{HashMap => jHashMap}
+import java.util.Collections.{synchronizedMap => jSyncMap}
+
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.internal.SQLConf
@@ -29,6 +32,11 @@ trait SessionInitializer {
 }
 
 trait SessionState {
+
+  // Holds a session-specific context
+  private[service] var _sessionId: Int = _
+  private[service] var _sqlContext: SQLContext = _
+
   def close(): Unit = {}
 }
 
@@ -42,10 +50,9 @@ trait SessionService {
 
 private[service] class SessionManager(pgServer: SQLServer, init: SessionInitializer)
     extends CompositeService {
+  import SQLServer.{listener => servListener}
 
-  private val sessionIdToState = java.util.Collections.synchronizedMap(
-    new java.util.HashMap[Int, (SQLContext, SessionState)]())
-
+  private val sessionIdToState = jSyncMap(new jHashMap[Int, SessionState]())
   private var getSession: String => SQLContext = _
 
   override def init(conf: SQLConf): Unit = {
@@ -74,21 +81,23 @@ private[service] class SessionManager(pgServer: SQLServer, init: SessionInitiali
   def openSession(userName: String, passwd: String, ipAddress: String, dbName: String,
       state: SessionState): Int = {
     val sessionId = SQLServerEnv.newSessionId()
-    SQLServer.listener.onSessionCreated(sessionId, userName, ipAddress)
     val sqlContext = getSession(dbName)
+    state._sessionId = sessionId
+    state._sqlContext = sqlContext
     sqlContext.sharedState.externalCatalog.setCurrentDatabase(dbName)
-    sessionIdToState.put(sessionId, (sqlContext, state))
+    sessionIdToState.put(sessionId, state)
+    servListener.onSessionCreated(sessionId, userName, ipAddress)
     sessionId
   }
 
   def closeSession(sessionId: Int): Unit = {
     require(sessionIdToState.containsKey(sessionId))
-    SQLServer.listener.onSessionClosed(sessionId)
+    servListener.onSessionClosed(sessionId)
     val state = sessionIdToState.remove(sessionId)
-    state._2.close()
+    state.close()
   }
 
-  def getSession(sessionId: Int): (SQLContext, SessionState) = {
+  def getSession(sessionId: Int): SessionState = {
     require(sessionIdToState.containsKey(sessionId))
     sessionIdToState.get(sessionId)
   }
@@ -116,7 +125,7 @@ private[server] class SparkSQLServiceManager(
   }
 
   override def getSessionState(sessionId: Int): SessionState = {
-    sessionManager.getSession(sessionId)._2
+    sessionManager.getSession(sessionId)
   }
 
   override def closeSession(sessionId: Int): Unit = {
@@ -125,6 +134,6 @@ private[server] class SparkSQLServiceManager(
 
   override def executeStatement(sessionId: Int, plan: (String, LogicalPlan)): Operation = {
     operationManager.newExecuteStatementOperation(
-      sessionManager.getSession(sessionId)._1, sessionId, plan)
+      sessionManager.getSession(sessionId)._sqlContext, sessionId, plan)
   }
 }

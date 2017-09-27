@@ -17,21 +17,56 @@
 
 package org.apache.spark.sql.server.service.postgresql.protocol.v3
 
-import org.apache.spark.SparkFunSuite
+import java.sql.SQLException
 
-class ParameterBinderSuite extends SparkFunSuite {
+import org.apache.spark.sql.catalyst.dsl.expressions._
+import org.apache.spark.sql.catalyst.expressions.{And, EqualTo, Literal}
+import org.apache.spark.sql.catalyst.plans.logical._
+import org.apache.spark.sql.catalyst.plans.PlanTest
+import org.apache.spark.sql.server.catalyst.expressions.ParameterPlaceHolder
+import org.apache.spark.sql.types._
+
+
+class ParameterBinderSuite extends PlanTest {
 
   test("bind parameters") {
-    assert("SELECT * FROM t WHERE a = 18" ===
-      ParameterBinder.bind("SELECT * FROM t WHERE a = $1", Map(1 -> "18")))
-    assert("SELECT * FROM t WHERE a = 42" ===
-      ParameterBinder.bind("SELECT * FROM t WHERE a = $300", Map(300 -> "42")))
-    assert("SELECT * FROM t WHERE a = -1 AND b = 8" ===
-      ParameterBinder.bind("SELECT * FROM t WHERE a = $1 AND b = $2", Map(1 -> "-1", 2 -> "8")))
+    val r1 = LocalRelation('a.int, 'b.int)
 
-    val e = intercept[IllegalArgumentException] {
-      ParameterBinder.bind("SELECT * FROM t WHERE a = $1", Map.empty)
-    }
-    assert(e.getMessage === "A value of the param 1 does not exist")
+    val param1 = Literal(18, IntegerType)
+    val lp1 = Filter(EqualTo('a.int, ParameterPlaceHolder(1)), r1)
+    val expected1 = Filter(EqualTo('a.int, param1), r1)
+    comparePlans(expected1, ParamBinder.bind(lp1, Map(1 -> param1)))
+
+    val param2 = Literal(42, IntegerType)
+    val lp2 = Filter(EqualTo('a.int, ParameterPlaceHolder(300)), r1)
+    val expected2 = Filter(EqualTo('a.int, param2), r1)
+    comparePlans(expected2, ParamBinder.bind(lp2, Map(300 -> param2)))
+
+    val param3 = Literal(-1, IntegerType)
+    val param4 = Literal(48, IntegerType)
+    val lp3 = Filter(
+      And(
+        EqualTo('a.int, ParameterPlaceHolder(1)),
+        EqualTo('b.int, ParameterPlaceHolder(2))
+      ), r1)
+    val expected3 = Filter(
+      And(
+        EqualTo('a.int, param3),
+        EqualTo('b.int, param4)
+      ), r1)
+    comparePlans(expected3, ParamBinder.bind(lp3, Map(1 -> param3, 2 -> param4)))
+
+    val errMsg1 = intercept[SQLException] {
+      ParamBinder.bind(lp1, Map.empty)
+    }.getMessage
+    assert(errMsg1 == "Unresolved parameters found: $1")
+    val errMsg2 = intercept[SQLException] {
+      ParamBinder.bind(lp2, Map.empty)
+    }.getMessage
+    assert(errMsg2 == "Unresolved parameters found: $300")
+    val errMsg3 = intercept[SQLException] {
+      ParamBinder.bind(lp3, Map.empty)
+    }.getMessage
+    assert(errMsg3 == "Unresolved parameters found: $1, $2")
   }
 }
