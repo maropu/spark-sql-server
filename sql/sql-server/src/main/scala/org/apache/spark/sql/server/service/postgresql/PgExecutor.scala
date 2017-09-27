@@ -45,6 +45,8 @@ private[postgresql] case class PgOperation(
     query: (String, LogicalPlan))(
     sqlContext: SQLContext,
     activePools: java.util.Map[Int, String]) extends Operation with Logging {
+  import sqlContext._
+  import SQLServer.{listener => servListener}
 
   private val sqlParser = new PgParser(SQLServerEnv.sqlConf)
   private val statementId = UUID.randomUUID().toString()
@@ -57,11 +59,9 @@ private[postgresql] case class PgOperation(
       s"""Cancelling query with $statementId:
          |${query._2}
        """.stripMargin)
-    if (statementId != null) {
-      sqlContext.sparkContext.cancelJobGroup(statementId)
-    }
+    sparkContext.cancelJobGroup(statementId)
+    servListener.onStatementCanceled(statementId)
     setState(CANCELED)
-    SQLServer.listener.onStatementCanceled(statementId)
   }
 
   override def outputSchema(): StructType = {
@@ -70,110 +70,118 @@ private[postgresql] case class PgOperation(
 
   override def close(): Unit = {
     // RDDs will be cleaned automatically upon garbage collection.
-    sqlContext.sparkContext.clearJobGroup()
+    sparkContext.clearJobGroup()
     logDebug(s"CLOSING $statementId")
     setState(CLOSED)
   }
 
+  private[this] var _cachedRowIterator: Iterator[InternalRow] = _
+
   override def run(): Iterator[InternalRow] = {
-    logInfo(
-      s"""Running query with $statementId:
-         |${query._1}
-       """.stripMargin)
-    setState(RUNNING)
+    if (state == INITIALIZED) {
+      setState(RUNNING)
+      logInfo(
+        s"""Running query with $statementId:
+           |${query._1}
+         """.stripMargin)
 
-    // Always use the latest class loader provided by SQLContext's state.
-    Thread.currentThread().setContextClassLoader(sqlContext.sharedState.jarClassLoader)
+      // Always use the latest class loader provided by SQLContext's state.
+      Thread.currentThread().setContextClassLoader(sqlContext.sharedState.jarClassLoader)
 
-    SQLServer.listener.onStatementStart(statementId, sessionId, query._1, statementId)
-    sqlContext.sparkContext.setJobGroup(statementId, query._1, true)
+      servListener.onStatementStart(statementId, sessionId, query._1, statementId)
+      sparkContext.setJobGroup(statementId, query._1, true)
 
-    if (activePools.containsKey(sessionId)) {
-      val pool = activePools.get(sessionId)
-      sqlContext.sparkContext.setLocalProperty("spark.scheduler.pool", pool)
-    }
-
-    val resultRowIterator = try {
-      val df = Dataset.ofRows(sqlContext.sparkSession, sqlParser.parsePlan(query._1))
-      logDebug(df.queryExecution.toString())
-      SQLServer.listener.onStatementParsed(statementId, df.queryExecution.toString())
-
-      val useIncrementalCollect = SQLServerEnv.sqlConf.sqlServerIncrementalCollectEnabled
-      val rowIter = if (useIncrementalCollect) {
-        df.queryExecution.executedPlan.executeToIterator()
-      } else {
-        df.queryExecution.executedPlan.executeCollect().iterator
+      if (activePools.containsKey(sessionId)) {
+        val pool = activePools.get(sessionId)
+        sparkContext.setLocalProperty("spark.scheduler.pool", pool)
       }
 
-      // If query suceeds, set the output schema
-      outputSchemaOption = Some(df.schema)
+      val resultRowIterator = try {
+        val df = Dataset.ofRows(sqlContext.sparkSession, sqlParser.parsePlan(query._1))
+        logDebug(df.queryExecution.toString())
+        servListener.onStatementParsed(statementId, df.queryExecution.toString())
 
-      // Based on the assumption that DDL commands succeed, we then update internal states
-      query._2 match {
-        case SetCommand(Some((SQLServerConf.SQLSERVER_POOL.key, Some(value)))) =>
-          logInfo(s"Setting spark.scheduler.pool=$value for future statements in this session.")
-          activePools.put(sessionId, value)
-        case CreateDatabaseCommand(dbName, _, _, _, _) =>
-          PgMetadata.registerDatabase(dbName, sqlContext)
-        case CreateTable(desc, _, _) =>
-          val dbName = desc.identifier.database.getOrElse("default")
-          val tableName = desc.identifier.table
-          PgMetadata.registerTable(dbName, tableName, desc.schema, desc.tableType, sqlContext)
-        case CreateTableCommand(table, _) =>
-          val dbName = table.identifier.database.getOrElse("default")
-          val tableName = table.identifier.table
-          PgMetadata.registerTable(dbName, tableName, table.schema, table.tableType, sqlContext)
-        case CreateViewCommand(table, _, _, _, _, child, _, _, _) =>
-          val dbName = table.database.getOrElse("default")
-          val tableName = table.identifier
-          val qe = sqlContext.sparkSession.sessionState.executePlan(child)
-          val schema = qe.analyzed.schema
-          PgMetadata.registerTable(dbName, tableName, schema, CatalogTableType.VIEW, sqlContext)
-        case CreateFunctionCommand(dbNameOption, funcName, _, _, _) =>
-          val dbName = dbNameOption.getOrElse("default")
-          PgMetadata.registerFunction(dbName, funcName, sqlContext)
-        case DropDatabaseCommand(dbName, _, _) =>
-          logInfo(s"Drop a database `$dbName` and refresh database catalog information")
-          PgMetadata.refreshDatabases(dbName, sqlContext)
-        case DropTableCommand(table, _, _, _) =>
-          val dbName = table.database.getOrElse("default")
-          val tableName = table.identifier
-          logInfo(s"Drop a table `$dbName.$tableName` and refresh table catalog information")
-          PgMetadata.refreshTables(dbName, sqlContext)
-        case DropFunctionCommand(dbNameOption, funcName, _, _) =>
-          val dbName = dbNameOption.getOrElse("default")
-          logInfo(s"Drop a function `$dbName.$funcName` and refresh function catalog information")
-          PgMetadata.refreshFunctions(dbName, sqlContext)
-        case _ =>
-      }
-      rowIter
-    } catch {
-      case NonFatal(e) =>
-        if (state == CANCELED) {
-          val errMsg =
-            s"""Cancelled query with $statementId
-               |${query._1}
-             """.stripMargin
-          logWarning(errMsg)
-          throw new SQLException(errMsg)
+        val useIncrementalCollect = SQLServerEnv.sqlConf.sqlServerIncrementalCollectEnabled
+        val rowIter = if (useIncrementalCollect) {
+          df.queryExecution.executedPlan.executeToIterator()
         } else {
-          val exceptionString = SparkUtils.exceptionString(e)
-          val errMsg =
-            s"""Caught an error executing query with with $statementId:
-               |${query._1}
-               |Exception message:
-               |$exceptionString
-             """.stripMargin
-          logError(errMsg)
-          setState(ERROR)
-          SQLServer.listener.onStatementError(statementId, e.getMessage, exceptionString)
-          throw new SQLException(errMsg)
+          df.queryExecution.executedPlan.executeCollect().iterator
         }
-    }
 
-    setState(FINISHED)
-    SQLServer.listener.onStatementFinish(statementId)
-    resultRowIterator
+        // If query suceeds, set the output schema
+        outputSchemaOption = Some(df.schema)
+
+        // Based on the assumption that DDL commands succeed, we then update internal states
+        query._2 match {
+          case SetCommand(Some((SQLServerConf.SQLSERVER_POOL.key, Some(value)))) =>
+            logInfo(s"Setting spark.scheduler.pool=$value for future statements in this session.")
+            activePools.put(sessionId, value)
+          case CreateDatabaseCommand(dbName, _, _, _, _) =>
+            PgMetadata.registerDatabase(dbName, sqlContext)
+          case CreateTable(desc, _, _) =>
+            val dbName = desc.identifier.database.getOrElse("default")
+            val tableName = desc.identifier.table
+            PgMetadata.registerTable(dbName, tableName, desc.schema, desc.tableType, sqlContext)
+          case CreateTableCommand(table, _) =>
+            val dbName = table.identifier.database.getOrElse("default")
+            val tableName = table.identifier.table
+            PgMetadata.registerTable(dbName, tableName, table.schema, table.tableType, sqlContext)
+          case CreateViewCommand(table, _, _, _, _, child, _, _, _) =>
+            val dbName = table.database.getOrElse("default")
+            val tableName = table.identifier
+            val qe = sqlContext.sparkSession.sessionState.executePlan(child)
+            val schema = qe.analyzed.schema
+            PgMetadata.registerTable(dbName, tableName, schema, CatalogTableType.VIEW, sqlContext)
+          case CreateFunctionCommand(dbNameOption, funcName, _, _, _) =>
+            val dbName = dbNameOption.getOrElse("default")
+            PgMetadata.registerFunction(dbName, funcName, sqlContext)
+          case DropDatabaseCommand(dbName, _, _) =>
+            logInfo(s"Drop a database `$dbName` and refresh database catalog information")
+            PgMetadata.refreshDatabases(dbName, sqlContext)
+          case DropTableCommand(table, _, _, _) =>
+            val dbName = table.database.getOrElse("default")
+            val tableName = table.identifier
+            logInfo(s"Drop a table `$dbName.$tableName` and refresh table catalog information")
+            PgMetadata.refreshTables(dbName, sqlContext)
+          case DropFunctionCommand(dbNameOption, funcName, _, _) =>
+            val dbName = dbNameOption.getOrElse("default")
+            logInfo(s"Drop a function `$dbName.$funcName` and refresh function catalog information")
+            PgMetadata.refreshFunctions(dbName, sqlContext)
+          case _ =>
+        }
+        rowIter
+      } catch {
+        case NonFatal(e) =>
+          if (state == CANCELED) {
+            val errMsg =
+              s"""Cancelled query with $statementId
+                 |${query._1}
+               """.stripMargin
+            logWarning(errMsg)
+            throw new SQLException(errMsg)
+          } else {
+            val exceptionString = SparkUtils.exceptionString(e)
+            val errMsg =
+              s"""Caught an error executing query with with $statementId:
+                 |${query._1}
+                 |Exception message:
+                 |$exceptionString
+               """.stripMargin
+            logError(errMsg)
+            servListener.onStatementError(statementId, e.getMessage, exceptionString)
+            setState(ERROR)
+            throw new SQLException(errMsg)
+          }
+      }
+
+      servListener.onStatementFinish(statementId)
+      setState(FINISHED)
+      _cachedRowIterator = resultRowIterator
+      resultRowIterator
+    } else {
+      // Since this operation already has been done, just returns the cached result
+      _cachedRowIterator
+    }
   }
 }
 
