@@ -358,20 +358,19 @@ object PgWireProtocol extends Logging {
         // val plan = (queryState.statement, boundPlan)
         val execState = cli.executeStatement(sessionId, plan, !portalName.isEmpty)
 
-        sessionState.resultRowIter = execState.run()
+        val rowIter = execState.run()
         val schema = execState.outputSchema()
         val outputFormats = formatsInExtendedQueryMode(schema)
-        val newQueryState = queryState.copy(
-          rowWriterOption = Some(PgRowConverters(conf, schema, outputFormats)),
-          schema = Some(schema)
-        )
-        sessionState.queries(queryName) = newQueryState
-        sessionState.portals(portalName) = PortalState(newQueryState)
-        sessionState.execState = execState
-        sessionState.isCursorMode = !portalName.isEmpty()
-        if (sessionState.isCursorMode) {
+        val rowWriter = PgRowConverters(conf, schema, outputFormats)
+        val portalState = PortalState(
+          queryState.withRowWriter(rowWriter), execState, !portalName.isEmpty)
+        portalState.resultRowIter = rowIter
+        if (portalState.isCursorMode) {
           logInfo(s"Cursor mode enabled: portalName='$portalName'")
         }
+
+        sessionState.portals(portalName) = portalState
+        sessionState.activePortal = Some(portalName)
 
         ctx.write(BindComplete)
         ctx.flush()
@@ -415,13 +414,12 @@ object PgWireProtocol extends Logging {
           val execState = cli.executeStatement(sessionId, (boundQuery, null), false)
           execState.run()
           ctx.write(RowDescription(execState.outputSchema()))
-
           // ctx.write(RowDescription(queryState.logicalPlan.schema))
           ctx.flush()
         } else if (tpe == 80) { // Describe a portal
-          require(sessionState.execState != null)
           logInfo(s"Describe the '$name' portal in this session (id:$sessionId)")
-          ctx.write(RowDescription(sessionState.execState.outputSchema()))
+          val portalState = sessionState.portals(name)
+          ctx.write(RowDescription(portalState.execState.outputSchema()))
           ctx.flush()
         } else {
           logWarning(s"Unknown type received in 'Describe`: $tpe")
@@ -440,14 +438,14 @@ object PgWireProtocol extends Logging {
           import sessionState.v3Protocol._
 
           val portalState = sessionState.portals(portalName)
-          val rowConveter = portalState.queryState.rowWriterOption.get
+          val rowConveter = portalState.queryState.rowWriter.get
           val rowIter = if (portalState.numFetched == 0) {
             // val iter = sessionState.execState.run()
             // sessionState.resultRowIter = iter
             // iter
-            sessionState.resultRowIter
+            portalState.resultRowIter
           } else {
-            sessionState.resultRowIter
+            portalState.resultRowIter
           }
 
           var numRows = 0
@@ -464,7 +462,7 @@ object PgWireProtocol extends Logging {
             // Accumulate fetched #rows in this query
             portalState.numFetched += numRows
           }
-          sessionState.execState.queryType match {
+          portalState.execState.queryType match {
             case BEGIN =>
               ctx.write(CommandComplete(s"BEGIN"))
             case SELECT =>
@@ -918,36 +916,39 @@ case class QueryState(
   statement: String,
   logicalPlan: LogicalPlan,
   paramIds: Seq[Int],
-  rowWriterOption: Option[RowWriter] = None,
-  schema: Option[StructType] = None)
+  // This writer is initialized in `Bind` messages because it depends
+  // on `outputFormats` provided by the messages.
+  rowWriter: Option[RowWriter] = None) {
 
-case class PortalState(queryState: QueryState) {
+  def withRowWriter(rowWriter: RowWriter): QueryState = {
+    QueryState(statement, logicalPlan, paramIds, Some(rowWriter))
+  }
+}
+
+case class PortalState(queryState: QueryState, execState: Operation, isCursorMode: Boolean) {
+
+  // Holds an iterator of operations results
+  var resultRowIter: Iterator[InternalRow] = Iterator.empty
 
   // Number of the rows that this portal state returns
   var numFetched: Int = 0
 }
 
 case class SessionV3State(
-    cli: SessionService,
-    conf: SQLConf,
-    v3Protocol: PgWireProtocol,
-    secretKey: Int) extends SessionState {
+  cli: SessionService,
+  conf: SQLConf,
+  v3Protocol: PgWireProtocol,
+  secretKey: Int) extends SessionState {
 
   // Holds multiple prepared statements inside a session
   val queries: mutable.Map[String, QueryState] = mutable.Map.empty
   val portals: mutable.Map[String, PortalState] = mutable.Map.empty
 
-  // Holds a current active state of query execution and this variable possibly accessed
+  // Holds a current active portal of query execution and this variable possibly accessed
   // by asynchronous JDBC cancellation requests.
-  @volatile var execState: Operation = _
+  @volatile var activePortal: Option[String] = None
 
-  // Holds an iterator of operations results
-  var resultRowIter: Iterator[InternalRow] = Iterator.empty
-
-  // Whether a cursor mode is enabled
-  var isCursorMode: Boolean = false
-
-  // Holds unprocessed bytes for a message parser
+  // Holds unprocessed bytes for incomming V3 messages
   var pendingBytes: Array[Byte] = Array.empty
 
   override def close(): Unit = {}
@@ -956,8 +957,7 @@ case class SessionV3State(
 object SessionV3State {
 
   def resetState(state: SessionV3State): Unit = {
-    state.execState = null
-    state.resultRowIter = Iterator.empty
+    state.activePortal = None
     state.pendingBytes = Array.empty
   }
 }
@@ -1072,7 +1072,9 @@ class PgV3MessageHandler(cli: SessionService, conf: SQLConf)
         return
       }
       logWarning(s"Canceling the running query: channelId=$channelId")
-      sessionState.execState.cancel()
+      sessionState.activePortal.foreach { portalName =>
+        sessionState.portals(portalName).execState.cancel()
+      }
       ctx.close()
       return
     } else if (magic != V3_PROTOCOL_VERSION) {

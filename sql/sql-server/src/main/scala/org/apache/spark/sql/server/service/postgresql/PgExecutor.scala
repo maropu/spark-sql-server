@@ -19,6 +19,7 @@ package org.apache.spark.sql.server.service.postgresql
 
 import java.sql.SQLException
 import java.util.UUID
+import javax.annotation.concurrent.ThreadSafe
 
 import scala.util.control.NonFatal
 
@@ -38,6 +39,8 @@ import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.{Utils => SparkUtils}
 
 
+// TODO: Recheck thread safety
+@ThreadSafe
 private[postgresql] case class PgOperation(
     sessionId: Int,
     query: (String, LogicalPlan),

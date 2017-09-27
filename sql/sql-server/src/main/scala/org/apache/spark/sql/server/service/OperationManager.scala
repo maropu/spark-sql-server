@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql.server.service
 
+import javax.annotation.concurrent.ThreadSafe
+
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
@@ -43,6 +45,7 @@ object BEGIN extends OperationType
 object FETCH extends OperationType
 object SELECT extends OperationType
 
+@ThreadSafe
 trait Operation {
 
   private val timeout = SQLServerEnv.sqlConf.sqlServerIdleOperationTimeout
