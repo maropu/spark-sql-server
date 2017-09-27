@@ -94,7 +94,7 @@ private[service] class SessionManager(pgServer: SQLServer, init: SessionInitiali
   }
 }
 
-private[server] class SparkSQLSessionService(
+private[server] class SparkSQLServiceManager(
     sqlServer: SQLServer,
     executor: OperationExecutor,
     initializer: SessionInitializer) extends CompositeService with SessionService {
@@ -125,8 +125,6 @@ private[server] class SparkSQLSessionService(
 
   override def executeStatement(sessionId: Int, plan: (String, LogicalPlan)): Operation = {
     operationManager.newExecuteStatementOperation(
-      sessionManager.getSession(sessionId)._1,
-      sessionId,
-      plan)
+      sessionManager.getSession(sessionId)._1, sessionId, plan)
   }
 }
