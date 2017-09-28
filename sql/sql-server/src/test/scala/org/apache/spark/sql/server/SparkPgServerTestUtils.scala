@@ -154,6 +154,7 @@ class SparkPgSQLServerTest(
        | --conf ${SQLServerConf.SQLSERVER_VERSION.key}=$pgVersion
        | --conf ${SQLServerConf.SQLSERVER_SSL_ENABLED.key}=$ssl
        | --conf ${SQLServerConf.SQLSERVER_SINGLE_SESSION_ENABLED.key}=$singleSession
+       | --conf ${SQLServerConf.SQLSERVER_PSQL_ENABLED.key}=true
      """.stripMargin.split("\\s+").toSeq ++
       options.flatMap { case (k, v) => Iterator("--conf", s"$k=$v") }
   }

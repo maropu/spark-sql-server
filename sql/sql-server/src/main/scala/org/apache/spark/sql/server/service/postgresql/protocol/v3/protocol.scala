@@ -1101,6 +1101,13 @@ class PgV3MessageHandler(cli: SessionService, conf: SQLConf)
     val props = keys.zip(values).toMap
     logDebug("Received properties from client: "
       + props.map { case (key, value) => s"$key=$value" }.mkString(", "))
+    props.get("application_name").foreach { appName =>
+      if (appName == "psql" && !conf.sqlServerPsqlEnabled) {
+        handleException(ctx, "Rejected requests from psql. To accept psql requests, " +
+          s"you should set true at ${SQLServerConf.SQLSERVER_PSQL_ENABLED.key}")
+        return
+      }
+    }
     val userName = props.getOrElse("user", "UNKNOWN")
     val passwd = props.getOrElse("passwd", "")
     val hostAddr = ctx.channel().localAddress().asInstanceOf[InetSocketAddress].getHostName()

@@ -64,12 +64,17 @@ object SQLServerConf {
       "The server version must be 7.4, 8.0, or 9.6")
     .createWithDefault("7.4")
 
+  val SQLSERVER_PSQL_ENABLED = buildConf("spark.sql.server.psql.enabled")
+    .doc("When set to true, the Spark SQL accepts request from psql clients.")
+    .booleanConf
+    .createWithDefault(true)
+
   val SQLSERVER_WORKER_THREADS = buildConf("spark.sql.server.worker.threads")
     .doc("Number of SQLServer worker threads.")
     .intConf
     .createWithDefault(4)
 
-   val SQLSERVER_INCREMENTAL_COLLECT_ENABLE =
+   val SQLSERVER_INCREMENTAL_COLLECT_ENABLED =
      buildConf("spark.sql.server.incrementalCollect.enabled")
     .doc("When set to true, Spark collects result rows partition-by-partition.")
     .booleanConf
@@ -147,9 +152,11 @@ class SQLServerConf(conf: SQLConf) {
 
   def sqlServerVersion: String = getConf(SQLSERVER_VERSION)
 
+  def sqlServerPsqlEnabled: Boolean = getConf(SQLSERVER_PSQL_ENABLED)
+
   def sqlServerWorkerThreads: Int = getConf(SQLSERVER_WORKER_THREADS)
 
-  def sqlServerIncrementalCollectEnabled: Boolean = getConf(SQLSERVER_INCREMENTAL_COLLECT_ENABLE)
+  def sqlServerIncrementalCollectEnabled: Boolean = getConf(SQLSERVER_INCREMENTAL_COLLECT_ENABLED)
 
   def sqlServerRecoveryMode: Option[String] = getConf(SQLSERVER_RECOVERY_MODE)
 

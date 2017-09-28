@@ -1033,7 +1033,7 @@ class PgJdbcCursorModeSuite extends PgJdbcTest(ssl = true) {
 
   test("collect mode") {
     testJdbcStatementWitConf(
-        SQLServerConf.SQLSERVER_INCREMENTAL_COLLECT_ENABLE.key -> "true",
+        SQLServerConf.SQLSERVER_INCREMENTAL_COLLECT_ENABLED.key -> "true",
         "autoCommitModeEnabled" -> "false",
         "fetchSize" -> "1000") { statement =>
       val rs = statement.executeQuery(
