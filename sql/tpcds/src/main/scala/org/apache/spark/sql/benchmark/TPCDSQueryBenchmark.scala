@@ -18,6 +18,7 @@
 package org.apache.spark.sql.benchmark
 
 import java.io.File
+import java.nio.file.Paths
 import java.sql.{DriverManager, ResultSet, Statement}
 import java.util.Properties
 
@@ -58,12 +59,16 @@ object TPCDSQueryBenchmark extends Logging {
   private val baseResourcePath = {
     // If regenerateGoldenFiles is true, we must be running this in SBT and we use hard-coded
     // relative path. Otherwise, we use classloader's getResource to find the location.
-    if (regenerateGoldenFiles) {
-      java.nio.file.Paths.get("sql", "tpcds", "src", "main", "resources", "tpcds").toFile
-    } else {
-      val res = getClass.getClassLoader.getResource("tpcds")
-      new File(res.getFile)
-    }
+    //
+    // if (regenerateGoldenFiles) {
+    //   Paths.get("sql", "tpcds", "src", "main", "resources", "tpcds").toFile
+    // } else {
+    //   val res = getClass.getClassLoader.getResource("tpcds")
+    //   new File(res.getFile)
+    // }
+
+    // TODO: Can't resolve this path by classloader's getResource
+    Paths.get("sql", "tpcds", "src", "main", "resources", "tpcds").toFile
   }
 
   private val queryFilePath = new File(baseResourcePath, "queries").getAbsolutePath
