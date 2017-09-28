@@ -17,7 +17,7 @@
 
 package org.apache.spark.sql.benchmark
 
-import java.io.{ByteArrayOutputStream, File, InputStream}
+import java.io.{ByteArrayOutputStream, File, FileInputStream, InputStream, PrintWriter}
 
 import scala.io.Source
 
@@ -53,6 +53,32 @@ private[benchmark] object Utils {
       inStream.close()
     }
     outStream.toByteArray
+  }
+
+  def fileToString(file: File, encoding: String = "UTF-8"): String = {
+    val inStream = new FileInputStream(file)
+    val outStream = new ByteArrayOutputStream
+    try {
+      var reading = true
+      while ( reading ) {
+        inStream.read() match {
+          case -1 => reading = false
+          case c => outStream.write(c)
+        }
+      }
+      outStream.flush()
+    }
+    finally {
+      inStream.close()
+    }
+    new String(outStream.toByteArray, encoding)
+  }
+
+  def stringToFile(file: File, str: String): File = {
+    val out = new PrintWriter(file)
+    out.write(str)
+    out.close()
+    file
   }
 
   def resourceToString(resource: String): String = {
@@ -121,7 +147,7 @@ private[benchmark] object Utils {
     output.toString
   }
 
-  def showString(
+  def formatOutput(
       rows: Seq[Seq[Any]],
       fieldNames: Seq[String],
       _numRows: Int,
