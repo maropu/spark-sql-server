@@ -57,9 +57,10 @@ fi
 
 # Resolve a jar location for the SQL server
 function find_resource {
+  local sql_server_version=`grep "<version>" "${_DIR}/../pom.xml" | head -n2 | tail -n1 | awk -F '[<>]' '{print $3}'`
   local spark_version=`grep "<spark.version>" "${_DIR}/../pom.xml" | head -n1 | awk -F '[<>]' '{print $3}'`
   local scala_version=`grep "<scala.binary.version>" "${_DIR}/../pom.xml" | head -n1 | awk -F '[<>]' '{print $3}'`
-  local jar_file="sql-server_${scala_version}-${spark_version}-SNAPSHOT-with-dependencies.jar"
+  local jar_file="sql-server_${scala_version}_${spark_version}_${sql_server_version}-with-dependencies.jar"
   local built_jar="$_DIR/../target/${jar_file}"
   if [ -e $built_jar ]; then
     RESOURCES=$built_jar

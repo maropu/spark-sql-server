@@ -26,7 +26,7 @@
   </parent>
   <groupId>org.apache.spark</groupId>
   <artifactId>spark-sql-server_2.11</artifactId>
-  <version>2.2.0-SNAPSHOT</version>
+  <version>0.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>SQL server for Apache Spark</name>
 
@@ -483,7 +483,7 @@
           </execution>
         </executions>
         <configuration>
-          <finalName>${project.artifactId}-${project.version}</finalName>
+          <finalName>${project.artifactId}_${spark.version}_${project.version}</finalName>
           <outputDirectory>${project.parent.build.directory}</outputDirectory>
         </configuration>
       </plugin>
@@ -499,7 +499,7 @@
               <goal>shade</goal>
             </goals>
             <configuration>
-              <finalName>${project.artifactId}-${project.version}-with-dependencies</finalName>
+              <finalName>${project.artifactId}_${spark.version}_${project.version}-with-dependencies</finalName>
               <outputDirectory>${project.parent.build.directory}</outputDirectory>
               <minimizeJar>false</minimizeJar>
               <createDependencyReducedPom>false</createDependencyReducedPom>
