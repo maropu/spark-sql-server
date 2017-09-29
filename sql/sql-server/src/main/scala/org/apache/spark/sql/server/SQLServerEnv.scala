@@ -55,7 +55,6 @@ object SQLServerEnv extends Logging {
 
   def withSQLContext(sqlContext: SQLContext): Unit = {
     require(sqlContext != null)
-    require(_sqlContext.isEmpty)
     _sqlContext = Option(sqlContext)
   }
 
