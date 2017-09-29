@@ -62,9 +62,25 @@ object SQLServer extends Logging {
    * Starts a new SQL server with the given context.
    */
   @DeveloperApi
-  def startWithContext(sqlContext: SQLContext): Unit = {
-    SQLServerEnv.withSQLContext(sqlContext)
+  def startWithContext(sqlContext: SQLContext, blocking: Boolean = false): Unit = {
+    if (blocking) {
+      _doStartWithContext(sqlContext)
+    } else {
+      val serverThread = new Thread() {
+          override def run(): Unit = {
+            try { _doStartWithContext(sqlContext) } catch {
+              case NonFatal(e) => logError("Error running SQLServer", e)
+            }
+          }
+        }
+      serverThread.setName(s"SparkSQL::${localHostName()}")
+      serverThread.setDaemon(true)
+      serverThread.start()
+    }
+  }
 
+  private def _doStartWithContext(sqlContext: SQLContext): Unit = {
+    SQLServerEnv.withSQLContext(sqlContext)
     val sqlServer = new SQLServer()
     prepareWith(sqlServer)
     // Initialize a Spark SQL server with given configurations
