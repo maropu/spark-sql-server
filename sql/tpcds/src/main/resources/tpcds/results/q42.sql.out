@@ -3,55 +3,50 @@
  d_year                  | 2000        
  i_category_id           | 7           
  i_category              | Home        
- sum(ss_ext_sales_price) | 494603.64   
+ sum(ss_ext_sales_price) | 458017.85   
 -RECORD 1------------------------------
- d_year                  | 2000        
- i_category_id           | 2           
- i_category              | Men         
- sum(ss_ext_sales_price) | 390852.57   
--RECORD 2------------------------------
- d_year                  | 2000        
- i_category_id           | 4           
- i_category              | Shoes       
- sum(ss_ext_sales_price) | 378230.23   
--RECORD 3------------------------------
  d_year                  | 2000        
  i_category_id           | 3           
  i_category              | Children    
- sum(ss_ext_sales_price) | 359411.01   
--RECORD 4------------------------------
+ sum(ss_ext_sales_price) | 370261.29   
+-RECORD 2------------------------------
  d_year                  | 2000        
- i_category_id           | 9           
- i_category              | Books       
- sum(ss_ext_sales_price) | 319480.51   
--RECORD 5------------------------------
- d_year                  | 2000        
- i_category_id           | 10          
- i_category              | Electronics 
- sum(ss_ext_sales_price) | 317086.16   
--RECORD 6------------------------------
- d_year                  | 2000        
- i_category_id           | 8           
- i_category              | Sports      
- sum(ss_ext_sales_price) | 287853.86   
--RECORD 7------------------------------
- d_year                  | 2000        
- i_category_id           | 6           
- i_category              | Jewelry     
- sum(ss_ext_sales_price) | 278786.18   
--RECORD 8------------------------------
+ i_category_id           | 2           
+ i_category              | Men         
+ sum(ss_ext_sales_price) | 368718.95   
+-RECORD 3------------------------------
  d_year                  | 2000        
  i_category_id           | 1           
  i_category              | Women       
- sum(ss_ext_sales_price) | 245897.86   
--RECORD 9------------------------------
+ sum(ss_ext_sales_price) | 320132.43   
+-RECORD 4------------------------------
+ d_year                  | 2000        
+ i_category_id           | 10          
+ i_category              | Electronics 
+ sum(ss_ext_sales_price) | 281421.74   
+-RECORD 5------------------------------
  d_year                  | 2000        
  i_category_id           | 5           
  i_category              | Music       
- sum(ss_ext_sales_price) | 189405.76   
--RECORD 10-----------------------------
+ sum(ss_ext_sales_price) | 223420.70   
+-RECORD 6------------------------------
  d_year                  | 2000        
- i_category_id           | 0           
- i_category              | null        
- sum(ss_ext_sales_price) | 39507.19
+ i_category_id           | 4           
+ i_category              | Shoes       
+ sum(ss_ext_sales_price) | 221242.25   
+-RECORD 7------------------------------
+ d_year                  | 2000        
+ i_category_id           | 8           
+ i_category              | Sports      
+ sum(ss_ext_sales_price) | 200806.45   
+-RECORD 8------------------------------
+ d_year                  | 2000        
+ i_category_id           | 6           
+ i_category              | Jewelry     
+ sum(ss_ext_sales_price) | 167920.91   
+-RECORD 9------------------------------
+ d_year                  | 2000        
+ i_category_id           | 9           
+ i_category              | Books       
+ sum(ss_ext_sales_price) | 161721.11
              

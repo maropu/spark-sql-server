@@ -2,901 +2,901 @@
 -RECORD 0---------------------------
  c_last_name      | null            
  c_first_name     | null            
- ca_city          | Salem           
- bought_city      | Lakeside        
- ss_ticket_number | 2203            
- extended_price   | 23464.72        
- extended_tax     | 675.04          
- list_price       | 46100.94        
+ ca_city          | Unionville      
+ bought_city      | Woodlawn        
+ ss_ticket_number | 70              
+ extended_price   | 14472.01        
+ extended_tax     | 383.45          
+ list_price       | 27139.95        
 -RECORD 1---------------------------
- c_last_name      | null            
- c_first_name     | Ira             
- ca_city          | Riverdale       
- bought_city      | Oak Ridge       
- ss_ticket_number | 10508           
- extended_price   | 32911.54        
- extended_tax     | 938.79          
- list_price       | 59812.32        
--RECORD 2---------------------------
- c_last_name      | null            
- c_first_name     | Rebecca         
- ca_city          | Belmont         
- bought_city      | Marion          
- ss_ticket_number | 13206           
- extended_price   | 14180.52        
- extended_tax     | 1072.25         
- list_price       | 23887.85        
--RECORD 3---------------------------
- c_last_name      | null            
- c_first_name     | null            
- ca_city          | Pleasant Valley 
- bought_city      | Lincoln         
- ss_ticket_number | 20829           
- extended_price   | 16340.86        
- extended_tax     | 289.50          
- list_price       | 34809.84        
--RECORD 4---------------------------
- c_last_name      | null            
- c_first_name     | Joel            
- ca_city          | Oak Hill        
- bought_city      | Clifton         
- ss_ticket_number | 21390           
- extended_price   | 19561.57        
- extended_tax     | 939.54          
- list_price       | 46319.37        
--RECORD 5---------------------------
- c_last_name      | null            
- c_first_name     | Max             
- ca_city          | Stringtown      
- bought_city      | Pine Grove      
- ss_ticket_number | 22049           
- extended_price   | 20059.77        
- extended_tax     | 974.94          
- list_price       | 38268.07        
--RECORD 6---------------------------
- c_last_name      | null            
- c_first_name     | null            
- ca_city          | Bridgeport      
- bought_city      | Riverside       
- ss_ticket_number | 23264           
- extended_price   | 10699.95        
- extended_tax     | 496.36          
- list_price       | 29285.70        
--RECORD 7---------------------------
- c_last_name      | null            
- c_first_name     | null            
- ca_city          | White Oak       
- bought_city      | Pleasant Hill   
- ss_ticket_number | 24860           
- extended_price   | 16258.45        
- extended_tax     | 733.62          
- list_price       | 52186.60        
--RECORD 8---------------------------
- c_last_name      | null            
- c_first_name     | Rebecca         
- ca_city          | Union Hill      
- bought_city      | Farmington      
- ss_ticket_number | 26031           
- extended_price   | 7636.54         
- extended_tax     | 515.78          
- list_price       | 13443.39        
--RECORD 9---------------------------
- c_last_name      | null            
- c_first_name     | Alecia          
- ca_city          | Jamestown       
- bought_city      | Oakdale         
- ss_ticket_number | 30174           
- extended_price   | 29125.41        
- extended_tax     | 1118.58         
- list_price       | 69857.70        
--RECORD 10--------------------------
- c_last_name      | null            
- c_first_name     | Raymond         
- ca_city          | Bunker Hill     
- bought_city      | Clifton         
- ss_ticket_number | 30655           
- extended_price   | 27237.08        
- extended_tax     | 1237.59         
- list_price       | 51322.22        
--RECORD 11--------------------------
- c_last_name      | null            
- c_first_name     | null            
- ca_city          | Pleasant Valley 
- bought_city      | Riley           
- ss_ticket_number | 30915           
- extended_price   | 25079.14        
- extended_tax     | 998.46          
- list_price       | 35200.27        
--RECORD 12--------------------------
- c_last_name      | null            
- c_first_name     | David           
- ca_city          | Glendale        
- bought_city      | Greenville      
- ss_ticket_number | 33716           
- extended_price   | 15434.87        
- extended_tax     | 1012.60         
- list_price       | 30661.71        
--RECORD 13--------------------------
- c_last_name      | null            
- c_first_name     | null            
- ca_city          | New Hope        
- bought_city      | Farmington      
- ss_ticket_number | 38760           
- extended_price   | 29150.85        
- extended_tax     | 647.52          
- list_price       | 50433.60        
--RECORD 14--------------------------
- c_last_name      | null            
- c_first_name     | Norma           
- ca_city          | Hamilton        
- bought_city      | Macedonia       
- ss_ticket_number | 41929           
- extended_price   | 35397.41        
- extended_tax     | 1268.87         
- list_price       | 55360.80        
--RECORD 15--------------------------
- c_last_name      | null            
- c_first_name     | null            
- ca_city          | Wildwood        
- bought_city      | Allison         
- ss_ticket_number | 45786           
- extended_price   | 10448.67        
- extended_tax     | 492.27          
- list_price       | 32424.46        
--RECORD 16--------------------------
- c_last_name      | null            
- c_first_name     | null            
- ca_city          | Greenville      
- bought_city      | Spring Hill     
- ss_ticket_number | 47915           
- extended_price   | 26747.77        
- extended_tax     | 512.05          
- list_price       | 57910.19        
--RECORD 17--------------------------
- c_last_name      | null            
- c_first_name     | Jerome          
- ca_city          | Galena          
- bought_city      | Georgetown      
- ss_ticket_number | 50559           
- extended_price   | 33831.95        
- extended_tax     | 890.50          
- list_price       | 57970.13        
--RECORD 18--------------------------
- c_last_name      | null            
- c_first_name     | null            
- ca_city          | Woodlawn        
- bought_city      | Springfield     
- ss_ticket_number | 59625           
- extended_price   | 22470.48        
- extended_tax     | 828.96          
- list_price       | 54458.90        
--RECORD 19--------------------------
- c_last_name      | null            
- c_first_name     | null            
- ca_city          | Hillcrest       
- bought_city      | Cordova         
- ss_ticket_number | 64306           
- extended_price   | 10534.53        
- extended_tax     | 295.14          
- list_price       | 15380.96        
--RECORD 20--------------------------
- c_last_name      | null            
- c_first_name     | John            
- ca_city          | Stringtown      
- bought_city      | Arlington       
- ss_ticket_number | 64522           
- extended_price   | 21495.01        
- extended_tax     | 783.81          
- list_price       | 45067.59        
--RECORD 21--------------------------
- c_last_name      | null            
- c_first_name     | null            
- ca_city          | Gladstone       
- bought_city      | Summit          
- ss_ticket_number | 66488           
- extended_price   | 20881.36        
- extended_tax     | 605.92          
- list_price       | 32362.22        
--RECORD 22--------------------------
- c_last_name      | null            
- c_first_name     | null            
- ca_city          | Hopewell        
- bought_city      | Riverdale       
- ss_ticket_number | 67278           
- extended_price   | 24471.59        
- extended_tax     | 1549.17         
- list_price       | 48406.81        
--RECORD 23--------------------------
- c_last_name      | null            
- c_first_name     | Russel          
- ca_city          | Red Hill        
- bought_city      | Woodland        
- ss_ticket_number | 82061           
- extended_price   | 17750.10        
- extended_tax     | 1025.09         
- list_price       | 40565.68        
--RECORD 24--------------------------
- c_last_name      | null            
- c_first_name     | null            
- ca_city          | Mount Olive     
- bought_city      | Maple Grove     
- ss_ticket_number | 82183           
- extended_price   | 16184.99        
- extended_tax     | 573.72          
- list_price       | 44448.96        
--RECORD 25--------------------------
- c_last_name      | null            
- c_first_name     | null            
- ca_city          | Shady Grove     
- bought_city      | Springdale      
- ss_ticket_number | 91775           
- extended_price   | 17103.31        
- extended_tax     | 911.07          
- list_price       | 35127.63        
--RECORD 26--------------------------
- c_last_name      | null            
- c_first_name     | null            
- ca_city          | Indian Village  
- bought_city      | Golden          
- ss_ticket_number | 98530           
- extended_price   | 18842.65        
- extended_tax     | 1005.52         
- list_price       | 40742.92        
--RECORD 27--------------------------
- c_last_name      | null            
- c_first_name     | null            
- ca_city          | Greenfield      
- bought_city      | Farmington      
- ss_ticket_number | 98985           
- extended_price   | 13264.63        
- extended_tax     | 589.99          
- list_price       | 20576.04        
--RECORD 28--------------------------
- c_last_name      | null            
- c_first_name     | Virginia        
- ca_city          | Five Forks      
- bought_city      | Oakland         
- ss_ticket_number | 106543          
- extended_price   | 24859.75        
- extended_tax     | 1006.88         
- list_price       | 39693.34        
--RECORD 29--------------------------
- c_last_name      | null            
- c_first_name     | null            
- ca_city          | Scottsville     
- bought_city      | Greenfield      
- ss_ticket_number | 107236          
- extended_price   | 14638.50        
- extended_tax     | 802.00          
- list_price       | 35356.18        
--RECORD 30--------------------------
- c_last_name      | null            
- c_first_name     | Virginia        
- ca_city          | Oak Hill        
- bought_city      | Amherst         
- ss_ticket_number | 109641          
- extended_price   | 7667.92         
- extended_tax     | 271.98          
- list_price       | 30755.88        
--RECORD 31--------------------------
  c_last_name      | null            
  c_first_name     | null            
  ca_city          | Midway          
- bought_city      | New Hope        
- ss_ticket_number | 113272          
- extended_price   | 50295.57        
- extended_tax     | 2963.67         
- list_price       | 78595.37        
--RECORD 32--------------------------
+ bought_city      | Oakwood         
+ ss_ticket_number | 11488           
+ extended_price   | 13314.57        
+ extended_tax     | 425.70          
+ list_price       | 30008.53        
+-RECORD 2---------------------------
  c_last_name      | null            
- c_first_name     | William         
- ca_city          | Valley View     
- bought_city      | Providence      
- ss_ticket_number | 115559          
- extended_price   | 29947.61        
- extended_tax     | 673.81          
- list_price       | 50883.54        
--RECORD 33--------------------------
+ c_first_name     | Rene            
+ ca_city          | Caledonia       
+ bought_city      | Stringtown      
+ ss_ticket_number | 16638           
+ extended_price   | 20732.47        
+ extended_tax     | 915.66          
+ list_price       | 38600.63        
+-RECORD 3---------------------------
+ c_last_name      | null            
+ c_first_name     | John            
+ ca_city          | Parkwood        
+ bought_city      | Edgewood        
+ ss_ticket_number | 24159           
+ extended_price   | 24087.46        
+ extended_tax     | 1200.55         
+ list_price       | 51305.29        
+-RECORD 4---------------------------
+ c_last_name      | null            
+ c_first_name     | Ana             
+ ca_city          | Deerfield       
+ bought_city      | Jamestown       
+ ss_ticket_number | 26329           
+ extended_price   | 37277.21        
+ extended_tax     | 1346.72         
+ list_price       | 65078.34        
+-RECORD 5---------------------------
+ c_last_name      | null            
+ c_first_name     | Kent            
+ ca_city          | Wilson          
+ bought_city      | Mountain View   
+ ss_ticket_number | 27855           
+ extended_price   | 34594.01        
+ extended_tax     | 1145.23         
+ list_price       | 61220.01        
+-RECORD 6---------------------------
+ c_last_name      | null            
+ c_first_name     | Rene            
+ ca_city          | Caledonia       
+ bought_city      | Spring Valley   
+ ss_ticket_number | 30016           
+ extended_price   | 48048.11        
+ extended_tax     | 1969.99         
+ list_price       | 88469.89        
+-RECORD 7---------------------------
+ c_last_name      | null            
+ c_first_name     | null            
+ ca_city          | Clinton         
+ bought_city      | Redland         
+ ss_ticket_number | 36631           
+ extended_price   | 20981.79        
+ extended_tax     | 1799.58         
+ list_price       | 26288.30        
+-RECORD 8---------------------------
+ c_last_name      | null            
+ c_first_name     | Donna           
+ ca_city          | Oak Hill        
+ bought_city      | Sulphur Springs 
+ ss_ticket_number | 36870           
+ extended_price   | 25603.09        
+ extended_tax     | 1331.75         
+ list_price       | 53982.97        
+-RECORD 9---------------------------
+ c_last_name      | null            
+ c_first_name     | null            
+ ca_city          | Sunnyside       
+ bought_city      | Newtown         
+ ss_ticket_number | 40831           
+ extended_price   | 22656.49        
+ extended_tax     | 1011.26         
+ list_price       | 54581.80        
+-RECORD 10--------------------------
+ c_last_name      | null            
+ c_first_name     | Karen           
+ ca_city          | Greenfield      
+ bought_city      | Friendship      
+ ss_ticket_number | 40841           
+ extended_price   | 15048.50        
+ extended_tax     | 678.00          
+ list_price       | 45109.61        
+-RECORD 11--------------------------
+ c_last_name      | null            
+ c_first_name     | null            
+ ca_city          | Shiloh          
+ bought_city      | Oakland         
+ ss_ticket_number | 46266           
+ extended_price   | 25416.89        
+ extended_tax     | 1427.81         
+ list_price       | 45735.58        
+-RECORD 12--------------------------
+ c_last_name      | null            
+ c_first_name     | Joshua          
+ ca_city          | Lakeside        
+ bought_city      | Highland Park   
+ ss_ticket_number | 46736           
+ extended_price   | 29566.29        
+ extended_tax     | 1020.12         
+ list_price       | 55274.62        
+-RECORD 13--------------------------
  c_last_name      | null            
  c_first_name     | null            
  ca_city          | Newport         
- bought_city      | Indian Village  
- ss_ticket_number | 120966          
- extended_price   | 15268.90        
- extended_tax     | 721.76          
- list_price       | 27022.81        
--RECORD 34--------------------------
- c_last_name      | null            
- c_first_name     | Robert          
- ca_city          | Cedar Grove     
- bought_city      | Riverside       
- ss_ticket_number | 122552          
- extended_price   | 20398.86        
- extended_tax     | 1049.35         
- list_price       | 44761.40        
--RECORD 35--------------------------
+ bought_city      | Bunker Hill     
+ ss_ticket_number | 47193           
+ extended_price   | 37645.73        
+ extended_tax     | 1195.20         
+ list_price       | 72749.99        
+-RECORD 14--------------------------
  c_last_name      | null            
  c_first_name     | null            
- ca_city          | Jamestown       
- bought_city      | Spring Valley   
- ss_ticket_number | 125125          
- extended_price   | 31795.01        
- extended_tax     | 1364.75         
- list_price       | 52740.75        
--RECORD 36--------------------------
+ ca_city          | Guilford        
+ bought_city      | Wildwood        
+ ss_ticket_number | 49651           
+ extended_price   | 14471.24        
+ extended_tax     | 513.47          
+ list_price       | 32498.08        
+-RECORD 15--------------------------
  c_last_name      | null            
  c_first_name     | null            
- ca_city          | Liberty         
- bought_city      | Oakwood         
- ss_ticket_number | 128427          
- extended_price   | 41495.05        
- extended_tax     | 2399.87         
- list_price       | 77105.28        
--RECORD 37--------------------------
- c_last_name      | null            
- c_first_name     | Brandon         
- ca_city          | Arlington       
- bought_city      | Woodland        
- ss_ticket_number | 135601          
- extended_price   | 43789.02        
- extended_tax     | 1493.45         
- list_price       | 66479.43        
--RECORD 38--------------------------
- c_last_name      | null            
- c_first_name     | Juan            
- ca_city          | Mount Pleasant  
- bought_city      | Greenwood       
- ss_ticket_number | 138846          
- extended_price   | 12326.46        
- extended_tax     | 472.96          
- list_price       | 25735.00        
--RECORD 39--------------------------
+ ca_city          | Leon            
+ bought_city      | Five Points     
+ ss_ticket_number | 50330           
+ extended_price   | 18970.87        
+ extended_tax     | 926.99          
+ list_price       | 49138.72        
+-RECORD 16--------------------------
  c_last_name      | null            
  c_first_name     | null            
- ca_city          | Shirley         
- bought_city      | Fairview        
- ss_ticket_number | 143290          
- extended_price   | 19808.13        
- extended_tax     | 596.98          
- list_price       | 34256.82        
--RECORD 40--------------------------
+ ca_city          | Salem           
+ bought_city      | Mount Pleasant  
+ ss_ticket_number | 50365           
+ extended_price   | 26947.72        
+ extended_tax     | 531.11          
+ list_price       | 39988.78        
+-RECORD 17--------------------------
+ c_last_name      | null            
+ c_first_name     | null            
+ ca_city          | Brownsville     
+ bought_city      | Walnut Grove    
+ ss_ticket_number | 53883           
+ extended_price   | 23832.80        
+ extended_tax     | 1031.26         
+ list_price       | 32052.94        
+-RECORD 18--------------------------
+ c_last_name      | null            
+ c_first_name     | null            
+ ca_city          | Shelby          
+ bought_city      | Clifton         
+ ss_ticket_number | 54573           
+ extended_price   | 25576.31        
+ extended_tax     | 723.92          
+ list_price       | 42159.67        
+-RECORD 19--------------------------
+ c_last_name      | null            
+ c_first_name     | Larry           
+ ca_city          | Oak Hill        
+ bought_city      | Five Points     
+ ss_ticket_number | 54597           
+ extended_price   | 31630.41        
+ extended_tax     | 1432.78         
+ list_price       | 55835.87        
+-RECORD 20--------------------------
+ c_last_name      | null            
+ c_first_name     | null            
+ ca_city          | Dallas          
+ bought_city      | Shady Grove     
+ ss_ticket_number | 55706           
+ extended_price   | 22011.96        
+ extended_tax     | 313.15          
+ list_price       | 53826.72        
+-RECORD 21--------------------------
+ c_last_name      | null            
+ c_first_name     | Tabatha         
+ ca_city          | Harmony         
+ bought_city      | Greenfield      
+ ss_ticket_number | 56102           
+ extended_price   | 17377.84        
+ extended_tax     | 420.63          
+ list_price       | 38464.67        
+-RECORD 22--------------------------
+ c_last_name      | null            
+ c_first_name     | Shannon         
+ ca_city          | Brownsville     
+ bought_city      | Deerfield       
+ ss_ticket_number | 57279           
+ extended_price   | 31806.93        
+ extended_tax     | 1450.73         
+ list_price       | 59987.95        
+-RECORD 23--------------------------
+ c_last_name      | null            
+ c_first_name     | null            
+ ca_city          | Centerville     
+ bought_city      | Providence      
+ ss_ticket_number | 62604           
+ extended_price   | 6898.02         
+ extended_tax     | 324.99          
+ list_price       | 30892.81        
+-RECORD 24--------------------------
+ c_last_name      | null            
+ c_first_name     | null            
+ ca_city          | Springfield     
+ bought_city      | Florence        
+ ss_ticket_number | 77578           
+ extended_price   | 11201.04        
+ extended_tax     | 573.75          
+ list_price       | 39745.55        
+-RECORD 25--------------------------
+ c_last_name      | null            
+ c_first_name     | null            
+ ca_city          | Fairview        
+ bought_city      | Florence        
+ ss_ticket_number | 90439           
+ extended_price   | 18472.43        
+ extended_tax     | 665.54          
+ list_price       | 45369.45        
+-RECORD 26--------------------------
+ c_last_name      | null            
+ c_first_name     | Lillian         
+ ca_city          | Fairview        
+ bought_city      | Pleasant Hill   
+ ss_ticket_number | 90533           
+ extended_price   | 32594.36        
+ extended_tax     | 1558.26         
+ list_price       | 66144.34        
+-RECORD 27--------------------------
  c_last_name      | null            
  c_first_name     | null            
  ca_city          | White Oak       
- bought_city      | Ferguson        
- ss_ticket_number | 146537          
- extended_price   | 5235.24         
- extended_tax     | 246.72          
- list_price       | 11343.46        
+ bought_city      | Florence        
+ ss_ticket_number | 92664           
+ extended_price   | 13525.33        
+ extended_tax     | 462.86          
+ list_price       | 28408.35        
+-RECORD 28--------------------------
+ c_last_name      | null            
+ c_first_name     | null            
+ ca_city          | Morris          
+ bought_city      | Sullivan        
+ ss_ticket_number | 97140           
+ extended_price   | 13728.72        
+ extended_tax     | 455.24          
+ list_price       | 22377.36        
+-RECORD 29--------------------------
+ c_last_name      | null            
+ c_first_name     | Malcolm         
+ ca_city          | Spring Hill     
+ bought_city      | Bridgeport      
+ ss_ticket_number | 97846           
+ extended_price   | 27789.25        
+ extended_tax     | 1441.65         
+ list_price       | 70190.53        
+-RECORD 30--------------------------
+ c_last_name      | null            
+ c_first_name     | Andrew          
+ ca_city          | Centerville     
+ bought_city      | Plainview       
+ ss_ticket_number | 98661           
+ extended_price   | 40661.38        
+ extended_tax     | 973.31          
+ list_price       | 79995.51        
+-RECORD 31--------------------------
+ c_last_name      | null            
+ c_first_name     | James           
+ ca_city          | Riverview       
+ bought_city      | Valley View     
+ ss_ticket_number | 99563           
+ extended_price   | 22376.23        
+ extended_tax     | 546.85          
+ list_price       | 42749.50        
+-RECORD 32--------------------------
+ c_last_name      | null            
+ c_first_name     | Juanita         
+ ca_city          | Waterloo        
+ bought_city      | Georgetown      
+ ss_ticket_number | 100509          
+ extended_price   | 26660.53        
+ extended_tax     | 676.41          
+ list_price       | 51566.27        
+-RECORD 33--------------------------
+ c_last_name      | null            
+ c_first_name     | null            
+ ca_city          | Shady Grove     
+ bought_city      | Clifford        
+ ss_ticket_number | 103990          
+ extended_price   | 20797.70        
+ extended_tax     | 1019.91         
+ list_price       | 44546.93        
+-RECORD 34--------------------------
+ c_last_name      | null            
+ c_first_name     | null            
+ ca_city          | Florence        
+ bought_city      | Spring Hill     
+ ss_ticket_number | 104935          
+ extended_price   | 19660.92        
+ extended_tax     | 1221.31         
+ list_price       | 44977.11        
+-RECORD 35--------------------------
+ c_last_name      | null            
+ c_first_name     | David           
+ ca_city          | Florence        
+ bought_city      | Springdale      
+ ss_ticket_number | 108460          
+ extended_price   | 17730.57        
+ extended_tax     | 647.69          
+ list_price       | 43637.79        
+-RECORD 36--------------------------
+ c_last_name      | null            
+ c_first_name     | Frank           
+ ca_city          | Riverview       
+ bought_city      | Waterloo        
+ ss_ticket_number | 109144          
+ extended_price   | 18721.91        
+ extended_tax     | 846.02          
+ list_price       | 29241.20        
+-RECORD 37--------------------------
+ c_last_name      | null            
+ c_first_name     | null            
+ ca_city          | Buena Vista     
+ bought_city      | Griffin         
+ ss_ticket_number | 109500          
+ extended_price   | 35164.09        
+ extended_tax     | 1692.37         
+ list_price       | 53432.26        
+-RECORD 38--------------------------
+ c_last_name      | null            
+ c_first_name     | null            
+ ca_city          | Wilson          
+ bought_city      | Jamestown       
+ ss_ticket_number | 111773          
+ extended_price   | 21025.19        
+ extended_tax     | 845.83          
+ list_price       | 39863.08        
+-RECORD 39--------------------------
+ c_last_name      | null            
+ c_first_name     | Melvin          
+ ca_city          | Woodville       
+ bought_city      | Harmony         
+ ss_ticket_number | 115030          
+ extended_price   | 15067.30        
+ extended_tax     | 734.83          
+ list_price       | 31515.14        
+-RECORD 40--------------------------
+ c_last_name      | null            
+ c_first_name     | Ricky           
+ ca_city          | Stringtown      
+ bought_city      | Glenwood        
+ ss_ticket_number | 120194          
+ extended_price   | 22030.71        
+ extended_tax     | 790.40          
+ list_price       | 54088.54        
 -RECORD 41--------------------------
  c_last_name      | null            
- c_first_name     | Luther          
- ca_city          | Greenville      
- bought_city      | Hillcrest       
- ss_ticket_number | 149654          
- extended_price   | 27079.37        
- extended_tax     | 939.22          
- list_price       | 41067.50        
+ c_first_name     | John            
+ ca_city          | Fairview        
+ bought_city      | Lakeside        
+ ss_ticket_number | 123374          
+ extended_price   | 21712.42        
+ extended_tax     | 1337.39         
+ list_price       | 31640.02        
 -RECORD 42--------------------------
  c_last_name      | null            
- c_first_name     | Michelle        
- ca_city          | Fairview        
- bought_city      | Hopewell        
- ss_ticket_number | 149783          
- extended_price   | 29018.58        
- extended_tax     | 1426.60         
- list_price       | 48040.63        
+ c_first_name     | Ralph           
+ ca_city          | Valley View     
+ bought_city      | Harmony         
+ ss_ticket_number | 125234          
+ extended_price   | 17152.89        
+ extended_tax     | 603.81          
+ list_price       | 43572.89        
 -RECORD 43--------------------------
  c_last_name      | null            
- c_first_name     | Angelica        
- ca_city          | Barnes          
- bought_city      | Plainview       
- ss_ticket_number | 151659          
- extended_price   | 21082.45        
- extended_tax     | 306.14          
- list_price       | 40857.65        
+ c_first_name     | Bernadette      
+ ca_city          | Ashland         
+ bought_city      | Pleasant Grove  
+ ss_ticket_number | 134217          
+ extended_price   | 6757.46         
+ extended_tax     | 306.65          
+ list_price       | 17709.08        
 -RECORD 44--------------------------
  c_last_name      | null            
- c_first_name     | Donna           
- ca_city          | Centerville     
- bought_city      | Friendship      
- ss_ticket_number | 152588          
- extended_price   | 20862.64        
- extended_tax     | 969.20          
- list_price       | 46304.16        
+ c_first_name     | Joseph          
+ ca_city          | Springdale      
+ bought_city      | Lakeside        
+ ss_ticket_number | 134343          
+ extended_price   | 17381.47        
+ extended_tax     | 748.31          
+ list_price       | 37418.87        
 -RECORD 45--------------------------
  c_last_name      | null            
- c_first_name     | Brian           
- ca_city          | Oak Ridge       
- bought_city      | Woodville       
- ss_ticket_number | 152862          
- extended_price   | 22493.16        
- extended_tax     | 1611.93         
- list_price       | 43153.08        
+ c_first_name     | Lacey           
+ ca_city          | Jamestown       
+ bought_city      | Riverside       
+ ss_ticket_number | 134462          
+ extended_price   | 10125.84        
+ extended_tax     | 293.43          
+ list_price       | 26180.45        
 -RECORD 46--------------------------
  c_last_name      | null            
- c_first_name     | null            
- ca_city          | Stringtown      
- bought_city      | Liberty         
- ss_ticket_number | 158006          
- extended_price   | 16267.97        
- extended_tax     | 450.16          
- list_price       | 25629.75        
+ c_first_name     | Warren          
+ ca_city          | Bunker Hill     
+ bought_city      | Greenville      
+ ss_ticket_number | 134828          
+ extended_price   | 10481.74        
+ extended_tax     | 350.80          
+ list_price       | 19160.46        
 -RECORD 47--------------------------
  c_last_name      | null            
- c_first_name     | Daniel          
- ca_city          | Globe           
- bought_city      | Spring Valley   
- ss_ticket_number | 161922          
- extended_price   | 15092.01        
- extended_tax     | 847.21          
- list_price       | 42715.60        
+ c_first_name     | Gertrude        
+ ca_city          | Greenwood       
+ bought_city      | Macedonia       
+ ss_ticket_number | 137410          
+ extended_price   | 33678.21        
+ extended_tax     | 1866.59         
+ list_price       | 47276.52        
 -RECORD 48--------------------------
  c_last_name      | null            
- c_first_name     | Marlene         
- ca_city          | Georgetown      
- bought_city      | Oakland         
- ss_ticket_number | 163799          
- extended_price   | 42790.16        
- extended_tax     | 1130.51         
- list_price       | 77449.21        
+ c_first_name     | null            
+ ca_city          | Galena          
+ bought_city      | Sulphur Springs 
+ ss_ticket_number | 137765          
+ extended_price   | 12788.84        
+ extended_tax     | 545.88          
+ list_price       | 35276.70        
 -RECORD 49--------------------------
  c_last_name      | null            
- c_first_name     | Dean            
- ca_city          | Lakeview        
- bought_city      | New Hope        
- ss_ticket_number | 167847          
- extended_price   | 24431.20        
- extended_tax     | 1333.52         
- list_price       | 38658.46        
+ c_first_name     | null            
+ ca_city          | Forest Hills    
+ bought_city      | Argyle          
+ ss_ticket_number | 139387          
+ extended_price   | 14190.66        
+ extended_tax     | 566.22          
+ list_price       | 26171.36        
 -RECORD 50--------------------------
  c_last_name      | null            
- c_first_name     | null            
- ca_city          | Greenfield      
- bought_city      | Hopewell        
- ss_ticket_number | 168370          
- extended_price   | 13878.80        
- extended_tax     | 617.56          
- list_price       | 31230.84        
+ c_first_name     | James           
+ ca_city          | Shiloh          
+ bought_city      | Wesley          
+ ss_ticket_number | 142680          
+ extended_price   | 28622.37        
+ extended_tax     | 1046.33         
+ list_price       | 61645.20        
 -RECORD 51--------------------------
  c_last_name      | null            
- c_first_name     | Robert          
- ca_city          | Four Points     
- bought_city      | Farmington      
- ss_ticket_number | 176911          
- extended_price   | 14828.21        
- extended_tax     | 674.85          
- list_price       | 32517.24        
+ c_first_name     | Susan           
+ ca_city          | Green Acres     
+ bought_city      | Liberty         
+ ss_ticket_number | 143399          
+ extended_price   | 13352.11        
+ extended_tax     | 880.61          
+ list_price       | 30549.47        
 -RECORD 52--------------------------
  c_last_name      | null            
- c_first_name     | Betty           
- ca_city          | Lakewood        
- bought_city      | Sulphur Springs 
- ss_ticket_number | 178057          
- extended_price   | 15008.49        
- extended_tax     | 693.61          
- list_price       | 25864.62        
+ c_first_name     | Willie          
+ ca_city          | Freeport        
+ bought_city      | Wyoming         
+ ss_ticket_number | 147738          
+ extended_price   | 15265.05        
+ extended_tax     | 608.18          
+ list_price       | 43336.34        
 -RECORD 53--------------------------
  c_last_name      | null            
  c_first_name     | null            
- ca_city          | Harmony         
- bought_city      | Spring Valley   
- ss_ticket_number | 178332          
- extended_price   | 10288.94        
- extended_tax     | 631.05          
- list_price       | 35516.38        
+ ca_city          | Walnut Grove    
+ bought_city      | Willow          
+ ss_ticket_number | 147740          
+ extended_price   | 24550.37        
+ extended_tax     | 1403.66         
+ list_price       | 47888.99        
 -RECORD 54--------------------------
  c_last_name      | null            
- c_first_name     | null            
- ca_city          | Enterprise      
- bought_city      | Bunker Hill     
- ss_ticket_number | 182211          
- extended_price   | 14072.57        
- extended_tax     | 405.42          
- list_price       | 33771.00        
+ c_first_name     | Jack            
+ ca_city          | Oakwood         
+ bought_city      | Liberty         
+ ss_ticket_number | 149758          
+ extended_price   | 18006.16        
+ extended_tax     | 299.45          
+ list_price       | 37000.83        
 -RECORD 55--------------------------
  c_last_name      | null            
  c_first_name     | null            
- ca_city          | Salem           
- bought_city      | Valley View     
- ss_ticket_number | 187904          
- extended_price   | 15702.34        
- extended_tax     | 439.59          
- list_price       | 41237.94        
+ ca_city          | Pleasant Hill   
+ bought_city      | Waterloo        
+ ss_ticket_number | 156554          
+ extended_price   | 20178.41        
+ extended_tax     | 1143.87         
+ list_price       | 34449.89        
 -RECORD 56--------------------------
  c_last_name      | null            
- c_first_name     | Faye            
- ca_city          | Walnut Grove    
- bought_city      | Oakland         
- ss_ticket_number | 189770          
- extended_price   | 18527.90        
- extended_tax     | 1113.75         
- list_price       | 39987.40        
+ c_first_name     | null            
+ ca_city          | Five Points     
+ bought_city      | Tracy           
+ ss_ticket_number | 159202          
+ extended_price   | 32371.98        
+ extended_tax     | 1162.21         
+ list_price       | 65641.10        
 -RECORD 57--------------------------
  c_last_name      | null            
- c_first_name     | Debra           
- ca_city          | Green Acres     
- bought_city      | Woodlawn        
- ss_ticket_number | 192040          
- extended_price   | 9053.50         
- extended_tax     | 169.31          
- list_price       | 13181.96        
+ c_first_name     | null            
+ ca_city          | Glendale        
+ bought_city      | Mount Pleasant  
+ ss_ticket_number | 159389          
+ extended_price   | 19529.56        
+ extended_tax     | 568.73          
+ list_price       | 42661.40        
 -RECORD 58--------------------------
  c_last_name      | null            
- c_first_name     | null            
- ca_city          | Salem           
+ c_first_name     | Victor          
+ ca_city          | Providence      
  bought_city      | Antioch         
- ss_ticket_number | 192673          
- extended_price   | 5412.31         
- extended_tax     | 119.61          
- list_price       | 12746.52        
+ ss_ticket_number | 161524          
+ extended_price   | 14173.12        
+ extended_tax     | 860.07          
+ list_price       | 26079.25        
 -RECORD 59--------------------------
  c_last_name      | null            
  c_first_name     | null            
- ca_city          | Mount Olive     
- bought_city      | Mount Pleasant  
- ss_ticket_number | 197746          
- extended_price   | 32038.93        
- extended_tax     | 1017.39         
- list_price       | 87608.72        
+ ca_city          | Pleasant Grove  
+ bought_city      | Newtown         
+ ss_ticket_number | 164893          
+ extended_price   | 15334.29        
+ extended_tax     | 612.95          
+ list_price       | 39959.97        
 -RECORD 60--------------------------
  c_last_name      | null            
- c_first_name     | Nancy           
- ca_city          | Shady Grove     
- bought_city      | Hillcrest       
- ss_ticket_number | 201415          
- extended_price   | 14985.28        
- extended_tax     | 328.13          
- list_price       | 21957.26        
+ c_first_name     | Raymond         
+ ca_city          | Springfield     
+ bought_city      | Greenfield      
+ ss_ticket_number | 174183          
+ extended_price   | 26633.39        
+ extended_tax     | 1132.88         
+ list_price       | 66071.66        
 -RECORD 61--------------------------
  c_last_name      | null            
- c_first_name     | Scott           
- ca_city          | Hillcrest       
- bought_city      | Louisville      
- ss_ticket_number | 203119          
- extended_price   | 8629.88         
- extended_tax     | 329.70          
- list_price       | 14712.89        
+ c_first_name     | null            
+ ca_city          | Mount Zion      
+ bought_city      | Greenwood       
+ ss_ticket_number | 174923          
+ extended_price   | 17133.91        
+ extended_tax     | 313.95          
+ list_price       | 51727.01        
 -RECORD 62--------------------------
  c_last_name      | null            
  c_first_name     | null            
- ca_city          | Plainview       
- bought_city      | Oak Grove       
- ss_ticket_number | 203425          
- extended_price   | 33448.32        
- extended_tax     | 1632.67         
- list_price       | 62674.71        
+ ca_city          | Kingston        
+ bought_city      | Wildwood        
+ ss_ticket_number | 176614          
+ extended_price   | 38949.49        
+ extended_tax     | 2260.34         
+ list_price       | 62962.63        
 -RECORD 63--------------------------
  c_last_name      | null            
  c_first_name     | null            
- ca_city          | Rocky Hill      
- bought_city      | Providence      
- ss_ticket_number | 211665          
- extended_price   | 15060.41        
- extended_tax     | 598.75          
- list_price       | 29385.31        
+ ca_city          | Springfield     
+ bought_city      | Jackson         
+ ss_ticket_number | 176898          
+ extended_price   | 22035.46        
+ extended_tax     | 785.41          
+ list_price       | 36552.00        
 -RECORD 64--------------------------
  c_last_name      | null            
- c_first_name     | Tonya           
- ca_city          | Buena Vista     
- bought_city      | Bunker Hill     
- ss_ticket_number | 213228          
- extended_price   | 46912.33        
- extended_tax     | 2039.49         
- list_price       | 81223.03        
+ c_first_name     | George          
+ ca_city          | Pleasant Grove  
+ bought_city      | Shiloh          
+ ss_ticket_number | 179953          
+ extended_price   | 18237.84        
+ extended_tax     | 607.57          
+ list_price       | 44135.38        
 -RECORD 65--------------------------
  c_last_name      | null            
- c_first_name     | Troy            
- ca_city          | Plainview       
- bought_city      | Ashland         
- ss_ticket_number | 216821          
- extended_price   | 45620.34        
- extended_tax     | 2295.90         
- list_price       | 74013.12        
+ c_first_name     | null            
+ ca_city          | Newtown         
+ bought_city      | Union Hill      
+ ss_ticket_number | 186823          
+ extended_price   | 18161.92        
+ extended_tax     | 709.16          
+ list_price       | 27119.67        
 -RECORD 66--------------------------
  c_last_name      | null            
- c_first_name     | Sandra          
- ca_city          | Unionville      
- bought_city      | Hopewell        
- ss_ticket_number | 221077          
- extended_price   | 8341.60         
- extended_tax     | 527.66          
- list_price       | 17817.11        
+ c_first_name     | Antone          
+ ca_city          | Antioch         
+ bought_city      | Forest Hills    
+ ss_ticket_number | 192973          
+ extended_price   | 14507.02        
+ extended_tax     | 841.86          
+ list_price       | 34973.08        
 -RECORD 67--------------------------
  c_last_name      | null            
- c_first_name     | Robert          
- ca_city          | Summit          
- bought_city      | Five Points     
- ss_ticket_number | 224508          
- extended_price   | 15607.69        
- extended_tax     | 500.96          
- list_price       | 37984.93        
+ c_first_name     | Violet          
+ ca_city          | Woodlawn        
+ bought_city      | Woodville       
+ ss_ticket_number | 193534          
+ extended_price   | 17536.20        
+ extended_tax     | 1067.01         
+ list_price       | 30308.64        
 -RECORD 68--------------------------
  c_last_name      | null            
- c_first_name     | Rebecca         
- ca_city          | Union Hill      
- bought_city      | Mountain View   
- ss_ticket_number | 225489          
- extended_price   | 35322.48        
- extended_tax     | 1859.03         
- list_price       | 58568.59        
+ c_first_name     | Emiko           
+ ca_city          | Liberty         
+ bought_city      | Oakdale         
+ ss_ticket_number | 193771          
+ extended_price   | 9730.58         
+ extended_tax     | 249.23          
+ list_price       | 22985.99        
 -RECORD 69--------------------------
  c_last_name      | null            
- c_first_name     | Jack            
- ca_city          | Sunnyside       
- bought_city      | Lakeview        
- ss_ticket_number | 231229          
- extended_price   | 16186.51        
- extended_tax     | 577.86          
- list_price       | 30596.37        
+ c_first_name     | null            
+ ca_city          | Mountain View   
+ bought_city      | Deerfield       
+ ss_ticket_number | 194436          
+ extended_price   | 16962.72        
+ extended_tax     | 773.97          
+ list_price       | 33070.54        
 -RECORD 70--------------------------
  c_last_name      | null            
  c_first_name     | null            
- ca_city          | Bethel          
- bought_city      | Sunnyside       
- ss_ticket_number | 233081          
- extended_price   | 13271.69        
- extended_tax     | 468.80          
- list_price       | 32129.60        
+ ca_city          | Georgetown      
+ bought_city      | Forest Hills    
+ ss_ticket_number | 195266          
+ extended_price   | 11924.71        
+ extended_tax     | 382.35          
+ list_price       | 28208.78        
 -RECORD 71--------------------------
  c_last_name      | null            
- c_first_name     | Alice           
- ca_city          | Oak Grove       
- bought_city      | Marion          
- ss_ticket_number | 233656          
- extended_price   | 30278.85        
- extended_tax     | 1490.14         
- list_price       | 65326.68        
+ c_first_name     | Roy             
+ ca_city          | Georgetown      
+ bought_city      | Riverside       
+ ss_ticket_number | 200033          
+ extended_price   | 35666.28        
+ extended_tax     | 644.10          
+ list_price       | 62654.54        
 -RECORD 72--------------------------
  c_last_name      | null            
- c_first_name     | Shayne          
- ca_city          | Riverview       
+ c_first_name     | Barbara         
+ ca_city          | Westgate        
  bought_city      | Crossroads      
- ss_ticket_number | 234750          
- extended_price   | 20554.66        
- extended_tax     | 737.10          
- list_price       | 52975.61        
+ ss_ticket_number | 202167          
+ extended_price   | 17296.28        
+ extended_tax     | 1017.79         
+ list_price       | 30562.26        
 -RECORD 73--------------------------
  c_last_name      | null            
- c_first_name     | Kevin           
- ca_city          | Buena Vista     
- bought_city      | Clifton         
- ss_ticket_number | 239837          
- extended_price   | 28589.10        
- extended_tax     | 999.94          
- list_price       | 48962.74        
+ c_first_name     | Diane           
+ ca_city          | Five Points     
+ bought_city      | Mount Zion      
+ ss_ticket_number | 203347          
+ extended_price   | 26281.72        
+ extended_tax     | 533.37          
+ list_price       | 42267.33        
 -RECORD 74--------------------------
- c_last_name      | Aaron           
- c_first_name     | Nick            
- ca_city          | Harmony         
- bought_city      | Edgewood        
- ss_ticket_number | 73734           
- extended_price   | 29649.48        
- extended_tax     | 959.10          
- list_price       | 56974.10        
+ c_last_name      | null            
+ c_first_name     | Andrew          
+ ca_city          | Shiloh          
+ bought_city      | Mount Zion      
+ ss_ticket_number | 205712          
+ extended_price   | 18320.09        
+ extended_tax     | 575.85          
+ list_price       | 32773.59        
 -RECORD 75--------------------------
- c_last_name      | Abney           
- c_first_name     | Janice          
- ca_city          | Mount Zion      
- bought_city      | Enterprise      
- ss_ticket_number | 27585           
- extended_price   | 16154.82        
- extended_tax     | 636.94          
- list_price       | 37751.16        
--RECORD 76--------------------------
- c_last_name      | Abraham         
- c_first_name     | Gerald          
- ca_city          | Pleasant Grove  
- bought_city      | Midway          
- ss_ticket_number | 1779            
- extended_price   | 8661.58         
- extended_tax     | 330.60          
- list_price       | 14811.87        
--RECORD 77--------------------------
- c_last_name      | Abrams          
- c_first_name     | Alma            
- ca_city          | Fairfield       
- bought_city      | Macedonia       
- ss_ticket_number | 33078           
- extended_price   | 28262.54        
- extended_tax     | 808.09          
- list_price       | 48263.03        
--RECORD 78--------------------------
- c_last_name      | Adame           
- c_first_name     | Brian           
- ca_city          | Marion          
- bought_city      | Forest Hills    
- ss_ticket_number | 142280          
- extended_price   | 15398.91        
- extended_tax     | 717.67          
- list_price       | 52277.17        
--RECORD 79--------------------------
- c_last_name      | Adams           
- c_first_name     | Adam            
- ca_city          | The Meadows     
- bought_city      | Glenwood        
- ss_ticket_number | 35054           
- extended_price   | 33420.92        
- extended_tax     | 1477.44         
- list_price       | 37326.99        
--RECORD 80--------------------------
- c_last_name      | Adams           
- c_first_name     | Paulette        
- ca_city          | Tremont         
- bought_city      | Lakeside        
- ss_ticket_number | 82644           
- extended_price   | 25822.05        
- extended_tax     | 365.13          
- list_price       | 46273.62        
--RECORD 81--------------------------
- c_last_name      | Adams           
- c_first_name     | Edwin           
- ca_city          | Plainview       
- bought_city      | Greenwood       
- ss_ticket_number | 108138          
- extended_price   | 23483.91        
- extended_tax     | 982.40          
- list_price       | 35181.82        
--RECORD 82--------------------------
- c_last_name      | Adams           
- c_first_name     | Nichole         
- ca_city          | Edgewood        
- bought_city      | Friendship      
- ss_ticket_number | 171894          
- extended_price   | 20821.96        
- extended_tax     | 1333.70         
- list_price       | 48375.06        
--RECORD 83--------------------------
- c_last_name      | Adams           
+ c_last_name      | null            
  c_first_name     | null            
- ca_city          | Oakland         
- bought_city      | Oak Ridge       
- ss_ticket_number | 173206          
- extended_price   | 18700.18        
- extended_tax     | 1085.29         
- list_price       | 29361.60        
+ ca_city          | Mount Pleasant  
+ bought_city      | Greenville      
+ ss_ticket_number | 206301          
+ extended_price   | 20248.08        
+ extended_tax     | 682.37          
+ list_price       | 57143.50        
+-RECORD 76--------------------------
+ c_last_name      | null            
+ c_first_name     | null            
+ ca_city          | Waterloo        
+ bought_city      | Spring Hill     
+ ss_ticket_number | 206784          
+ extended_price   | 21355.86        
+ extended_tax     | 1366.98         
+ list_price       | 37107.65        
+-RECORD 77--------------------------
+ c_last_name      | null            
+ c_first_name     | null            
+ ca_city          | Littleton       
+ bought_city      | Walnut Grove    
+ ss_ticket_number | 209023          
+ extended_price   | 22998.20        
+ extended_tax     | 640.55          
+ list_price       | 41076.55        
+-RECORD 78--------------------------
+ c_last_name      | null            
+ c_first_name     | Norman          
+ ca_city          | Jamestown       
+ bought_city      | Farmington      
+ ss_ticket_number | 218063          
+ extended_price   | 37475.56        
+ extended_tax     | 1480.70         
+ list_price       | 61106.57        
+-RECORD 79--------------------------
+ c_last_name      | null            
+ c_first_name     | null            
+ ca_city          | Hillcrest       
+ bought_city      | Valley View     
+ ss_ticket_number | 218569          
+ extended_price   | 37536.35        
+ extended_tax     | 1322.01         
+ list_price       | 54952.26        
+-RECORD 80--------------------------
+ c_last_name      | null            
+ c_first_name     | Douglas         
+ ca_city          | Crossroads      
+ bought_city      | Sunnyside       
+ ss_ticket_number | 218776          
+ extended_price   | 22822.92        
+ extended_tax     | 884.66          
+ list_price       | 42559.53        
+-RECORD 81--------------------------
+ c_last_name      | null            
+ c_first_name     | null            
+ ca_city          | Summit          
+ bought_city      | Concord         
+ ss_ticket_number | 224470          
+ extended_price   | 17167.29        
+ extended_tax     | 893.49          
+ list_price       | 36546.18        
+-RECORD 82--------------------------
+ c_last_name      | null            
+ c_first_name     | Joshua          
+ ca_city          | Five Points     
+ bought_city      | Hopewell        
+ ss_ticket_number | 227114          
+ extended_price   | 19755.36        
+ extended_tax     | 674.30          
+ list_price       | 28406.59        
+-RECORD 83--------------------------
+ c_last_name      | null            
+ c_first_name     | null            
+ ca_city          | Edgewood        
+ bought_city      | Belmont         
+ ss_ticket_number | 230383          
+ extended_price   | 14998.93        
+ extended_tax     | 844.15          
+ list_price       | 26544.25        
 -RECORD 84--------------------------
- c_last_name      | Adams           
- c_first_name     | Nichole         
- ca_city          | Edgewood        
- bought_city      | Green Acres     
- ss_ticket_number | 180862          
- extended_price   | 17519.04        
- extended_tax     | 657.52          
- list_price       | 33555.87        
+ c_last_name      | null            
+ c_first_name     | null            
+ ca_city          | Franklin        
+ bought_city      | Floyd           
+ ss_ticket_number | 230648          
+ extended_price   | 16319.23        
+ extended_tax     | 871.53          
+ list_price       | 38604.51        
 -RECORD 85--------------------------
- c_last_name      | Adams           
- c_first_name     | Donna           
- ca_city          | Plainview       
- bought_city      | Liberty         
- ss_ticket_number | 219849          
- extended_price   | 18150.78        
- extended_tax     | 448.49          
- list_price       | 22444.41        
+ c_last_name      | null            
+ c_first_name     | Joseph          
+ ca_city          | Lakewood        
+ bought_city      | Mount Olive     
+ ss_ticket_number | 231104          
+ extended_price   | 34934.39        
+ extended_tax     | 1256.89         
+ list_price       | 55986.84        
 -RECORD 86--------------------------
- c_last_name      | Aguilar         
- c_first_name     | Jeannine        
- ca_city          | Unionville      
- bought_city      | Jackson         
- ss_ticket_number | 152737          
- extended_price   | 34732.21        
- extended_tax     | 1299.63         
- list_price       | 56844.65        
+ c_last_name      | null            
+ c_first_name     | Marti           
+ ca_city          | Greenwood       
+ bought_city      | Providence      
+ ss_ticket_number | 231861          
+ extended_price   | 18475.92        
+ extended_tax     | 694.12          
+ list_price       | 33988.12        
 -RECORD 87--------------------------
- c_last_name      | Ahmed           
- c_first_name     | Jeffrey         
- ca_city          | Stewart         
- bought_city      | Edgewood        
- ss_ticket_number | 202936          
- extended_price   | 27333.88        
- extended_tax     | 948.83          
- list_price       | 39990.68        
+ c_last_name      | null            
+ c_first_name     | null            
+ ca_city          | Deerfield       
+ bought_city      | Lakeside        
+ ss_ticket_number | 232906          
+ extended_price   | 18068.60        
+ extended_tax     | 650.65          
+ list_price       | 43837.36        
 -RECORD 88--------------------------
- c_last_name      | Albert          
- c_first_name     | Sally           
- ca_city          | Nottingham      
- bought_city      | Mount Zion      
- ss_ticket_number | 7000            
- extended_price   | 11496.97        
- extended_tax     | 305.77          
- list_price       | 28524.27        
+ c_last_name      | null            
+ c_first_name     | null            
+ ca_city          | Lakeside        
+ bought_city      | Jackson         
+ ss_ticket_number | 235093          
+ extended_price   | 15888.52        
+ extended_tax     | 457.78          
+ list_price       | 39640.17        
 -RECORD 89--------------------------
- c_last_name      | Albrecht        
- c_first_name     | Bob             
- ca_city          | Marion          
- bought_city      | Pleasant Hill   
- ss_ticket_number | 60194           
- extended_price   | 23528.46        
- extended_tax     | 1101.20         
- list_price       | 43551.97        
+ c_last_name      | Aaron           
+ c_first_name     | Guy             
+ ca_city          | Lakeside        
+ bought_city      | Mount Pleasant  
+ ss_ticket_number | 210815          
+ extended_price   | 24704.66        
+ extended_tax     | 678.88          
+ list_price       | 45673.18        
 -RECORD 90--------------------------
- c_last_name      | Alcorn          
- c_first_name     | Jeffery         
- ca_city          | Cedar Grove     
- bought_city      | Salem           
- ss_ticket_number | 46467           
- extended_price   | 17634.79        
- extended_tax     | 785.53          
- list_price       | 57718.43        
+ c_last_name      | Abbott          
+ c_first_name     | Joseph          
+ ca_city          | Greenfield      
+ bought_city      | Midway          
+ ss_ticket_number | 62751           
+ extended_price   | 37795.50        
+ extended_tax     | 1086.40         
+ list_price       | 53385.17        
 -RECORD 91--------------------------
- c_last_name      | Alderman        
- c_first_name     | Melanie         
- ca_city          | Edgewood        
- bought_city      | Mount Zion      
- ss_ticket_number | 14230           
- extended_price   | 28157.47        
- extended_tax     | 270.85          
- list_price       | 48818.21        
+ c_last_name      | Abbott          
+ c_first_name     | Harriet         
+ ca_city          | Wesley          
+ bought_city      | Forest Hills    
+ ss_ticket_number | 84405           
+ extended_price   | 23666.36        
+ extended_tax     | 1274.86         
+ list_price       | 45689.64        
 -RECORD 92--------------------------
- c_last_name      | Aldridge        
- c_first_name     | Daniel          
- ca_city          | Berlin          
- bought_city      | Wilson          
- ss_ticket_number | 114445          
- extended_price   | 15440.33        
- extended_tax     | 552.85          
- list_price       | 22637.40        
+ c_last_name      | Abney           
+ c_first_name     | Louis           
+ ca_city          | Gladstone       
+ bought_city      | Green Acres     
+ ss_ticket_number | 140967          
+ extended_price   | 20698.82        
+ extended_tax     | 491.86          
+ list_price       | 48086.21        
 -RECORD 93--------------------------
- c_last_name      | Alger           
- c_first_name     | Beverly         
- ca_city          | Allentown       
- bought_city      | Riverview       
- ss_ticket_number | 173449          
- extended_price   | 24541.75        
- extended_tax     | 797.49          
- list_price       | 48511.28        
+ c_last_name      | Acevedo         
+ c_first_name     | David           
+ ca_city          | Clinton         
+ bought_city      | Shady Grove     
+ ss_ticket_number | 131505          
+ extended_price   | 22075.16        
+ extended_tax     | 772.60          
+ list_price       | 46961.99        
 -RECORD 94--------------------------
- c_last_name      | Allen           
- c_first_name     | Brittany        
- ca_city          | Lincoln         
- bought_city      | Hillcrest       
- ss_ticket_number | 10696           
- extended_price   | 17579.89        
- extended_tax     | 595.90          
- list_price       | 46637.81        
+ c_last_name      | Acosta          
+ c_first_name     | Johnnie         
+ ca_city          | Centerville     
+ bought_city      | Enterprise      
+ ss_ticket_number | 69183           
+ extended_price   | 21688.97        
+ extended_tax     | 1059.74         
+ list_price       | 34387.30        
 -RECORD 95--------------------------
- c_last_name      | Allen           
- c_first_name     | Yvette          
- ca_city          | Providence      
- bought_city      | Flatwoods       
- ss_ticket_number | 73587           
- extended_price   | 8938.13         
- extended_tax     | 561.96          
- list_price       | 27604.45        
+ c_last_name      | Acosta          
+ c_first_name     | David           
+ ca_city          | Harmony         
+ bought_city      | Bunker Hill     
+ ss_ticket_number | 112259          
+ extended_price   | 11738.20        
+ extended_tax     | 399.34          
+ list_price       | 17105.96        
 -RECORD 96--------------------------
- c_last_name      | Allen           
- c_first_name     | Lori            
- ca_city          | Hamilton        
- bought_city      | Greenwood       
- ss_ticket_number | 138690          
- extended_price   | 16085.88        
- extended_tax     | 579.59          
- list_price       | 35840.88        
+ c_last_name      | Adair           
+ c_first_name     | Evan            
+ ca_city          | Blanchard       
+ bought_city      | New Hope        
+ ss_ticket_number | 117449          
+ extended_price   | 10843.01        
+ extended_tax     | 540.08          
+ list_price       | 20084.01        
 -RECORD 97--------------------------
- c_last_name      | Allison         
- c_first_name     | Anya            
- ca_city          | Union           
- bought_city      | Ashland         
- ss_ticket_number | 79895           
- extended_price   | 9453.18         
- extended_tax     | 499.78          
- list_price       | 22112.21        
+ c_last_name      | Adams           
+ c_first_name     | Genevieve       
+ ca_city          | Enterprise      
+ bought_city      | Union Hill      
+ ss_ticket_number | 109910          
+ extended_price   | 32666.21        
+ extended_tax     | 1432.96         
+ list_price       | 61189.81        
 -RECORD 98--------------------------
- c_last_name      | Alvarez         
- c_first_name     | Terrence        
- ca_city          | Concord         
- bought_city      | Spring Valley   
- ss_ticket_number | 32211           
- extended_price   | 13206.58        
- extended_tax     | 470.82          
- list_price       | 33690.82        
+ c_last_name      | Adams           
+ c_first_name     | Joyce           
+ ca_city          | Newtown         
+ bought_city      | Concord         
+ ss_ticket_number | 166181          
+ extended_price   | 18450.10        
+ extended_tax     | 1108.79         
+ list_price       | 28427.74        
 -RECORD 99--------------------------
- c_last_name      | Alvarez         
- c_first_name     | Marie           
- ca_city          | Walnut Grove    
- bought_city      | Red Hill        
- ss_ticket_number | 206011          
- extended_price   | 25535.02        
- extended_tax     | 1344.58         
- list_price       | 63224.42
+ c_last_name      | Adams           
+ c_first_name     | John            
+ ca_city          | Marion          
+ bought_city      | Oak Ridge       
+ ss_ticket_number | 206733          
+ extended_price   | 34785.44        
+ extended_tax     | 852.47          
+ list_price       | 57926.68
              

@@ -4,9 +4,9 @@
 -RECORD 1----------------------------
  customer_preferred_cust_flag | null 
 -RECORD 2----------------------------
- customer_preferred_cust_flag | null 
+ customer_preferred_cust_flag | N    
 -RECORD 3----------------------------
- customer_preferred_cust_flag | null 
+ customer_preferred_cust_flag | N    
 -RECORD 4----------------------------
  customer_preferred_cust_flag | N    
 -RECORD 5----------------------------
@@ -90,13 +90,13 @@
 -RECORD 44---------------------------
  customer_preferred_cust_flag | N    
 -RECORD 45---------------------------
- customer_preferred_cust_flag | N    
+ customer_preferred_cust_flag | Y    
 -RECORD 46---------------------------
- customer_preferred_cust_flag | N    
+ customer_preferred_cust_flag | Y    
 -RECORD 47---------------------------
- customer_preferred_cust_flag | N    
+ customer_preferred_cust_flag | Y    
 -RECORD 48---------------------------
- customer_preferred_cust_flag | N    
+ customer_preferred_cust_flag | Y    
 -RECORD 49---------------------------
  customer_preferred_cust_flag | Y    
 -RECORD 50---------------------------
@@ -174,17 +174,5 @@
 -RECORD 86---------------------------
  customer_preferred_cust_flag | Y    
 -RECORD 87---------------------------
- customer_preferred_cust_flag | Y    
--RECORD 88---------------------------
- customer_preferred_cust_flag | Y    
--RECORD 89---------------------------
- customer_preferred_cust_flag | Y    
--RECORD 90---------------------------
- customer_preferred_cust_flag | Y    
--RECORD 91---------------------------
- customer_preferred_cust_flag | Y    
--RECORD 92---------------------------
- customer_preferred_cust_flag | Y    
--RECORD 93---------------------------
  customer_preferred_cust_flag | Y
              

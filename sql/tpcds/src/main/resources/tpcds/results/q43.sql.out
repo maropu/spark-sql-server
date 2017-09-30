@@ -2,61 +2,61 @@
 -RECORD 0------------------------
  s_store_name | able             
  s_store_id   | AAAAAAAACAAAAAAA 
- sun_sales    | 495537.85        
- mon_sales    | 454457.37        
- tue_sales    | 480383.13        
- wed_sales    | 468495.25        
- thu_sales    | 496050.12        
- fri_sales    | 471996.47        
- sat_sales    | 510311.54        
+ sun_sales    | 517884.59        
+ mon_sales    | 469230.50        
+ tue_sales    | 505832.67        
+ wed_sales    | 443696.30        
+ thu_sales    | 479716.97        
+ fri_sales    | 462447.50        
+ sat_sales    | 503064.60        
 -RECORD 1------------------------
  s_store_name | ation            
  s_store_id   | AAAAAAAAHAAAAAAA 
- sun_sales    | 485290.49        
- mon_sales    | 465106.17        
- tue_sales    | 462449.17        
- wed_sales    | 478799.15        
- thu_sales    | 521647.09        
- fri_sales    | 474980.87        
- sat_sales    | 484757.85        
+ sun_sales    | 508811.68        
+ mon_sales    | 474290.02        
+ tue_sales    | 448808.84        
+ wed_sales    | 492870.99        
+ thu_sales    | 498127.64        
+ fri_sales    | 474355.89        
+ sat_sales    | 505906.68        
 -RECORD 2------------------------
  s_store_name | bar              
  s_store_id   | AAAAAAAAKAAAAAAA 
- sun_sales    | 510374.60        
- mon_sales    | 458247.16        
- tue_sales    | 464054.12        
- wed_sales    | 473015.97        
- thu_sales    | 487045.12        
- fri_sales    | 495531.52        
- sat_sales    | 502011.00        
+ sun_sales    | 496021.80        
+ mon_sales    | 459933.01        
+ tue_sales    | 479825.96        
+ wed_sales    | 474630.24        
+ thu_sales    | 482326.79        
+ fri_sales    | 478330.87        
+ sat_sales    | 505252.22        
 -RECORD 3------------------------
  s_store_name | eing             
  s_store_id   | AAAAAAAAIAAAAAAA 
- sun_sales    | 513799.80        
- mon_sales    | 464451.67        
- tue_sales    | 440681.32        
- wed_sales    | 501857.36        
- thu_sales    | 476201.82        
- fri_sales    | 452754.56        
- sat_sales    | 481703.98        
+ sun_sales    | 498752.97        
+ mon_sales    | 476119.01        
+ tue_sales    | 485965.24        
+ wed_sales    | 454921.28        
+ thu_sales    | 491953.89        
+ fri_sales    | 476014.69        
+ sat_sales    | 484633.67        
 -RECORD 4------------------------
  s_store_name | ese              
  s_store_id   | AAAAAAAAEAAAAAAA 
- sun_sales    | 529524.71        
- mon_sales    | 460191.13        
- tue_sales    | 492178.33        
- wed_sales    | 458067.77        
- thu_sales    | 488508.48        
- fri_sales    | 477658.66        
- sat_sales    | 490178.23        
+ sun_sales    | 493724.01        
+ mon_sales    | 499637.85        
+ tue_sales    | 452314.62        
+ wed_sales    | 466232.23        
+ thu_sales    | 481922.38        
+ fri_sales    | 477933.29        
+ sat_sales    | 500577.95        
 -RECORD 5------------------------
  s_store_name | ought            
  s_store_id   | AAAAAAAABAAAAAAA 
- sun_sales    | 464514.26        
- mon_sales    | 460448.28        
- tue_sales    | 465249.85        
- wed_sales    | 482655.67        
- thu_sales    | 474754.90        
- fri_sales    | 479860.76        
- sat_sales    | 474064.44
+ sun_sales    | 505735.34        
+ mon_sales    | 471490.23        
+ tue_sales    | 463248.39        
+ wed_sales    | 482690.52        
+ thu_sales    | 485818.98        
+ fri_sales    | 481816.20        
+ sat_sales    | 491354.68
              

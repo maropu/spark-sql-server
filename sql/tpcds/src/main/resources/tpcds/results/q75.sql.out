@@ -2,1101 +2,1101 @@
 -RECORD 0--------------------
  prev_year      | 2001       
  year           | 2002       
- i_brand_id     | 7009003    
- i_class_id     | 16         
+ i_brand_id     | 9011004    
+ i_class_id     | 11         
  i_category_id  | 9          
- i_manufact_id  | 545        
- prev_yr_cnt    | 6720       
- curr_yr_cnt    | 3891       
- sales_cnt_diff | -2829      
- sales_amt_diff | -117008.58 
+ i_manufact_id  | 730        
+ prev_yr_cnt    | 6136       
+ curr_yr_cnt    | 3927       
+ sales_cnt_diff | -2209      
+ sales_amt_diff | -64592.86  
 -RECORD 1--------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 8005007    
- i_class_id     | 5          
- i_category_id  | 9          
- i_manufact_id  | 512        
- prev_yr_cnt    | 6454       
- curr_yr_cnt    | 4227       
- sales_cnt_diff | -2227      
- sales_amt_diff | -135735.94 
--RECORD 2--------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9001010    
- i_class_id     | 1          
- i_category_id  | 9          
- i_manufact_id  | 456        
- prev_yr_cnt    | 5643       
- curr_yr_cnt    | 3436       
- sales_cnt_diff | -2207      
- sales_amt_diff | -93617.05  
--RECORD 3--------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 10013015   
- i_class_id     | 3          
- i_category_id  | 9          
- i_manufact_id  | 127        
- prev_yr_cnt    | 6225       
- curr_yr_cnt    | 4143       
- sales_cnt_diff | -2082      
- sales_amt_diff | -14567.99  
--RECORD 4--------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9015004    
- i_class_id     | 10         
- i_category_id  | 9          
- i_manufact_id  | 118        
- prev_yr_cnt    | 7332       
- curr_yr_cnt    | 5259       
- sales_cnt_diff | -2073      
- sales_amt_diff | -77291.51  
--RECORD 5--------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9004002    
- i_class_id     | 4          
- i_category_id  | 9          
- i_manufact_id  | 435        
- prev_yr_cnt    | 6625       
- curr_yr_cnt    | 4581       
- sales_cnt_diff | -2044      
- sales_amt_diff | -122670.86 
--RECORD 6--------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9014004    
- i_class_id     | 3          
- i_category_id  | 9          
- i_manufact_id  | 306        
- prev_yr_cnt    | 5855       
- curr_yr_cnt    | 3858       
- sales_cnt_diff | -1997      
- sales_amt_diff | -73620.65  
--RECORD 7--------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 5002001    
- i_class_id     | 5          
- i_category_id  | 9          
- i_manufact_id  | 170        
- prev_yr_cnt    | 5700       
- curr_yr_cnt    | 3736       
- sales_cnt_diff | -1964      
- sales_amt_diff | -109018.53 
--RECORD 8--------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9014010    
- i_class_id     | 1          
- i_category_id  | 9          
- i_manufact_id  | 987        
- prev_yr_cnt    | 6970       
- curr_yr_cnt    | 5148       
- sales_cnt_diff | -1822      
- sales_amt_diff | -75086.23  
--RECORD 9--------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9015008    
- i_class_id     | 15         
- i_category_id  | 9          
- i_manufact_id  | 327        
- prev_yr_cnt    | 6526       
- curr_yr_cnt    | 4739       
- sales_cnt_diff | -1787      
- sales_amt_diff | -93540.56  
--RECORD 10-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9016002    
- i_class_id     | 16         
- i_category_id  | 9          
- i_manufact_id  | 197        
- prev_yr_cnt    | 6053       
- curr_yr_cnt    | 4343       
- sales_cnt_diff | -1710      
- sales_amt_diff | -97667.31  
--RECORD 11-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9015002    
- i_class_id     | 15         
- i_category_id  | 9          
- i_manufact_id  | 856        
- prev_yr_cnt    | 10449      
- curr_yr_cnt    | 8783       
- sales_cnt_diff | -1666      
- sales_amt_diff | -20233.37  
--RECORD 12-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 3001001    
- i_class_id     | 1          
- i_category_id  | 9          
- i_manufact_id  | 380        
- prev_yr_cnt    | 6554       
- curr_yr_cnt    | 4895       
- sales_cnt_diff | -1659      
- sales_amt_diff | -71747.73  
--RECORD 13-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 5002001    
- i_class_id     | 14         
- i_category_id  | 9          
- i_manufact_id  | 75         
- prev_yr_cnt    | 6649       
- curr_yr_cnt    | 5024       
- sales_cnt_diff | -1625      
- sales_amt_diff | -114258.52 
--RECORD 14-------------------
  prev_year      | 2001       
  year           | 2002       
  i_brand_id     | 9004008    
  i_class_id     | 4          
  i_category_id  | 9          
- i_manufact_id  | 787        
- prev_yr_cnt    | 6493       
- curr_yr_cnt    | 4911       
- sales_cnt_diff | -1582      
- sales_amt_diff | -133842.63 
--RECORD 15-------------------
+ i_manufact_id  | 454        
+ prev_yr_cnt    | 6130       
+ curr_yr_cnt    | 4012       
+ sales_cnt_diff | -2118      
+ sales_amt_diff | -137401.99 
+-RECORD 2--------------------
  prev_year      | 2001       
  year           | 2002       
- i_brand_id     | 3001001    
- i_class_id     | 4          
+ i_brand_id     | 9006010    
+ i_class_id     | 6          
  i_category_id  | 9          
- i_manufact_id  | 652        
- prev_yr_cnt    | 6331       
- curr_yr_cnt    | 4766       
- sales_cnt_diff | -1565      
- sales_amt_diff | -74417.45  
--RECORD 16-------------------
+ i_manufact_id  | 373        
+ prev_yr_cnt    | 6584       
+ curr_yr_cnt    | 4510       
+ sales_cnt_diff | -2074      
+ sales_amt_diff | -56824.27  
+-RECORD 3--------------------
  prev_year      | 2001       
  year           | 2002       
- i_brand_id     | 5004001    
- i_class_id     | 11         
+ i_brand_id     | 9003002    
+ i_class_id     | 3          
  i_category_id  | 9          
- i_manufact_id  | 963        
- prev_yr_cnt    | 6179       
- curr_yr_cnt    | 4628       
- sales_cnt_diff | -1551      
- sales_amt_diff | -85648.92  
--RECORD 17-------------------
+ i_manufact_id  | 331        
+ prev_yr_cnt    | 6314       
+ curr_yr_cnt    | 4249       
+ sales_cnt_diff | -2065      
+ sales_amt_diff | -162310.87 
+-RECORD 4--------------------
  prev_year      | 2001       
  year           | 2002       
- i_brand_id     | 3004001    
- i_class_id     | 7          
- i_category_id  | 9          
- i_manufact_id  | 237        
- prev_yr_cnt    | 6097       
- curr_yr_cnt    | 4560       
- sales_cnt_diff | -1537      
- sales_amt_diff | -118933.63 
--RECORD 18-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 1001001    
- i_class_id     | 8          
- i_category_id  | 9          
- i_manufact_id  | 271        
- prev_yr_cnt    | 5623       
- curr_yr_cnt    | 4128       
- sales_cnt_diff | -1495      
- sales_amt_diff | -50180.45  
--RECORD 19-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 10004009   
- i_class_id     | 4          
- i_category_id  | 9          
- i_manufact_id  | 513        
- prev_yr_cnt    | 6500       
- curr_yr_cnt    | 5024       
- sales_cnt_diff | -1476      
- sales_amt_diff | -67288.17  
--RECORD 20-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 4004001    
- i_class_id     | 10         
- i_category_id  | 9          
- i_manufact_id  | 126        
- prev_yr_cnt    | 5667       
- curr_yr_cnt    | 4194       
- sales_cnt_diff | -1473      
- sales_amt_diff | -88247.10  
--RECORD 21-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9007002    
- i_class_id     | 7          
- i_category_id  | 9          
- i_manufact_id  | 144        
- prev_yr_cnt    | 5474       
- curr_yr_cnt    | 4020       
- sales_cnt_diff | -1454      
- sales_amt_diff | -42908.70  
--RECORD 22-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9016008    
+ i_brand_id     | 9016002    
  i_class_id     | 16         
  i_category_id  | 9          
- i_manufact_id  | 53         
- prev_yr_cnt    | 6099       
- curr_yr_cnt    | 4671       
- sales_cnt_diff | -1428      
- sales_amt_diff | -67851.70  
--RECORD 23-------------------
+ i_manufact_id  | 761        
+ prev_yr_cnt    | 6098       
+ curr_yr_cnt    | 4109       
+ sales_cnt_diff | -1989      
+ sales_amt_diff | -75674.23  
+-RECORD 5--------------------
  prev_year      | 2001       
  year           | 2002       
- i_brand_id     | 9007008    
+ i_brand_id     | 2001001    
  i_class_id     | 7          
  i_category_id  | 9          
- i_manufact_id  | 110        
- prev_yr_cnt    | 5655       
- curr_yr_cnt    | 4230       
- sales_cnt_diff | -1425      
- sales_amt_diff | -28768.95  
--RECORD 24-------------------
+ i_manufact_id  | 85         
+ prev_yr_cnt    | 5689       
+ curr_yr_cnt    | 3750       
+ sales_cnt_diff | -1939      
+ sales_amt_diff | -79485.07  
+-RECORD 6--------------------
  prev_year      | 2001       
  year           | 2002       
- i_brand_id     | 9002008    
- i_class_id     | 2          
- i_category_id  | 9          
- i_manufact_id  | 97         
- prev_yr_cnt    | 5979       
- curr_yr_cnt    | 4581       
- sales_cnt_diff | -1398      
- sales_amt_diff | -101148.97 
--RECORD 25-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9008004    
- i_class_id     | 8          
- i_category_id  | 9          
- i_manufact_id  | 171        
- prev_yr_cnt    | 5952       
- curr_yr_cnt    | 4559       
- sales_cnt_diff | -1393      
- sales_amt_diff | -41622.99  
--RECORD 26-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 10010001   
- i_class_id     | 10         
- i_category_id  | 9          
- i_manufact_id  | 368        
- prev_yr_cnt    | 5714       
- curr_yr_cnt    | 4353       
- sales_cnt_diff | -1361      
- sales_amt_diff | -78871.35  
--RECORD 27-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 3003001    
- i_class_id     | 8          
- i_category_id  | 9          
- i_manufact_id  | 266        
- prev_yr_cnt    | 5785       
- curr_yr_cnt    | 4431       
- sales_cnt_diff | -1354      
- sales_amt_diff | -99666.06  
--RECORD 28-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9011002    
+ i_brand_id     | 9011010    
  i_class_id     | 11         
  i_category_id  | 9          
- i_manufact_id  | 581        
- prev_yr_cnt    | 6045       
- curr_yr_cnt    | 4721       
- sales_cnt_diff | -1324      
- sales_amt_diff | -61169.99  
--RECORD 29-------------------
+ i_manufact_id  | 254        
+ prev_yr_cnt    | 6635       
+ curr_yr_cnt    | 4698       
+ sales_cnt_diff | -1937      
+ sales_amt_diff | -108841.59 
+-RECORD 7--------------------
  prev_year      | 2001       
  year           | 2002       
- i_brand_id     | 9012004    
- i_class_id     | 12         
+ i_brand_id     | 9003002    
+ i_class_id     | 3          
  i_category_id  | 9          
- i_manufact_id  | 233        
- prev_yr_cnt    | 5370       
- curr_yr_cnt    | 4050       
- sales_cnt_diff | -1320      
- sales_amt_diff | -135207.43 
--RECORD 30-------------------
+ i_manufact_id  | 1000       
+ prev_yr_cnt    | 6152       
+ curr_yr_cnt    | 4220       
+ sales_cnt_diff | -1932      
+ sales_amt_diff | -51341.52  
+-RECORD 8--------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9009010    
+ i_class_id     | 1          
+ i_category_id  | 9          
+ i_manufact_id  | 311        
+ prev_yr_cnt    | 6980       
+ curr_yr_cnt    | 5065       
+ sales_cnt_diff | -1915      
+ sales_amt_diff | -166624.10 
+-RECORD 9--------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9003004    
+ i_class_id     | 3          
+ i_category_id  | 9          
+ i_manufact_id  | 25         
+ prev_yr_cnt    | 6382       
+ curr_yr_cnt    | 4612       
+ sales_cnt_diff | -1770      
+ sales_amt_diff | -109080.80 
+-RECORD 10-------------------
  prev_year      | 2001       
  year           | 2002       
  i_brand_id     | 9008008    
  i_class_id     | 8          
  i_category_id  | 9          
- i_manufact_id  | 84         
- prev_yr_cnt    | 5431       
- curr_yr_cnt    | 4114       
- sales_cnt_diff | -1317      
- sales_amt_diff | -48625.72  
--RECORD 31-------------------
+ i_manufact_id  | 322        
+ prev_yr_cnt    | 5391       
+ curr_yr_cnt    | 3664       
+ sales_cnt_diff | -1727      
+ sales_amt_diff | -58283.91  
+-RECORD 11-------------------
  prev_year      | 2001       
  year           | 2002       
- i_brand_id     | 9010010    
- i_class_id     | 7          
+ i_brand_id     | 3004001    
+ i_class_id     | 1          
  i_category_id  | 9          
- i_manufact_id  | 962        
- prev_yr_cnt    | 6123       
- curr_yr_cnt    | 4819       
- sales_cnt_diff | -1304      
- sales_amt_diff | -34943.08  
--RECORD 32-------------------
+ i_manufact_id  | 89         
+ prev_yr_cnt    | 6307       
+ curr_yr_cnt    | 4616       
+ sales_cnt_diff | -1691      
+ sales_amt_diff | -105539.10 
+-RECORD 12-------------------
  prev_year      | 2001       
  year           | 2002       
- i_brand_id     | 9009008    
- i_class_id     | 9          
+ i_brand_id     | 9014004    
+ i_class_id     | 12         
  i_category_id  | 9          
- i_manufact_id  | 135        
- prev_yr_cnt    | 5984       
- curr_yr_cnt    | 4698       
- sales_cnt_diff | -1286      
- sales_amt_diff | -53184.41  
--RECORD 33-------------------
+ i_manufact_id  | 423        
+ prev_yr_cnt    | 6427       
+ curr_yr_cnt    | 4742       
+ sales_cnt_diff | -1685      
+ sales_amt_diff | -66528.45  
+-RECORD 13-------------------
  prev_year      | 2001       
  year           | 2002       
- i_brand_id     | 9014008    
- i_class_id     | 14         
- i_category_id  | 9          
- i_manufact_id  | 52         
- prev_yr_cnt    | 5835       
- curr_yr_cnt    | 4555       
- sales_cnt_diff | -1280      
- sales_amt_diff | -47886.49  
--RECORD 34-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9011002    
- i_class_id     | 11         
- i_category_id  | 9          
- i_manufact_id  | 806        
- prev_yr_cnt    | 5487       
- curr_yr_cnt    | 4208       
- sales_cnt_diff | -1279      
- sales_amt_diff | -34285.63  
--RECORD 35-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9005008    
+ i_brand_id     | 1001001    
  i_class_id     | 5          
  i_category_id  | 9          
- i_manufact_id  | 326        
- prev_yr_cnt    | 5773       
- curr_yr_cnt    | 4494       
- sales_cnt_diff | -1279      
- sales_amt_diff | -47219.15  
--RECORD 36-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 1003001    
- i_class_id     | 3          
- i_category_id  | 9          
- i_manufact_id  | 57         
- prev_yr_cnt    | 5893       
- curr_yr_cnt    | 4631       
- sales_cnt_diff | -1262      
- sales_amt_diff | -24156.11  
--RECORD 37-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 5003001    
- i_class_id     | 3          
- i_category_id  | 9          
- i_manufact_id  | 456        
- prev_yr_cnt    | 5617       
- curr_yr_cnt    | 4359       
- sales_cnt_diff | -1258      
- sales_amt_diff | -46563.26  
--RECORD 38-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9015008    
- i_class_id     | 15         
- i_category_id  | 9          
- i_manufact_id  | 829        
- prev_yr_cnt    | 4998       
- curr_yr_cnt    | 3781       
- sales_cnt_diff | -1217      
- sales_amt_diff | 15209.89   
--RECORD 39-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 7007001    
- i_class_id     | 7          
- i_category_id  | 9          
- i_manufact_id  | 211        
- prev_yr_cnt    | 6277       
- curr_yr_cnt    | 5071       
- sales_cnt_diff | -1206      
- sales_amt_diff | -74262.01  
--RECORD 40-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9011008    
- i_class_id     | 11         
- i_category_id  | 9          
- i_manufact_id  | 541        
- prev_yr_cnt    | 5654       
- curr_yr_cnt    | 4449       
- sales_cnt_diff | -1205      
- sales_amt_diff | -50137.27  
--RECORD 41-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 6010001    
- i_class_id     | 4          
- i_category_id  | 9          
- i_manufact_id  | 91         
- prev_yr_cnt    | 6373       
- curr_yr_cnt    | 5169       
- sales_cnt_diff | -1204      
- sales_amt_diff | -40582.11  
--RECORD 42-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 4003001    
- i_class_id     | 3          
- i_category_id  | 9          
- i_manufact_id  | 175        
- prev_yr_cnt    | 6106       
- curr_yr_cnt    | 4907       
- sales_cnt_diff | -1199      
- sales_amt_diff | -84819.82  
--RECORD 43-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9009008    
- i_class_id     | 9          
- i_category_id  | 9          
- i_manufact_id  | 83         
- prev_yr_cnt    | 5880       
- curr_yr_cnt    | 4689       
- sales_cnt_diff | -1191      
- sales_amt_diff | -54463.08  
--RECORD 44-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9014010    
- i_class_id     | 14         
- i_category_id  | 9          
- i_manufact_id  | 201        
- prev_yr_cnt    | 6106       
- curr_yr_cnt    | 4919       
- sales_cnt_diff | -1187      
- sales_amt_diff | -5741.72   
--RECORD 45-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9012010    
- i_class_id     | 16         
- i_category_id  | 9          
- i_manufact_id  | 173        
- prev_yr_cnt    | 6576       
- curr_yr_cnt    | 5390       
- sales_cnt_diff | -1186      
- sales_amt_diff | -57504.67  
--RECORD 46-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9014002    
- i_class_id     | 14         
- i_category_id  | 9          
- i_manufact_id  | 966        
- prev_yr_cnt    | 6066       
- curr_yr_cnt    | 4915       
- sales_cnt_diff | -1151      
- sales_amt_diff | -31274.42  
--RECORD 47-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9003004    
- i_class_id     | 2          
- i_category_id  | 9          
- i_manufact_id  | 29         
- prev_yr_cnt    | 5232       
- curr_yr_cnt    | 4084       
- sales_cnt_diff | -1148      
- sales_amt_diff | -85408.38  
--RECORD 48-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9008002    
- i_class_id     | 8          
- i_category_id  | 9          
- i_manufact_id  | 586        
- prev_yr_cnt    | 6212       
- curr_yr_cnt    | 5079       
- sales_cnt_diff | -1133      
- sales_amt_diff | -45166.64  
--RECORD 49-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9004010    
- i_class_id     | 4          
- i_category_id  | 9          
- i_manufact_id  | 87         
- prev_yr_cnt    | 5551       
- curr_yr_cnt    | 4428       
- sales_cnt_diff | -1123      
- sales_amt_diff | -104064.28 
--RECORD 50-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9013002    
- i_class_id     | 13         
- i_category_id  | 9          
- i_manufact_id  | 18         
- prev_yr_cnt    | 5087       
- curr_yr_cnt    | 3977       
- sales_cnt_diff | -1110      
- sales_amt_diff | 34375.04   
--RECORD 51-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9001008    
- i_class_id     | 1          
- i_category_id  | 9          
- i_manufact_id  | 65         
- prev_yr_cnt    | 5429       
- curr_yr_cnt    | 4333       
- sales_cnt_diff | -1096      
- sales_amt_diff | -112773.38 
--RECORD 52-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 8007003    
- i_class_id     | 4          
- i_category_id  | 9          
- i_manufact_id  | 290        
- prev_yr_cnt    | 6148       
- curr_yr_cnt    | 5075       
- sales_cnt_diff | -1073      
- sales_amt_diff | -48541.94  
--RECORD 53-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9004002    
- i_class_id     | 4          
- i_category_id  | 9          
- i_manufact_id  | 506        
- prev_yr_cnt    | 5503       
- curr_yr_cnt    | 4432       
- sales_cnt_diff | -1071      
- sales_amt_diff | -47389.52  
--RECORD 54-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9001009    
- i_class_id     | 1          
- i_category_id  | 9          
- i_manufact_id  | 73         
- prev_yr_cnt    | 5116       
- curr_yr_cnt    | 4053       
- sales_cnt_diff | -1063      
- sales_amt_diff | -12805.29  
--RECORD 55-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9003008    
- i_class_id     | 3          
- i_category_id  | 9          
- i_manufact_id  | 156        
- prev_yr_cnt    | 5719       
- curr_yr_cnt    | 4665       
- sales_cnt_diff | -1054      
- sales_amt_diff | -27241.44  
--RECORD 56-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9011008    
- i_class_id     | 11         
- i_category_id  | 9          
- i_manufact_id  | 324        
- prev_yr_cnt    | 5293       
- curr_yr_cnt    | 4253       
- sales_cnt_diff | -1040      
- sales_amt_diff | -78455.59  
--RECORD 57-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9011008    
- i_class_id     | 11         
- i_category_id  | 9          
- i_manufact_id  | 525        
- prev_yr_cnt    | 5269       
- curr_yr_cnt    | 4243       
- sales_cnt_diff | -1026      
- sales_amt_diff | -8416.01   
--RECORD 58-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9009004    
- i_class_id     | 9          
- i_category_id  | 9          
- i_manufact_id  | 599        
+ i_manufact_id  | 172        
  prev_yr_cnt    | 5642       
- curr_yr_cnt    | 4622       
- sales_cnt_diff | -1020      
- sales_amt_diff | -7244.59   
--RECORD 59-------------------
+ curr_yr_cnt    | 3998       
+ sales_cnt_diff | -1644      
+ sales_amt_diff | -65808.52  
+-RECORD 14-------------------
  prev_year      | 2001       
  year           | 2002       
- i_brand_id     | 9004010    
- i_class_id     | 4          
+ i_brand_id     | 8007009    
+ i_class_id     | 9          
  i_category_id  | 9          
- i_manufact_id  | 146        
- prev_yr_cnt    | 5387       
- curr_yr_cnt    | 4373       
- sales_cnt_diff | -1014      
- sales_amt_diff | -96437.31  
--RECORD 60-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9002010    
- i_class_id     | 2          
- i_category_id  | 9          
- i_manufact_id  | 64         
- prev_yr_cnt    | 4911       
- curr_yr_cnt    | 3898       
- sales_cnt_diff | -1013      
- sales_amt_diff | -70357.40  
--RECORD 61-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 2003001    
- i_class_id     | 3          
- i_category_id  | 9          
- i_manufact_id  | 4          
- prev_yr_cnt    | 6089       
- curr_yr_cnt    | 5078       
- sales_cnt_diff | -1011      
- sales_amt_diff | -14326.99  
--RECORD 62-------------------
+ i_manufact_id  | 322        
+ prev_yr_cnt    | 5493       
+ curr_yr_cnt    | 3906       
+ sales_cnt_diff | -1587      
+ sales_amt_diff | -31458.78  
+-RECORD 15-------------------
  prev_year      | 2001       
  year           | 2002       
  i_brand_id     | 9015002    
  i_class_id     | 15         
  i_category_id  | 9          
- i_manufact_id  | 120        
- prev_yr_cnt    | 5419       
- curr_yr_cnt    | 4409       
- sales_cnt_diff | -1010      
- sales_amt_diff | -25557.35  
--RECORD 63-------------------
+ i_manufact_id  | 303        
+ prev_yr_cnt    | 5722       
+ curr_yr_cnt    | 4211       
+ sales_cnt_diff | -1511      
+ sales_amt_diff | -81847.95  
+-RECORD 16-------------------
  prev_year      | 2001       
  year           | 2002       
- i_brand_id     | 9008002    
- i_class_id     | 8          
- i_category_id  | 9          
- i_manufact_id  | 433        
- prev_yr_cnt    | 5707       
- curr_yr_cnt    | 4697       
- sales_cnt_diff | -1010      
- sales_amt_diff | -59856.93  
--RECORD 64-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9008010    
- i_class_id     | 3          
- i_category_id  | 9          
- i_manufact_id  | 64         
- prev_yr_cnt    | 6024       
- curr_yr_cnt    | 5020       
- sales_cnt_diff | -1004      
- sales_amt_diff | 15466.29   
--RECORD 65-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 1003001    
- i_class_id     | 5          
- i_category_id  | 9          
- i_manufact_id  | 139        
- prev_yr_cnt    | 6059       
- curr_yr_cnt    | 5060       
- sales_cnt_diff | -999       
- sales_amt_diff | -23720.17  
--RECORD 66-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9013008    
- i_class_id     | 13         
- i_category_id  | 9          
- i_manufact_id  | 660        
- prev_yr_cnt    | 5400       
- curr_yr_cnt    | 4411       
- sales_cnt_diff | -989       
- sales_amt_diff | -6728.84   
--RECORD 67-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9003002    
- i_class_id     | 3          
- i_category_id  | 9          
- i_manufact_id  | 281        
- prev_yr_cnt    | 5640       
- curr_yr_cnt    | 4651       
- sales_cnt_diff | -989       
- sales_amt_diff | -62224.16  
--RECORD 68-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9013002    
- i_class_id     | 13         
- i_category_id  | 9          
- i_manufact_id  | 30         
- prev_yr_cnt    | 4967       
- curr_yr_cnt    | 3997       
- sales_cnt_diff | -970       
- sales_amt_diff | -74733.18  
--RECORD 69-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 6014001    
- i_class_id     | 14         
- i_category_id  | 9          
- i_manufact_id  | 977        
- prev_yr_cnt    | 5339       
- curr_yr_cnt    | 4369       
- sales_cnt_diff | -970       
- sales_amt_diff | -34999.44  
--RECORD 70-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 8012009    
- i_class_id     | 12         
- i_category_id  | 9          
- i_manufact_id  | 149        
- prev_yr_cnt    | 5872       
- curr_yr_cnt    | 4905       
- sales_cnt_diff | -967       
- sales_amt_diff | -25425.45  
--RECORD 71-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9004009    
+ i_brand_id     | 8015003    
  i_class_id     | 4          
  i_category_id  | 9          
- i_manufact_id  | 618        
- prev_yr_cnt    | 5522       
- curr_yr_cnt    | 4576       
- sales_cnt_diff | -946       
- sales_amt_diff | -59306.75  
--RECORD 72-------------------
+ i_manufact_id  | 289        
+ prev_yr_cnt    | 6413       
+ curr_yr_cnt    | 4905       
+ sales_cnt_diff | -1508      
+ sales_amt_diff | -140884.23 
+-RECORD 17-------------------
  prev_year      | 2001       
  year           | 2002       
- i_brand_id     | 7006009    
+ i_brand_id     | 9002008    
+ i_class_id     | 2          
+ i_category_id  | 9          
+ i_manufact_id  | 202        
+ prev_yr_cnt    | 5758       
+ curr_yr_cnt    | 4287       
+ sales_cnt_diff | -1471      
+ sales_amt_diff | -27415.18  
+-RECORD 18-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9004002    
+ i_class_id     | 4          
+ i_category_id  | 9          
+ i_manufact_id  | 55         
+ prev_yr_cnt    | 5596       
+ curr_yr_cnt    | 4196       
+ sales_cnt_diff | -1400      
+ sales_amt_diff | -277.92    
+-RECORD 19-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9010002    
+ i_class_id     | 10         
+ i_category_id  | 9          
+ i_manufact_id  | 432        
+ prev_yr_cnt    | 5153       
+ curr_yr_cnt    | 3767       
+ sales_cnt_diff | -1386      
+ sales_amt_diff | -56643.31  
+-RECORD 20-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9015003    
+ i_class_id     | 15         
+ i_category_id  | 9          
+ i_manufact_id  | 278        
+ prev_yr_cnt    | 5120       
+ curr_yr_cnt    | 3745       
+ sales_cnt_diff | -1375      
+ sales_amt_diff | -61503.40  
+-RECORD 21-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 5001001    
+ i_class_id     | 10         
+ i_category_id  | 9          
+ i_manufact_id  | 136        
+ prev_yr_cnt    | 5271       
+ curr_yr_cnt    | 3918       
+ sales_cnt_diff | -1353      
+ sales_amt_diff | -52691.74  
+-RECORD 22-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9007002    
+ i_class_id     | 7          
+ i_category_id  | 9          
+ i_manufact_id  | 207        
+ prev_yr_cnt    | 6416       
+ curr_yr_cnt    | 5088       
+ sales_cnt_diff | -1328      
+ sales_amt_diff | -28312.29  
+-RECORD 23-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9016004    
  i_class_id     | 8          
  i_category_id  | 9          
- i_manufact_id  | 116        
- prev_yr_cnt    | 5471       
- curr_yr_cnt    | 4528       
- sales_cnt_diff | -943       
- sales_amt_diff | -65664.87  
--RECORD 73-------------------
+ i_manufact_id  | 114        
+ prev_yr_cnt    | 5560       
+ curr_yr_cnt    | 4263       
+ sales_cnt_diff | -1297      
+ sales_amt_diff | -65169.90  
+-RECORD 24-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9007004    
+ i_class_id     | 7          
+ i_category_id  | 9          
+ i_manufact_id  | 968        
+ prev_yr_cnt    | 5625       
+ curr_yr_cnt    | 4330       
+ sales_cnt_diff | -1295      
+ sales_amt_diff | -86120.30  
+-RECORD 25-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9008008    
+ i_class_id     | 8          
+ i_category_id  | 9          
+ i_manufact_id  | 535        
+ prev_yr_cnt    | 6155       
+ curr_yr_cnt    | 4861       
+ sales_cnt_diff | -1294      
+ sales_amt_diff | -66647.47  
+-RECORD 26-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 3003001    
+ i_class_id     | 1          
+ i_category_id  | 9          
+ i_manufact_id  | 175        
+ prev_yr_cnt    | 6170       
+ curr_yr_cnt    | 4892       
+ sales_cnt_diff | -1278      
+ sales_amt_diff | -72260.64  
+-RECORD 27-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9010004    
+ i_class_id     | 3          
+ i_category_id  | 9          
+ i_manufact_id  | 948        
+ prev_yr_cnt    | 5640       
+ curr_yr_cnt    | 4387       
+ sales_cnt_diff | -1253      
+ sales_amt_diff | -34985.51  
+-RECORD 28-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9012008    
+ i_class_id     | 12         
+ i_category_id  | 9          
+ i_manufact_id  | 249        
+ prev_yr_cnt    | 5254       
+ curr_yr_cnt    | 4002       
+ sales_cnt_diff | -1252      
+ sales_amt_diff | -15484.88  
+-RECORD 29-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9015008    
+ i_class_id     | 15         
+ i_category_id  | 9          
+ i_manufact_id  | 281        
+ prev_yr_cnt    | 5558       
+ curr_yr_cnt    | 4315       
+ sales_cnt_diff | -1243      
+ sales_amt_diff | 10022.91   
+-RECORD 30-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9006004    
+ i_class_id     | 6          
+ i_category_id  | 9          
+ i_manufact_id  | 620        
+ prev_yr_cnt    | 4822       
+ curr_yr_cnt    | 3594       
+ sales_cnt_diff | -1228      
+ sales_amt_diff | -19309.88  
+-RECORD 31-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9010008    
+ i_class_id     | 10         
+ i_category_id  | 9          
+ i_manufact_id  | 171        
+ prev_yr_cnt    | 6500       
+ curr_yr_cnt    | 5279       
+ sales_cnt_diff | -1221      
+ sales_amt_diff | -73654.23  
+-RECORD 32-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9004008    
+ i_class_id     | 4          
+ i_category_id  | 9          
+ i_manufact_id  | 256        
+ prev_yr_cnt    | 5366       
+ curr_yr_cnt    | 4164       
+ sales_cnt_diff | -1202      
+ sales_amt_diff | -93628.46  
+-RECORD 33-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9008008    
+ i_class_id     | 8          
+ i_category_id  | 9          
+ i_manufact_id  | 82         
+ prev_yr_cnt    | 6042       
+ curr_yr_cnt    | 4852       
+ sales_cnt_diff | -1190      
+ sales_amt_diff | -78558.05  
+-RECORD 34-------------------
  prev_year      | 2001       
  year           | 2002       
  i_brand_id     | 9014010    
- i_class_id     | 15         
+ i_class_id     | 2          
  i_category_id  | 9          
- i_manufact_id  | 151        
- prev_yr_cnt    | 5633       
- curr_yr_cnt    | 4701       
- sales_cnt_diff | -932       
- sales_amt_diff | 7429.42    
--RECORD 74-------------------
+ i_manufact_id  | 727        
+ prev_yr_cnt    | 6579       
+ curr_yr_cnt    | 5396       
+ sales_cnt_diff | -1183      
+ sales_amt_diff | -45368.94  
+-RECORD 35-------------------
  prev_year      | 2001       
  year           | 2002       
- i_brand_id     | 9003002    
- i_class_id     | 3          
+ i_brand_id     | 10002014   
+ i_class_id     | 1          
  i_category_id  | 9          
- i_manufact_id  | 877        
- prev_yr_cnt    | 6303       
- curr_yr_cnt    | 5379       
- sales_cnt_diff | -924       
- sales_amt_diff | -45324.79  
--RECORD 75-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9006008    
- i_class_id     | 6          
- i_category_id  | 9          
- i_manufact_id  | 162        
- prev_yr_cnt    | 5169       
- curr_yr_cnt    | 4251       
- sales_cnt_diff | -918       
- sales_amt_diff | -69642.81  
--RECORD 76-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9008010    
- i_class_id     | 8          
- i_category_id  | 9          
- i_manufact_id  | 503        
- prev_yr_cnt    | 5526       
- curr_yr_cnt    | 4608       
- sales_cnt_diff | -918       
- sales_amt_diff | -49021.02  
--RECORD 77-------------------
+ i_manufact_id  | 12         
+ prev_yr_cnt    | 5662       
+ curr_yr_cnt    | 4515       
+ sales_cnt_diff | -1147      
+ sales_amt_diff | -47170.70  
+-RECORD 36-------------------
  prev_year      | 2001       
  year           | 2002       
  i_brand_id     | 9005002    
  i_class_id     | 5          
  i_category_id  | 9          
- i_manufact_id  | 530        
- prev_yr_cnt    | 4962       
- curr_yr_cnt    | 4049       
- sales_cnt_diff | -913       
- sales_amt_diff | -51406.91  
+ i_manufact_id  | 105        
+ prev_yr_cnt    | 5650       
+ curr_yr_cnt    | 4508       
+ sales_cnt_diff | -1142      
+ sales_amt_diff | -75927.61  
+-RECORD 37-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 1001001    
+ i_class_id     | 1          
+ i_category_id  | 9          
+ i_manufact_id  | 183        
+ prev_yr_cnt    | 5538       
+ curr_yr_cnt    | 4417       
+ sales_cnt_diff | -1121      
+ sales_amt_diff | -34086.49  
+-RECORD 38-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 8015005    
+ i_class_id     | 11         
+ i_category_id  | 9          
+ i_manufact_id  | 898        
+ prev_yr_cnt    | 5677       
+ curr_yr_cnt    | 4557       
+ sales_cnt_diff | -1120      
+ sales_amt_diff | -49916.13  
+-RECORD 39-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9016010    
+ i_class_id     | 16         
+ i_category_id  | 9          
+ i_manufact_id  | 662        
+ prev_yr_cnt    | 5306       
+ curr_yr_cnt    | 4197       
+ sales_cnt_diff | -1109      
+ sales_amt_diff | -29664.55  
+-RECORD 40-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 2001001    
+ i_class_id     | 1          
+ i_category_id  | 9          
+ i_manufact_id  | 151        
+ prev_yr_cnt    | 6309       
+ curr_yr_cnt    | 5200       
+ sales_cnt_diff | -1109      
+ sales_amt_diff | -13881.98  
+-RECORD 41-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 7007001    
+ i_class_id     | 12         
+ i_category_id  | 9          
+ i_manufact_id  | 221        
+ prev_yr_cnt    | 6250       
+ curr_yr_cnt    | 5147       
+ sales_cnt_diff | -1103      
+ sales_amt_diff | 8445.22    
+-RECORD 42-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9010008    
+ i_class_id     | 10         
+ i_category_id  | 9          
+ i_manufact_id  | 106        
+ prev_yr_cnt    | 5739       
+ curr_yr_cnt    | 4637       
+ sales_cnt_diff | -1102      
+ sales_amt_diff | -39967.26  
+-RECORD 43-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 5001001    
+ i_class_id     | 6          
+ i_category_id  | 9          
+ i_manufact_id  | 201        
+ prev_yr_cnt    | 5714       
+ curr_yr_cnt    | 4615       
+ sales_cnt_diff | -1099      
+ sales_amt_diff | -2073.61   
+-RECORD 44-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9002004    
+ i_class_id     | 2          
+ i_category_id  | 9          
+ i_manufact_id  | 578        
+ prev_yr_cnt    | 5976       
+ curr_yr_cnt    | 4881       
+ sales_cnt_diff | -1095      
+ sales_amt_diff | -26222.70  
+-RECORD 45-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9013010    
+ i_class_id     | 12         
+ i_category_id  | 9          
+ i_manufact_id  | 28         
+ prev_yr_cnt    | 5672       
+ curr_yr_cnt    | 4579       
+ sales_cnt_diff | -1093      
+ sales_amt_diff | -61365.10  
+-RECORD 46-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9003002    
+ i_class_id     | 3          
+ i_category_id  | 9          
+ i_manufact_id  | 238        
+ prev_yr_cnt    | 5784       
+ curr_yr_cnt    | 4694       
+ sales_cnt_diff | -1090      
+ sales_amt_diff | -52094.93  
+-RECORD 47-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9012010    
+ i_class_id     | 12         
+ i_category_id  | 9          
+ i_manufact_id  | 4          
+ prev_yr_cnt    | 6214       
+ curr_yr_cnt    | 5128       
+ sales_cnt_diff | -1086      
+ sales_amt_diff | -41244.90  
+-RECORD 48-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 4003001    
+ i_class_id     | 6          
+ i_category_id  | 9          
+ i_manufact_id  | 356        
+ prev_yr_cnt    | 5890       
+ curr_yr_cnt    | 4815       
+ sales_cnt_diff | -1075      
+ sales_amt_diff | -19594.68  
+-RECORD 49-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9009002    
+ i_class_id     | 9          
+ i_category_id  | 9          
+ i_manufact_id  | 633        
+ prev_yr_cnt    | 5839       
+ curr_yr_cnt    | 4786       
+ sales_cnt_diff | -1053      
+ sales_amt_diff | -40163.90  
+-RECORD 50-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9006010    
+ i_class_id     | 6          
+ i_category_id  | 9          
+ i_manufact_id  | 100        
+ prev_yr_cnt    | 5322       
+ curr_yr_cnt    | 4271       
+ sales_cnt_diff | -1051      
+ sales_amt_diff | -65656.49  
+-RECORD 51-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9003002    
+ i_class_id     | 3          
+ i_category_id  | 9          
+ i_manufact_id  | 130        
+ prev_yr_cnt    | 5708       
+ curr_yr_cnt    | 4658       
+ sales_cnt_diff | -1050      
+ sales_amt_diff | -121435.05 
+-RECORD 52-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9011004    
+ i_class_id     | 3          
+ i_category_id  | 9          
+ i_manufact_id  | 115        
+ prev_yr_cnt    | 5101       
+ curr_yr_cnt    | 4064       
+ sales_cnt_diff | -1037      
+ sales_amt_diff | -38404.07  
+-RECORD 53-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9006008    
+ i_class_id     | 6          
+ i_category_id  | 9          
+ i_manufact_id  | 156        
+ prev_yr_cnt    | 5824       
+ curr_yr_cnt    | 4793       
+ sales_cnt_diff | -1031      
+ sales_amt_diff | -16295.15  
+-RECORD 54-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 4004001    
+ i_class_id     | 10         
+ i_category_id  | 9          
+ i_manufact_id  | 105        
+ prev_yr_cnt    | 5560       
+ curr_yr_cnt    | 4533       
+ sales_cnt_diff | -1027      
+ sales_amt_diff | -29705.36  
+-RECORD 55-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9009008    
+ i_class_id     | 9          
+ i_category_id  | 9          
+ i_manufact_id  | 3          
+ prev_yr_cnt    | 5731       
+ curr_yr_cnt    | 4718       
+ sales_cnt_diff | -1013      
+ sales_amt_diff | -62660.48  
+-RECORD 56-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 10005001   
+ i_class_id     | 5          
+ i_category_id  | 9          
+ i_manufact_id  | 65         
+ prev_yr_cnt    | 5890       
+ curr_yr_cnt    | 4879       
+ sales_cnt_diff | -1011      
+ sales_amt_diff | -57577.01  
+-RECORD 57-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9007008    
+ i_class_id     | 7          
+ i_category_id  | 9          
+ i_manufact_id  | 122        
+ prev_yr_cnt    | 6085       
+ curr_yr_cnt    | 5077       
+ sales_cnt_diff | -1008      
+ sales_amt_diff | -108804.86 
+-RECORD 58-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9001008    
+ i_class_id     | 1          
+ i_category_id  | 9          
+ i_manufact_id  | 258        
+ prev_yr_cnt    | 5714       
+ curr_yr_cnt    | 4706       
+ sales_cnt_diff | -1008      
+ sales_amt_diff | -73311.07  
+-RECORD 59-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9003008    
+ i_class_id     | 3          
+ i_category_id  | 9          
+ i_manufact_id  | 382        
+ prev_yr_cnt    | 5145       
+ curr_yr_cnt    | 4143       
+ sales_cnt_diff | -1002      
+ sales_amt_diff | -23005.48  
+-RECORD 60-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 2001001    
+ i_class_id     | 1          
+ i_category_id  | 9          
+ i_manufact_id  | 177        
+ prev_yr_cnt    | 5711       
+ curr_yr_cnt    | 4718       
+ sales_cnt_diff | -993       
+ sales_amt_diff | -45422.40  
+-RECORD 61-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 8002001    
+ i_class_id     | 13         
+ i_category_id  | 9          
+ i_manufact_id  | 268        
+ prev_yr_cnt    | 5521       
+ curr_yr_cnt    | 4545       
+ sales_cnt_diff | -976       
+ sales_amt_diff | -50681.49  
+-RECORD 62-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9010008    
+ i_class_id     | 10         
+ i_category_id  | 9          
+ i_manufact_id  | 9          
+ prev_yr_cnt    | 5549       
+ curr_yr_cnt    | 4578       
+ sales_cnt_diff | -971       
+ sales_amt_diff | 45104.79   
+-RECORD 63-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 5002001    
+ i_class_id     | 2          
+ i_category_id  | 9          
+ i_manufact_id  | 230        
+ prev_yr_cnt    | 5856       
+ curr_yr_cnt    | 4887       
+ sales_cnt_diff | -969       
+ sales_amt_diff | -25537.87  
+-RECORD 64-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 10015001   
+ i_class_id     | 1          
+ i_category_id  | 9          
+ i_manufact_id  | 399        
+ prev_yr_cnt    | 6188       
+ curr_yr_cnt    | 5225       
+ sales_cnt_diff | -963       
+ sales_amt_diff | -76365.39  
+-RECORD 65-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9010004    
+ i_class_id     | 10         
+ i_category_id  | 9          
+ i_manufact_id  | 110        
+ prev_yr_cnt    | 5035       
+ curr_yr_cnt    | 4082       
+ sales_cnt_diff | -953       
+ sales_amt_diff | -81282.12  
+-RECORD 66-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9013010    
+ i_class_id     | 3          
+ i_category_id  | 9          
+ i_manufact_id  | 235        
+ prev_yr_cnt    | 5771       
+ curr_yr_cnt    | 4821       
+ sales_cnt_diff | -950       
+ sales_amt_diff | -81516.67  
+-RECORD 67-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9003004    
+ i_class_id     | 3          
+ i_category_id  | 9          
+ i_manufact_id  | 311        
+ prev_yr_cnt    | 5414       
+ curr_yr_cnt    | 4467       
+ sales_cnt_diff | -947       
+ sales_amt_diff | -19498.98  
+-RECORD 68-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9007008    
+ i_class_id     | 7          
+ i_category_id  | 9          
+ i_manufact_id  | 766        
+ prev_yr_cnt    | 5412       
+ curr_yr_cnt    | 4470       
+ sales_cnt_diff | -942       
+ sales_amt_diff | -43150.76  
+-RECORD 69-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9010008    
+ i_class_id     | 10         
+ i_category_id  | 9          
+ i_manufact_id  | 621        
+ prev_yr_cnt    | 5897       
+ curr_yr_cnt    | 4955       
+ sales_cnt_diff | -942       
+ sales_amt_diff | -1466.75   
+-RECORD 70-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 3003001    
+ i_class_id     | 9          
+ i_category_id  | 9          
+ i_manufact_id  | 210        
+ prev_yr_cnt    | 5703       
+ curr_yr_cnt    | 4761       
+ sales_cnt_diff | -942       
+ sales_amt_diff | -22794.72  
+-RECORD 71-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 4001001    
+ i_class_id     | 15         
+ i_category_id  | 9          
+ i_manufact_id  | 42         
+ prev_yr_cnt    | 5385       
+ curr_yr_cnt    | 4444       
+ sales_cnt_diff | -941       
+ sales_amt_diff | -77081.27  
+-RECORD 72-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9012010    
+ i_class_id     | 12         
+ i_category_id  | 9          
+ i_manufact_id  | 268        
+ prev_yr_cnt    | 5363       
+ curr_yr_cnt    | 4425       
+ sales_cnt_diff | -938       
+ sales_amt_diff | -13775.61  
+-RECORD 73-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 4002001    
+ i_class_id     | 2          
+ i_category_id  | 9          
+ i_manufact_id  | 891        
+ prev_yr_cnt    | 6168       
+ curr_yr_cnt    | 5233       
+ sales_cnt_diff | -935       
+ sales_amt_diff | -54473.40  
+-RECORD 74-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 10011013   
+ i_class_id     | 11         
+ i_category_id  | 9          
+ i_manufact_id  | 123        
+ prev_yr_cnt    | 6141       
+ curr_yr_cnt    | 5207       
+ sales_cnt_diff | -934       
+ sales_amt_diff | -77290.63  
+-RECORD 75-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9005002    
+ i_class_id     | 5          
+ i_category_id  | 9          
+ i_manufact_id  | 379        
+ prev_yr_cnt    | 5673       
+ curr_yr_cnt    | 4742       
+ sales_cnt_diff | -931       
+ sales_amt_diff | -66550.24  
+-RECORD 76-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9005002    
+ i_class_id     | 5          
+ i_category_id  | 9          
+ i_manufact_id  | 35         
+ prev_yr_cnt    | 6085       
+ curr_yr_cnt    | 5166       
+ sales_cnt_diff | -919       
+ sales_amt_diff | -23898.75  
+-RECORD 77-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9014008    
+ i_class_id     | 14         
+ i_category_id  | 9          
+ i_manufact_id  | 904        
+ prev_yr_cnt    | 5637       
+ curr_yr_cnt    | 4725       
+ sales_cnt_diff | -912       
+ sales_amt_diff | -54696.64  
 -RECORD 78-------------------
  prev_year      | 2001       
  year           | 2002       
  i_brand_id     | 9010002    
  i_class_id     | 10         
  i_category_id  | 9          
- i_manufact_id  | 236        
- prev_yr_cnt    | 5107       
- curr_yr_cnt    | 4195       
- sales_cnt_diff | -912       
- sales_amt_diff | -68196.83  
+ i_manufact_id  | 351        
+ prev_yr_cnt    | 5553       
+ curr_yr_cnt    | 4668       
+ sales_cnt_diff | -885       
+ sales_amt_diff | -58399.99  
 -RECORD 79-------------------
  prev_year      | 2001       
  year           | 2002       
- i_brand_id     | 9015004    
- i_class_id     | 15         
+ i_brand_id     | 9002008    
+ i_class_id     | 2          
  i_category_id  | 9          
- i_manufact_id  | 134        
- prev_yr_cnt    | 4996       
- curr_yr_cnt    | 4092       
- sales_cnt_diff | -904       
- sales_amt_diff | -20839.46  
+ i_manufact_id  | 603        
+ prev_yr_cnt    | 5399       
+ curr_yr_cnt    | 4518       
+ sales_cnt_diff | -881       
+ sales_amt_diff | -8944.74   
 -RECORD 80-------------------
  prev_year      | 2001       
  year           | 2002       
- i_brand_id     | 9009009    
- i_class_id     | 6          
+ i_brand_id     | 9005002    
+ i_class_id     | 5          
  i_category_id  | 9          
- i_manufact_id  | 181        
- prev_yr_cnt    | 5283       
- curr_yr_cnt    | 4380       
- sales_cnt_diff | -903       
- sales_amt_diff | -50577.89  
+ i_manufact_id  | 226        
+ prev_yr_cnt    | 6438       
+ curr_yr_cnt    | 5559       
+ sales_cnt_diff | -879       
+ sales_amt_diff | -78309.56  
 -RECORD 81-------------------
  prev_year      | 2001       
  year           | 2002       
- i_brand_id     | 9009010    
+ i_brand_id     | 9016008    
  i_class_id     | 16         
  i_category_id  | 9          
- i_manufact_id  | 590        
- prev_yr_cnt    | 4684       
- curr_yr_cnt    | 3787       
- sales_cnt_diff | -897       
- sales_amt_diff | -42032.78  
+ i_manufact_id  | 134        
+ prev_yr_cnt    | 5482       
+ curr_yr_cnt    | 4617       
+ sales_cnt_diff | -865       
+ sales_amt_diff | -93343.25  
 -RECORD 82-------------------
  prev_year      | 2001       
  year           | 2002       
- i_brand_id     | 9006008    
- i_class_id     | 6          
+ i_brand_id     | 7004007    
+ i_class_id     | 2          
  i_category_id  | 9          
- i_manufact_id  | 221        
- prev_yr_cnt    | 5238       
- curr_yr_cnt    | 4347       
- sales_cnt_diff | -891       
- sales_amt_diff | -110703.28 
+ i_manufact_id  | 248        
+ prev_yr_cnt    | 5385       
+ curr_yr_cnt    | 4527       
+ sales_cnt_diff | -858       
+ sales_amt_diff | -59997.87  
 -RECORD 83-------------------
  prev_year      | 2001       
  year           | 2002       
- i_brand_id     | 10009017   
- i_class_id     | 9          
+ i_brand_id     | 9002002    
+ i_class_id     | 2          
  i_category_id  | 9          
- i_manufact_id  | 640        
- prev_yr_cnt    | 5562       
- curr_yr_cnt    | 4682       
- sales_cnt_diff | -880       
- sales_amt_diff | -91021.88  
+ i_manufact_id  | 556        
+ prev_yr_cnt    | 5690       
+ curr_yr_cnt    | 4832       
+ sales_cnt_diff | -858       
+ sales_amt_diff | 2965.47    
 -RECORD 84-------------------
  prev_year      | 2001       
  year           | 2002       
- i_brand_id     | 7013003    
- i_class_id     | 13         
+ i_brand_id     | 6012003    
+ i_class_id     | 9          
  i_category_id  | 9          
- i_manufact_id  | 313        
- prev_yr_cnt    | 5161       
- curr_yr_cnt    | 4284       
- sales_cnt_diff | -877       
- sales_amt_diff | -55538.42  
+ i_manufact_id  | 48         
+ prev_yr_cnt    | 5468       
+ curr_yr_cnt    | 4620       
+ sales_cnt_diff | -848       
+ sales_amt_diff | 17912.88   
 -RECORD 85-------------------
  prev_year      | 2001       
  year           | 2002       
- i_brand_id     | 3004001    
- i_class_id     | 12         
+ i_brand_id     | 9013010    
+ i_class_id     | 13         
  i_category_id  | 9          
- i_manufact_id  | 570        
- prev_yr_cnt    | 5053       
- curr_yr_cnt    | 4181       
- sales_cnt_diff | -872       
- sales_amt_diff | -81469.82  
+ i_manufact_id  | 288        
+ prev_yr_cnt    | 5473       
+ curr_yr_cnt    | 4631       
+ sales_cnt_diff | -842       
+ sales_amt_diff | 22917.88   
 -RECORD 86-------------------
  prev_year      | 2001       
  year           | 2002       
- i_brand_id     | 9009004    
+ i_brand_id     | 9009008    
  i_class_id     | 9          
  i_category_id  | 9          
- i_manufact_id  | 587        
- prev_yr_cnt    | 5131       
- curr_yr_cnt    | 4262       
- sales_cnt_diff | -869       
- sales_amt_diff | -31202.41  
+ i_manufact_id  | 958        
+ prev_yr_cnt    | 5837       
+ curr_yr_cnt    | 5002       
+ sales_cnt_diff | -835       
+ sales_amt_diff | -63092.62  
 -RECORD 87-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9015008    
+ i_class_id     | 15         
+ i_category_id  | 9          
+ i_manufact_id  | 384        
+ prev_yr_cnt    | 5348       
+ curr_yr_cnt    | 4519       
+ sales_cnt_diff | -829       
+ sales_amt_diff | -29937.40  
+-RECORD 88-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 1003001    
+ i_class_id     | 3          
+ i_category_id  | 9          
+ i_manufact_id  | 242        
+ prev_yr_cnt    | 5504       
+ curr_yr_cnt    | 4697       
+ sales_cnt_diff | -807       
+ sales_amt_diff | -10853.56  
+-RECORD 89-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9011002    
+ i_class_id     | 11         
+ i_category_id  | 9          
+ i_manufact_id  | 372        
+ prev_yr_cnt    | 5085       
+ curr_yr_cnt    | 4279       
+ sales_cnt_diff | -806       
+ sales_amt_diff | -78551.75  
+-RECORD 90-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9015002    
+ i_class_id     | 15         
+ i_category_id  | 9          
+ i_manufact_id  | 224        
+ prev_yr_cnt    | 5915       
+ curr_yr_cnt    | 5112       
+ sales_cnt_diff | -803       
+ sales_amt_diff | -46136.85  
+-RECORD 91-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9015002    
+ i_class_id     | 15         
+ i_category_id  | 9          
+ i_manufact_id  | 531        
+ prev_yr_cnt    | 5831       
+ curr_yr_cnt    | 5029       
+ sales_cnt_diff | -802       
+ sales_amt_diff | -10846.84  
+-RECORD 92-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 2004001    
+ i_class_id     | 16         
+ i_category_id  | 9          
+ i_manufact_id  | 443        
+ prev_yr_cnt    | 5269       
+ curr_yr_cnt    | 4475       
+ sales_cnt_diff | -794       
+ sales_amt_diff | -28869.68  
+-RECORD 93-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9003010    
+ i_class_id     | 3          
+ i_category_id  | 9          
+ i_manufact_id  | 269        
+ prev_yr_cnt    | 6297       
+ curr_yr_cnt    | 5505       
+ sales_cnt_diff | -792       
+ sales_amt_diff | -53827.19  
+-RECORD 94-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9012004    
+ i_class_id     | 12         
+ i_category_id  | 9          
+ i_manufact_id  | 808        
+ prev_yr_cnt    | 5796       
+ curr_yr_cnt    | 5006       
+ sales_cnt_diff | -790       
+ sales_amt_diff | -43025.36  
+-RECORD 95-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9007002    
+ i_class_id     | 7          
+ i_category_id  | 9          
+ i_manufact_id  | 306        
+ prev_yr_cnt    | 5398       
+ curr_yr_cnt    | 4608       
+ sales_cnt_diff | -790       
+ sales_amt_diff | -67953.64  
+-RECORD 96-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 6015001    
+ i_class_id     | 15         
+ i_category_id  | 9          
+ i_manufact_id  | 543        
+ prev_yr_cnt    | 5041       
+ curr_yr_cnt    | 4252       
+ sales_cnt_diff | -789       
+ sales_amt_diff | 3631.40    
+-RECORD 97-------------------
+ prev_year      | 2001       
+ year           | 2002       
+ i_brand_id     | 9004012    
+ i_class_id     | 4          
+ i_category_id  | 9          
+ i_manufact_id  | 621        
+ prev_yr_cnt    | 5974       
+ curr_yr_cnt    | 5186       
+ sales_cnt_diff | -788       
+ sales_amt_diff | 52156.56   
+-RECORD 98-------------------
  prev_year      | 2001       
  year           | 2002       
  i_brand_id     | 9010008    
  i_class_id     | 10         
  i_category_id  | 9          
- i_manufact_id  | 86         
- prev_yr_cnt    | 5074       
- curr_yr_cnt    | 4211       
- sales_cnt_diff | -863       
- sales_amt_diff | -31897.54  
--RECORD 88-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9006002    
- i_class_id     | 6          
- i_category_id  | 9          
- i_manufact_id  | 230        
- prev_yr_cnt    | 5616       
- curr_yr_cnt    | 4756       
- sales_cnt_diff | -860       
- sales_amt_diff | -39142.42  
--RECORD 89-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9001008    
- i_class_id     | 1          
- i_category_id  | 9          
- i_manufact_id  | 533        
- prev_yr_cnt    | 6196       
- curr_yr_cnt    | 5337       
- sales_cnt_diff | -859       
- sales_amt_diff | -70174.46  
--RECORD 90-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9004010    
- i_class_id     | 4          
- i_category_id  | 9          
- i_manufact_id  | 102        
- prev_yr_cnt    | 6146       
- curr_yr_cnt    | 5291       
- sales_cnt_diff | -855       
- sales_amt_diff | -66567.87  
--RECORD 91-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9002004    
- i_class_id     | 2          
- i_category_id  | 9          
- i_manufact_id  | 179        
- prev_yr_cnt    | 5203       
- curr_yr_cnt    | 4351       
- sales_cnt_diff | -852       
- sales_amt_diff | -26624.64  
--RECORD 92-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9016008    
- i_class_id     | 16         
- i_category_id  | 9          
- i_manufact_id  | 69         
- prev_yr_cnt    | 5922       
- curr_yr_cnt    | 5072       
- sales_cnt_diff | -850       
- sales_amt_diff | -31016.10  
--RECORD 93-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9008010    
- i_class_id     | 8          
- i_category_id  | 9          
- i_manufact_id  | 81         
- prev_yr_cnt    | 5520       
- curr_yr_cnt    | 4672       
- sales_cnt_diff | -848       
- sales_amt_diff | -44217.60  
--RECORD 94-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9001002    
- i_class_id     | 1          
- i_category_id  | 9          
- i_manufact_id  | 927        
- prev_yr_cnt    | 5858       
- curr_yr_cnt    | 5013       
- sales_cnt_diff | -845       
- sales_amt_diff | 8179.45    
--RECORD 95-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 1001001    
- i_class_id     | 1          
- i_category_id  | 9          
- i_manufact_id  | 116        
- prev_yr_cnt    | 5773       
- curr_yr_cnt    | 4930       
- sales_cnt_diff | -843       
- sales_amt_diff | 700.02     
--RECORD 96-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9012008    
- i_class_id     | 12         
- i_category_id  | 9          
- i_manufact_id  | 274        
- prev_yr_cnt    | 6154       
- curr_yr_cnt    | 5316       
- sales_cnt_diff | -838       
- sales_amt_diff | -85490.33  
--RECORD 97-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 6008007    
- i_class_id     | 8          
- i_category_id  | 9          
- i_manufact_id  | 22         
- prev_yr_cnt    | 5439       
- curr_yr_cnt    | 4605       
- sales_cnt_diff | -834       
- sales_amt_diff | -25617.83  
--RECORD 98-------------------
- prev_year      | 2001       
- year           | 2002       
- i_brand_id     | 9016008    
- i_class_id     | 16         
- i_category_id  | 9          
- i_manufact_id  | 601        
- prev_yr_cnt    | 6463       
- curr_yr_cnt    | 5633       
- sales_cnt_diff | -830       
- sales_amt_diff | 22715.94   
+ i_manufact_id  | 284        
+ prev_yr_cnt    | 5382       
+ curr_yr_cnt    | 4597       
+ sales_cnt_diff | -785       
+ sales_amt_diff | 22162.92   
 -RECORD 99-------------------
  prev_year      | 2001       
  year           | 2002       
- i_brand_id     | 9001008    
- i_class_id     | 1          
+ i_brand_id     | 9011002    
+ i_class_id     | 11         
  i_category_id  | 9          
- i_manufact_id  | 170        
- prev_yr_cnt    | 5970       
- curr_yr_cnt    | 5142       
- sales_cnt_diff | -828       
- sales_amt_diff | -2265.18
+ i_manufact_id  | 42         
+ prev_yr_cnt    | 5750       
+ curr_yr_cnt    | 4968       
+ sales_cnt_diff | -782       
+ sales_amt_diff | -87125.33
              

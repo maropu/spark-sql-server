@@ -7,11 +7,11 @@
  min(cd_dep_count)          | 0    
  max(cd_dep_count)          | 0    
  avg(cd_dep_count)          | 0.0  
- cd_dep_employed_count      | 2    
+ cd_dep_employed_count      | 1    
  cnt2                       | 1    
- min(cd_dep_employed_count) | 2    
- max(cd_dep_employed_count) | 2    
- avg(cd_dep_employed_count) | 2.0  
+ min(cd_dep_employed_count) | 1    
+ max(cd_dep_employed_count) | 1    
+ avg(cd_dep_employed_count) | 1.0  
  cd_dep_college_count       | 2    
  cnt3                       | 1    
  min(cd_dep_college_count)  | 2    
@@ -30,11 +30,11 @@
  min(cd_dep_employed_count) | 3    
  max(cd_dep_employed_count) | 3    
  avg(cd_dep_employed_count) | 3.0  
- cd_dep_college_count       | 4    
+ cd_dep_college_count       | 0    
  cnt3                       | 1    
- min(cd_dep_college_count)  | 4    
- max(cd_dep_college_count)  | 4    
- avg(cd_dep_college_count)  | 4.0  
+ min(cd_dep_college_count)  | 0    
+ max(cd_dep_college_count)  | 0    
+ avg(cd_dep_college_count)  | 0.0  
 -RECORD 2--------------------------
  ca_state                   | null 
  cd_gender                  | F    
@@ -48,11 +48,11 @@
  min(cd_dep_employed_count) | 5    
  max(cd_dep_employed_count) | 5    
  avg(cd_dep_employed_count) | 5.0  
- cd_dep_college_count       | 2    
+ cd_dep_college_count       | 0    
  cnt3                       | 1    
- min(cd_dep_college_count)  | 2    
- max(cd_dep_college_count)  | 2    
- avg(cd_dep_college_count)  | 2.0  
+ min(cd_dep_college_count)  | 0    
+ max(cd_dep_college_count)  | 0    
+ avg(cd_dep_college_count)  | 0.0  
 -RECORD 3--------------------------
  ca_state                   | null 
  cd_gender                  | F    
@@ -66,11 +66,11 @@
  min(cd_dep_employed_count) | 6    
  max(cd_dep_employed_count) | 6    
  avg(cd_dep_employed_count) | 6.0  
- cd_dep_college_count       | 4    
+ cd_dep_college_count       | 0    
  cnt3                       | 1    
- min(cd_dep_college_count)  | 4    
- max(cd_dep_college_count)  | 4    
- avg(cd_dep_college_count)  | 4.0  
+ min(cd_dep_college_count)  | 0    
+ max(cd_dep_college_count)  | 0    
+ avg(cd_dep_college_count)  | 0.0  
 -RECORD 4--------------------------
  ca_state                   | null 
  cd_gender                  | F    
@@ -97,29 +97,29 @@
  min(cd_dep_count)          | 1    
  max(cd_dep_count)          | 1    
  avg(cd_dep_count)          | 1.0  
- cd_dep_employed_count      | 4    
+ cd_dep_employed_count      | 5    
  cnt2                       | 1    
- min(cd_dep_employed_count) | 4    
- max(cd_dep_employed_count) | 4    
- avg(cd_dep_employed_count) | 4.0  
- cd_dep_college_count       | 4    
+ min(cd_dep_employed_count) | 5    
+ max(cd_dep_employed_count) | 5    
+ avg(cd_dep_employed_count) | 5.0  
+ cd_dep_college_count       | 3    
  cnt3                       | 1    
- min(cd_dep_college_count)  | 4    
- max(cd_dep_college_count)  | 4    
- avg(cd_dep_college_count)  | 4.0  
+ min(cd_dep_college_count)  | 3    
+ max(cd_dep_college_count)  | 3    
+ avg(cd_dep_college_count)  | 3.0  
 -RECORD 6--------------------------
  ca_state                   | null 
  cd_gender                  | F    
  cd_marital_status          | D    
  cnt1                       | 1    
- min(cd_dep_count)          | 1    
- max(cd_dep_count)          | 1    
- avg(cd_dep_count)          | 1.0  
- cd_dep_employed_count      | 4    
+ min(cd_dep_count)          | 3    
+ max(cd_dep_count)          | 3    
+ avg(cd_dep_count)          | 3.0  
+ cd_dep_employed_count      | 0    
  cnt2                       | 1    
- min(cd_dep_employed_count) | 4    
- max(cd_dep_employed_count) | 4    
- avg(cd_dep_employed_count) | 4.0  
+ min(cd_dep_employed_count) | 0    
+ max(cd_dep_employed_count) | 0    
+ avg(cd_dep_employed_count) | 0.0  
  cd_dep_college_count       | 5    
  cnt3                       | 1    
  min(cd_dep_college_count)  | 5    
@@ -130,27 +130,9 @@
  cd_gender                  | F    
  cd_marital_status          | D    
  cnt1                       | 1    
- min(cd_dep_count)          | 2    
- max(cd_dep_count)          | 2    
- avg(cd_dep_count)          | 2.0  
- cd_dep_employed_count      | 0    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 0    
- max(cd_dep_employed_count) | 0    
- avg(cd_dep_employed_count) | 0.0  
- cd_dep_college_count       | 4    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 4    
- max(cd_dep_college_count)  | 4    
- avg(cd_dep_college_count)  | 4.0  
--RECORD 8--------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | D    
- cnt1                       | 1    
- min(cd_dep_count)          | 2    
- max(cd_dep_count)          | 2    
- avg(cd_dep_count)          | 2.0  
+ min(cd_dep_count)          | 3    
+ max(cd_dep_count)          | 3    
+ avg(cd_dep_count)          | 3.0  
  cd_dep_employed_count      | 1    
  cnt2                       | 1    
  min(cd_dep_employed_count) | 1    
@@ -161,55 +143,73 @@
  min(cd_dep_college_count)  | 3    
  max(cd_dep_college_count)  | 3    
  avg(cd_dep_college_count)  | 3.0  
+-RECORD 8--------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | D    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 3    
+ max(cd_dep_count)          | 3    
+ avg(cd_dep_count)          | 3.0  
+ cd_dep_employed_count      | 5    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 5    
+ max(cd_dep_employed_count) | 5    
+ avg(cd_dep_employed_count) | 5.0  
+ cd_dep_college_count       | 4    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 4    
+ max(cd_dep_college_count)  | 4    
+ avg(cd_dep_college_count)  | 4.0  
 -RECORD 9--------------------------
  ca_state                   | null 
  cd_gender                  | F    
  cd_marital_status          | D    
  cnt1                       | 1    
- min(cd_dep_count)          | 2    
- max(cd_dep_count)          | 2    
- avg(cd_dep_count)          | 2.0  
- cd_dep_employed_count      | 6    
+ min(cd_dep_count)          | 4    
+ max(cd_dep_count)          | 4    
+ avg(cd_dep_count)          | 4.0  
+ cd_dep_employed_count      | 2    
  cnt2                       | 1    
- min(cd_dep_employed_count) | 6    
- max(cd_dep_employed_count) | 6    
- avg(cd_dep_employed_count) | 6.0  
- cd_dep_college_count       | 1    
+ min(cd_dep_employed_count) | 2    
+ max(cd_dep_employed_count) | 2    
+ avg(cd_dep_employed_count) | 2.0  
+ cd_dep_college_count       | 5    
  cnt3                       | 1    
- min(cd_dep_college_count)  | 1    
- max(cd_dep_college_count)  | 1    
- avg(cd_dep_college_count)  | 1.0  
+ min(cd_dep_college_count)  | 5    
+ max(cd_dep_college_count)  | 5    
+ avg(cd_dep_college_count)  | 5.0  
 -RECORD 10-------------------------
  ca_state                   | null 
  cd_gender                  | F    
  cd_marital_status          | D    
  cnt1                       | 1    
- min(cd_dep_count)          | 3    
- max(cd_dep_count)          | 3    
- avg(cd_dep_count)          | 3.0  
- cd_dep_employed_count      | 3    
+ min(cd_dep_count)          | 4    
+ max(cd_dep_count)          | 4    
+ avg(cd_dep_count)          | 4.0  
+ cd_dep_employed_count      | 4    
  cnt2                       | 1    
- min(cd_dep_employed_count) | 3    
- max(cd_dep_employed_count) | 3    
- avg(cd_dep_employed_count) | 3.0  
- cd_dep_college_count       | 2    
+ min(cd_dep_employed_count) | 4    
+ max(cd_dep_employed_count) | 4    
+ avg(cd_dep_employed_count) | 4.0  
+ cd_dep_college_count       | 4    
  cnt3                       | 1    
- min(cd_dep_college_count)  | 2    
- max(cd_dep_college_count)  | 2    
- avg(cd_dep_college_count)  | 2.0  
+ min(cd_dep_college_count)  | 4    
+ max(cd_dep_college_count)  | 4    
+ avg(cd_dep_college_count)  | 4.0  
 -RECORD 11-------------------------
  ca_state                   | null 
  cd_gender                  | F    
  cd_marital_status          | D    
  cnt1                       | 1    
- min(cd_dep_count)          | 3    
- max(cd_dep_count)          | 3    
- avg(cd_dep_count)          | 3.0  
- cd_dep_employed_count      | 3    
+ min(cd_dep_count)          | 6    
+ max(cd_dep_count)          | 6    
+ avg(cd_dep_count)          | 6.0  
+ cd_dep_employed_count      | 0    
  cnt2                       | 1    
- min(cd_dep_employed_count) | 3    
- max(cd_dep_employed_count) | 3    
- avg(cd_dep_employed_count) | 3.0  
+ min(cd_dep_employed_count) | 0    
+ max(cd_dep_employed_count) | 0    
+ avg(cd_dep_employed_count) | 0.0  
  cd_dep_college_count       | 6    
  cnt3                       | 1    
  min(cd_dep_college_count)  | 6    
@@ -220,27 +220,27 @@
  cd_gender                  | F    
  cd_marital_status          | D    
  cnt1                       | 1    
- min(cd_dep_count)          | 3    
- max(cd_dep_count)          | 3    
- avg(cd_dep_count)          | 3.0  
- cd_dep_employed_count      | 4    
+ min(cd_dep_count)          | 6    
+ max(cd_dep_count)          | 6    
+ avg(cd_dep_count)          | 6.0  
+ cd_dep_employed_count      | 5    
  cnt2                       | 1    
- min(cd_dep_employed_count) | 4    
- max(cd_dep_employed_count) | 4    
- avg(cd_dep_employed_count) | 4.0  
- cd_dep_college_count       | 1    
+ min(cd_dep_employed_count) | 5    
+ max(cd_dep_employed_count) | 5    
+ avg(cd_dep_employed_count) | 5.0  
+ cd_dep_college_count       | 4    
  cnt3                       | 1    
- min(cd_dep_college_count)  | 1    
- max(cd_dep_college_count)  | 1    
- avg(cd_dep_college_count)  | 1.0  
+ min(cd_dep_college_count)  | 4    
+ max(cd_dep_college_count)  | 4    
+ avg(cd_dep_college_count)  | 4.0  
 -RECORD 13-------------------------
  ca_state                   | null 
  cd_gender                  | F    
- cd_marital_status          | D    
+ cd_marital_status          | M    
  cnt1                       | 1    
- min(cd_dep_count)          | 4    
- max(cd_dep_count)          | 4    
- avg(cd_dep_count)          | 4.0  
+ min(cd_dep_count)          | 0    
+ max(cd_dep_count)          | 0    
+ avg(cd_dep_count)          | 0.0  
  cd_dep_employed_count      | 0    
  cnt2                       | 1    
  min(cd_dep_employed_count) | 0    
@@ -254,166 +254,58 @@
 -RECORD 14-------------------------
  ca_state                   | null 
  cd_gender                  | F    
- cd_marital_status          | D    
- cnt1                       | 1    
- min(cd_dep_count)          | 4    
- max(cd_dep_count)          | 4    
- avg(cd_dep_count)          | 4.0  
- cd_dep_employed_count      | 1    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 1    
- max(cd_dep_employed_count) | 1    
- avg(cd_dep_employed_count) | 1.0  
- cd_dep_college_count       | 1    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 1    
- max(cd_dep_college_count)  | 1    
- avg(cd_dep_college_count)  | 1.0  
--RECORD 15-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | D    
- cnt1                       | 1    
- min(cd_dep_count)          | 4    
- max(cd_dep_count)          | 4    
- avg(cd_dep_count)          | 4.0  
- cd_dep_employed_count      | 1    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 1    
- max(cd_dep_employed_count) | 1    
- avg(cd_dep_employed_count) | 1.0  
- cd_dep_college_count       | 4    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 4    
- max(cd_dep_college_count)  | 4    
- avg(cd_dep_college_count)  | 4.0  
--RECORD 16-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | D    
- cnt1                       | 1    
- min(cd_dep_count)          | 4    
- max(cd_dep_count)          | 4    
- avg(cd_dep_count)          | 4.0  
- cd_dep_employed_count      | 5    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 5    
- max(cd_dep_employed_count) | 5    
- avg(cd_dep_employed_count) | 5.0  
- cd_dep_college_count       | 6    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 6    
- max(cd_dep_college_count)  | 6    
- avg(cd_dep_college_count)  | 6.0  
--RECORD 17-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | D    
- cnt1                       | 1    
- min(cd_dep_count)          | 5    
- max(cd_dep_count)          | 5    
- avg(cd_dep_count)          | 5.0  
- cd_dep_employed_count      | 4    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 4    
- max(cd_dep_employed_count) | 4    
- avg(cd_dep_employed_count) | 4.0  
- cd_dep_college_count       | 3    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 3    
- max(cd_dep_college_count)  | 3    
- avg(cd_dep_college_count)  | 3.0  
--RECORD 18-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | D    
- cnt1                       | 1    
- min(cd_dep_count)          | 5    
- max(cd_dep_count)          | 5    
- avg(cd_dep_count)          | 5.0  
- cd_dep_employed_count      | 5    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 5    
- max(cd_dep_employed_count) | 5    
- avg(cd_dep_employed_count) | 5.0  
- cd_dep_college_count       | 2    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 2    
- max(cd_dep_college_count)  | 2    
- avg(cd_dep_college_count)  | 2.0  
--RECORD 19-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | D    
- cnt1                       | 1    
- min(cd_dep_count)          | 6    
- max(cd_dep_count)          | 6    
- avg(cd_dep_count)          | 6.0  
- cd_dep_employed_count      | 1    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 1    
- max(cd_dep_employed_count) | 1    
- avg(cd_dep_employed_count) | 1.0  
- cd_dep_college_count       | 3    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 3    
- max(cd_dep_college_count)  | 3    
- avg(cd_dep_college_count)  | 3.0  
--RECORD 20-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | D    
- cnt1                       | 1    
- min(cd_dep_count)          | 6    
- max(cd_dep_count)          | 6    
- avg(cd_dep_count)          | 6.0  
- cd_dep_employed_count      | 2    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 2    
- max(cd_dep_employed_count) | 2    
- avg(cd_dep_employed_count) | 2.0  
- cd_dep_college_count       | 2    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 2    
- max(cd_dep_college_count)  | 2    
- avg(cd_dep_college_count)  | 2.0  
--RECORD 21-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | D    
- cnt1                       | 1    
- min(cd_dep_count)          | 6    
- max(cd_dep_count)          | 6    
- avg(cd_dep_count)          | 6.0  
- cd_dep_employed_count      | 4    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 4    
- max(cd_dep_employed_count) | 4    
- avg(cd_dep_employed_count) | 4.0  
- cd_dep_college_count       | 1    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 1    
- max(cd_dep_college_count)  | 1    
- avg(cd_dep_college_count)  | 1.0  
--RECORD 22-------------------------
- ca_state                   | null 
- cd_gender                  | F    
  cd_marital_status          | M    
  cnt1                       | 1    
  min(cd_dep_count)          | 0    
  max(cd_dep_count)          | 0    
  avg(cd_dep_count)          | 0.0  
- cd_dep_employed_count      | 5    
+ cd_dep_employed_count      | 3    
  cnt2                       | 1    
- min(cd_dep_employed_count) | 5    
- max(cd_dep_employed_count) | 5    
- avg(cd_dep_employed_count) | 5.0  
- cd_dep_college_count       | 5    
+ min(cd_dep_employed_count) | 3    
+ max(cd_dep_employed_count) | 3    
+ avg(cd_dep_employed_count) | 3.0  
+ cd_dep_college_count       | 6    
  cnt3                       | 1    
- min(cd_dep_college_count)  | 5    
- max(cd_dep_college_count)  | 5    
- avg(cd_dep_college_count)  | 5.0  
--RECORD 23-------------------------
+ min(cd_dep_college_count)  | 6    
+ max(cd_dep_college_count)  | 6    
+ avg(cd_dep_college_count)  | 6.0  
+-RECORD 15-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | M    
+ cnt1                       | 2    
+ min(cd_dep_count)          | 1    
+ max(cd_dep_count)          | 1    
+ avg(cd_dep_count)          | 1.0  
+ cd_dep_employed_count      | 1    
+ cnt2                       | 2    
+ min(cd_dep_employed_count) | 1    
+ max(cd_dep_employed_count) | 1    
+ avg(cd_dep_employed_count) | 1.0  
+ cd_dep_college_count       | 0    
+ cnt3                       | 2    
+ min(cd_dep_college_count)  | 0    
+ max(cd_dep_college_count)  | 0    
+ avg(cd_dep_college_count)  | 0.0  
+-RECORD 16-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | M    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 1    
+ max(cd_dep_count)          | 1    
+ avg(cd_dep_count)          | 1.0  
+ cd_dep_employed_count      | 2    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 2    
+ max(cd_dep_employed_count) | 2    
+ avg(cd_dep_employed_count) | 2.0  
+ cd_dep_college_count       | 4    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 4    
+ max(cd_dep_college_count)  | 4    
+ avg(cd_dep_college_count)  | 4.0  
+-RECORD 17-------------------------
  ca_state                   | null 
  cd_gender                  | F    
  cd_marital_status          | M    
@@ -426,12 +318,12 @@
  min(cd_dep_employed_count) | 3    
  max(cd_dep_employed_count) | 3    
  avg(cd_dep_employed_count) | 3.0  
- cd_dep_college_count       | 0    
+ cd_dep_college_count       | 3    
  cnt3                       | 1    
- min(cd_dep_college_count)  | 0    
- max(cd_dep_college_count)  | 0    
- avg(cd_dep_college_count)  | 0.0  
--RECORD 24-------------------------
+ min(cd_dep_college_count)  | 3    
+ max(cd_dep_college_count)  | 3    
+ avg(cd_dep_college_count)  | 3.0  
+-RECORD 18-------------------------
  ca_state                   | null 
  cd_gender                  | F    
  cd_marital_status          | M    
@@ -439,71 +331,71 @@
  min(cd_dep_count)          | 1    
  max(cd_dep_count)          | 1    
  avg(cd_dep_count)          | 1.0  
- cd_dep_employed_count      | 6    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 6    
- max(cd_dep_employed_count) | 6    
- avg(cd_dep_employed_count) | 6.0  
- cd_dep_college_count       | 0    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 0    
- max(cd_dep_college_count)  | 0    
- avg(cd_dep_college_count)  | 0.0  
--RECORD 25-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | M    
- cnt1                       | 1    
- min(cd_dep_count)          | 1    
- max(cd_dep_count)          | 1    
- avg(cd_dep_count)          | 1.0  
- cd_dep_employed_count      | 6    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 6    
- max(cd_dep_employed_count) | 6    
- avg(cd_dep_employed_count) | 6.0  
- cd_dep_college_count       | 1    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 1    
- max(cd_dep_college_count)  | 1    
- avg(cd_dep_college_count)  | 1.0  
--RECORD 26-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | M    
- cnt1                       | 1    
- min(cd_dep_count)          | 2    
- max(cd_dep_count)          | 2    
- avg(cd_dep_count)          | 2.0  
- cd_dep_employed_count      | 2    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 2    
- max(cd_dep_employed_count) | 2    
- avg(cd_dep_employed_count) | 2.0  
- cd_dep_college_count       | 6    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 6    
- max(cd_dep_college_count)  | 6    
- avg(cd_dep_college_count)  | 6.0  
--RECORD 27-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | M    
- cnt1                       | 1    
- min(cd_dep_count)          | 2    
- max(cd_dep_count)          | 2    
- avg(cd_dep_count)          | 2.0  
  cd_dep_employed_count      | 4    
  cnt2                       | 1    
  min(cd_dep_employed_count) | 4    
  max(cd_dep_employed_count) | 4    
  avg(cd_dep_employed_count) | 4.0  
+ cd_dep_college_count       | 2    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 2    
+ max(cd_dep_college_count)  | 2    
+ avg(cd_dep_college_count)  | 2.0  
+-RECORD 19-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | M    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 1    
+ max(cd_dep_count)          | 1    
+ avg(cd_dep_count)          | 1.0  
+ cd_dep_employed_count      | 6    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 6    
+ max(cd_dep_employed_count) | 6    
+ avg(cd_dep_employed_count) | 6.0  
+ cd_dep_college_count       | 2    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 2    
+ max(cd_dep_college_count)  | 2    
+ avg(cd_dep_college_count)  | 2.0  
+-RECORD 20-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | M    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 2    
+ max(cd_dep_count)          | 2    
+ avg(cd_dep_count)          | 2.0  
+ cd_dep_employed_count      | 1    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 1    
+ max(cd_dep_employed_count) | 1    
+ avg(cd_dep_employed_count) | 1.0  
+ cd_dep_college_count       | 0    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 0    
+ max(cd_dep_college_count)  | 0    
+ avg(cd_dep_college_count)  | 0.0  
+-RECORD 21-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | M    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 2    
+ max(cd_dep_count)          | 2    
+ avg(cd_dep_count)          | 2.0  
+ cd_dep_employed_count      | 5    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 5    
+ max(cd_dep_employed_count) | 5    
+ avg(cd_dep_employed_count) | 5.0  
  cd_dep_college_count       | 4    
  cnt3                       | 1    
  min(cd_dep_college_count)  | 4    
  max(cd_dep_college_count)  | 4    
  avg(cd_dep_college_count)  | 4.0  
--RECORD 28-------------------------
+-RECORD 22-------------------------
  ca_state                   | null 
  cd_gender                  | F    
  cd_marital_status          | M    
@@ -511,6 +403,24 @@
  min(cd_dep_count)          | 3    
  max(cd_dep_count)          | 3    
  avg(cd_dep_count)          | 3.0  
+ cd_dep_employed_count      | 0    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 0    
+ max(cd_dep_employed_count) | 0    
+ avg(cd_dep_employed_count) | 0.0  
+ cd_dep_college_count       | 4    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 4    
+ max(cd_dep_college_count)  | 4    
+ avg(cd_dep_college_count)  | 4.0  
+-RECORD 23-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | M    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 4    
+ max(cd_dep_count)          | 4    
+ avg(cd_dep_count)          | 4.0  
  cd_dep_employed_count      | 2    
  cnt2                       | 1    
  min(cd_dep_employed_count) | 2    
@@ -521,32 +431,122 @@
  min(cd_dep_college_count)  | 1    
  max(cd_dep_college_count)  | 1    
  avg(cd_dep_college_count)  | 1.0  
+-RECORD 24-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | M    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 4    
+ max(cd_dep_count)          | 4    
+ avg(cd_dep_count)          | 4.0  
+ cd_dep_employed_count      | 4    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 4    
+ max(cd_dep_employed_count) | 4    
+ avg(cd_dep_employed_count) | 4.0  
+ cd_dep_college_count       | 1    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 1    
+ max(cd_dep_college_count)  | 1    
+ avg(cd_dep_college_count)  | 1.0  
+-RECORD 25-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | M    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 5    
+ max(cd_dep_count)          | 5    
+ avg(cd_dep_count)          | 5.0  
+ cd_dep_employed_count      | 1    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 1    
+ max(cd_dep_employed_count) | 1    
+ avg(cd_dep_employed_count) | 1.0  
+ cd_dep_college_count       | 2    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 2    
+ max(cd_dep_college_count)  | 2    
+ avg(cd_dep_college_count)  | 2.0  
+-RECORD 26-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | M    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 5    
+ max(cd_dep_count)          | 5    
+ avg(cd_dep_count)          | 5.0  
+ cd_dep_employed_count      | 3    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 3    
+ max(cd_dep_employed_count) | 3    
+ avg(cd_dep_employed_count) | 3.0  
+ cd_dep_college_count       | 3    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 3    
+ max(cd_dep_college_count)  | 3    
+ avg(cd_dep_college_count)  | 3.0  
+-RECORD 27-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | M    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 6    
+ max(cd_dep_count)          | 6    
+ avg(cd_dep_count)          | 6.0  
+ cd_dep_employed_count      | 2    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 2    
+ max(cd_dep_employed_count) | 2    
+ avg(cd_dep_employed_count) | 2.0  
+ cd_dep_college_count       | 2    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 2    
+ max(cd_dep_college_count)  | 2    
+ avg(cd_dep_college_count)  | 2.0  
+-RECORD 28-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | M    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 6    
+ max(cd_dep_count)          | 6    
+ avg(cd_dep_count)          | 6.0  
+ cd_dep_employed_count      | 2    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 2    
+ max(cd_dep_employed_count) | 2    
+ avg(cd_dep_employed_count) | 2.0  
+ cd_dep_college_count       | 3    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 3    
+ max(cd_dep_college_count)  | 3    
+ avg(cd_dep_college_count)  | 3.0  
 -RECORD 29-------------------------
  ca_state                   | null 
  cd_gender                  | F    
  cd_marital_status          | M    
  cnt1                       | 1    
- min(cd_dep_count)          | 3    
- max(cd_dep_count)          | 3    
- avg(cd_dep_count)          | 3.0  
- cd_dep_employed_count      | 5    
+ min(cd_dep_count)          | 6    
+ max(cd_dep_count)          | 6    
+ avg(cd_dep_count)          | 6.0  
+ cd_dep_employed_count      | 3    
  cnt2                       | 1    
- min(cd_dep_employed_count) | 5    
- max(cd_dep_employed_count) | 5    
- avg(cd_dep_employed_count) | 5.0  
- cd_dep_college_count       | 0    
+ min(cd_dep_employed_count) | 3    
+ max(cd_dep_employed_count) | 3    
+ avg(cd_dep_employed_count) | 3.0  
+ cd_dep_college_count       | 4    
  cnt3                       | 1    
- min(cd_dep_college_count)  | 0    
- max(cd_dep_college_count)  | 0    
- avg(cd_dep_college_count)  | 0.0  
+ min(cd_dep_college_count)  | 4    
+ max(cd_dep_college_count)  | 4    
+ avg(cd_dep_college_count)  | 4.0  
 -RECORD 30-------------------------
  ca_state                   | null 
  cd_gender                  | F    
  cd_marital_status          | M    
  cnt1                       | 1    
- min(cd_dep_count)          | 3    
- max(cd_dep_count)          | 3    
- avg(cd_dep_count)          | 3.0  
+ min(cd_dep_count)          | 6    
+ max(cd_dep_count)          | 6    
+ avg(cd_dep_count)          | 6.0  
  cd_dep_employed_count      | 5    
  cnt2                       | 1    
  min(cd_dep_employed_count) | 5    
@@ -560,112 +560,40 @@
 -RECORD 31-------------------------
  ca_state                   | null 
  cd_gender                  | F    
- cd_marital_status          | M    
+ cd_marital_status          | S    
  cnt1                       | 1    
- min(cd_dep_count)          | 4    
- max(cd_dep_count)          | 4    
- avg(cd_dep_count)          | 4.0  
- cd_dep_employed_count      | 1    
+ min(cd_dep_count)          | 0    
+ max(cd_dep_count)          | 0    
+ avg(cd_dep_count)          | 0.0  
+ cd_dep_employed_count      | 0    
  cnt2                       | 1    
- min(cd_dep_employed_count) | 1    
- max(cd_dep_employed_count) | 1    
- avg(cd_dep_employed_count) | 1.0  
- cd_dep_college_count       | 4    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 4    
- max(cd_dep_college_count)  | 4    
- avg(cd_dep_college_count)  | 4.0  
--RECORD 32-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | M    
- cnt1                       | 1    
- min(cd_dep_count)          | 4    
- max(cd_dep_count)          | 4    
- avg(cd_dep_count)          | 4.0  
- cd_dep_employed_count      | 2    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 2    
- max(cd_dep_employed_count) | 2    
- avg(cd_dep_employed_count) | 2.0  
- cd_dep_college_count       | 1    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 1    
- max(cd_dep_college_count)  | 1    
- avg(cd_dep_college_count)  | 1.0  
--RECORD 33-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | M    
- cnt1                       | 1    
- min(cd_dep_count)          | 4    
- max(cd_dep_count)          | 4    
- avg(cd_dep_count)          | 4.0  
- cd_dep_employed_count      | 3    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 3    
- max(cd_dep_employed_count) | 3    
- avg(cd_dep_employed_count) | 3.0  
+ min(cd_dep_employed_count) | 0    
+ max(cd_dep_employed_count) | 0    
+ avg(cd_dep_employed_count) | 0.0  
  cd_dep_college_count       | 3    
  cnt3                       | 1    
  min(cd_dep_college_count)  | 3    
  max(cd_dep_college_count)  | 3    
  avg(cd_dep_college_count)  | 3.0  
--RECORD 34-------------------------
+-RECORD 32-------------------------
  ca_state                   | null 
  cd_gender                  | F    
- cd_marital_status          | M    
+ cd_marital_status          | S    
  cnt1                       | 1    
- min(cd_dep_count)          | 5    
- max(cd_dep_count)          | 5    
- avg(cd_dep_count)          | 5.0  
+ min(cd_dep_count)          | 0    
+ max(cd_dep_count)          | 0    
+ avg(cd_dep_count)          | 0.0  
  cd_dep_employed_count      | 2    
  cnt2                       | 1    
  min(cd_dep_employed_count) | 2    
  max(cd_dep_employed_count) | 2    
  avg(cd_dep_employed_count) | 2.0  
- cd_dep_college_count       | 2    
+ cd_dep_college_count       | 3    
  cnt3                       | 1    
- min(cd_dep_college_count)  | 2    
- max(cd_dep_college_count)  | 2    
- avg(cd_dep_college_count)  | 2.0  
--RECORD 35-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | M    
- cnt1                       | 1    
- min(cd_dep_count)          | 6    
- max(cd_dep_count)          | 6    
- avg(cd_dep_count)          | 6.0  
- cd_dep_employed_count      | 1    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 1    
- max(cd_dep_employed_count) | 1    
- avg(cd_dep_employed_count) | 1.0  
- cd_dep_college_count       | 1    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 1    
- max(cd_dep_college_count)  | 1    
- avg(cd_dep_college_count)  | 1.0  
--RECORD 36-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | M    
- cnt1                       | 1    
- min(cd_dep_count)          | 6    
- max(cd_dep_count)          | 6    
- avg(cd_dep_count)          | 6.0  
- cd_dep_employed_count      | 5    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 5    
- max(cd_dep_employed_count) | 5    
- avg(cd_dep_employed_count) | 5.0  
- cd_dep_college_count       | 6    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 6    
- max(cd_dep_college_count)  | 6    
- avg(cd_dep_college_count)  | 6.0  
--RECORD 37-------------------------
+ min(cd_dep_college_count)  | 3    
+ max(cd_dep_college_count)  | 3    
+ avg(cd_dep_college_count)  | 3.0  
+-RECORD 33-------------------------
  ca_state                   | null 
  cd_gender                  | F    
  cd_marital_status          | S    
@@ -683,7 +611,25 @@
  min(cd_dep_college_count)  | 6    
  max(cd_dep_college_count)  | 6    
  avg(cd_dep_college_count)  | 6.0  
--RECORD 38-------------------------
+-RECORD 34-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | S    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 0    
+ max(cd_dep_count)          | 0    
+ avg(cd_dep_count)          | 0.0  
+ cd_dep_employed_count      | 4    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 4    
+ max(cd_dep_employed_count) | 4    
+ avg(cd_dep_employed_count) | 4.0  
+ cd_dep_college_count       | 5    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 5    
+ max(cd_dep_college_count)  | 5    
+ avg(cd_dep_college_count)  | 5.0  
+-RECORD 35-------------------------
  ca_state                   | null 
  cd_gender                  | F    
  cd_marital_status          | S    
@@ -696,6 +642,60 @@
  min(cd_dep_employed_count) | 0    
  max(cd_dep_employed_count) | 0    
  avg(cd_dep_employed_count) | 0.0  
+ cd_dep_college_count       | 3    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 3    
+ max(cd_dep_college_count)  | 3    
+ avg(cd_dep_college_count)  | 3.0  
+-RECORD 36-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | S    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 1    
+ max(cd_dep_count)          | 1    
+ avg(cd_dep_count)          | 1.0  
+ cd_dep_employed_count      | 3    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 3    
+ max(cd_dep_employed_count) | 3    
+ avg(cd_dep_employed_count) | 3.0  
+ cd_dep_college_count       | 4    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 4    
+ max(cd_dep_college_count)  | 4    
+ avg(cd_dep_college_count)  | 4.0  
+-RECORD 37-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | S    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 1    
+ max(cd_dep_count)          | 1    
+ avg(cd_dep_count)          | 1.0  
+ cd_dep_employed_count      | 4    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 4    
+ max(cd_dep_employed_count) | 4    
+ avg(cd_dep_employed_count) | 4.0  
+ cd_dep_college_count       | 0    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 0    
+ max(cd_dep_college_count)  | 0    
+ avg(cd_dep_college_count)  | 0.0  
+-RECORD 38-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | S    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 1    
+ max(cd_dep_count)          | 1    
+ avg(cd_dep_count)          | 1.0  
+ cd_dep_employed_count      | 4    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 4    
+ max(cd_dep_employed_count) | 4    
+ avg(cd_dep_employed_count) | 4.0  
  cd_dep_college_count       | 4    
  cnt3                       | 1    
  min(cd_dep_college_count)  | 4    
@@ -709,53 +709,17 @@
  min(cd_dep_count)          | 1    
  max(cd_dep_count)          | 1    
  avg(cd_dep_count)          | 1.0  
- cd_dep_employed_count      | 1    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 1    
- max(cd_dep_employed_count) | 1    
- avg(cd_dep_employed_count) | 1.0  
- cd_dep_college_count       | 2    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 2    
- max(cd_dep_college_count)  | 2    
- avg(cd_dep_college_count)  | 2.0  
--RECORD 40-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | S    
- cnt1                       | 1    
- min(cd_dep_count)          | 1    
- max(cd_dep_count)          | 1    
- avg(cd_dep_count)          | 1.0  
- cd_dep_employed_count      | 2    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 2    
- max(cd_dep_employed_count) | 2    
- avg(cd_dep_employed_count) | 2.0  
- cd_dep_college_count       | 6    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 6    
- max(cd_dep_college_count)  | 6    
- avg(cd_dep_college_count)  | 6.0  
--RECORD 41-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | S    
- cnt1                       | 1    
- min(cd_dep_count)          | 1    
- max(cd_dep_count)          | 1    
- avg(cd_dep_count)          | 1.0  
  cd_dep_employed_count      | 5    
  cnt2                       | 1    
  min(cd_dep_employed_count) | 5    
  max(cd_dep_employed_count) | 5    
  avg(cd_dep_employed_count) | 5.0  
- cd_dep_college_count       | 5    
+ cd_dep_college_count       | 0    
  cnt3                       | 1    
- min(cd_dep_college_count)  | 5    
- max(cd_dep_college_count)  | 5    
- avg(cd_dep_college_count)  | 5.0  
--RECORD 42-------------------------
+ min(cd_dep_college_count)  | 0    
+ max(cd_dep_college_count)  | 0    
+ avg(cd_dep_college_count)  | 0.0  
+-RECORD 40-------------------------
  ca_state                   | null 
  cd_gender                  | F    
  cd_marital_status          | S    
@@ -773,21 +737,57 @@
  min(cd_dep_college_count)  | 3    
  max(cd_dep_college_count)  | 3    
  avg(cd_dep_college_count)  | 3.0  
+-RECORD 41-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | S    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 2    
+ max(cd_dep_count)          | 2    
+ avg(cd_dep_count)          | 2.0  
+ cd_dep_employed_count      | 1    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 1    
+ max(cd_dep_employed_count) | 1    
+ avg(cd_dep_employed_count) | 1.0  
+ cd_dep_college_count       | 6    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 6    
+ max(cd_dep_college_count)  | 6    
+ avg(cd_dep_college_count)  | 6.0  
+-RECORD 42-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | S    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 2    
+ max(cd_dep_count)          | 2    
+ avg(cd_dep_count)          | 2.0  
+ cd_dep_employed_count      | 2    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 2    
+ max(cd_dep_employed_count) | 2    
+ avg(cd_dep_employed_count) | 2.0  
+ cd_dep_college_count       | 2    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 2    
+ max(cd_dep_college_count)  | 2    
+ avg(cd_dep_college_count)  | 2.0  
 -RECORD 43-------------------------
  ca_state                   | null 
  cd_gender                  | F    
  cd_marital_status          | S    
- cnt1                       | 2    
+ cnt1                       | 1    
  min(cd_dep_count)          | 2    
  max(cd_dep_count)          | 2    
  avg(cd_dep_count)          | 2.0  
- cd_dep_employed_count      | 5    
- cnt2                       | 2    
- min(cd_dep_employed_count) | 5    
- max(cd_dep_employed_count) | 5    
- avg(cd_dep_employed_count) | 5.0  
+ cd_dep_employed_count      | 4    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 4    
+ max(cd_dep_employed_count) | 4    
+ avg(cd_dep_employed_count) | 4.0  
  cd_dep_college_count       | 6    
- cnt3                       | 2    
+ cnt3                       | 1    
  min(cd_dep_college_count)  | 6    
  max(cd_dep_college_count)  | 6    
  avg(cd_dep_college_count)  | 6.0  
@@ -796,37 +796,37 @@
  cd_gender                  | F    
  cd_marital_status          | S    
  cnt1                       | 1    
- min(cd_dep_count)          | 3    
- max(cd_dep_count)          | 3    
- avg(cd_dep_count)          | 3.0  
- cd_dep_employed_count      | 0    
+ min(cd_dep_count)          | 2    
+ max(cd_dep_count)          | 2    
+ avg(cd_dep_count)          | 2.0  
+ cd_dep_employed_count      | 6    
  cnt2                       | 1    
- min(cd_dep_employed_count) | 0    
- max(cd_dep_employed_count) | 0    
- avg(cd_dep_employed_count) | 0.0  
- cd_dep_college_count       | 4    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 4    
- max(cd_dep_college_count)  | 4    
- avg(cd_dep_college_count)  | 4.0  
--RECORD 45-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | S    
- cnt1                       | 1    
- min(cd_dep_count)          | 3    
- max(cd_dep_count)          | 3    
- avg(cd_dep_count)          | 3.0  
- cd_dep_employed_count      | 2    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 2    
- max(cd_dep_employed_count) | 2    
- avg(cd_dep_employed_count) | 2.0  
+ min(cd_dep_employed_count) | 6    
+ max(cd_dep_employed_count) | 6    
+ avg(cd_dep_employed_count) | 6.0  
  cd_dep_college_count       | 1    
  cnt3                       | 1    
  min(cd_dep_college_count)  | 1    
  max(cd_dep_college_count)  | 1    
  avg(cd_dep_college_count)  | 1.0  
+-RECORD 45-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | S    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 2    
+ max(cd_dep_count)          | 2    
+ avg(cd_dep_count)          | 2.0  
+ cd_dep_employed_count      | 6    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 6    
+ max(cd_dep_employed_count) | 6    
+ avg(cd_dep_employed_count) | 6.0  
+ cd_dep_college_count       | 5    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 5    
+ max(cd_dep_college_count)  | 5    
+ avg(cd_dep_college_count)  | 5.0  
 -RECORD 46-------------------------
  ca_state                   | null 
  cd_gender                  | F    
@@ -835,17 +835,35 @@
  min(cd_dep_count)          | 3    
  max(cd_dep_count)          | 3    
  avg(cd_dep_count)          | 3.0  
- cd_dep_employed_count      | 2    
+ cd_dep_employed_count      | 1    
  cnt2                       | 1    
- min(cd_dep_employed_count) | 2    
- max(cd_dep_employed_count) | 2    
- avg(cd_dep_employed_count) | 2.0  
- cd_dep_college_count       | 5    
+ min(cd_dep_employed_count) | 1    
+ max(cd_dep_employed_count) | 1    
+ avg(cd_dep_employed_count) | 1.0  
+ cd_dep_college_count       | 0    
  cnt3                       | 1    
- min(cd_dep_college_count)  | 5    
- max(cd_dep_college_count)  | 5    
- avg(cd_dep_college_count)  | 5.0  
+ min(cd_dep_college_count)  | 0    
+ max(cd_dep_college_count)  | 0    
+ avg(cd_dep_college_count)  | 0.0  
 -RECORD 47-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | S    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 3    
+ max(cd_dep_count)          | 3    
+ avg(cd_dep_count)          | 3.0  
+ cd_dep_employed_count      | 1    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 1    
+ max(cd_dep_employed_count) | 1    
+ avg(cd_dep_employed_count) | 1.0  
+ cd_dep_college_count       | 2    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 2    
+ max(cd_dep_college_count)  | 2    
+ avg(cd_dep_college_count)  | 2.0  
+-RECORD 48-------------------------
  ca_state                   | null 
  cd_gender                  | F    
  cd_marital_status          | S    
@@ -858,48 +876,84 @@
  min(cd_dep_employed_count) | 3    
  max(cd_dep_employed_count) | 3    
  avg(cd_dep_employed_count) | 3.0  
- cd_dep_college_count       | 3    
+ cd_dep_college_count       | 0    
  cnt3                       | 1    
- min(cd_dep_college_count)  | 3    
- max(cd_dep_college_count)  | 3    
- avg(cd_dep_college_count)  | 3.0  
--RECORD 48-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | S    
- cnt1                       | 1    
- min(cd_dep_count)          | 4    
- max(cd_dep_count)          | 4    
- avg(cd_dep_count)          | 4.0  
- cd_dep_employed_count      | 1    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 1    
- max(cd_dep_employed_count) | 1    
- avg(cd_dep_employed_count) | 1.0  
- cd_dep_college_count       | 4    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 4    
- max(cd_dep_college_count)  | 4    
- avg(cd_dep_college_count)  | 4.0  
+ min(cd_dep_college_count)  | 0    
+ max(cd_dep_college_count)  | 0    
+ avg(cd_dep_college_count)  | 0.0  
 -RECORD 49-------------------------
  ca_state                   | null 
  cd_gender                  | F    
  cd_marital_status          | S    
  cnt1                       | 1    
+ min(cd_dep_count)          | 3    
+ max(cd_dep_count)          | 3    
+ avg(cd_dep_count)          | 3.0  
+ cd_dep_employed_count      | 4    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 4    
+ max(cd_dep_employed_count) | 4    
+ avg(cd_dep_employed_count) | 4.0  
+ cd_dep_college_count       | 6    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 6    
+ max(cd_dep_college_count)  | 6    
+ avg(cd_dep_college_count)  | 6.0  
+-RECORD 50-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | S    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 3    
+ max(cd_dep_count)          | 3    
+ avg(cd_dep_count)          | 3.0  
+ cd_dep_employed_count      | 6    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 6    
+ max(cd_dep_employed_count) | 6    
+ avg(cd_dep_employed_count) | 6.0  
+ cd_dep_college_count       | 6    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 6    
+ max(cd_dep_college_count)  | 6    
+ avg(cd_dep_college_count)  | 6.0  
+-RECORD 51-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | S    
+ cnt1                       | 1    
  min(cd_dep_count)          | 4    
  max(cd_dep_count)          | 4    
  avg(cd_dep_count)          | 4.0  
- cd_dep_employed_count      | 2    
+ cd_dep_employed_count      | 0    
  cnt2                       | 1    
- min(cd_dep_employed_count) | 2    
- max(cd_dep_employed_count) | 2    
- avg(cd_dep_employed_count) | 2.0  
- cd_dep_college_count       | 4    
+ min(cd_dep_employed_count) | 0    
+ max(cd_dep_employed_count) | 0    
+ avg(cd_dep_employed_count) | 0.0  
+ cd_dep_college_count       | 2    
  cnt3                       | 1    
- min(cd_dep_college_count)  | 4    
- max(cd_dep_college_count)  | 4    
- avg(cd_dep_college_count)  | 4.0  
--RECORD 50-------------------------
+ min(cd_dep_college_count)  | 2    
+ max(cd_dep_college_count)  | 2    
+ avg(cd_dep_college_count)  | 2.0  
+-RECORD 52-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | S    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 5    
+ max(cd_dep_count)          | 5    
+ avg(cd_dep_count)          | 5.0  
+ cd_dep_employed_count      | 4    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 4    
+ max(cd_dep_employed_count) | 4    
+ avg(cd_dep_employed_count) | 4.0  
+ cd_dep_college_count       | 2    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 2    
+ max(cd_dep_college_count)  | 2    
+ avg(cd_dep_college_count)  | 2.0  
+-RECORD 53-------------------------
  ca_state                   | null 
  cd_gender                  | F    
  cd_marital_status          | S    
@@ -912,66 +966,120 @@
  min(cd_dep_employed_count) | 6    
  max(cd_dep_employed_count) | 6    
  avg(cd_dep_employed_count) | 6.0  
+ cd_dep_college_count       | 6    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 6    
+ max(cd_dep_college_count)  | 6    
+ avg(cd_dep_college_count)  | 6.0  
+-RECORD 54-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | S    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 6    
+ max(cd_dep_count)          | 6    
+ avg(cd_dep_count)          | 6.0  
+ cd_dep_employed_count      | 0    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 0    
+ max(cd_dep_employed_count) | 0    
+ avg(cd_dep_employed_count) | 0.0  
  cd_dep_college_count       | 0    
  cnt3                       | 1    
  min(cd_dep_college_count)  | 0    
  max(cd_dep_college_count)  | 0    
  avg(cd_dep_college_count)  | 0.0  
--RECORD 51-------------------------
+-RECORD 55-------------------------
  ca_state                   | null 
  cd_gender                  | F    
- cd_marital_status          | U    
+ cd_marital_status          | S    
  cnt1                       | 1    
- min(cd_dep_count)          | 0    
- max(cd_dep_count)          | 0    
- avg(cd_dep_count)          | 0.0  
- cd_dep_employed_count      | 1    
+ min(cd_dep_count)          | 6    
+ max(cd_dep_count)          | 6    
+ avg(cd_dep_count)          | 6.0  
+ cd_dep_employed_count      | 0    
  cnt2                       | 1    
- min(cd_dep_employed_count) | 1    
- max(cd_dep_employed_count) | 1    
- avg(cd_dep_employed_count) | 1.0  
- cd_dep_college_count       | 3    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 3    
- max(cd_dep_college_count)  | 3    
- avg(cd_dep_college_count)  | 3.0  
--RECORD 52-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | U    
- cnt1                       | 1    
- min(cd_dep_count)          | 0    
- max(cd_dep_count)          | 0    
- avg(cd_dep_count)          | 0.0  
- cd_dep_employed_count      | 3    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 3    
- max(cd_dep_employed_count) | 3    
- avg(cd_dep_employed_count) | 3.0  
- cd_dep_college_count       | 0    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 0    
- max(cd_dep_college_count)  | 0    
- avg(cd_dep_college_count)  | 0.0  
--RECORD 53-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | U    
- cnt1                       | 1    
- min(cd_dep_count)          | 1    
- max(cd_dep_count)          | 1    
- avg(cd_dep_count)          | 1.0  
- cd_dep_employed_count      | 3    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 3    
- max(cd_dep_employed_count) | 3    
- avg(cd_dep_employed_count) | 3.0  
+ min(cd_dep_employed_count) | 0    
+ max(cd_dep_employed_count) | 0    
+ avg(cd_dep_employed_count) | 0.0  
  cd_dep_college_count       | 2    
  cnt3                       | 1    
  min(cd_dep_college_count)  | 2    
  max(cd_dep_college_count)  | 2    
  avg(cd_dep_college_count)  | 2.0  
--RECORD 54-------------------------
+-RECORD 56-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | S    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 6    
+ max(cd_dep_count)          | 6    
+ avg(cd_dep_count)          | 6.0  
+ cd_dep_employed_count      | 4    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 4    
+ max(cd_dep_employed_count) | 4    
+ avg(cd_dep_employed_count) | 4.0  
+ cd_dep_college_count       | 5    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 5    
+ max(cd_dep_college_count)  | 5    
+ avg(cd_dep_college_count)  | 5.0  
+-RECORD 57-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | U    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 0    
+ max(cd_dep_count)          | 0    
+ avg(cd_dep_count)          | 0.0  
+ cd_dep_employed_count      | 4    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 4    
+ max(cd_dep_employed_count) | 4    
+ avg(cd_dep_employed_count) | 4.0  
+ cd_dep_college_count       | 1    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 1    
+ max(cd_dep_college_count)  | 1    
+ avg(cd_dep_college_count)  | 1.0  
+-RECORD 58-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | U    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 0    
+ max(cd_dep_count)          | 0    
+ avg(cd_dep_count)          | 0.0  
+ cd_dep_employed_count      | 5    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 5    
+ max(cd_dep_employed_count) | 5    
+ avg(cd_dep_employed_count) | 5.0  
+ cd_dep_college_count       | 1    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 1    
+ max(cd_dep_college_count)  | 1    
+ avg(cd_dep_college_count)  | 1.0  
+-RECORD 59-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | U    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 0    
+ max(cd_dep_count)          | 0    
+ avg(cd_dep_count)          | 0.0  
+ cd_dep_employed_count      | 6    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 6    
+ max(cd_dep_employed_count) | 6    
+ avg(cd_dep_employed_count) | 6.0  
+ cd_dep_college_count       | 6    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 6    
+ max(cd_dep_college_count)  | 6    
+ avg(cd_dep_college_count)  | 6.0  
+-RECORD 60-------------------------
  ca_state                   | null 
  cd_gender                  | F    
  cd_marital_status          | U    
@@ -984,114 +1092,6 @@
  min(cd_dep_employed_count) | 5    
  max(cd_dep_employed_count) | 5    
  avg(cd_dep_employed_count) | 5.0  
- cd_dep_college_count       | 6    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 6    
- max(cd_dep_college_count)  | 6    
- avg(cd_dep_college_count)  | 6.0  
--RECORD 55-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | U    
- cnt1                       | 1    
- min(cd_dep_count)          | 2    
- max(cd_dep_count)          | 2    
- avg(cd_dep_count)          | 2.0  
- cd_dep_employed_count      | 0    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 0    
- max(cd_dep_employed_count) | 0    
- avg(cd_dep_employed_count) | 0.0  
- cd_dep_college_count       | 1    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 1    
- max(cd_dep_college_count)  | 1    
- avg(cd_dep_college_count)  | 1.0  
--RECORD 56-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | U    
- cnt1                       | 1    
- min(cd_dep_count)          | 2    
- max(cd_dep_count)          | 2    
- avg(cd_dep_count)          | 2.0  
- cd_dep_employed_count      | 4    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 4    
- max(cd_dep_employed_count) | 4    
- avg(cd_dep_employed_count) | 4.0  
- cd_dep_college_count       | 4    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 4    
- max(cd_dep_college_count)  | 4    
- avg(cd_dep_college_count)  | 4.0  
--RECORD 57-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | U    
- cnt1                       | 2    
- min(cd_dep_count)          | 3    
- max(cd_dep_count)          | 3    
- avg(cd_dep_count)          | 3.0  
- cd_dep_employed_count      | 1    
- cnt2                       | 2    
- min(cd_dep_employed_count) | 1    
- max(cd_dep_employed_count) | 1    
- avg(cd_dep_employed_count) | 1.0  
- cd_dep_college_count       | 6    
- cnt3                       | 2    
- min(cd_dep_college_count)  | 6    
- max(cd_dep_college_count)  | 6    
- avg(cd_dep_college_count)  | 6.0  
--RECORD 58-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | U    
- cnt1                       | 1    
- min(cd_dep_count)          | 4    
- max(cd_dep_count)          | 4    
- avg(cd_dep_count)          | 4.0  
- cd_dep_employed_count      | 0    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 0    
- max(cd_dep_employed_count) | 0    
- avg(cd_dep_employed_count) | 0.0  
- cd_dep_college_count       | 4    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 4    
- max(cd_dep_college_count)  | 4    
- avg(cd_dep_college_count)  | 4.0  
--RECORD 59-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | U    
- cnt1                       | 1    
- min(cd_dep_count)          | 5    
- max(cd_dep_count)          | 5    
- avg(cd_dep_count)          | 5.0  
- cd_dep_employed_count      | 3    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 3    
- max(cd_dep_employed_count) | 3    
- avg(cd_dep_employed_count) | 3.0  
- cd_dep_college_count       | 6    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 6    
- max(cd_dep_college_count)  | 6    
- avg(cd_dep_college_count)  | 6.0  
--RECORD 60-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | U    
- cnt1                       | 1    
- min(cd_dep_count)          | 6    
- max(cd_dep_count)          | 6    
- avg(cd_dep_count)          | 6.0  
- cd_dep_employed_count      | 2    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 2    
- max(cd_dep_employed_count) | 2    
- avg(cd_dep_employed_count) | 2.0  
  cd_dep_college_count       | 2    
  cnt3                       | 1    
  min(cd_dep_college_count)  | 2    
@@ -1102,9 +1102,9 @@
  cd_gender                  | F    
  cd_marital_status          | U    
  cnt1                       | 1    
- min(cd_dep_count)          | 6    
- max(cd_dep_count)          | 6    
- avg(cd_dep_count)          | 6.0  
+ min(cd_dep_count)          | 2    
+ max(cd_dep_count)          | 2    
+ avg(cd_dep_count)          | 2.0  
  cd_dep_employed_count      | 4    
  cnt2                       | 1    
  min(cd_dep_employed_count) | 4    
@@ -1120,20 +1120,146 @@
  cd_gender                  | F    
  cd_marital_status          | U    
  cnt1                       | 1    
- min(cd_dep_count)          | 6    
- max(cd_dep_count)          | 6    
- avg(cd_dep_count)          | 6.0  
+ min(cd_dep_count)          | 3    
+ max(cd_dep_count)          | 3    
+ avg(cd_dep_count)          | 3.0  
+ cd_dep_employed_count      | 1    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 1    
+ max(cd_dep_employed_count) | 1    
+ avg(cd_dep_employed_count) | 1.0  
+ cd_dep_college_count       | 6    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 6    
+ max(cd_dep_college_count)  | 6    
+ avg(cd_dep_college_count)  | 6.0  
+-RECORD 63-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | U    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 3    
+ max(cd_dep_count)          | 3    
+ avg(cd_dep_count)          | 3.0  
+ cd_dep_employed_count      | 3    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 3    
+ max(cd_dep_employed_count) | 3    
+ avg(cd_dep_employed_count) | 3.0  
+ cd_dep_college_count       | 6    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 6    
+ max(cd_dep_college_count)  | 6    
+ avg(cd_dep_college_count)  | 6.0  
+-RECORD 64-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | U    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 3    
+ max(cd_dep_count)          | 3    
+ avg(cd_dep_count)          | 3.0  
+ cd_dep_employed_count      | 4    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 4    
+ max(cd_dep_employed_count) | 4    
+ avg(cd_dep_employed_count) | 4.0  
+ cd_dep_college_count       | 3    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 3    
+ max(cd_dep_college_count)  | 3    
+ avg(cd_dep_college_count)  | 3.0  
+-RECORD 65-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | U    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 3    
+ max(cd_dep_count)          | 3    
+ avg(cd_dep_count)          | 3.0  
  cd_dep_employed_count      | 5    
  cnt2                       | 1    
  min(cd_dep_employed_count) | 5    
  max(cd_dep_employed_count) | 5    
  avg(cd_dep_employed_count) | 5.0  
+ cd_dep_college_count       | 1    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 1    
+ max(cd_dep_college_count)  | 1    
+ avg(cd_dep_college_count)  | 1.0  
+-RECORD 66-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | U    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 3    
+ max(cd_dep_count)          | 3    
+ avg(cd_dep_count)          | 3.0  
+ cd_dep_employed_count      | 6    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 6    
+ max(cd_dep_employed_count) | 6    
+ avg(cd_dep_employed_count) | 6.0  
  cd_dep_college_count       | 0    
  cnt3                       | 1    
  min(cd_dep_college_count)  | 0    
  max(cd_dep_college_count)  | 0    
  avg(cd_dep_college_count)  | 0.0  
--RECORD 63-------------------------
+-RECORD 67-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | U    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 3    
+ max(cd_dep_count)          | 3    
+ avg(cd_dep_count)          | 3.0  
+ cd_dep_employed_count      | 6    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 6    
+ max(cd_dep_employed_count) | 6    
+ avg(cd_dep_employed_count) | 6.0  
+ cd_dep_college_count       | 3    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 3    
+ max(cd_dep_college_count)  | 3    
+ avg(cd_dep_college_count)  | 3.0  
+-RECORD 68-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | U    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 6    
+ max(cd_dep_count)          | 6    
+ avg(cd_dep_count)          | 6.0  
+ cd_dep_employed_count      | 1    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 1    
+ max(cd_dep_employed_count) | 1    
+ avg(cd_dep_employed_count) | 1.0  
+ cd_dep_college_count       | 3    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 3    
+ max(cd_dep_college_count)  | 3    
+ avg(cd_dep_college_count)  | 3.0  
+-RECORD 69-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | U    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 6    
+ max(cd_dep_count)          | 6    
+ avg(cd_dep_count)          | 6.0  
+ cd_dep_employed_count      | 2    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 2    
+ max(cd_dep_employed_count) | 2    
+ avg(cd_dep_employed_count) | 2.0  
+ cd_dep_college_count       | 1    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 1    
+ max(cd_dep_college_count)  | 1    
+ avg(cd_dep_college_count)  | 1.0  
+-RECORD 70-------------------------
  ca_state                   | null 
  cd_gender                  | F    
  cd_marital_status          | U    
@@ -1151,140 +1277,86 @@
  min(cd_dep_college_count)  | 6    
  max(cd_dep_college_count)  | 6    
  avg(cd_dep_college_count)  | 6.0  
--RECORD 64-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | W    
- cnt1                       | 1    
- min(cd_dep_count)          | 0    
- max(cd_dep_count)          | 0    
- avg(cd_dep_count)          | 0.0  
- cd_dep_employed_count      | 0    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 0    
- max(cd_dep_employed_count) | 0    
- avg(cd_dep_employed_count) | 0.0  
- cd_dep_college_count       | 4    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 4    
- max(cd_dep_college_count)  | 4    
- avg(cd_dep_college_count)  | 4.0  
--RECORD 65-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | W    
- cnt1                       | 1    
- min(cd_dep_count)          | 0    
- max(cd_dep_count)          | 0    
- avg(cd_dep_count)          | 0.0  
- cd_dep_employed_count      | 5    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 5    
- max(cd_dep_employed_count) | 5    
- avg(cd_dep_employed_count) | 5.0  
- cd_dep_college_count       | 5    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 5    
- max(cd_dep_college_count)  | 5    
- avg(cd_dep_college_count)  | 5.0  
--RECORD 66-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | W    
- cnt1                       | 1    
- min(cd_dep_count)          | 1    
- max(cd_dep_count)          | 1    
- avg(cd_dep_count)          | 1.0  
- cd_dep_employed_count      | 3    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 3    
- max(cd_dep_employed_count) | 3    
- avg(cd_dep_employed_count) | 3.0  
- cd_dep_college_count       | 4    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 4    
- max(cd_dep_college_count)  | 4    
- avg(cd_dep_college_count)  | 4.0  
--RECORD 67-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | W    
- cnt1                       | 1    
- min(cd_dep_count)          | 2    
- max(cd_dep_count)          | 2    
- avg(cd_dep_count)          | 2.0  
- cd_dep_employed_count      | 0    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 0    
- max(cd_dep_employed_count) | 0    
- avg(cd_dep_employed_count) | 0.0  
- cd_dep_college_count       | 5    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 5    
- max(cd_dep_college_count)  | 5    
- avg(cd_dep_college_count)  | 5.0  
--RECORD 68-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | W    
- cnt1                       | 1    
- min(cd_dep_count)          | 3    
- max(cd_dep_count)          | 3    
- avg(cd_dep_count)          | 3.0  
- cd_dep_employed_count      | 3    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 3    
- max(cd_dep_employed_count) | 3    
- avg(cd_dep_employed_count) | 3.0  
- cd_dep_college_count       | 6    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 6    
- max(cd_dep_college_count)  | 6    
- avg(cd_dep_college_count)  | 6.0  
--RECORD 69-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | W    
- cnt1                       | 1    
- min(cd_dep_count)          | 3    
- max(cd_dep_count)          | 3    
- avg(cd_dep_count)          | 3.0  
- cd_dep_employed_count      | 6    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 6    
- max(cd_dep_employed_count) | 6    
- avg(cd_dep_employed_count) | 6.0  
- cd_dep_college_count       | 6    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 6    
- max(cd_dep_college_count)  | 6    
- avg(cd_dep_college_count)  | 6.0  
--RECORD 70-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | W    
- cnt1                       | 1    
- min(cd_dep_count)          | 4    
- max(cd_dep_count)          | 4    
- avg(cd_dep_count)          | 4.0  
- cd_dep_employed_count      | 3    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 3    
- max(cd_dep_employed_count) | 3    
- avg(cd_dep_employed_count) | 3.0  
- cd_dep_college_count       | 1    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 1    
- max(cd_dep_college_count)  | 1    
- avg(cd_dep_college_count)  | 1.0  
 -RECORD 71-------------------------
  ca_state                   | null 
  cd_gender                  | F    
  cd_marital_status          | W    
  cnt1                       | 1    
- min(cd_dep_count)          | 5    
- max(cd_dep_count)          | 5    
- avg(cd_dep_count)          | 5.0  
+ min(cd_dep_count)          | 0    
+ max(cd_dep_count)          | 0    
+ avg(cd_dep_count)          | 0.0  
+ cd_dep_employed_count      | 2    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 2    
+ max(cd_dep_employed_count) | 2    
+ avg(cd_dep_employed_count) | 2.0  
+ cd_dep_college_count       | 4    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 4    
+ max(cd_dep_college_count)  | 4    
+ avg(cd_dep_college_count)  | 4.0  
+-RECORD 72-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | W    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 0    
+ max(cd_dep_count)          | 0    
+ avg(cd_dep_count)          | 0.0  
+ cd_dep_employed_count      | 6    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 6    
+ max(cd_dep_employed_count) | 6    
+ avg(cd_dep_employed_count) | 6.0  
+ cd_dep_college_count       | 2    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 2    
+ max(cd_dep_college_count)  | 2    
+ avg(cd_dep_college_count)  | 2.0  
+-RECORD 73-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | W    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 2    
+ max(cd_dep_count)          | 2    
+ avg(cd_dep_count)          | 2.0  
+ cd_dep_employed_count      | 5    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 5    
+ max(cd_dep_employed_count) | 5    
+ avg(cd_dep_employed_count) | 5.0  
+ cd_dep_college_count       | 1    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 1    
+ max(cd_dep_college_count)  | 1    
+ avg(cd_dep_college_count)  | 1.0  
+-RECORD 74-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | W    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 4    
+ max(cd_dep_count)          | 4    
+ avg(cd_dep_count)          | 4.0  
+ cd_dep_employed_count      | 0    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 0    
+ max(cd_dep_employed_count) | 0    
+ avg(cd_dep_employed_count) | 0.0  
+ cd_dep_college_count       | 4    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 4    
+ max(cd_dep_college_count)  | 4    
+ avg(cd_dep_college_count)  | 4.0  
+-RECORD 75-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | W    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 4    
+ max(cd_dep_count)          | 4    
+ avg(cd_dep_count)          | 4.0  
  cd_dep_employed_count      | 1    
  cnt2                       | 1    
  min(cd_dep_employed_count) | 1    
@@ -1295,83 +1367,65 @@
  min(cd_dep_college_count)  | 1    
  max(cd_dep_college_count)  | 1    
  avg(cd_dep_college_count)  | 1.0  
--RECORD 72-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | W    
- cnt1                       | 1    
- min(cd_dep_count)          | 5    
- max(cd_dep_count)          | 5    
- avg(cd_dep_count)          | 5.0  
- cd_dep_employed_count      | 1    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 1    
- max(cd_dep_employed_count) | 1    
- avg(cd_dep_employed_count) | 1.0  
- cd_dep_college_count       | 4    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 4    
- max(cd_dep_college_count)  | 4    
- avg(cd_dep_college_count)  | 4.0  
--RECORD 73-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | W    
- cnt1                       | 1    
- min(cd_dep_count)          | 5    
- max(cd_dep_count)          | 5    
- avg(cd_dep_count)          | 5.0  
- cd_dep_employed_count      | 3    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 3    
- max(cd_dep_employed_count) | 3    
- avg(cd_dep_employed_count) | 3.0  
- cd_dep_college_count       | 6    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 6    
- max(cd_dep_college_count)  | 6    
- avg(cd_dep_college_count)  | 6.0  
--RECORD 74-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | W    
- cnt1                       | 1    
- min(cd_dep_count)          | 5    
- max(cd_dep_count)          | 5    
- avg(cd_dep_count)          | 5.0  
- cd_dep_employed_count      | 4    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 4    
- max(cd_dep_employed_count) | 4    
- avg(cd_dep_employed_count) | 4.0  
- cd_dep_college_count       | 6    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 6    
- max(cd_dep_college_count)  | 6    
- avg(cd_dep_college_count)  | 6.0  
--RECORD 75-------------------------
- ca_state                   | null 
- cd_gender                  | F    
- cd_marital_status          | W    
- cnt1                       | 1    
- min(cd_dep_count)          | 6    
- max(cd_dep_count)          | 6    
- avg(cd_dep_count)          | 6.0  
- cd_dep_employed_count      | 0    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 0    
- max(cd_dep_employed_count) | 0    
- avg(cd_dep_employed_count) | 0.0  
- cd_dep_college_count       | 5    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 5    
- max(cd_dep_college_count)  | 5    
- avg(cd_dep_college_count)  | 5.0  
 -RECORD 76-------------------------
  ca_state                   | null 
  cd_gender                  | F    
  cd_marital_status          | W    
  cnt1                       | 1    
+ min(cd_dep_count)          | 4    
+ max(cd_dep_count)          | 4    
+ avg(cd_dep_count)          | 4.0  
+ cd_dep_employed_count      | 2    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 2    
+ max(cd_dep_employed_count) | 2    
+ avg(cd_dep_employed_count) | 2.0  
+ cd_dep_college_count       | 6    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 6    
+ max(cd_dep_college_count)  | 6    
+ avg(cd_dep_college_count)  | 6.0  
+-RECORD 77-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | W    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 4    
+ max(cd_dep_count)          | 4    
+ avg(cd_dep_count)          | 4.0  
+ cd_dep_employed_count      | 4    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 4    
+ max(cd_dep_employed_count) | 4    
+ avg(cd_dep_employed_count) | 4.0  
+ cd_dep_college_count       | 3    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 3    
+ max(cd_dep_college_count)  | 3    
+ avg(cd_dep_college_count)  | 3.0  
+-RECORD 78-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | W    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 5    
+ max(cd_dep_count)          | 5    
+ avg(cd_dep_count)          | 5.0  
+ cd_dep_employed_count      | 6    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 6    
+ max(cd_dep_employed_count) | 6    
+ avg(cd_dep_employed_count) | 6.0  
+ cd_dep_college_count       | 1    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 1    
+ max(cd_dep_college_count)  | 1    
+ avg(cd_dep_college_count)  | 1.0  
+-RECORD 79-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | W    
+ cnt1                       | 1    
  min(cd_dep_count)          | 6    
  max(cd_dep_count)          | 6    
  avg(cd_dep_count)          | 6.0  
@@ -1380,12 +1434,48 @@
  min(cd_dep_employed_count) | 2    
  max(cd_dep_employed_count) | 2    
  avg(cd_dep_employed_count) | 2.0  
- cd_dep_college_count       | 3    
+ cd_dep_college_count       | 6    
  cnt3                       | 1    
- min(cd_dep_college_count)  | 3    
- max(cd_dep_college_count)  | 3    
- avg(cd_dep_college_count)  | 3.0  
--RECORD 77-------------------------
+ min(cd_dep_college_count)  | 6    
+ max(cd_dep_college_count)  | 6    
+ avg(cd_dep_college_count)  | 6.0  
+-RECORD 80-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | W    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 6    
+ max(cd_dep_count)          | 6    
+ avg(cd_dep_count)          | 6.0  
+ cd_dep_employed_count      | 3    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 3    
+ max(cd_dep_employed_count) | 3    
+ avg(cd_dep_employed_count) | 3.0  
+ cd_dep_college_count       | 4    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 4    
+ max(cd_dep_college_count)  | 4    
+ avg(cd_dep_college_count)  | 4.0  
+-RECORD 81-------------------------
+ ca_state                   | null 
+ cd_gender                  | F    
+ cd_marital_status          | W    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 6    
+ max(cd_dep_count)          | 6    
+ avg(cd_dep_count)          | 6.0  
+ cd_dep_employed_count      | 4    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 4    
+ max(cd_dep_employed_count) | 4    
+ avg(cd_dep_employed_count) | 4.0  
+ cd_dep_college_count       | 0    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 0    
+ max(cd_dep_college_count)  | 0    
+ avg(cd_dep_college_count)  | 0.0  
+-RECORD 82-------------------------
  ca_state                   | null 
  cd_gender                  | F    
  cd_marital_status          | W    
@@ -1398,138 +1488,84 @@
  min(cd_dep_employed_count) | 5    
  max(cd_dep_employed_count) | 5    
  avg(cd_dep_employed_count) | 5.0  
- cd_dep_college_count       | 5    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 5    
- max(cd_dep_college_count)  | 5    
- avg(cd_dep_college_count)  | 5.0  
--RECORD 78-------------------------
- ca_state                   | null 
- cd_gender                  | M    
- cd_marital_status          | D    
- cnt1                       | 1    
- min(cd_dep_count)          | 0    
- max(cd_dep_count)          | 0    
- avg(cd_dep_count)          | 0.0  
- cd_dep_employed_count      | 3    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 3    
- max(cd_dep_employed_count) | 3    
- avg(cd_dep_employed_count) | 3.0  
- cd_dep_college_count       | 0    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 0    
- max(cd_dep_college_count)  | 0    
- avg(cd_dep_college_count)  | 0.0  
--RECORD 79-------------------------
- ca_state                   | null 
- cd_gender                  | M    
- cd_marital_status          | D    
- cnt1                       | 1    
- min(cd_dep_count)          | 1    
- max(cd_dep_count)          | 1    
- avg(cd_dep_count)          | 1.0  
- cd_dep_employed_count      | 3    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 3    
- max(cd_dep_employed_count) | 3    
- avg(cd_dep_employed_count) | 3.0  
- cd_dep_college_count       | 0    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 0    
- max(cd_dep_college_count)  | 0    
- avg(cd_dep_college_count)  | 0.0  
--RECORD 80-------------------------
- ca_state                   | null 
- cd_gender                  | M    
- cd_marital_status          | D    
- cnt1                       | 1    
- min(cd_dep_count)          | 1    
- max(cd_dep_count)          | 1    
- avg(cd_dep_count)          | 1.0  
- cd_dep_employed_count      | 3    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 3    
- max(cd_dep_employed_count) | 3    
- avg(cd_dep_employed_count) | 3.0  
- cd_dep_college_count       | 2    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 2    
- max(cd_dep_college_count)  | 2    
- avg(cd_dep_college_count)  | 2.0  
--RECORD 81-------------------------
- ca_state                   | null 
- cd_gender                  | M    
- cd_marital_status          | D    
- cnt1                       | 1    
- min(cd_dep_count)          | 2    
- max(cd_dep_count)          | 2    
- avg(cd_dep_count)          | 2.0  
- cd_dep_employed_count      | 0    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 0    
- max(cd_dep_employed_count) | 0    
- avg(cd_dep_employed_count) | 0.0  
  cd_dep_college_count       | 6    
  cnt3                       | 1    
  min(cd_dep_college_count)  | 6    
  max(cd_dep_college_count)  | 6    
  avg(cd_dep_college_count)  | 6.0  
--RECORD 82-------------------------
- ca_state                   | null 
- cd_gender                  | M    
- cd_marital_status          | D    
- cnt1                       | 1    
- min(cd_dep_count)          | 2    
- max(cd_dep_count)          | 2    
- avg(cd_dep_count)          | 2.0  
- cd_dep_employed_count      | 4    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 4    
- max(cd_dep_employed_count) | 4    
- avg(cd_dep_employed_count) | 4.0  
- cd_dep_college_count       | 4    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 4    
- max(cd_dep_college_count)  | 4    
- avg(cd_dep_college_count)  | 4.0  
 -RECORD 83-------------------------
  ca_state                   | null 
  cd_gender                  | M    
  cd_marital_status          | D    
  cnt1                       | 1    
- min(cd_dep_count)          | 2    
- max(cd_dep_count)          | 2    
- avg(cd_dep_count)          | 2.0  
+ min(cd_dep_count)          | 1    
+ max(cd_dep_count)          | 1    
+ avg(cd_dep_count)          | 1.0  
  cd_dep_employed_count      | 5    
  cnt2                       | 1    
  min(cd_dep_employed_count) | 5    
  max(cd_dep_employed_count) | 5    
  avg(cd_dep_employed_count) | 5.0  
- cd_dep_college_count       | 3    
+ cd_dep_college_count       | 6    
  cnt3                       | 1    
- min(cd_dep_college_count)  | 3    
- max(cd_dep_college_count)  | 3    
- avg(cd_dep_college_count)  | 3.0  
+ min(cd_dep_college_count)  | 6    
+ max(cd_dep_college_count)  | 6    
+ avg(cd_dep_college_count)  | 6.0  
 -RECORD 84-------------------------
  ca_state                   | null 
  cd_gender                  | M    
  cd_marital_status          | D    
  cnt1                       | 1    
- min(cd_dep_count)          | 3    
- max(cd_dep_count)          | 3    
- avg(cd_dep_count)          | 3.0  
- cd_dep_employed_count      | 1    
+ min(cd_dep_count)          | 2    
+ max(cd_dep_count)          | 2    
+ avg(cd_dep_count)          | 2.0  
+ cd_dep_employed_count      | 3    
  cnt2                       | 1    
- min(cd_dep_employed_count) | 1    
- max(cd_dep_employed_count) | 1    
- avg(cd_dep_employed_count) | 1.0  
- cd_dep_college_count       | 5    
+ min(cd_dep_employed_count) | 3    
+ max(cd_dep_employed_count) | 3    
+ avg(cd_dep_employed_count) | 3.0  
+ cd_dep_college_count       | 3    
  cnt3                       | 1    
- min(cd_dep_college_count)  | 5    
- max(cd_dep_college_count)  | 5    
- avg(cd_dep_college_count)  | 5.0  
+ min(cd_dep_college_count)  | 3    
+ max(cd_dep_college_count)  | 3    
+ avg(cd_dep_college_count)  | 3.0  
 -RECORD 85-------------------------
+ ca_state                   | null 
+ cd_gender                  | M    
+ cd_marital_status          | D    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 2    
+ max(cd_dep_count)          | 2    
+ avg(cd_dep_count)          | 2.0  
+ cd_dep_employed_count      | 6    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 6    
+ max(cd_dep_employed_count) | 6    
+ avg(cd_dep_employed_count) | 6.0  
+ cd_dep_college_count       | 1    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 1    
+ max(cd_dep_college_count)  | 1    
+ avg(cd_dep_college_count)  | 1.0  
+-RECORD 86-------------------------
+ ca_state                   | null 
+ cd_gender                  | M    
+ cd_marital_status          | D    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 2    
+ max(cd_dep_count)          | 2    
+ avg(cd_dep_count)          | 2.0  
+ cd_dep_employed_count      | 6    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 6    
+ max(cd_dep_employed_count) | 6    
+ avg(cd_dep_employed_count) | 6.0  
+ cd_dep_college_count       | 6    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 6    
+ max(cd_dep_college_count)  | 6    
+ avg(cd_dep_college_count)  | 6.0  
+-RECORD 87-------------------------
  ca_state                   | null 
  cd_gender                  | M    
  cd_marital_status          | D    
@@ -1537,17 +1573,35 @@
  min(cd_dep_count)          | 3    
  max(cd_dep_count)          | 3    
  avg(cd_dep_count)          | 3.0  
- cd_dep_employed_count      | 2    
+ cd_dep_employed_count      | 5    
  cnt2                       | 1    
- min(cd_dep_employed_count) | 2    
- max(cd_dep_employed_count) | 2    
- avg(cd_dep_employed_count) | 2.0  
- cd_dep_college_count       | 3    
+ min(cd_dep_employed_count) | 5    
+ max(cd_dep_employed_count) | 5    
+ avg(cd_dep_employed_count) | 5.0  
+ cd_dep_college_count       | 4    
  cnt3                       | 1    
- min(cd_dep_college_count)  | 3    
- max(cd_dep_college_count)  | 3    
- avg(cd_dep_college_count)  | 3.0  
--RECORD 86-------------------------
+ min(cd_dep_college_count)  | 4    
+ max(cd_dep_college_count)  | 4    
+ avg(cd_dep_college_count)  | 4.0  
+-RECORD 88-------------------------
+ ca_state                   | null 
+ cd_gender                  | M    
+ cd_marital_status          | D    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 3    
+ max(cd_dep_count)          | 3    
+ avg(cd_dep_count)          | 3.0  
+ cd_dep_employed_count      | 6    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 6    
+ max(cd_dep_employed_count) | 6    
+ avg(cd_dep_employed_count) | 6.0  
+ cd_dep_college_count       | 6    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 6    
+ max(cd_dep_college_count)  | 6    
+ avg(cd_dep_college_count)  | 6.0  
+-RECORD 89-------------------------
  ca_state                   | null 
  cd_gender                  | M    
  cd_marital_status          | D    
@@ -1560,12 +1614,12 @@
  min(cd_dep_employed_count) | 5    
  max(cd_dep_employed_count) | 5    
  avg(cd_dep_employed_count) | 5.0  
- cd_dep_college_count       | 2    
+ cd_dep_college_count       | 5    
  cnt3                       | 1    
- min(cd_dep_college_count)  | 2    
- max(cd_dep_college_count)  | 2    
- avg(cd_dep_college_count)  | 2.0  
--RECORD 87-------------------------
+ min(cd_dep_college_count)  | 5    
+ max(cd_dep_college_count)  | 5    
+ avg(cd_dep_college_count)  | 5.0  
+-RECORD 90-------------------------
  ca_state                   | null 
  cd_gender                  | M    
  cd_marital_status          | D    
@@ -1578,12 +1632,12 @@
  min(cd_dep_employed_count) | 1    
  max(cd_dep_employed_count) | 1    
  avg(cd_dep_employed_count) | 1.0  
- cd_dep_college_count       | 6    
+ cd_dep_college_count       | 1    
  cnt3                       | 1    
- min(cd_dep_college_count)  | 6    
- max(cd_dep_college_count)  | 6    
- avg(cd_dep_college_count)  | 6.0  
--RECORD 88-------------------------
+ min(cd_dep_college_count)  | 1    
+ max(cd_dep_college_count)  | 1    
+ avg(cd_dep_college_count)  | 1.0  
+-RECORD 91-------------------------
  ca_state                   | null 
  cd_gender                  | M    
  cd_marital_status          | D    
@@ -1591,17 +1645,53 @@
  min(cd_dep_count)          | 6    
  max(cd_dep_count)          | 6    
  avg(cd_dep_count)          | 6.0  
- cd_dep_employed_count      | 3    
+ cd_dep_employed_count      | 2    
  cnt2                       | 1    
- min(cd_dep_employed_count) | 3    
- max(cd_dep_employed_count) | 3    
- avg(cd_dep_employed_count) | 3.0  
- cd_dep_college_count       | 1    
+ min(cd_dep_employed_count) | 2    
+ max(cd_dep_employed_count) | 2    
+ avg(cd_dep_employed_count) | 2.0  
+ cd_dep_college_count       | 5    
  cnt3                       | 1    
- min(cd_dep_college_count)  | 1    
- max(cd_dep_college_count)  | 1    
- avg(cd_dep_college_count)  | 1.0  
--RECORD 89-------------------------
+ min(cd_dep_college_count)  | 5    
+ max(cd_dep_college_count)  | 5    
+ avg(cd_dep_college_count)  | 5.0  
+-RECORD 92-------------------------
+ ca_state                   | null 
+ cd_gender                  | M    
+ cd_marital_status          | D    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 6    
+ max(cd_dep_count)          | 6    
+ avg(cd_dep_count)          | 6.0  
+ cd_dep_employed_count      | 4    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 4    
+ max(cd_dep_employed_count) | 4    
+ avg(cd_dep_employed_count) | 4.0  
+ cd_dep_college_count       | 3    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 3    
+ max(cd_dep_college_count)  | 3    
+ avg(cd_dep_college_count)  | 3.0  
+-RECORD 93-------------------------
+ ca_state                   | null 
+ cd_gender                  | M    
+ cd_marital_status          | D    
+ cnt1                       | 1    
+ min(cd_dep_count)          | 6    
+ max(cd_dep_count)          | 6    
+ avg(cd_dep_count)          | 6.0  
+ cd_dep_employed_count      | 4    
+ cnt2                       | 1    
+ min(cd_dep_employed_count) | 4    
+ max(cd_dep_employed_count) | 4    
+ avg(cd_dep_employed_count) | 4.0  
+ cd_dep_college_count       | 4    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 4    
+ max(cd_dep_college_count)  | 4    
+ avg(cd_dep_college_count)  | 4.0  
+-RECORD 94-------------------------
  ca_state                   | null 
  cd_gender                  | M    
  cd_marital_status          | M    
@@ -1614,30 +1704,30 @@
  min(cd_dep_employed_count) | 0    
  max(cd_dep_employed_count) | 0    
  avg(cd_dep_employed_count) | 0.0  
- cd_dep_college_count       | 1    
+ cd_dep_college_count       | 2    
  cnt3                       | 1    
- min(cd_dep_college_count)  | 1    
- max(cd_dep_college_count)  | 1    
- avg(cd_dep_college_count)  | 1.0  
--RECORD 90-------------------------
+ min(cd_dep_college_count)  | 2    
+ max(cd_dep_college_count)  | 2    
+ avg(cd_dep_college_count)  | 2.0  
+-RECORD 95-------------------------
  ca_state                   | null 
  cd_gender                  | M    
  cd_marital_status          | M    
- cnt1                       | 2    
+ cnt1                       | 1    
  min(cd_dep_count)          | 0    
  max(cd_dep_count)          | 0    
  avg(cd_dep_count)          | 0.0  
  cd_dep_employed_count      | 1    
- cnt2                       | 2    
+ cnt2                       | 1    
  min(cd_dep_employed_count) | 1    
  max(cd_dep_employed_count) | 1    
  avg(cd_dep_employed_count) | 1.0  
- cd_dep_college_count       | 2    
- cnt3                       | 2    
- min(cd_dep_college_count)  | 2    
- max(cd_dep_college_count)  | 2    
- avg(cd_dep_college_count)  | 2.0  
--RECORD 91-------------------------
+ cd_dep_college_count       | 6    
+ cnt3                       | 1    
+ min(cd_dep_college_count)  | 6    
+ max(cd_dep_college_count)  | 6    
+ avg(cd_dep_college_count)  | 6.0  
+-RECORD 96-------------------------
  ca_state                   | null 
  cd_gender                  | M    
  cd_marital_status          | M    
@@ -1650,114 +1740,24 @@
  min(cd_dep_employed_count) | 2    
  max(cd_dep_employed_count) | 2    
  avg(cd_dep_employed_count) | 2.0  
- cd_dep_college_count       | 1    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 1    
- max(cd_dep_college_count)  | 1    
- avg(cd_dep_college_count)  | 1.0  
--RECORD 92-------------------------
- ca_state                   | null 
- cd_gender                  | M    
- cd_marital_status          | M    
- cnt1                       | 1    
- min(cd_dep_count)          | 0    
- max(cd_dep_count)          | 0    
- avg(cd_dep_count)          | 0.0  
- cd_dep_employed_count      | 3    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 3    
- max(cd_dep_employed_count) | 3    
- avg(cd_dep_employed_count) | 3.0  
- cd_dep_college_count       | 5    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 5    
- max(cd_dep_college_count)  | 5    
- avg(cd_dep_college_count)  | 5.0  
--RECORD 93-------------------------
- ca_state                   | null 
- cd_gender                  | M    
- cd_marital_status          | M    
- cnt1                       | 1    
- min(cd_dep_count)          | 0    
- max(cd_dep_count)          | 0    
- avg(cd_dep_count)          | 0.0  
- cd_dep_employed_count      | 5    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 5    
- max(cd_dep_employed_count) | 5    
- avg(cd_dep_employed_count) | 5.0  
  cd_dep_college_count       | 0    
  cnt3                       | 1    
  min(cd_dep_college_count)  | 0    
  max(cd_dep_college_count)  | 0    
  avg(cd_dep_college_count)  | 0.0  
--RECORD 94-------------------------
- ca_state                   | null 
- cd_gender                  | M    
- cd_marital_status          | M    
- cnt1                       | 1    
- min(cd_dep_count)          | 1    
- max(cd_dep_count)          | 1    
- avg(cd_dep_count)          | 1.0  
- cd_dep_employed_count      | 0    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 0    
- max(cd_dep_employed_count) | 0    
- avg(cd_dep_employed_count) | 0.0  
- cd_dep_college_count       | 1    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 1    
- max(cd_dep_college_count)  | 1    
- avg(cd_dep_college_count)  | 1.0  
--RECORD 95-------------------------
- ca_state                   | null 
- cd_gender                  | M    
- cd_marital_status          | M    
- cnt1                       | 1    
- min(cd_dep_count)          | 1    
- max(cd_dep_count)          | 1    
- avg(cd_dep_count)          | 1.0  
- cd_dep_employed_count      | 0    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 0    
- max(cd_dep_employed_count) | 0    
- avg(cd_dep_employed_count) | 0.0  
- cd_dep_college_count       | 2    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 2    
- max(cd_dep_college_count)  | 2    
- avg(cd_dep_college_count)  | 2.0  
--RECORD 96-------------------------
- ca_state                   | null 
- cd_gender                  | M    
- cd_marital_status          | M    
- cnt1                       | 1    
- min(cd_dep_count)          | 2    
- max(cd_dep_count)          | 2    
- avg(cd_dep_count)          | 2.0  
- cd_dep_employed_count      | 6    
- cnt2                       | 1    
- min(cd_dep_employed_count) | 6    
- max(cd_dep_employed_count) | 6    
- avg(cd_dep_employed_count) | 6.0  
- cd_dep_college_count       | 5    
- cnt3                       | 1    
- min(cd_dep_college_count)  | 5    
- max(cd_dep_college_count)  | 5    
- avg(cd_dep_college_count)  | 5.0  
 -RECORD 97-------------------------
  ca_state                   | null 
  cd_gender                  | M    
  cd_marital_status          | M    
  cnt1                       | 1    
- min(cd_dep_count)          | 3    
- max(cd_dep_count)          | 3    
- avg(cd_dep_count)          | 3.0  
- cd_dep_employed_count      | 5    
+ min(cd_dep_count)          | 0    
+ max(cd_dep_count)          | 0    
+ avg(cd_dep_count)          | 0.0  
+ cd_dep_employed_count      | 6    
  cnt2                       | 1    
- min(cd_dep_employed_count) | 5    
- max(cd_dep_employed_count) | 5    
- avg(cd_dep_employed_count) | 5.0  
+ min(cd_dep_employed_count) | 6    
+ max(cd_dep_employed_count) | 6    
+ avg(cd_dep_employed_count) | 6.0  
  cd_dep_college_count       | 1    
  cnt3                       | 1    
  min(cd_dep_college_count)  | 1    
@@ -1768,35 +1768,35 @@
  cd_gender                  | M    
  cd_marital_status          | M    
  cnt1                       | 1    
- min(cd_dep_count)          | 3    
- max(cd_dep_count)          | 3    
- avg(cd_dep_count)          | 3.0  
+ min(cd_dep_count)          | 0    
+ max(cd_dep_count)          | 0    
+ avg(cd_dep_count)          | 0.0  
  cd_dep_employed_count      | 6    
  cnt2                       | 1    
  min(cd_dep_employed_count) | 6    
  max(cd_dep_employed_count) | 6    
  avg(cd_dep_employed_count) | 6.0  
- cd_dep_college_count       | 4    
+ cd_dep_college_count       | 2    
  cnt3                       | 1    
- min(cd_dep_college_count)  | 4    
- max(cd_dep_college_count)  | 4    
- avg(cd_dep_college_count)  | 4.0  
+ min(cd_dep_college_count)  | 2    
+ max(cd_dep_college_count)  | 2    
+ avg(cd_dep_college_count)  | 2.0  
 -RECORD 99-------------------------
  ca_state                   | null 
  cd_gender                  | M    
  cd_marital_status          | M    
  cnt1                       | 1    
- min(cd_dep_count)          | 4    
- max(cd_dep_count)          | 4    
- avg(cd_dep_count)          | 4.0  
+ min(cd_dep_count)          | 1    
+ max(cd_dep_count)          | 1    
+ avg(cd_dep_count)          | 1.0  
  cd_dep_employed_count      | 1    
  cnt2                       | 1    
  min(cd_dep_employed_count) | 1    
  max(cd_dep_employed_count) | 1    
  avg(cd_dep_employed_count) | 1.0  
- cd_dep_college_count       | 3    
+ cd_dep_college_count       | 6    
  cnt3                       | 1    
- min(cd_dep_college_count)  | 3    
- max(cd_dep_college_count)  | 3    
- avg(cd_dep_college_count)  | 3.0
+ min(cd_dep_college_count)  | 6    
+ max(cd_dep_college_count)  | 6    
+ avg(cd_dep_college_count)  | 6.0
              

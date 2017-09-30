@@ -2,601 +2,601 @@
 -RECORD 0-------------------------------
  channel | null                         
  id      | null                         
- sales   | 13553636.71                  
- returns | 630819.07                    
- profit  | -3876883.14                  
+ sales   | 13343451.50                  
+ returns | 687196.48                    
+ profit  | -4060382.36                  
 -RECORD 1-------------------------------
  channel | catalog channel              
  id      | null                         
- sales   | 4818809.23                   
- returns | 250952.51                    
- profit  | -519182.04                   
+ sales   | 4456215.06                   
+ returns | 230287.89                    
+ profit  | -614823.52                   
 -RECORD 2-------------------------------
  channel | catalog channel              
  id      | catalog_pageAAAAAAAAAAABAAAA 
- sales   | 18407.14                     
- returns | 67.62                        
- profit  | 4548.90                      
+ sales   | 19965.69                     
+ returns | 3132.48                      
+ profit  | -16011.54                    
 -RECORD 3-------------------------------
  channel | catalog channel              
  id      | catalog_pageAAAAAAAAABABAAAA 
- sales   | 1837.52                      
- returns | 0.00                         
- profit  | -3388.65                     
+ sales   | 14376.88                     
+ returns | 380.90                       
+ profit  | -3715.45                     
 -RECORD 4-------------------------------
  channel | catalog channel              
  id      | catalog_pageAAAAAAAAACABAAAA 
- sales   | 18390.60                     
+ sales   | 4427.58                      
  returns | 0.00                         
- profit  | 9578.02                      
+ profit  | -6520.01                     
 -RECORD 5-------------------------------
  channel | catalog channel              
  id      | catalog_pageAAAAAAAAADABAAAA 
- sales   | 1404.55                      
- returns | 27.58                        
- profit  | -3703.26                     
+ sales   | 8488.29                      
+ returns | 0.00                         
+ profit  | -3247.97                     
 -RECORD 6-------------------------------
  channel | catalog channel              
  id      | catalog_pageAAAAAAAAADCBAAAA 
- sales   | 2868.85                      
+ sales   | 16052.65                     
  returns | 0.00                         
- profit  | 826.15                       
+ profit  | -5900.88                     
 -RECORD 7-------------------------------
  channel | catalog channel              
  id      | catalog_pageAAAAAAAAAEABAAAA 
- sales   | 5039.78                      
+ sales   | 10314.44                     
  returns | 0.00                         
- profit  | -3701.62                     
+ profit  | -7096.25                     
 -RECORD 8-------------------------------
  channel | catalog channel              
  id      | catalog_pageAAAAAAAAAECBAAAA 
- sales   | 3971.05                      
- returns | 0.00                         
- profit  | 1757.41                      
+ sales   | 2857.44                      
+ returns | 2548.08                      
+ profit  | -136.42                      
 -RECORD 9-------------------------------
  channel | catalog channel              
  id      | catalog_pageAAAAAAAAAFABAAAA 
- sales   | 2316.00                      
+ sales   | 5184.92                      
  returns | 0.00                         
- profit  | -1002.65                     
+ profit  | -507.04                      
 -RECORD 10------------------------------
  channel | catalog channel              
  id      | catalog_pageAAAAAAAAAFCBAAAA 
- sales   | 7015.40                      
+ sales   | 594.44                       
  returns | 0.00                         
- profit  | 915.49                       
+ profit  | -1518.44                     
 -RECORD 11------------------------------
  channel | catalog channel              
  id      | catalog_pageAAAAAAAAAGABAAAA 
- sales   | 23067.38                     
- returns | 0.00                         
- profit  | 10478.19                     
+ sales   | 1107.03                      
+ returns | 190.82                       
+ profit  | -897.30                      
 -RECORD 12------------------------------
  channel | catalog channel              
  id      | catalog_pageAAAAAAAAAGCBAAAA 
- sales   | 27364.22                     
+ sales   | 3059.65                      
  returns | 0.00                         
- profit  | 8607.28                      
+ profit  | -5088.38                     
 -RECORD 13------------------------------
  channel | catalog channel              
  id      | catalog_pageAAAAAAAAAHABAAAA 
- sales   | 12794.77                     
+ sales   | 13134.30                     
  returns | 0.00                         
- profit  | -7812.73                     
+ profit  | 2118.90                      
 -RECORD 14------------------------------
  channel | catalog channel              
  id      | catalog_pageAAAAAAAAAHCBAAAA 
- sales   | 2640.87                      
- returns | 63.18                        
- profit  | -2334.42                     
+ sales   | 16181.17                     
+ returns | 0.00                         
+ profit  | 4761.95                      
 -RECORD 15------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAAAICBAAAA 
- sales   | 1845.15                      
+ id      | catalog_pageAAAAAAAAAJCBAAAA 
+ sales   | 2448.69                      
  returns | 0.00                         
- profit  | -4629.81                     
+ profit  | 557.49                       
 -RECORD 16------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAAAJCBAAAA 
- sales   | 1555.72                      
+ id      | catalog_pageAAAAAAAAAKCBAAAA 
+ sales   | 1005.27                      
  returns | 0.00                         
- profit  | -5039.18                     
+ profit  | 154.35                       
 -RECORD 17------------------------------
  channel | catalog channel              
  id      | catalog_pageAAAAAAAAAKPAAAAA 
- sales   | 42070.02                     
+ sales   | 8445.19                      
  returns | 0.00                         
- profit  | 6567.19                      
+ profit  | -4147.63                     
 -RECORD 18------------------------------
  channel | catalog channel              
  id      | catalog_pageAAAAAAAAALCBAAAA 
- sales   | 8772.47                      
+ sales   | 11511.46                     
  returns | 0.00                         
- profit  | 479.78                       
+ profit  | 1173.29                      
 -RECORD 19------------------------------
  channel | catalog channel              
  id      | catalog_pageAAAAAAAAALPAAAAA 
- sales   | 20380.13                     
- returns | 0.00                         
- profit  | 2437.83                      
+ sales   | 22038.68                     
+ returns | 94.24                        
+ profit  | 2354.44                      
 -RECORD 20------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAAAMCBAAAA 
- sales   | 15549.59                     
- returns | 5438.72                      
- profit  | -7150.88                     
+ id      | catalog_pageAAAAAAAAAMPAAAAA 
+ sales   | 24071.71                     
+ returns | 5664.86                      
+ profit  | -6484.42                     
 -RECORD 21------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAAAMPAAAAA 
- sales   | 11607.07                     
+ id      | catalog_pageAAAAAAAAANCBAAAA 
+ sales   | 8352.06                      
  returns | 0.00                         
- profit  | -7275.33                     
+ profit  | 4237.49                      
 -RECORD 22------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAAANCBAAAA 
- sales   | 21588.37                     
- returns | 0.00                         
- profit  | 4221.36                      
+ id      | catalog_pageAAAAAAAAANPAAAAA 
+ sales   | 14597.62                     
+ returns | 134.64                       
+ profit  | -15964.47                    
 -RECORD 23------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAAANPAAAAA 
- sales   | 21638.94                     
+ id      | catalog_pageAAAAAAAAAOCBAAAA 
+ sales   | 373.75                       
  returns | 0.00                         
- profit  | 4905.57                      
+ profit  | -1085.83                     
 -RECORD 24------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAAAOCBAAAA 
- sales   | 521.86                       
+ id      | catalog_pageAAAAAAAAAOPAAAAA 
+ sales   | 23808.03                     
  returns | 0.00                         
- profit  | 160.52                       
+ profit  | 5548.05                      
 -RECORD 25------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAAAOPAAAAA 
- sales   | 38265.71                     
+ id      | catalog_pageAAAAAAAAAPCBAAAA 
+ sales   | 9531.26                      
  returns | 0.00                         
- profit  | -15751.13                    
+ profit  | 581.49                       
 -RECORD 26------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAAAPCBAAAA 
- sales   | 4872.72                      
- returns | 0.00                         
- profit  | 2322.60                      
+ id      | catalog_pageAAAAAAAAAPPAAAAA 
+ sales   | 33119.11                     
+ returns | 55.44                        
+ profit  | 7393.54                      
 -RECORD 27------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAAAPPAAAAA 
- sales   | 16581.43                     
- returns | 5140.00                      
- profit  | -3778.70                     
+ id      | catalog_pageAAAAAAAABAABAAAA 
+ sales   | 4272.46                      
+ returns | 501.30                       
+ profit  | -9581.06                     
 -RECORD 28------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAABAABAAAA 
- sales   | 6642.83                      
+ id      | catalog_pageAAAAAAAABBABAAAA 
+ sales   | 1080.28                      
  returns | 0.00                         
- profit  | 768.98                       
+ profit  | -4305.79                     
 -RECORD 29------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAABBABAAAA 
- sales   | 280.96                       
+ id      | catalog_pageAAAAAAAABCABAAAA 
+ sales   | 33.90                        
  returns | 0.00                         
- profit  | -50.56                       
+ profit  | -278.65                      
 -RECORD 30------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAABCABAAAA 
- sales   | 1048.56                      
- returns | 0.00                         
- profit  | -600.26                      
+ id      | catalog_pageAAAAAAAABDABAAAA 
+ sales   | 5872.30                      
+ returns | 88.38                        
+ profit  | -480.99                      
 -RECORD 31------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAABDABAAAA 
- sales   | 17545.67                     
+ id      | catalog_pageAAAAAAAABDCBAAAA 
+ sales   | 5743.76                      
  returns | 0.00                         
- profit  | -9838.60                     
+ profit  | 1462.64                      
 -RECORD 32------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAABDCBAAAA 
- sales   | 9090.78                      
+ id      | catalog_pageAAAAAAAABEABAAAA 
+ sales   | 2049.28                      
  returns | 0.00                         
- profit  | -572.50                      
+ profit  | -4059.03                     
 -RECORD 33------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAABEABAAAA 
- sales   | 17525.88                     
- returns | 232.32                       
- profit  | -2410.45                     
+ id      | catalog_pageAAAAAAAABECBAAAA 
+ sales   | 18997.60                     
+ returns | 0.00                         
+ profit  | -8490.71                     
 -RECORD 34------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAABECBAAAA 
- sales   | 18693.14                     
+ id      | catalog_pageAAAAAAAABFABAAAA 
+ sales   | 31503.86                     
  returns | 0.00                         
- profit  | -3538.78                     
+ profit  | 7136.80                      
 -RECORD 35------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAABFABAAAA 
- sales   | 17175.44                     
- returns | 61.36                        
- profit  | 2821.53                      
+ id      | catalog_pageAAAAAAAABFCBAAAA 
+ sales   | 25421.67                     
+ returns | 8976.00                      
+ profit  | 10129.52                     
 -RECORD 36------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAABFCBAAAA 
- sales   | 140.82                       
- returns | 0.00                         
- profit  | -569.12                      
+ id      | catalog_pageAAAAAAAABGABAAAA 
+ sales   | 10594.99                     
+ returns | 367.65                       
+ profit  | -2926.53                     
 -RECORD 37------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAABGABAAAA 
- sales   | 384.55                       
- returns | 0.00                         
- profit  | -619.85                      
+ id      | catalog_pageAAAAAAAABHABAAAA 
+ sales   | 9000.33                      
+ returns | 1145.50                      
+ profit  | -12055.00                    
 -RECORD 38------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAABGCBAAAA 
- sales   | 3166.40                      
- returns | 1590.00                      
- profit  | -9892.69                     
+ id      | catalog_pageAAAAAAAABICBAAAA 
+ sales   | 1094.54                      
+ returns | 0.00                         
+ profit  | -202.67                      
 -RECORD 39------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAABHABAAAA 
- sales   | 14266.65                     
+ id      | catalog_pageAAAAAAAABJCBAAAA 
+ sales   | 2178.01                      
  returns | 0.00                         
- profit  | -4959.21                     
+ profit  | 979.05                       
 -RECORD 40------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAABHCBAAAA 
- sales   | 1741.48                      
+ id      | catalog_pageAAAAAAAABKCBAAAA 
+ sales   | 9189.93                      
  returns | 0.00                         
- profit  | 403.78                       
+ profit  | 4352.16                      
 -RECORD 41------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAABICBAAAA 
- sales   | 1413.03                      
- returns | 0.00                         
- profit  | -789.20                      
+ id      | catalog_pageAAAAAAAABKPAAAAA 
+ sales   | 9637.79                      
+ returns | 1986.96                      
+ profit  | -19295.74                    
 -RECORD 42------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAABJCBAAAA 
- sales   | 17473.29                     
- returns | 18.29                        
- profit  | 2514.85                      
+ id      | catalog_pageAAAAAAAABLCBAAAA 
+ sales   | 13969.57                     
+ returns | 0.00                         
+ profit  | 5111.08                      
 -RECORD 43------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAABKCBAAAA 
- sales   | 415.15                       
- returns | 0.00                         
- profit  | -1.90                        
+ id      | catalog_pageAAAAAAAABLPAAAAA 
+ sales   | 11655.71                     
+ returns | 3796.68                      
+ profit  | -15600.79                    
 -RECORD 44------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAABKPAAAAA 
- sales   | 2724.27                      
- returns | 0.00                         
- profit  | -8394.13                     
+ id      | catalog_pageAAAAAAAABMCBAAAA 
+ sales   | 11936.10                     
+ returns | 14.70                        
+ profit  | 1200.76                      
 -RECORD 45------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAABLCBAAAA 
- sales   | 15422.53                     
+ id      | catalog_pageAAAAAAAABMPAAAAA 
+ sales   | 14866.48                     
  returns | 0.00                         
- profit  | 7523.39                      
+ profit  | -662.88                      
 -RECORD 46------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAABLPAAAAA 
- sales   | 20440.65                     
+ id      | catalog_pageAAAAAAAABNCBAAAA 
+ sales   | 5440.20                      
  returns | 0.00                         
- profit  | -6095.43                     
+ profit  | -3049.20                     
 -RECORD 47------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAABMCBAAAA 
- sales   | 2324.92                      
- returns | 0.00                         
- profit  | 1256.32                      
+ id      | catalog_pageAAAAAAAABNPAAAAA 
+ sales   | 4186.13                      
+ returns | 188.37                       
+ profit  | -16115.36                    
 -RECORD 48------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAABMPAAAAA 
- sales   | 2322.14                      
+ id      | catalog_pageAAAAAAAABOCBAAAA 
+ sales   | 3112.32                      
  returns | 0.00                         
- profit  | -4465.41                     
+ profit  | -2559.36                     
 -RECORD 49------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAABNCBAAAA 
- sales   | 10606.89                     
+ id      | catalog_pageAAAAAAAABOPAAAAA 
+ sales   | 2020.48                      
  returns | 0.00                         
- profit  | -4039.08                     
+ profit  | -192.04                      
 -RECORD 50------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAABNPAAAAA 
- sales   | 5671.18                      
+ id      | catalog_pageAAAAAAAABPCBAAAA 
+ sales   | 7148.02                      
  returns | 0.00                         
- profit  | -6038.20                     
+ profit  | 1781.91                      
 -RECORD 51------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAABOCBAAAA 
- sales   | 7494.52                      
+ id      | catalog_pageAAAAAAAABPPAAAAA 
+ sales   | 17674.89                     
  returns | 0.00                         
- profit  | 2578.36                      
+ profit  | 345.58                       
 -RECORD 52------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAABOPAAAAA 
- sales   | 19163.74                     
+ id      | catalog_pageAAAAAAAACAABAAAA 
+ sales   | 17255.36                     
  returns | 0.00                         
- profit  | 2677.78                      
+ profit  | -3926.28                     
 -RECORD 53------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAABPCBAAAA 
- sales   | 48.42                        
- returns | 0.00                         
- profit  | -92.80                       
+ id      | catalog_pageAAAAAAAACBABAAAA 
+ sales   | 2470.13                      
+ returns | 1545.21                      
+ profit  | -1544.35                     
 -RECORD 54------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAABPPAAAAA 
- sales   | 65484.56                     
- returns | 8188.50                      
- profit  | 16714.73                     
+ id      | catalog_pageAAAAAAAACCABAAAA 
+ sales   | 6361.92                      
+ returns | 0.00                         
+ profit  | 3790.08                      
 -RECORD 55------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAACAABAAAA 
- sales   | 34936.59                     
+ id      | catalog_pageAAAAAAAACDCBAAAA 
+ sales   | 1526.49                      
  returns | 0.00                         
- profit  | 6574.55                      
+ profit  | -3403.89                     
 -RECORD 56------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAACBABAAAA 
- sales   | 8178.17                      
+ id      | catalog_pageAAAAAAAACEABAAAA 
+ sales   | 10732.94                     
  returns | 0.00                         
- profit  | 1370.92                      
+ profit  | -984.47                      
 -RECORD 57------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAACCABAAAA 
- sales   | 24428.99                     
+ id      | catalog_pageAAAAAAAACECBAAAA 
+ sales   | 648.84                       
  returns | 0.00                         
- profit  | 7616.93                      
+ profit  | 170.04                       
 -RECORD 58------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAACDABAAAA 
- sales   | 17628.32                     
- returns | 1503.67                      
- profit  | -2086.58                     
+ id      | catalog_pageAAAAAAAACFABAAAA 
+ sales   | 6745.24                      
+ returns | 0.00                         
+ profit  | -3013.83                     
 -RECORD 59------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAACDCBAAAA 
- sales   | 222.09                       
+ id      | catalog_pageAAAAAAAACGABAAAA 
+ sales   | 5143.41                      
  returns | 0.00                         
- profit  | 108.57                       
+ profit  | 1545.93                      
 -RECORD 60------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAACEABAAAA 
- sales   | 9898.50                      
- returns | 491.66                       
- profit  | -4581.91                     
+ id      | catalog_pageAAAAAAAACGCBAAAA 
+ sales   | 1284.52                      
+ returns | 0.00                         
+ profit  | -144.08                      
 -RECORD 61------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAACECBAAAA 
- sales   | 11493.96                     
+ id      | catalog_pageAAAAAAAACHABAAAA 
+ sales   | 10246.18                     
  returns | 0.00                         
- profit  | -7027.70                     
+ profit  | -6015.51                     
 -RECORD 62------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAACFABAAAA 
- sales   | 25027.83                     
- returns | 11283.47                     
- profit  | 4064.93                      
+ id      | catalog_pageAAAAAAAACHCBAAAA 
+ sales   | 10416.70                     
+ returns | 0.00                         
+ profit  | 19.49                        
 -RECORD 63------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAACFCBAAAA 
- sales   | 618.24                       
+ id      | catalog_pageAAAAAAAACICBAAAA 
+ sales   | 396.76                       
  returns | 0.00                         
- profit  | -1316.28                     
+ profit  | 154.44                       
 -RECORD 64------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAACGABAAAA 
- sales   | 1830.05                      
+ id      | catalog_pageAAAAAAAACJCBAAAA 
+ sales   | 281.26                       
  returns | 0.00                         
- profit  | -3073.99                     
+ profit  | -5252.32                     
 -RECORD 65------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAACHABAAAA 
- sales   | 1121.15                      
- returns | 275.52                       
- profit  | -5850.52                     
+ id      | catalog_pageAAAAAAAACKCBAAAA 
+ sales   | 163.02                       
+ returns | 0.00                         
+ profit  | -46.83                       
 -RECORD 66------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAACHCBAAAA 
- sales   | 13108.45                     
- returns | 0.00                         
- profit  | -786.42                      
+ id      | catalog_pageAAAAAAAACKPAAAAA 
+ sales   | 12857.24                     
+ returns | 730.99                       
+ profit  | -2517.04                     
 -RECORD 67------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAACICBAAAA 
- sales   | 1755.49                      
+ id      | catalog_pageAAAAAAAACLCBAAAA 
+ sales   | 5470.63                      
  returns | 0.00                         
- profit  | 146.98                       
+ profit  | 1082.94                      
 -RECORD 68------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAACJCBAAAA 
- sales   | 2982.05                      
+ id      | catalog_pageAAAAAAAACLPAAAAA 
+ sales   | 21549.31                     
  returns | 0.00                         
- profit  | -196.21                      
+ profit  | 6695.34                      
 -RECORD 69------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAACKCBAAAA 
- sales   | 13658.88                     
+ id      | catalog_pageAAAAAAAACMCBAAAA 
+ sales   | 11329.50                     
  returns | 0.00                         
- profit  | 5924.52                      
+ profit  | 5202.60                      
 -RECORD 70------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAACKPAAAAA 
- sales   | 26319.77                     
- returns | 162.81                       
- profit  | -8423.49                     
+ id      | catalog_pageAAAAAAAACMPAAAAA 
+ sales   | 7546.59                      
+ returns | 294.84                       
+ profit  | -2582.73                     
 -RECORD 71------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAACLCBAAAA 
- sales   | 6469.97                      
+ id      | catalog_pageAAAAAAAACNPAAAAA 
+ sales   | 23904.66                     
  returns | 0.00                         
- profit  | -5067.48                     
+ profit  | 488.70                       
 -RECORD 72------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAACLPAAAAA 
- sales   | 43938.15                     
- returns | 7021.98                      
- profit  | -4638.29                     
+ id      | catalog_pageAAAAAAAACOPAAAAA 
+ sales   | 19014.47                     
+ returns | 648.01                       
+ profit  | -8700.92                     
 -RECORD 73------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAACMCBAAAA 
- sales   | 9332.13                      
+ id      | catalog_pageAAAAAAAACPCBAAAA 
+ sales   | 1148.55                      
  returns | 0.00                         
- profit  | -5421.54                     
+ profit  | -932.52                      
 -RECORD 74------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAACMPAAAAA 
- sales   | 13306.48                     
+ id      | catalog_pageAAAAAAAACPPAAAAA 
+ sales   | 25230.53                     
  returns | 0.00                         
- profit  | -6449.30                     
+ profit  | -741.80                      
 -RECORD 75------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAACNPAAAAA 
- sales   | 18488.66                     
+ id      | catalog_pageAAAAAAAADAABAAAA 
+ sales   | 20305.27                     
  returns | 0.00                         
- profit  | 186.37                       
+ profit  | 972.58                       
 -RECORD 76------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAACOCBAAAA 
- sales   | 1220.46                      
- returns | 451.26                       
- profit  | -6770.17                     
+ id      | catalog_pageAAAAAAAADBABAAAA 
+ sales   | 1390.65                      
+ returns | 0.00                         
+ profit  | -4835.48                     
 -RECORD 77------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAACOPAAAAA 
- sales   | 27469.76                     
- returns | 1091.48                      
- profit  | 7443.78                      
+ id      | catalog_pageAAAAAAAADCABAAAA 
+ sales   | 8296.22                      
+ returns | 4011.70                      
+ profit  | -5197.32                     
 -RECORD 78------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAACPCBAAAA 
- sales   | 117.48                       
+ id      | catalog_pageAAAAAAAADDABAAAA 
+ sales   | 6289.02                      
  returns | 0.00                         
- profit  | 30.19                        
+ profit  | 1457.49                      
 -RECORD 79------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAACPPAAAAA 
- sales   | 19041.61                     
- returns | 172.22                       
- profit  | 380.68                       
+ id      | catalog_pageAAAAAAAADDCBAAAA 
+ sales   | 14137.81                     
+ returns | 0.00                         
+ profit  | 479.91                       
 -RECORD 80------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAADAABAAAA 
- sales   | 12391.42                     
- returns | 953.40                       
- profit  | -7032.35                     
+ id      | catalog_pageAAAAAAAADEABAAAA 
+ sales   | 7572.00                      
+ returns | 77.80                        
+ profit  | 2937.68                      
 -RECORD 81------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAADBABAAAA 
- sales   | 1495.00                      
+ id      | catalog_pageAAAAAAAADECBAAAA 
+ sales   | 4207.12                      
  returns | 0.00                         
- profit  | -9772.65                     
+ profit  | -2457.02                     
 -RECORD 82------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAADCABAAAA 
- sales   | 0.00                         
- returns | 0.00                         
- profit  | -3388.10                     
+ id      | catalog_pageAAAAAAAADFABAAAA 
+ sales   | 23991.62                     
+ returns | 3.15                         
+ profit  | 1216.83                      
 -RECORD 83------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAADDABAAAA 
- sales   | 15917.59                     
+ id      | catalog_pageAAAAAAAADFCBAAAA 
+ sales   | 6537.84                      
  returns | 0.00                         
- profit  | 4459.43                      
+ profit  | -6173.37                     
 -RECORD 84------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAADDCBAAAA 
- sales   | 4409.76                      
- returns | 733.12                       
- profit  | 912.46                       
+ id      | catalog_pageAAAAAAAADGABAAAA 
+ sales   | 9050.23                      
+ returns | 3062.68                      
+ profit  | -2935.52                     
 -RECORD 85------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAADEABAAAA 
- sales   | 14545.59                     
- returns | 10419.31                     
- profit  | -2030.01                     
+ id      | catalog_pageAAAAAAAADGCBAAAA 
+ sales   | 7789.42                      
+ returns | 0.00                         
+ profit  | -3868.94                     
 -RECORD 86------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAADFABAAAA 
- sales   | 5222.68                      
+ id      | catalog_pageAAAAAAAADHABAAAA 
+ sales   | 25558.98                     
  returns | 0.00                         
- profit  | -3306.65                     
+ profit  | -6817.76                     
 -RECORD 87------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAADFCBAAAA 
- sales   | 2442.96                      
- returns | 0.00                         
- profit  | -758.68                      
+ id      | catalog_pageAAAAAAAADHCBAAAA 
+ sales   | 5245.91                      
+ returns | 65.34                        
+ profit  | -1734.29                     
 -RECORD 88------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAADGABAAAA 
- sales   | 14604.59                     
+ id      | catalog_pageAAAAAAAADICBAAAA 
+ sales   | 0.00                         
  returns | 0.00                         
- profit  | -3980.39                     
+ profit  | -2246.10                     
 -RECORD 89------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAADHABAAAA 
- sales   | 19078.94                     
- returns | 12277.75                     
- profit  | 6448.20                      
+ id      | catalog_pageAAAAAAAADJCBAAAA 
+ sales   | 7721.15                      
+ returns | 0.00                         
+ profit  | 3313.85                      
 -RECORD 90------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAADHCBAAAA 
- sales   | 12207.03                     
- returns | 0.00                         
- profit  | 1895.71                      
+ id      | catalog_pageAAAAAAAADKCBAAAA 
+ sales   | 5463.32                      
+ returns | 1677.60                      
+ profit  | 874.45                       
 -RECORD 91------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAADICBAAAA 
- sales   | 12548.28                     
+ id      | catalog_pageAAAAAAAADKPAAAAA 
+ sales   | 30068.71                     
  returns | 0.00                         
- profit  | 407.59                       
+ profit  | -8011.27                     
 -RECORD 92------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAADJCBAAAA 
- sales   | 3526.74                      
+ id      | catalog_pageAAAAAAAADLCBAAAA 
+ sales   | 1146.19                      
  returns | 0.00                         
- profit  | 2014.47                      
+ profit  | -1287.95                     
 -RECORD 93------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAADKCBAAAA 
- sales   | 3071.53                      
+ id      | catalog_pageAAAAAAAADLPAAAAA 
+ sales   | 35314.26                     
  returns | 0.00                         
- profit  | -5979.53                     
+ profit  | -5055.96                     
 -RECORD 94------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAADKPAAAAA 
- sales   | 52608.41                     
- returns | 1959.75                      
- profit  | 20557.42                     
+ id      | catalog_pageAAAAAAAADMCBAAAA 
+ sales   | 2420.23                      
+ returns | 0.00                         
+ profit  | -1610.01                     
 -RECORD 95------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAADLCBAAAA 
- sales   | 386.12                       
- returns | 0.00                         
- profit  | -1094.08                     
+ id      | catalog_pageAAAAAAAADMPAAAAA 
+ sales   | 32509.00                     
+ returns | 737.40                       
+ profit  | -14350.75                    
 -RECORD 96------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAADLPAAAAA 
- sales   | 22380.47                     
- returns | 230.88                       
- profit  | 611.66                       
+ id      | catalog_pageAAAAAAAADNCBAAAA 
+ sales   | 9986.56                      
+ returns | 5534.72                      
+ profit  | 1208.35                      
 -RECORD 97------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAADMCBAAAA 
- sales   | 4943.75                      
+ id      | catalog_pageAAAAAAAADNPAAAAA 
+ sales   | 1953.82                      
  returns | 0.00                         
- profit  | 2158.10                      
+ profit  | 220.42                       
 -RECORD 98------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAADMPAAAAA 
- sales   | 17113.94                     
- returns | 0.00                         
- profit  | 4231.57                      
+ id      | catalog_pageAAAAAAAADOCBAAAA 
+ sales   | 3356.59                      
+ returns | 62.99                        
+ profit  | -4084.30                     
 -RECORD 99------------------------------
  channel | catalog channel              
- id      | catalog_pageAAAAAAAADNCBAAAA 
- sales   | 982.53                       
+ id      | catalog_pageAAAAAAAADOPAAAAA 
+ sales   | 5090.89                      
  returns | 0.00                         
- profit  | -4098.99
+ profit  | -2319.86
              
