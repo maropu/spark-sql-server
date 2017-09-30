@@ -22,8 +22,8 @@ import scala.util.control.NonFatal
 
 import org.apache.spark.SparkContext
 import org.apache.spark.annotation.DeveloperApi
-import org.apache.spark.deploy.master.{LeaderElectable, MonarchyLeaderAgent, ZooKeeperLeaderElectionAgentAccessor}
 import org.apache.spark.deploy.SparkHadoopUtil
+import org.apache.spark.deploy.master.{LeaderElectable, MonarchyLeaderAgent, ZooKeeperLeaderElectionAgentAccessor}
 import org.apache.spark.internal.Logging
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd, SparkListenerJobStart}
 import org.apache.spark.sql.SQLContext
