@@ -74,6 +74,7 @@ work/
 thirdparty/scala-*
 thirdparty/zinc-*
 thirdparty/spark-*
+thirdparty/apache-maven-*
 
 # For Hive
 TempStatsStore/
