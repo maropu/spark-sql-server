@@ -84,7 +84,7 @@ object TPCDSQueryBenchmark extends Logging {
       "promotion", "store", "store_returns", "catalog_sales", "web_sales", "store_sales",
       "web_returns", "web_site", "reason", "call_center", "warehouse", "ship_mode", "income_band",
       "time_dim", "web_page")
-    
+
     private def getTypedValues(rs: ResultSet): Seq[Any] = {
       val rsMetaData = rs.getMetaData
       (1 to rsMetaData.getColumnCount).map { offset =>
@@ -103,7 +103,7 @@ object TPCDSQueryBenchmark extends Logging {
         }
       }
     }
-    
+
     private def doSql[T](sql: String)(f: ResultSet => T): Seq[T] = {
       val results = new mutable.ArrayBuffer[T]()
       val rs = statement.executeQuery(sql)
@@ -113,7 +113,7 @@ object TPCDSQueryBenchmark extends Logging {
       rs.close()
       results.toSeq
     }
-    
+
     case class QueryCase(queryName: String, sql: String, resultFile: File)
 
     private def runTPCDSQueries(q: QueryCase): Unit = {
