@@ -6,15 +6,22 @@ This is just a prototype to check feasibility for yet another SQL JDBC/ODBC serv
 
 ## Running the SQL JDBC/ODBC server
 
-To start the JDBC/ODBC server, run the following in the root directory:
+To start the JDBC/ODBC server, check out this repository and run the following command in the root directory:
 
     $ ./sbin/start-sql-server.sh
 
-This script accepts all `bin/spark-submit` command line options in Spark, plus options
-for the SQL server. You may run `./sbin/start-sql-server.sh --help` for a complete list of
-all available options. By default, the server listens on localhost:5432.
+This script accepts all `bin/spark-submit` command line options in Spark, plus options for the SQL server.
+You may run `./sbin/start-sql-server.sh --help` for a complete list of all available options.
+If you use `spark-2.2.0`, you can add the option below to install the JDBC/ODBC server:
 
-Now you can use a PostgreSQL `psql` command to test the SQL JDBC/ODBC server:
+    $ ./bin/spark-shell --packages maropu:spark-sql-server:0.1.0
+
+Then, you run the commands to launch the server:
+
+    scala> sql("SET spark.sql.crossJoin.enabled=true")
+    scala> org.apache.spark.sql.server.SQLServer.startWithContext(spark.sqlContext)
+
+Now, you can use a PostgreSQL `psql` command to test the SQL JDBC/ODBC server:
 
     $ psql -h localhost -d default
 
