@@ -74,6 +74,8 @@
     <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
     <finalName>${project.artifactId}_${spark.version}_${project.version}</finalName>
     <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
+    <sourceDirectory>src/main/scala</sourceDirectory>
+    <testSourceDirectory>src/test/scala</testSourceDirectory>
   </build>
 </project>
 

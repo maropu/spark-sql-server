@@ -1,5 +1,6 @@
 [![License](http://img.shields.io/:license-Apache_v2-blue.svg)](https://github.com/maropu/spark-sql-server/blob/master/LICENSE)
 [![Build Status](https://travis-ci.org/maropu/spark-sql-server.svg?branch=master)](https://travis-ci.org/maropu/spark-sql-server)
+[![Coverage Status](https://coveralls.io/repos/github/maropu/spark-sql-server/badge.svg?branch=master)](https://coveralls.io/github/maropu/spark-sql-server?branch=master)
 
 A Spark SQL server based on the PostgreSQL V3 protocol.
 This is just a prototype to check feasibility for yet another SQL JDBC/ODBC server in Apache Spark
