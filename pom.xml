@@ -466,7 +466,10 @@
             <excludes>
               <exclude>**/*$*</exclude>
               <exclude>**/*$</exclude>
+              <exclude>org/apache/spark/sql/server/ui/**</exclude>
               <exclude>org/apache/spark/sql/server/parser/**</exclude>
+              <exclude>org/apache/spark/sql/server/execution/**</exclude>
+              <exclude>org/apache/spark/sql/server/benchmark/**</exclude>
             </excludes>
           </instrumentation>
           <format>xml</format>
