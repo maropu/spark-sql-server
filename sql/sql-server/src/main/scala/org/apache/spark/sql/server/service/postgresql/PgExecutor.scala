@@ -122,7 +122,7 @@ private[postgresql] case class PgOperation(
             val qe = sqlContext.sparkSession.sessionState.executePlan(child)
             val schema = qe.analyzed.schema
             PgMetadata.registerTable(dbName, tableName, schema, CatalogTableType.VIEW, sqlContext)
-          case CreateFunctionCommand(dbNameOption, funcName, _, _, _) =>
+          case CreateFunctionCommand(dbNameOption, funcName, _, _, _, _, _) =>
             val dbName = dbNameOption.getOrElse("default")
             PgMetadata.registerFunction(dbName, funcName, sqlContext)
           case DropDatabaseCommand(dbName, _, _) =>

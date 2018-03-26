@@ -43,11 +43,11 @@ import org.ietf.jgss.{GSSContext, GSSCredential, GSSException, GSSManager, Oid}
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.{AnalysisException, SQLContext}
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.server.{SQLServerConf, SQLServerEnv}
 import org.apache.spark.sql.server.SQLServerConf._
+import org.apache.spark.sql.server.parser.ParseException
 import org.apache.spark.sql.server.service.{Operation, SessionService, SessionState}
 import org.apache.spark.sql.server.service.postgresql.PgMetadata._
 import org.apache.spark.sql.server.service.postgresql.PgParser

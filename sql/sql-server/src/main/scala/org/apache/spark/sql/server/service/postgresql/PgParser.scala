@@ -22,6 +22,7 @@ import java.util.Locale
 import scala.collection.JavaConverters._
 import scala.collection.mutable.Buffer
 
+import org.apache.spark.sql.catalyst.FunctionIdentifier
 import org.apache.spark.sql.catalyst.analysis._
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateFunction, First}
@@ -61,15 +62,10 @@ private[postgresql] class PgAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder
   }
 
   override def visitPrimitiveDataType(ctx: PrimitiveDataTypeContext): DataType = withOrigin(ctx) {
-    try {
-      super.visitPrimitiveDataType(ctx)
-    } catch {
-      case e: ParseException =>
-        val dataType = ctx.identifier.getText.toLowerCase(Locale.ROOT)
-        (dataType, ctx.INTEGER_VALUE().asScala.toList) match {
-          case ("text", Nil) => StringType
-          case _ => throw e
-        }
+    val dataType = ctx.identifier.getText.toLowerCase(Locale.ROOT)
+    (dataType, ctx.INTEGER_VALUE().asScala.toList) match {
+      case ("text", Nil) => StringType
+      case _ => super.visitPrimitiveDataType(ctx)
     }
   }
 
@@ -155,13 +151,13 @@ private[postgresql] class PgAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder
           case extractName(n) => n
           case n => n
         }
-        UnresolvedFunction(funcName, Seq.empty, false)
+        UnresolvedFunction(FunctionIdentifier(funcName), Seq.empty, false)
       case "regtype" =>
         val args = expression(ctx.primaryExpression()) :: Nil
         val funcName = if (ctx.pgDataType.identifier != null) {
-          s"${ctx.pgDataType.identifier.getText}.$dataType"
+          FunctionIdentifier(dataType, Some(ctx.pgDataType.identifier.getText))
         } else {
-          dataType
+          FunctionIdentifier(dataType)
         }
         UnresolvedFunction(funcName, args, false)
       case "regclass" =>
@@ -171,16 +167,11 @@ private[postgresql] class PgAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder
     }
   }
 
-  override def visitConcat(ctx: ConcatContext): Expression = {
-    val exprs = ctx.primaryExpression().asScala
-    Concat(expression(exprs.head) +: exprs.drop(1).map(expression))
-  }
-
   private def toSparkRange(start: Expression, end: Expression, intvl: Option[Expression]) = {
     // Fill a gap between PostgreSQL `generate_series` and Spark `range` here
     val e = Add(end, Literal(1, IntegerType))
     val args = intvl.map(i => start :: e :: i :: Nil).getOrElse(start :: e :: Nil)
-    UnresolvedTableValuedFunction("range", args)
+    UnresolvedTableValuedFunction("range", args, Seq.empty)
   }
 
   override def visitSubstringInternalFunc(ctx: SubstringInternalFuncContext): Expression = {
@@ -198,13 +189,16 @@ private[postgresql] class PgAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder
 
   override def visitTableValuedFunction(ctx: TableValuedFunctionContext): LogicalPlan = {
     withOrigin(ctx) {
-      val funcPlan = (ctx.identifier(0).getText, ctx.expression.asScala.map(expression)) match {
+      val funcName = ctx.functionTable.identifier.getText
+      val args = ctx.functionTable.expression.asScala.map(expression)
+      val funcPlan = (funcName, args) match {
         case ("generate_series", Buffer(start, end)) => toSparkRange(start, end, None)
         case ("generate_series", Buffer(start, end, step)) => toSparkRange(start, end, Some(step))
         case _ => super.visitTableValuedFunction(ctx)
       }
-      if (ctx.identifier().size > 1) {
-        val prefix = ctx.identifier(1).getText
+      if (ctx.functionTable.tableAlias() != null &&
+          ctx.functionTable.tableAlias.strictIdentifier() != null) {
+        val prefix = ctx.functionTable.tableAlias.strictIdentifier.getText
         // This workaround is needed to parse a SQL syntax below:
         //
         // SELECT
@@ -212,8 +206,8 @@ private[postgresql] class PgAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder
         // FROM
         //   generate_series(1, array_upper(current_schemas(false), 1)) AS s(r)
         //
-        if (ctx.identifierList != null) {
-          val aliases = visitIdentifierList(ctx.identifierList)
+        if (ctx.functionTable.tableAlias.identifierList() != null) {
+          val aliases = visitIdentifierList(ctx.functionTable.tableAlias.identifierList())
           // TODO: Since there is currently one table function `range`, we just assign an output
           // name here. But, we need to make this logic more general in future.
           val projectList = Alias(UnresolvedAttribute("id"), aliases.head)() :: Nil

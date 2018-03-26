@@ -123,7 +123,7 @@ install_scala() {
 install_spark() {
   local spark_version=`grep "<spark.version>" "${_DIR}/../pom.xml" | head -n1 | awk -F '[<>]' '{print $3}'`
   local hadoop_version=`grep "<hadoop.binary.version>" "${_DIR}/../pom.xml" | head -n1 | awk -F '[<>]' '{print $3}'`
-  local apache_mirror=${APACHE_MIRROR:-'http://d3kbcqa49mib13.cloudfront.net'}
+  local apache_mirror=${APACHE_MIRROR:-"http://www-us.apache.org/dist/spark/spark-${spark_version}"}
 
   install_app \
     "${apache_mirror}" \

@@ -23,10 +23,12 @@ import java.util.concurrent.atomic.AtomicInteger
 import scala.util.control.NonFatal
 
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.SQLContext
-import org.apache.spark.sql.catalyst.FunctionIdentifier
-import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.{Column, SQLContext}
+import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.CatalogTableType
+import org.apache.spark.sql.catalyst.expressions.Expression
+import org.apache.spark.sql.expressions.UserDefinedFunction
+import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 import org.apache.spark.util.Utils._
 
@@ -44,7 +46,7 @@ private[postgresql] object PgMetadata extends Logging {
 
   case class PgSystemTable(oid: Int, table: TableIdentifier)
   case class PgType(oid: Int, name: String, len: Int, elemOid: Int, input: String)
-  case class PgSystemFunction(oid: Int, func: FunctionIdentifier, doRegister: SQLContext => Unit)
+  case class PgSystemFunction(oid: Int, name: FunctionIdentifier, udf: Unit => UserDefinedFunction)
 
   // `src/include/catalog/unused_oids` in a PostgreSQL source repository prints unused oids; 2-9,
   // 3300, 3308-3309, 3315-3328, 3330-3381, 3394-3453, 3577-3579, 3997-3999, 4066, 4083, 4099-4101,
@@ -181,34 +183,41 @@ private[postgresql] object PgMetadata extends Logging {
   private val defaultSparkNamespace = (nextUnusedOid, "spark")
   private val userRoleOid = nextUnusedOid
 
+  // SPARK-23793 Spark-2.3.0 can't handle database names to register UDFs in public APIs
+  private def registerFunction(
+      ctx: SQLContext, func: FunctionIdentifier, udf: UserDefinedFunction): Unit = {
+    def builder(children: Seq[Expression]) = udf.apply(children.map(Column.apply) : _*).expr
+    ctx.sessionState.functionRegistry.registerFunction(func, builder)
+  }
+
   private val pgSystemFunctions = Seq(
     // scalastyle:off
-    PgSystemFunction(          384, FunctionIdentifier(           "array_to_string", Some(catalogDbName)), { c => c.udf.register(s"$catalogDbName.array_to_string", (ar: Seq[String], delim: String) => if (ar != null) ar.mkString(delim) else "") }),
-    PgSystemFunction(          750, FunctionIdentifier(                  "array_in",                None), { c => c.udf.register("array_in", () => "array_in") }),
-    PgSystemFunction(         1081, FunctionIdentifier(               "format_type", Some(catalogDbName)), { c => c.udf.register(s"$catalogDbName.format_type", (type_oid: Int, typemod: String) => pgTypeOidMap.get(type_oid).map(_.name).getOrElse("unknown")) }),
-    PgSystemFunction(         1215, FunctionIdentifier(           "obj_description", Some(catalogDbName)), { c => c.udf.register(s"$catalogDbName.obj_description", (oid: Int, tableName: String) => "") }),
-    PgSystemFunction(         1402, FunctionIdentifier(           "current_schemas",                None), { c => c.udf.register("current_schemas", (arg: Boolean) => Seq(defaultSparkNamespace._2)) }),
-    PgSystemFunction(         1597, FunctionIdentifier(       "pg_encoding_to_char", Some(catalogDbName)), { c => c.udf.register(s"$catalogDbName.pg_encoding_to_char", (encoding: Int) => "") }),
-    PgSystemFunction(         1642, FunctionIdentifier(           "pg_get_userbyid", Some(catalogDbName)), { c => c.udf.register(s"$catalogDbName.pg_get_userbyid", (userid: Int) => "") }),
-    PgSystemFunction(         1716, FunctionIdentifier(               "pg_get_expr", Some(catalogDbName)), { c => c.udf.register(s"$catalogDbName.pg_get_expr", (adbin: String, adrelid: Int) => "") }),
-    PgSystemFunction(         2079, FunctionIdentifier(       "pg_table_is_visible", Some(catalogDbName)), { c => c.udf.register(s"$catalogDbName.pg_table_is_visible", (tableoid: Int) => !pgCatalogOidMap.get(tableoid).isDefined) }),
-    PgSystemFunction(         2081, FunctionIdentifier(    "pg_function_is_visible", Some(catalogDbName)), { c => c.udf.register(s"$catalogDbName.pg_function_is_visible", (functionoid: Int) => !pgSystemFunctionOidMap.get(functionoid).isDefined) }),
-    PgSystemFunction(         2092, FunctionIdentifier(               "array_upper",                None), { c => c.udf.register("array_upper", (ar: Seq[String], n: Int) => ar.size) }),
-    PgSystemFunction(         2162, FunctionIdentifier( "pg_get_function_arguments", Some(catalogDbName)), { c => c.udf.register(s"$catalogDbName.pg_get_function_arguments", (oid: Int) => "" ) }),
-    PgSystemFunction(         2165, FunctionIdentifier(    "pg_get_function_result", Some(catalogDbName)), { c => c.udf.register(s"$catalogDbName.pg_get_function_result", (oid: Int) => "" ) }),
-    PgSystemFunction(         2420, FunctionIdentifier(            "oidvectortypes", Some(catalogDbName)), { c => c.udf.register(s"$catalogDbName.oidvectortypes", (typeoids: Seq[Int]) => if (typeoids != null) typeoids.map(getPgTypeNameFromOid).mkString(", ") else "") }),
+    PgSystemFunction(          384, FunctionIdentifier(           "array_to_string", Some(catalogDbName)), _ => udf { (ar: Seq[String], delim: String) => if (ar != null) ar.mkString(delim) else "" }),
+    PgSystemFunction(          750, FunctionIdentifier(                  "array_in",                None), _ => udf { () => "array_in" }),
+    PgSystemFunction(         1081, FunctionIdentifier(               "format_type", Some(catalogDbName)), _ => udf { (type_oid: Int, typemod: String) => pgTypeOidMap.get(type_oid).map(_.name).getOrElse("unknown") }),
+    PgSystemFunction(         1215, FunctionIdentifier(           "obj_description", Some(catalogDbName)), _ => udf { (oid: Int, tableName: String) => "" }),
+    PgSystemFunction(         1402, FunctionIdentifier(           "current_schemas",                None), _ => udf { (arg: Boolean) => Seq(defaultSparkNamespace._2) }),
+    PgSystemFunction(         1597, FunctionIdentifier(       "pg_encoding_to_char", Some(catalogDbName)), _ => udf { (encoding: Int) => "" }),
+    PgSystemFunction(         1642, FunctionIdentifier(           "pg_get_userbyid", Some(catalogDbName)), _ => udf { (userid: Int) => "" }),
+    PgSystemFunction(         1716, FunctionIdentifier(               "pg_get_expr", Some(catalogDbName)), _ => udf { (adbin: String, adrelid: Int) => "" }),
+    PgSystemFunction(         2079, FunctionIdentifier(       "pg_table_is_visible", Some(catalogDbName)), _ => udf { (tableoid: Int) => !pgCatalogOidMap.get(tableoid).isDefined }),
+    PgSystemFunction(         2081, FunctionIdentifier(    "pg_function_is_visible", Some(catalogDbName)), _ => udf { (functionoid: Int) => !pgSystemFunctionOidMap.get(functionoid).isDefined }),
+    PgSystemFunction(         2092, FunctionIdentifier(               "array_upper",                None), _ => udf { (ar: Seq[String], n: Int) => ar.size }),
+    PgSystemFunction(         2162, FunctionIdentifier( "pg_get_function_arguments", Some(catalogDbName)), _ => udf { (oid: Int) => "" }),
+    PgSystemFunction(         2165, FunctionIdentifier(    "pg_get_function_result", Some(catalogDbName)), _ => udf { (oid: Int) => "" }),
+    PgSystemFunction(         2420, FunctionIdentifier(            "oidvectortypes", Some(catalogDbName)), _ => udf { (typeoids: Seq[Int]) => if (typeoids != null) typeoids.map(getPgTypeNameFromOid).mkString(", ") else "" }),
 
     // Entries below is not a kind of functions though, we need to process some interactions
     // between clients and JDBC drivers.
-    PgSystemFunction(nextUnusedOid, FunctionIdentifier(                   "ANY",                None), { c => c.udf.register("ANY", (arg: Seq[String]) => arg.head) }),
-    PgSystemFunction(nextUnusedOid, FunctionIdentifier(               "regtype", Some(catalogDbName)), { c => c.udf.register(s"$catalogDbName.regtype", (typeoid: Int) => getPgTypeNameFromOid(typeoid)) })
+    PgSystemFunction(nextUnusedOid, FunctionIdentifier(                       "ANY",                None), _ => udf { (arg: Seq[String]) => arg.head }),
+    PgSystemFunction(nextUnusedOid, FunctionIdentifier(                   "regtype", Some(catalogDbName)), _ => udf { (typeoid: Int) => getPgTypeNameFromOid(typeoid) })
     // scalastyle:on
   )
 
   private val pgSystemFunctionOidMap: Map[Int, PgSystemFunction] =
     pgSystemFunctions.map(f => f.oid -> f).toMap
   private val pgSystemFunctionNameMap: Map[String, PgSystemFunction] =
-    pgSystemFunctions.map(f => f.func.unquotedString.toLowerCase -> f).toMap
+    pgSystemFunctions.map(f => f.name.unquotedString.toLowerCase -> f).toMap
 
   private def safeCreateCatalogTable(
       name: String,
@@ -222,7 +231,9 @@ private[postgresql] object PgMetadata extends Logging {
   }
 
   def initSystemFunctions(sqlContext: SQLContext): Unit = {
-    pgSystemFunctions.foreach { case PgSystemFunction(_, _, doRegister) => doRegister(sqlContext) }
+    pgSystemFunctions.foreach { case PgSystemFunction(_, name, udf) =>
+      registerFunction(sqlContext, name, udf())
+    }
   }
 
   def initSystemCatalogTables(sqlContext: SQLContext): Unit = {
