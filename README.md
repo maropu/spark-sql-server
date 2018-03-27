@@ -109,6 +109,14 @@ int main(int argc, char **argv) {
 }
 ```
 
+## GUI clients
+
+You can also use some GUI clients (e.g., [PGnJ](http://thomasmango.com/projects/pgnj/));
+
+![GUI client example](resources/PGnJ.png)
+
+Note that you need to set `false` at `spark.sql.server.binaryTransferMode` for the `PGnJ` client.
+
 ## Cursor mode
 
 To enable a cursor mode on your JDBC driver, you make sure autocommit is off and you need to set fetch size
