@@ -14,9 +14,9 @@ To start the JDBC/ODBC server, check out this repository and run the following c
 
 This script accepts all `bin/spark-submit` command line options in Spark, plus options for the SQL server.
 You may run `./sbin/start-sql-server.sh --help` for a complete list of all available options.
-If you use `spark-2.2.0`, you can add the option below to install the JDBC/ODBC server:
+If you use `spark-2.3.0`, you can add the option below to install the JDBC/ODBC server:
 
-    $ ./bin/spark-shell --packages maropu:spark-sql-server:0.1.0
+    $ ./bin/spark-shell --packages maropu:spark-sql-server:0.1.1
 
 Then, you run the commands to launch the server:
 
