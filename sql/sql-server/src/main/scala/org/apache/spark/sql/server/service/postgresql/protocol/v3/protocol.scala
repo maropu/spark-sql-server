@@ -1197,8 +1197,7 @@ object PgV3MessageHandler {
   def parsePlan(query: String): LogicalPlan = try {
     parser.parsePlan(query)
   } catch {
-    case e: ParseException if e.command.isDefined =>
-      throw new SQLException(s"Cannot handle command ${e.command.get}")
+    case e: ParseException => throw new SQLException(e.getMessage)
   }
 
   def analyzePlan(query: String, sqlContext: SQLContext): LogicalPlan = {
