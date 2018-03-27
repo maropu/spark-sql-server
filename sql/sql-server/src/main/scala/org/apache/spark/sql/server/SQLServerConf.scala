@@ -74,6 +74,11 @@ object SQLServerConf {
     .intConf
     .createWithDefault(4)
 
+  val SQLSERVER_BINARY_TRANSFER_MODE = buildConf("spark.sql.server.binaryTransferMode")
+    .doc("Number of SQLServer worker threads.")
+    .booleanConf
+    .createWithDefault(true)
+
    val SQLSERVER_INCREMENTAL_COLLECT_ENABLED =
      buildConf("spark.sql.server.incrementalCollect.enabled")
     .doc("When set to true, Spark collects result rows partition-by-partition.")
@@ -155,6 +160,8 @@ class SQLServerConf(conf: SQLConf) {
   def sqlServerPsqlEnabled: Boolean = getConf(SQLSERVER_PSQL_ENABLED)
 
   def sqlServerWorkerThreads: Int = getConf(SQLSERVER_WORKER_THREADS)
+
+  def sqlServerBinaryTransferMode: Boolean = getConf(SQLSERVER_BINARY_TRANSFER_MODE)
 
   def sqlServerIncrementalCollectEnabled: Boolean = getConf(SQLSERVER_INCREMENTAL_COLLECT_ENABLED)
 

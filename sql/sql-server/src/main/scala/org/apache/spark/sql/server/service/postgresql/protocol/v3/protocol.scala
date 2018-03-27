@@ -25,6 +25,7 @@ import java.security.{KeyStore, PrivilegedExceptionAction}
 import java.sql.SQLException
 import java.util.{HashMap => jHashMap}
 import java.util.Collections.{synchronizedMap => jSyncMap}
+import java.util.Locale
 import javax.net.ssl.{KeyManagerFactory, SSLContext}
 
 import scala.collection.mutable
@@ -215,12 +216,13 @@ object PgWireProtocol extends Logging {
     BinaryType, ShortType, IntegerType, LongType, FloatType, DoubleType, DateType, TimestampType
   )
 
-  private def formatsInSimpleQueryMode(schema: StructType): Seq[Boolean] = {
-    Seq.fill(schema.length)(false)
-  }
-
-  private def formatsInExtendedQueryMode(schema: StructType): Seq[Boolean] = {
-    schema.map { f => binaryFormatTypes.contains(f.dataType) }
+  // TODO: Is it the best to decide data transfer modes depending on client applications?
+  private def resultDataFormatsFor(
+      schema: StructType, message: String, conf: SQLConf): Seq[Boolean] = message match {
+    case "Bind" if conf.sqlServerBinaryTransferMode =>
+      schema.map { f => binaryFormatTypes.contains(f.dataType) }
+    case _ =>
+      Seq.fill(schema.length)(false)
   }
 
   /**
@@ -364,7 +366,7 @@ object PgWireProtocol extends Logging {
         val plan = (queryState.statement, analyzed)
         val execState = cli.executeStatement(sessionState._sessionId, plan)
         val schema = analyzed.schema
-        val outputFormats = formatsInExtendedQueryMode(schema)
+        val outputFormats = resultDataFormatsFor(schema, "Bind", conf)
         val rowWriter = PgRowConverters(conf, schema, outputFormats)
         val portalState = PortalState(
           queryState.withRowWriter(rowWriter), execState, !portalName.isEmpty)
@@ -588,7 +590,7 @@ object PgWireProtocol extends Logging {
             val schema = analyzedPlan.schema
             ctx.write(RowDescription(schema))
 
-            val formats = formatsInSimpleQueryMode(schema)
+            val formats = resultDataFormatsFor(schema, "Query", conf)
             val rowWriter = PgRowConverters(conf, schema, formats)
             var numRows = 0
             resultRowIter.foreach { iter =>
