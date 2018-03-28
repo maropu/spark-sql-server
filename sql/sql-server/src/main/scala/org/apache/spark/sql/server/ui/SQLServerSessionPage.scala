@@ -66,7 +66,7 @@ private[ui] class SQLServerSessionPage(parent: SQLServerTab)
     val timeSinceStart = System.currentTimeMillis() - startTime.getTime
     <ul class ="unstyled">
       <li>
-        <strong>Started at: </strong> {startTime.toString}
+        <strong>Started at: </strong> {formatDate(startTime)}
       </li>
       <li>
         <strong>Time since start: </strong>{formatDurationVerbose(timeSinceStart)}
@@ -144,41 +144,6 @@ private[ui] class SQLServerSessionPage(parent: SQLServerTab)
       ""
     }
     <td>{errorSummary}{details}</td>
-  }
-
-  /** Generate stats of batch sessions of the thrift server program */
-  private def generateSessionStatsTable(): Seq[Node] = {
-    val sessionList = listener.getSessionList
-    val numBatches = sessionList.size
-    val table = if (numBatches > 0) {
-      val dataRows =
-        sessionList.sortBy(_.startTimestamp).reverse.map ( session =>
-        Seq(
-          session.userName,
-          session.ipAddr,
-          session.sessionId.toString,
-          formatDate(session.startTimestamp),
-          formatDate(session.finishTimestamp),
-          formatDurationOption(Some(session.totalTime)),
-          session.totalExecution.toString
-        )
-      ).toSeq
-      val headerRow = Seq("User", "IP", "Session ID", "Start Time", "Finish Time", "Duration",
-        "Total Execute")
-      Some(listingTable(headerRow, dataRows))
-    } else {
-      None
-    }
-
-    val content =
-      <h5>Session Statistics</h5> ++
-      <div>
-        <ul class="unstyled">
-          {table.getOrElse("No statistics have been generated yet.")}
-        </ul>
-      </div>
-
-    content
   }
 
   /**

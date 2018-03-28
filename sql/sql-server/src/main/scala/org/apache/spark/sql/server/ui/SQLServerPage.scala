@@ -72,7 +72,7 @@ private[ui] class SQLServerPage(parent: SQLServerTab) extends WebUIPage("") with
     val table = if (numStatement > 0) {
       val headerRow = Seq("User", "JobID", "GroupID", "Start Time", "Finish Time", "Duration",
         "Statement", "State", "Detail")
-      val dataRows = listener.getExecutionList
+      val dataRows = listener.getExecutionList.sortBy(_.startTimestamp).reverse
 
       def generateDataRow(info: ExecutionInfo): Seq[Node] = {
         val jobLink = info.jobId.map { id: String =>
@@ -142,7 +142,7 @@ private[ui] class SQLServerPage(parent: SQLServerTab) extends WebUIPage("") with
     val sessionList = listener.getSessionList
     val numBatches = sessionList.size
     val table = if (numBatches > 0) {
-      val dataRows = sessionList
+      val dataRows = sessionList.sortBy(_.startTimestamp).reverse
       val headerRow = Seq("User", "IP", "Session ID", "Start Time", "Finish Time", "Duration",
         "Total Execute")
       def generateDataRow(session: SessionInfo): Seq[Node] = {
@@ -179,13 +179,5 @@ private[ui] class SQLServerPage(parent: SQLServerTab) extends WebUIPage("") with
    */
   private def formatDurationOption(msOption: Option[Long]): String = {
     msOption.map(formatDurationVerbose).getOrElse(emptyCell)
-  }
-
-  /** Generate HTML table from string data */
-  private def listingTable(headers: Seq[String], data: Seq[Seq[String]]) = {
-    def generateDataRow(data: Seq[String]): Seq[Node] = {
-      <tr> {data.map(d => <td>{d}</td>)} </tr>
-    }
-    UIUtils.listingTable(headers, generateDataRow, data, fixedWidth = true)
   }
 }
