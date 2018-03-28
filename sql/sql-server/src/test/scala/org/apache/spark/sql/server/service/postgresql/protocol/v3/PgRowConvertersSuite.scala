@@ -22,12 +22,52 @@ import java.nio.charset.StandardCharsets
 import java.sql.{Date, SQLException, Timestamp}
 
 import org.apache.spark.SparkFunSuite
-import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
-import org.apache.spark.sql.catalyst.util.{ArrayBasedMapData, ArrayData, DateTimeUtils}
+import org.apache.spark.sql.catalyst.expressions.{GenericInternalRow, Literal}
+import org.apache.spark.sql.catalyst.util.{ArrayBasedMapData, ArrayData, DateTimeUtils, GenericArrayData}
 import org.apache.spark.sql.internal.SQLConf
-import org.apache.spark.sql.types.{NullType, StructField}
-import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
+
+
+// Wrapped in an object to check Scala compatibility. See SPARK-13929
+object UDT {
+
+  @SQLUserDefinedType(udt = classOf[MyDenseVectorUDT])
+  class MyDenseVector(val data: Array[Double]) extends Serializable {
+    override def hashCode(): Int = java.util.Arrays.hashCode(data)
+
+    override def equals(other: Any): Boolean = other match {
+      case v: MyDenseVector => java.util.Arrays.equals(this.data, v.data)
+      case _ => false
+    }
+
+    override def toString: String = data.mkString("(", ", ", ")")
+  }
+
+  class MyDenseVectorUDT extends UserDefinedType[MyDenseVector] {
+
+    override def sqlType: DataType = ArrayType(DoubleType, containsNull = false)
+
+    override def serialize(features: MyDenseVector): ArrayData = {
+      new GenericArrayData(features.data.map(_.asInstanceOf[Any]))
+    }
+
+    override def deserialize(datum: Any): MyDenseVector = {
+      datum match {
+        case data: ArrayData =>
+          new MyDenseVector(data.toDoubleArray())
+      }
+    }
+
+    override def userClass: Class[MyDenseVector] = classOf[MyDenseVector]
+
+    private[spark] override def asNullable: MyDenseVectorUDT = this
+
+    override def hashCode(): Int = getClass.hashCode()
+
+    override def equals(other: Any): Boolean = other.isInstanceOf[MyDenseVectorUDT]
+  }
+}
 
 class PgRowConvertersSuite extends SparkFunSuite {
 
@@ -230,5 +270,32 @@ class PgRowConvertersSuite extends SparkFunSuite {
     assert(errMsg.contains(
       "Cannot convert value: type=StructType(StructField(c0,IntegerType,true), " +
         "StructField(c1,StringType,true)), isBinary=true"))
+  }
+
+  test("udt") {
+    val udt = new UDT.MyDenseVectorUDT()
+    val vector = new UDT.MyDenseVector(Array(1.0, 3.0, 5.0, 7.0, 9.0))
+    val data = udt.serialize(vector)
+    val fieldType = StructField("a", udt)
+    val inputRow = new GenericInternalRow(1)
+    inputRow.update(0, Literal(data, udt))
+    val buf = new Array[Byte](25)
+    val byteBuffer = ByteBuffer.wrap(buf)
+    val writer = ColumnWriter(fieldType, 0, isBinary = false, conf)
+    writer.write(inputRow, byteBuffer)
+    byteBuffer.rewind()
+
+    // Check data field size
+    assert(byteBuffer.getInt === 21)
+
+    // Check data itself
+    val actualData = buf.slice(4, 25)
+    assert(actualData === "[1.0,3.0,5.0,7.0,9.0]".getBytes(StandardCharsets.UTF_8))
+
+    val errMsg = intercept[SQLException] {
+      ColumnWriter(fieldType, 0, isBinary = true, conf)
+    }.getMessage
+    assert(errMsg.contains("Cannot convert value: type=" +
+      "org.apache.spark.sql.server.service.postgresql.protocol.v3.UDT$MyDenseVectorUDT"))
   }
 }

@@ -423,6 +423,9 @@ object ColumnWriter {
       case (_: MapType, false) => new MapColumnTextWriter(field, ordinal, conf)
       case (_: StructType, false) => new StructColumnTextWriter(field, ordinal, conf)
 
+      // Handles all UDTs as strings
+      case (udt: UserDefinedType[_], false) => new ColumnTextWriter(udt, ordinal)
+
       case _ => throw new SQLException(
         s"Cannot convert value: type=${field.dataType}, isBinary=$isBinary")
     }
