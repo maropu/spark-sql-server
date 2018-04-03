@@ -39,17 +39,23 @@ import org.apache.spark.util.{ThreadUtils, Utils}
 class PgJdbcTest(
     pgVersion: String = "9.6",
     ssl: Boolean = false,
+    queryMode: String = "extended",
     singleSession: Boolean = false)
-  extends SQLServerTest(pgVersion, ssl, singleSession) with PgJdbcTestBase {
+  extends SQLServerTest(pgVersion, ssl, queryMode, singleSession) with PgJdbcTestBase {
 
   override def serverInstance: SparkPgSQLServerTest = server
 }
 
-abstract class SQLServerTest(pgVersion: String, ssl: Boolean, singleSession: Boolean)
+abstract class SQLServerTest(
+    pgVersion: String, ssl: Boolean, queryMode: String, singleSession: Boolean)
   extends SparkFunSuite with BeforeAndAfterAll with Logging {
 
   protected val server = new SparkPgSQLServerTest(
-    this.getClass.getSimpleName, pgVersion = pgVersion, ssl = ssl, singleSession = singleSession)
+    name = this.getClass.getSimpleName,
+    pgVersion = pgVersion,
+    ssl = ssl,
+    queryMode = queryMode,
+    singleSession = singleSession)
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -71,6 +77,7 @@ class SparkPgSQLServerTest(
     name: String,
     pgVersion: String,
     val ssl: Boolean,
+    val queryMode: String,
     singleSession: Boolean,
     options: Map[String, String] = Map.empty)
   extends Logging {
@@ -267,11 +274,13 @@ trait PgJdbcTestBase {
     props.put("user", System.getProperty("user.name"))
     props.put("password", "")
     props.put("prepareThreshold", "1")
+    props.put("preferQueryMode", serverInstance.queryMode)
     // props.put("loglevel", "2")
     if (serverInstance.ssl) {
       props.put("ssl", "true")
       props.put("sslfactory", "org.postgresql.ssl.NonValidatingFactory")
     }
+
     DriverManager.getConnection(jdbcUri, props)
   }
 

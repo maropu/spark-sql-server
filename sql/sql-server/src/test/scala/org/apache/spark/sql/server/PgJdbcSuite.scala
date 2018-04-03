@@ -53,12 +53,15 @@ class ProcessOutputCapturer(stream: InputStream, capture: String => Unit) extend
   }
 }
 
-class PgV9_6JdbcSuite extends PgJdbcSuite("9.6")
-class PgV8_0JdbcSuite extends PgJdbcSuite("8.0")
-class PgV7_4JdbcSuite extends PgJdbcSuite("7.4")
+// class PgV9_6JdbcSimpleModeSuite extends PgJdbcSuite("9.6", "simple")
+class PgV9_6JdbcExtendedModeSuite extends PgJdbcSuite("9.6", "extended")
+// class PgV8_0JdbcSimpleModeSuite extends PgJdbcSuite("8.0", "simple")
+class PgV8_0JdbcExtendedModeSuite extends PgJdbcSuite("8.0", "extended")
+// class PgV7_4JdbcSimpleModeSuite extends PgJdbcSuite("7.4", "simple")
+class PgV7_4JdbcExtendedModeSuite extends PgJdbcSuite("7.4", "extended")
 
-abstract class PgJdbcSuite(pgVersion: String)
-  extends PgJdbcTest(pgVersion = pgVersion, ssl = false) {
+abstract class PgJdbcSuite(pgVersion: String, queryMode: String)
+  extends PgJdbcTest(pgVersion = pgVersion, ssl = false, queryMode = queryMode) {
 
   val hiveVersion = "1.2.1"
 
