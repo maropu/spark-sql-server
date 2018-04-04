@@ -262,6 +262,8 @@ class SparkPgSQLServerTest(
 
 trait PgJdbcTestBase {
 
+  private val jdbcQueryTimeout = 180
+
   // Register a JDBC driver for PostgreSQL
   Utils.classForName(classOf[org.postgresql.Driver].getCanonicalName)
 
@@ -286,7 +288,11 @@ trait PgJdbcTestBase {
 
   def testMultipleConnectionJdbcStatement(fs: (Statement => Unit)*) {
     val connections = fs.map { _ => getJdbcConnect() }
-    val statements = connections.map(_.createStatement())
+    val statements = connections.map { c =>
+      val stmt = c.createStatement()
+      stmt.setQueryTimeout(jdbcQueryTimeout)
+      stmt
+    }
     try {
       statements.zip(fs).foreach { case (s, f) => f(s) }
     } finally {
@@ -302,6 +308,7 @@ trait PgJdbcTestBase {
   def testJdbcPreparedStatement(sql: String)(f: PreparedStatement => Unit): Unit = {
     val connection = getJdbcConnect()
     val statement = connection.prepareStatement(sql)
+    statement.setQueryTimeout(jdbcQueryTimeout)
     try {
       f(statement)
     } finally {
@@ -337,6 +344,9 @@ trait PgJdbcTestBase {
     sparkOptions.foreach { case (key, value) =>
       statement.execute(s"SET $key=$value")
     }
+
+    statement.setQueryTimeout(jdbcQueryTimeout)
+
     try f(statement) finally {
       keys.zip(currentValues).foreach {
         case (key, value) => statement.execute(s"SET $key=$value")
