@@ -75,19 +75,19 @@ class PgRowConvertersSuite extends SparkFunSuite {
 
   test("primitive types") {
     Seq(
-      (false, "BOOLEAN", (b: Array[Byte]) => b(0) == 1),
-      (13.toByte, "BYTE", (b: Array[Byte]) => b(0)),
-      (2392.toShort, "SHORT", (b: Array[Byte]) => ByteBuffer.wrap(b).getShort),
-      (813, "INT", (b: Array[Byte]) => ByteBuffer.wrap(b).getInt),
-      (18923L, "LONG", (b: Array[Byte]) => ByteBuffer.wrap(b).getLong),
-      (1.0f, "FLOAT", (b: Array[Byte]) => ByteBuffer.wrap(b).getFloat),
-      (8.0, "DOUBLE", (b: Array[Byte]) => ByteBuffer.wrap(b).getDouble)
-    ).foreach { case (data, tpe, readData) =>
+      (false, "f", "BOOLEAN", (b: Array[Byte]) => b(0) == 1),
+      (13.toByte, "13", "BYTE", (b: Array[Byte]) => b(0)),
+      (2392.toShort, "2392", "SHORT", (b: Array[Byte]) => ByteBuffer.wrap(b).getShort),
+      (813, "813", "INT", (b: Array[Byte]) => ByteBuffer.wrap(b).getInt),
+      (18923L, "18923", "LONG", (b: Array[Byte]) => ByteBuffer.wrap(b).getLong),
+      (1.0f, "1.0", "FLOAT", (b: Array[Byte]) => ByteBuffer.wrap(b).getFloat),
+      (8.0, "8.0", "DOUBLE", (b: Array[Byte]) => ByteBuffer.wrap(b).getDouble)
+    ).foreach { case (data, expectedTextData, tpe, readData) =>
       Seq(true, false).foreach { binaryMode =>
         val fieldType = StructType.fromDDL(s"a $tpe")(0)
         val inputRow = new GenericInternalRow(1)
         inputRow.update(0, data)
-        val dataSize = if (binaryMode) fieldType.dataType.defaultSize else data.toString.length
+        val dataSize = if (binaryMode) fieldType.dataType.defaultSize else expectedTextData.length
         val buf = new Array[Byte](4 + dataSize)
         val byteBuffer = ByteBuffer.wrap(buf)
         val writer = ColumnWriter(fieldType, 0, isBinary = binaryMode, conf)
@@ -100,7 +100,11 @@ class PgRowConvertersSuite extends SparkFunSuite {
         // Check data itself
         val slicedBytes = buf.slice(4, 4 + dataSize)
         val actualData = if (binaryMode) readData(slicedBytes) else slicedBytes
-        val expectedData = if (binaryMode) data else data.toString.getBytes(StandardCharsets.UTF_8)
+        val expectedData = if (!binaryMode) {
+          expectedTextData.getBytes(StandardCharsets.UTF_8)
+        } else {
+          data
+        }
         assert(actualData === expectedData, s"type=$tpe isBinary=$binaryMode")
       }
     }

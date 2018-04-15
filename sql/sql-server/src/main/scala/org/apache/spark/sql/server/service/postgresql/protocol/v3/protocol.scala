@@ -25,7 +25,6 @@ import java.security.{KeyStore, PrivilegedExceptionAction}
 import java.sql.SQLException
 import java.util.{HashMap => jHashMap}
 import java.util.Collections.{synchronizedMap => jSyncMap}
-import java.util.Locale
 import javax.net.ssl.{KeyManagerFactory, SSLContext}
 
 import scala.collection.mutable

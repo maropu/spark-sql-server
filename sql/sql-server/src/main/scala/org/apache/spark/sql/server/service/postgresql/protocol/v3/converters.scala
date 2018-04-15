@@ -45,8 +45,16 @@ object PgParamConverters {
         case (PgUnspecifiedType.oid, format) =>
           throw new SQLException(s"Unspecified type unsupported: format=$format")
         case (PgBoolType.oid, 0) =>
-          // '1' (49) means true; otherwise false
-          Literal(if (param(0) == 49) true else false, BooleanType)
+          val value = if (Seq(49, 84, 116).contains(param(0))) {
+            // In case of 49('1'), 84('T'), or 116('t')
+            true
+          } else if (Seq(48, 70, 102).contains(param(0))) {
+            // In case of 48('0'), 70('F'), or 102('f')
+            false
+          } else {
+            throw new SQLException(s"Unknown bool parameter: '${param(0)}'")
+          }
+          Literal(value, BooleanType)
         case (PgBoolType.oid, 1) =>
           Literal(if (param(0) == 1) true else false, BooleanType)
         case (PgNumericType.oid, 0) =>
@@ -154,6 +162,14 @@ class ColumnTextWriter(dataType: DataType, ordinal: Int) extends ColumnWriter(or
     val bytes = value.toString.getBytes(StandardCharsets.UTF_8)
     byteBuffer.putInt(bytes.length)
     byteBuffer.put(bytes)
+  }
+}
+
+class BooleanColumnTextWriter(ordinal: Int) extends ColumnTextWriter(BooleanType, ordinal) {
+
+  override def nullSafeWriter(row: InternalRow, byteBuffer: ByteBuffer): Unit = {
+    byteBuffer.putInt(1)
+    byteBuffer.put(if (row.getBoolean(ordinal)) 't'.toByte else 'f'.toByte)
   }
 }
 
@@ -404,6 +420,7 @@ object ColumnWriter {
     (field.dataType, isBinary) match {
       case (NullType, _) => new NullColumnWriter(ordinal)
       case (BooleanType, true) => new BooleanColumnBinaryWriter(ordinal)
+      case (BooleanType, false) => new BooleanColumnTextWriter(ordinal)
       case (ShortType, true) => new ShortColumnBinaryWriter(ordinal)
       case (IntegerType, true) => new IntegerColumnBinaryWriter(ordinal)
       case (LongType, true) => new LongColumnBinaryWriter(ordinal)
