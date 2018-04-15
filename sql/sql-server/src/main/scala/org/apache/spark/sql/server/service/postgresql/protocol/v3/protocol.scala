@@ -216,13 +216,15 @@ object PgWireProtocol extends Logging {
     BinaryType, ShortType, IntegerType, LongType, FloatType, DoubleType, DateType, TimestampType
   )
 
-  // TODO: Is it the best to decide data transfer modes depending on client applications?
-  private def resultDataFormatsFor(
-      schema: StructType, message: String, conf: SQLConf): Seq[Boolean] = message match {
-    case "Bind" if conf.sqlServerBinaryTransferMode =>
-      schema.map { f => binaryFormatTypes.contains(f.dataType) }
-    case _ =>
+  private def resultDataFormatsFor(schema: StructType, state: SessionV3State): Seq[Boolean] = {
+    if (state.appName == "psql") {
+      // TODO: `psql` always needs a text transfer mode?
       Seq.fill(schema.length)(false)
+    } else if (state.conf.sqlServerBinaryTransferMode) {
+      schema.map { f => binaryFormatTypes.contains(f.dataType) }
+    } else {
+      Seq.fill(schema.length)(false)
+    }
   }
 
   /**
@@ -366,7 +368,7 @@ object PgWireProtocol extends Logging {
         val plan = (queryState.statement, analyzed)
         val execState = cli.executeStatement(sessionState._sessionId, plan)
         val schema = analyzed.schema
-        val outputFormats = resultDataFormatsFor(schema, "Bind", conf)
+        val outputFormats = resultDataFormatsFor(schema, sessionState)
         val rowWriter = PgRowConverters(conf, schema, outputFormats)
         val portalState = PortalState(
           queryState.withRowWriter(rowWriter), execState, !portalName.isEmpty)
@@ -592,7 +594,7 @@ object PgWireProtocol extends Logging {
             val schema = analyzedPlan.schema
             ctx.write(RowDescription(schema))
 
-            val formats = resultDataFormatsFor(schema, "Query", conf)
+            val formats = resultDataFormatsFor(schema, sessionState)
             val rowWriter = PgRowConverters(conf, schema, formats)
             var numRows = 0
             resultRowIter.foreach { iter =>
@@ -946,6 +948,7 @@ case class SessionV3State(
   cli: SessionService,
   conf: SQLConf,
   v3Protocol: PgWireProtocol,
+  appName: String,
   secretKey: Int) extends SessionState {
 
   // Holds multiple prepared statements inside a session
@@ -1012,12 +1015,13 @@ class PgV3MessageHandler(cli: SessionService, conf: SQLConf)
   private def openSession(
       channelId: Int,
       secretKey: Int,
+      appName: String,
       userName: String,
       passwd: String,
       hostAddr: String,
       dbName: String): SessionState = {
     val v3Protocol = PgWireProtocol(conf.sqlServerMessageBufferSizeInBytes)
-    val state = SessionV3State(cli, conf, v3Protocol, secretKey)
+    val state = SessionV3State(cli, conf, v3Protocol, appName, secretKey)
     val sessionId = cli.openSession(userName, passwd, hostAddr, dbName, state)
     channelIdToSessionId.put(channelId, sessionId)
     logInfo(s"Open a session (sessionId=$sessionId, channelId=$channelId " +
@@ -1106,20 +1110,20 @@ class PgV3MessageHandler(cli: SessionService, conf: SQLConf)
     val props = keys.zip(values).toMap
     logDebug("Received properties from client: "
       + props.map { case (key, value) => s"$key=$value" }.mkString(", "))
-    props.get("application_name").foreach { appName =>
-      if (appName == "psql" && !conf.sqlServerPsqlEnabled) {
+    val appName = props.get("application_name").map { name =>
+      if (name == "psql" && !conf.sqlServerPsqlEnabled) {
         handleException(ctx, "Rejected requests from psql. To accept psql requests, " +
           s"you should set true at ${SQLServerConf.SQLSERVER_PSQL_ENABLED.key}")
-        return
       }
-    }
+      name
+    }.getOrElse("unknown")
     val userName = props.getOrElse("user", "UNKNOWN")
     val passwd = props.getOrElse("passwd", "")
     val hostAddr = ctx.channel().localAddress().asInstanceOf[InetSocketAddress].getHostName()
     val secretKey = new Random(System.currentTimeMillis).nextInt
     val dbName = props.getOrElse("database", "default")
     val sessionState = openSession(
-      getUniqueChannelId(ctx), secretKey, userName, passwd, hostAddr, dbName
+      getUniqueChannelId(ctx), secretKey, appName, userName, passwd, hostAddr, dbName
     ).asInstanceOf[SessionV3State]
 
     // Check if Kerberos authentication is enabled
