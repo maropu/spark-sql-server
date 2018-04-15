@@ -559,6 +559,8 @@ object PgWireProtocol extends Logging {
       // the query string.
       val statements = new String(byteArray, StandardCharsets.UTF_8).split(";").map(_.trim).init
 
+      logInfo(s"Query: statements=${statements.mkString(", ")}")
+
       ("Query", (ctx: ChannelHandlerContext, sessionState: SessionV3State) => {
         import sessionState.v3Protocol._
         import sessionState._
@@ -670,6 +672,7 @@ object PgWireProtocol extends Logging {
     val (msgTypeName, func) = messageProcessors.get(messageId).map(_(msgBuffer)).getOrElse {
       throw new SQLException(s"Unknown message type: $messageId")
     }
+    logDebug(s"Processing $msgTypeName: msgLen=$msgLen")
     msgBuffer.position(basePos + msgLen)
     (msgTypeName, func)
   }
