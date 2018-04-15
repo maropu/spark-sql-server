@@ -75,7 +75,7 @@ object SQLServerConf {
     .createWithDefault(4)
 
   val SQLSERVER_BINARY_TRANSFER_MODE = buildConf("spark.sql.server.binaryTransferMode")
-    .doc("Number of SQLServer worker threads.")
+    .doc(" Whether binary transfer mode is enabled.")
     .booleanConf
     .createWithDefault(true)
 
