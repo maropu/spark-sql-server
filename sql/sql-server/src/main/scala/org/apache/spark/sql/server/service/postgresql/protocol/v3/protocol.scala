@@ -702,8 +702,11 @@ object PgWireProtocol extends Logging {
     Seq(
       "application_name" -> "spark-sql-server",
       "server_encoding" -> "UTF-8",
+      "client_encoding" -> "UTF-8",
       "server_version" -> conf.sqlServerVersion,
       "TimeZone" -> conf.sessionLocalTimeZone,
+      "session_authorization" -> sessionState.userName,
+      "IntervalStyle" -> "postgres",
       "integer_datetimes" -> "on"
     ).foreach { case (key, value) =>
       ctx.write(ParameterStatus(key, value))
@@ -946,6 +949,7 @@ case class SessionV3State(
   cli: SessionService,
   conf: SQLConf,
   v3Protocol: PgWireProtocol,
+  userName: String,
   appName: String,
   secretKey: Int) extends SessionState {
 
@@ -1019,7 +1023,7 @@ class PgV3MessageHandler(cli: SessionService, conf: SQLConf)
       hostAddr: String,
       dbName: String): SessionState = {
     val v3Protocol = PgWireProtocol(conf.sqlServerMessageBufferSizeInBytes)
-    val state = SessionV3State(cli, conf, v3Protocol, appName, secretKey)
+    val state = SessionV3State(cli, conf, v3Protocol, userName, appName, secretKey)
     val sessionId = cli.openSession(userName, passwd, hostAddr, dbName, state)
     channelIdToSessionId.put(channelId, sessionId)
     logInfo(s"Open a session (sessionId=$sessionId, channelId=$channelId " +
