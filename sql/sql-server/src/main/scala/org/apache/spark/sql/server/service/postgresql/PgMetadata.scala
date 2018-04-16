@@ -533,6 +533,7 @@ private[postgresql] object PgMetadata extends Logging {
         |  atttypmod INT,
         |  attlen INT,
         |  attnum INT,
+        |  attidentity STRING,
         |  attisdropped BOOLEAN,
         |  attcollation INT
         |)
@@ -643,7 +644,7 @@ private[postgresql] object PgMetadata extends Logging {
           s"""
             |INSERT INTO $catalogDbName.pg_attribute VALUES(
             |  $nextUnusedOid, $tableOid, '${field.name}', ${pgType.oid}, ${!field.nullable}, true,
-            |  0, ${pgType.len}, ${1 + index}, false, 0
+            |  0, ${pgType.len}, ${1 + index}, '', false, 0
             |)
           """
       }
