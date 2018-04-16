@@ -6,7 +6,7 @@ A Spark SQL server based on the PostgreSQL V3 protocol.
 This is just a prototype to check feasibility for yet another SQL JDBC/ODBC server in Apache Spark
 (See [SPARK-15816](https://issues.apache.org/jira/browse/SPARK-15816) for related discussions).
 
-## Running the SQL JDBC/ODBC server
+## Running the Spark SQL JDBC/ODBC server
 
 To start the JDBC/ODBC server, check out this repository and run the following command in the root directory:
 
@@ -45,7 +45,7 @@ import java.util.Properties;
 public class JdbcTest {
   public static void main(String[] args) {
     try {
-      // Register the PostgreSQL JDBC driver
+      // Register your PostgreSQL JDBC driver
       Class.forName("org.postgresql.Driver");
 
       // Connect to a 'default' database in the SPARK SQL server
@@ -199,7 +199,7 @@ To enable GSSAPI, you need to set the following configurations in `start-sql-ser
         --conf spark.yarn.principal=<Kerberos principal server>
 
 Then, you set a Kerberos service name (`kerberosServerName`) in `Properties` when creating a JDBC connection.
-See [Connection Parameters](https://jdbc.postgresql.org/documentation/head/connect.html) for more information.
+See [Connection Parameters](https://jdbc.postgresql.org/documentation/head/connect.html#connection-parameters) for more information.
 
 ## High Availability
 
@@ -214,6 +214,10 @@ with the same ZooKeeper configuration (ZooKeeper URL and directory) as follows;
         --conf spark.sql.server.recoveryMode=ZOOKEEPER \
         --conf spark.deploy.zookeeper.url=<ZooKeeper URL> \
         --conf spark.deploy.zookeeper.dir=<ZooKeeper directory to store recovery state>
+
+To support simple connection fail-over, PostgreSQL JDBC drivers can define multiple endpoints (host and port pairs)
+in the connection url separated by commas.
+See [Connection Fail-over](https://jdbc.postgresql.org/documentation/head/connect.html#connection-failover) for more information.
 
 ## Run TPC-DS queries in Spark via the SQL server
 
@@ -234,7 +238,7 @@ Finally, runs TPC-DS queries against the SQL server:
     $ ./sbin/run-tpcds-benchmark --data-location /tmp/spark-tpcds-data
 
 [This benchmark code](./sql/tpcds/src/main/scala/org/apache/spark/sql/benchmark/TPCDSQueryBenchmark.scala)
-is a good example about how to connect the SQL server with the Postgre JDBC driver.
+is a good example about how to connect the SQL server with Postgre JDBC drivers.
 
 ## Bug reports
 
