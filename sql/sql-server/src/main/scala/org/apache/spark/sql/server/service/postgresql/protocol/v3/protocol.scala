@@ -301,7 +301,7 @@ object PgWireProtocol extends Logging {
   }
 
   // TODO: Needs to change `Any` into `Unit`
-  private type MessageProcessorType = (ChannelHandlerContext, SessionV3State) => Any
+  private type MessageProcessorType = (SessionV3State) => Any
 
   /**
    * Internal registry of client message processors.
@@ -346,7 +346,7 @@ object PgWireProtocol extends Logging {
       logInfo(s"Bind: portalName='$portalName' queryName='$queryName' formats=$formats "
         + s"params=$params resultFormats=$resultFormats")
 
-      ("Bind", (ctx: ChannelHandlerContext, sessionState: SessionV3State) => {
+      ("Bind", (sessionState: SessionV3State) => {
         import sessionState._
         import PgV3MessageHandler._
 
@@ -388,7 +388,7 @@ object PgWireProtocol extends Logging {
     67 -> { msg =>
       val (tpe, name) = (msg.get(), extractString(msg))
 
-      ("Close", (ctx: ChannelHandlerContext, sessionState: SessionV3State) => {
+      ("Close", (sessionState: SessionV3State) => {
         if (tpe == 83) { // Close a prepared statement
           sessionState.queries.remove(name)
           logInfo(s"Close the '$name' prepared statement (id:${sessionState._sessionId})")
@@ -405,7 +405,8 @@ object PgWireProtocol extends Logging {
     68 -> { msg =>
       val (tpe, name) = (msg.get(), extractString(msg))
 
-      ("Describe", (ctx: ChannelHandlerContext, sessionState: SessionV3State) => {
+      ("Describe", (sessionState: SessionV3State) => {
+        import sessionState._
         import sessionState.v3Protocol._
 
         if (tpe == 83) { // Describe a prepared statement
@@ -430,8 +431,9 @@ object PgWireProtocol extends Logging {
 
       logInfo(s"Execute: portalName='$portalName', maxRows=$maxRows")
 
-      ("Execute", (ctx: ChannelHandlerContext, sessionState: SessionV3State) => {
+      ("Execute", (sessionState: SessionV3State) => {
         try {
+          import sessionState._
           import sessionState.v3Protocol._
 
           val portalState = sessionState.portals(portalName)
@@ -508,15 +510,14 @@ object PgWireProtocol extends Logging {
       }
       val resultFormat = msg.getShort()
 
-      ("FunctionCall",
-          (ctx: ChannelHandlerContext, sessionState: SessionV3State) => {
+      ("FunctionCall", (sessionState: SessionV3State) => {
         throw new UnsupportedOperationException("Not supported yet")
       })
     },
 
     // An ASCII code of the `Flush` message is 'H'(72)
     72 -> { msg =>
-      ("Flush", (ctx: ChannelHandlerContext, sessionState: SessionV3State) => {
+      ("Flush", (sessionState: SessionV3State) => {
         throw new UnsupportedOperationException("Not supported yet")
       })
     },
@@ -536,7 +537,7 @@ object PgWireProtocol extends Logging {
 
       logInfo(s"Parse: queryName='$queryName' query='$query' objIds=$params")
 
-      ("Parse", (ctx: ChannelHandlerContext, sessionState: SessionV3State) => {
+      ("Parse", (sessionState: SessionV3State) => {
         import sessionState._
         import PgV3MessageHandler._
 
@@ -561,7 +562,7 @@ object PgWireProtocol extends Logging {
 
       logInfo(s"Query: statements=${statements.mkString(", ")}")
 
-      ("Query", (ctx: ChannelHandlerContext, sessionState: SessionV3State) => {
+      ("Query", (sessionState: SessionV3State) => {
         import sessionState.v3Protocol._
         import sessionState._
         import PgV3MessageHandler._
@@ -609,7 +610,8 @@ object PgWireProtocol extends Logging {
 
     // An ASCII code of the `Sync` message is 'S'(83)
     83 -> { msg =>
-      ("Sync", (ctx: ChannelHandlerContext, sessionState: SessionV3State) => {
+      ("Sync", (sessionState: SessionV3State) => {
+        import sessionState._
         ctx.write(ReadyForQuery)
         ctx.flush()
       })
@@ -617,14 +619,14 @@ object PgWireProtocol extends Logging {
 
     // An ASCII code of the `Terminate` message is 'X'(88)
     88 -> { msg =>
-      ("Terminate", (ctx: ChannelHandlerContext, sessionState: SessionV3State) => {
-        ctx.close()
+      ("Terminate", (sessionState: SessionV3State) => {
+        sessionState.close()
       })
     },
 
     // An ASCII code of the `CopyDone` message is 'c'(99)
     99 -> { msg =>
-      ("CopyDone", (ctx: ChannelHandlerContext, sessionState: SessionV3State) => {
+      ("CopyDone", (sessionState: SessionV3State) => {
         throw new UnsupportedOperationException("Not supported yet")
       })
     },
@@ -634,14 +636,14 @@ object PgWireProtocol extends Logging {
       val data = new Array[Byte](msg.getInt())
       msg.get(data)
 
-      ("CopyData", (ctx: ChannelHandlerContext, sessionState: SessionV3State) => {
+      ("CopyData", (sessionState: SessionV3State) => {
         throw new UnsupportedOperationException("Not supported yet")
       })
     },
 
     // An ASCII code of the `CopyFail` message is 'f'(102)
     102 -> { msg =>
-      ("CopyFail", (ctx: ChannelHandlerContext, sessionState: SessionV3State) => {
+      ("CopyFail", (sessionState: SessionV3State) => {
         throw new UnsupportedOperationException("Not supported yet")
       })
     },
@@ -651,10 +653,11 @@ object PgWireProtocol extends Logging {
       val token = new Array[Byte](msg.remaining)
       msg.get(token)
 
-      ("PasswordMessage", (ctx: ChannelHandlerContext, sessionState: SessionV3State) => {
+      ("PasswordMessage", (sessionState: SessionV3State) => {
+        import sessionState._
         import PgV3MessageHandler._
         if (doGSSAuthentication(ctx, sessionState, kerberosServerPrincipal, token)) {
-          sendAuthenticationOk(ctx, sessionState)
+          sendAuthenticationOk(sessionState)
         }
       })
     }
@@ -693,7 +696,7 @@ object PgWireProtocol extends Logging {
     buf.array()
   }
 
-  def sendAuthenticationOk(ctx: ChannelHandlerContext, sessionState: SessionV3State): Unit = {
+  def sendAuthenticationOk(sessionState: SessionV3State): Unit = {
     import sessionState.v3Protocol._
     import sessionState._
 
@@ -946,12 +949,14 @@ case class PortalState(queryState: QueryState, execState: Operation, isCursorMod
 }
 
 case class SessionV3State(
-  cli: SessionService,
-  conf: SQLConf,
-  v3Protocol: PgWireProtocol,
-  userName: String,
-  appName: String,
-  secretKey: Int) extends SessionState {
+    ctx: ChannelHandlerContext,
+    cli: SessionService,
+    v3Protocol: PgWireProtocol,
+    conf: SQLConf,
+    userName: String,
+    appName: String,
+    secretKey: Int,
+    closeFunc: () => Unit) extends SessionState {
 
   // Holds multiple prepared statements inside a session
   val queries: mutable.Map[String, QueryState] = mutable.Map.empty
@@ -961,10 +966,13 @@ case class SessionV3State(
   // by asynchronous JDBC cancellation requests.
   @volatile var activePortal: Option[String] = None
 
-  // Holds unprocessed bytes for incomming V3 messages
+  // Holds unprocessed bytes for incoming V3 messages
   var pendingBytes: Array[Byte] = Array.empty
 
-  override def close(): Unit = {}
+  override def close(): Unit = {
+    closeFunc()
+    ctx.close()
+  }
 }
 
 object SessionV3State {
@@ -1006,15 +1014,14 @@ class PgV3MessageHandler(cli: SessionService, conf: SQLConf)
     logError(s"Exception detected: ${exceptionString(cause)}")
     handleException(ctx, cause.getMessage)
     closeSession(channelId = getUniqueChannelId(ctx))
-    ctx.close()
   }
 
   override def channelInactive(ctx: ChannelHandlerContext): Unit = {
     closeSession(channelId = getUniqueChannelId(ctx))
-    ctx.close()
   }
 
   private def openSession(
+      ctx: ChannelHandlerContext,
       channelId: Int,
       secretKey: Int,
       appName: String,
@@ -1023,7 +1030,8 @@ class PgV3MessageHandler(cli: SessionService, conf: SQLConf)
       hostAddr: String,
       dbName: String): SessionState = {
     val v3Protocol = PgWireProtocol(conf.sqlServerMessageBufferSizeInBytes)
-    val state = SessionV3State(cli, conf, v3Protocol, userName, appName, secretKey)
+    val closeFunc: () => Unit = () => { channelIdToSessionId.remove(channelId) }
+    val state = SessionV3State(ctx, cli, v3Protocol, conf, userName, appName, secretKey, closeFunc)
     val sessionId = cli.openSession(userName, passwd, hostAddr, dbName, state)
     channelIdToSessionId.put(channelId, sessionId)
     logInfo(s"Open a session (sessionId=$sessionId, channelId=$channelId " +
@@ -1034,8 +1042,9 @@ class PgV3MessageHandler(cli: SessionService, conf: SQLConf)
   private def closeSession(channelId: Int): Unit = {
     // `exceptionCaught` possibly calls this function
     if (channelIdToSessionId.containsKey(channelId)) {
-      val sessionId = channelIdToSessionId.remove(channelId)
+      val sessionId = channelIdToSessionId.get(channelId)
       logInfo(s"Close the session (sessionId=$sessionId, channelId=$channelId)")
+      // Resource cleanup will be done in `SessionState.close()`
       cli.closeSession(sessionId)
     }
   }
@@ -1125,7 +1134,7 @@ class PgV3MessageHandler(cli: SessionService, conf: SQLConf)
     val secretKey = new Random(System.currentTimeMillis).nextInt
     val dbName = props.getOrElse("database", "default")
     val sessionState = openSession(
-      getUniqueChannelId(ctx), secretKey, appName, userName, passwd, hostAddr, dbName
+      ctx, getUniqueChannelId(ctx), secretKey, appName, userName, passwd, hostAddr, dbName
     ).asInstanceOf[SessionV3State]
 
     // Check if Kerberos authentication is enabled
@@ -1133,7 +1142,7 @@ class PgV3MessageHandler(cli: SessionService, conf: SQLConf)
       ctx.write(AuthenticationGSS)
       ctx.flush()
     } else {
-      sendAuthenticationOk(ctx, sessionState)
+      sendAuthenticationOk(sessionState)
     }
   }
 
@@ -1187,7 +1196,7 @@ class PgV3MessageHandler(cli: SessionService, conf: SQLConf)
           SessionV3State.resetState(sessionState)
           return
       }
-      try { processor(ctx, sessionState) } catch {
+      try { processor(sessionState) } catch {
         case NonFatal(e) =>
           handleException(ctx, s"Exception detected in `$msgTypeName`: ${exceptionString(e)}")
           SessionV3State.resetState(sessionState)
