@@ -433,9 +433,9 @@ trait PgJdbcTestBase {
     }
   }
 
-  def testSimpleModeOnly(testName: String)(testBody: => Unit): Unit =
+  def testSimpleQueryModeOnly(testName: String)(testBody: => Unit): Unit =
     testSelectiveModeOnly("simple", testName)(testBody)
 
-  def testExtendedModeOnly(testName: String)(testBody: => Unit): Unit =
+  def testExtendedQueryModeOnly(testName: String)(testBody: => Unit): Unit =
     testSelectiveModeOnly("extended", testName)(testBody)
 }

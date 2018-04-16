@@ -451,6 +451,28 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String)
     }
   }
 
+  testSimpleQueryModeOnly("multiple query statements") {
+    testJdbcStatement { statement =>
+      val numQuries = 3
+
+      (0 until numQuries).flatMap { i =>
+        Seq(
+          s"DROP TABLE IF EXISTS test$i",
+          s"CREATE TABLE test$i(c INT)",
+          s"INSERT INTO test$i VALUES ($i)"
+        )
+      }.foreach { sqlText =>
+        assert(statement.execute(sqlText.stripMargin))
+      }
+
+      val e = intercept[SQLException] {
+        val multipleQuries = (0 until numQuries).map(i => s"SELECT * FROM test$i").mkString(";")
+        statement.executeQuery(multipleQuries)
+      }
+      assert(e.getMessage.contains("multi-query execution unsupported:"))
+    }
+  }
+
   test("result set containing NULL") {
     testJdbcStatement { statement =>
       Seq(
@@ -610,7 +632,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String)
     }
   }
 
-  testSimpleModeOnly("Date/Timestamp types in PreparedStatement") {
+  testSimpleQueryModeOnly("Date/Timestamp types in PreparedStatement") {
     testJdbcStatement { statement =>
       Seq(
         "DROP TABLE IF EXISTS test",
@@ -683,7 +705,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String)
     }
   }
 
-  testExtendedModeOnly("Date/Timestamp types in PreparedStatement") {
+  testExtendedQueryModeOnly("Date/Timestamp types in PreparedStatement") {
     // The PostgreSQL JDBC drivers send `Date` and `Timestamp` data with Oid.UNSPECIFIED, so
     // the SQL server can't handle these data types now (it can't check the types in a server side).
     val e1 = intercept[SQLException] {
@@ -1053,7 +1075,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String)
     }
   }
 
-  testSimpleModeOnly("setMaxRows") {
+  testSimpleQueryModeOnly("setMaxRows") {
     testJdbcStatement { statement =>
       assert(statement.execute(
         """
@@ -1071,7 +1093,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String)
     }
   }
 
-  testExtendedModeOnly("setMaxRows") {
+  testExtendedQueryModeOnly("setMaxRows") {
     testJdbcStatement { statement =>
       assert(statement.execute(
         """
