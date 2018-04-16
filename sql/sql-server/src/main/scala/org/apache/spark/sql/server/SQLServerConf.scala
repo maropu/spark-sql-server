@@ -53,16 +53,16 @@ object SQLServerConf {
     .createWithDefault(5432)
 
   // scalastyle:off line.size.limit
-  // `server_version` decides how to handle metadata between jdbc clients and servers.
+  // `server_version` decides how to handle metadata between JDBC clients and servers.
   // See an URL below for valid version numbers:
-  // https://github.com/pgjdbc/pgjdbc/blob/master/pgjdbc/src/main/java/org/postgresql/core/ServerVersion.java
+  // https://github.com/pgjdbc/pgjdbc/blob/REL42.2.2/pgjdbc/src/main/java/org/postgresql/core/ServerVersion.java
   // scalastyle:on line.size.limit
   val SQLSERVER_VERSION = buildConf("spark.sql.server.version")
     .internal()
     .stringConf
-    .checkValue(version => Seq("8.0", "9.6").contains(version),
-      "The server version must be 8.0 or 9.6")
-    .createWithDefault("8.0")
+    .checkValue(version => Seq("8.4", "9.6").contains(version),
+      "The server version must be 8.4 or 9.6")
+    .createWithDefault("8.4")
 
   val SQLSERVER_PSQL_ENABLED = buildConf("spark.sql.server.psql.enabled")
     .doc("When set to true, the Spark SQL accepts request from psql clients.")

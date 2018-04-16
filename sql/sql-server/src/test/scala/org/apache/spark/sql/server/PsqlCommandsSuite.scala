@@ -349,7 +349,7 @@ class PsqlCommandsV9_6Suite extends PgJdbcTest(pgVersion = "9.6") with BeforeAnd
   }
 }
 
-class PsqlCommandsV8_0Suite extends PgJdbcTest(pgVersion = "8.0") with BeforeAndAfterAll {
+class PsqlCommandsV8_4Suite extends PgJdbcTest(pgVersion = "8.4") with BeforeAndAfterAll {
 
   override protected def beforeAll() : Unit = {
     super.beforeAll()
