@@ -20,8 +20,7 @@ package org.apache.spark.sql.server
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.sql._
-import java.util.Properties
-import java.util.UUID
+import java.util.{Properties, UUID}
 
 import scala.collection.mutable
 import scala.concurrent.Promise
@@ -36,25 +35,33 @@ import org.apache.spark.SparkFunSuite
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.{ThreadUtils, Utils}
 
-class PgJdbcTest(
-    pgVersion: String = "9.6",
-    ssl: Boolean = false,
-    queryMode: String = "extended",
-    singleSession: Boolean = false)
-  extends SQLServerTest(pgVersion, ssl, queryMode, singleSession) with PgJdbcTestBase {
 
-  override def serverInstance: SparkPgSQLServerTest = server
+/**
+ * A base class that manages a pair of JDBC driver connections and a SQL server instance.
+ */
+class PgJdbcTest(
+    override val pgVersion: String = "9.6",
+    override val ssl: Boolean = false,
+    override val queryQueryMode: String = "extended",
+    override val singleSession: Boolean = false) extends SQLServerTest with PgJdbcTestBase {
+
+  override val serverInstance: SparkPgSQLServerTest = server
 }
 
-abstract class SQLServerTest(
-    pgVersion: String, ssl: Boolean, queryMode: String, singleSession: Boolean)
-  extends SparkFunSuite with BeforeAndAfterAll with Logging {
+/**
+ * A base class for a SQL server instance.
+ */
+abstract class SQLServerTest extends SparkFunSuite with BeforeAndAfterAll with Logging {
+
+  // Parameters for the Spark SQL server
+  val pgVersion: String
+  val ssl: Boolean
+  val singleSession: Boolean
 
   protected val server = new SparkPgSQLServerTest(
     name = this.getClass.getSimpleName,
     pgVersion = pgVersion,
     ssl = ssl,
-    queryMode = queryMode,
     singleSession = singleSession)
 
   override protected def beforeAll(): Unit = {
@@ -71,27 +78,12 @@ abstract class SQLServerTest(
       super.afterAll()
     }
   }
-
-  def testSelectiveModeOnly(testMode: String, testName: String)(testBody: => Unit): Unit = {
-    if (queryMode == testMode) {
-      test(testName) { testBody }
-    } else {
-      ignore(s"$testName [skipped when $queryMode mode enabled]")(testBody)
-    }
-  }
-
-  def testSimpleModeOnly(testName: String)(testBody: => Unit): Unit =
-    testSelectiveModeOnly("simple", testName)(testBody)
-
-  def testExtendedModeOnly(testName: String)(testBody: => Unit): Unit =
-    testSelectiveModeOnly("extended", testName)(testBody)
 }
 
 class SparkPgSQLServerTest(
     name: String,
     pgVersion: String,
     val ssl: Boolean,
-    val queryMode: String,
     singleSession: Boolean,
     options: Map[String, String] = Map.empty)
   extends Logging {
@@ -110,7 +102,7 @@ class SparkPgSQLServerTest(
 
      // Write a hive-site.xml containing a setting of `hive.metastore.warehouse.dir`
      val metastoreURL =
-       s"jdbc:derby:memory:;databaseName=${tempDir};create=true"
+       s"jdbc:derby:memory:;databaseName=$tempDir;create=true"
      Files.write(
        s"""
          |<configuration>
@@ -260,7 +252,7 @@ class SparkPgSQLServerTest(
     logTailingProcess = null
   }
 
-  def dumpServerLogs(): Unit = {
+  private def dumpServerLogs(): Unit = {
     logError(
       s"""
          |=====================================
@@ -274,24 +266,85 @@ class SparkPgSQLServerTest(
   }
 }
 
+/**
+ * A trait for JDBC driver connections.
+ */
 trait PgJdbcTestBase {
+  self: SparkFunSuite =>
 
-  private val jdbcQueryTimeout = 180
+  // Server instance that this JDBC driver connects to
+  protected val serverInstance: SparkPgSQLServerTest
 
   // Register a JDBC driver for PostgreSQL
   Utils.classForName(classOf[org.postgresql.Driver].getCanonicalName)
 
   private lazy val jdbcUri = s"jdbc:postgresql://localhost:${serverInstance.listeningPort}/default"
 
-  def serverInstance: SparkPgSQLServerTest
+  // Connection parameters refer to ones of PostgreSQL JDBC driver v42.x:
+  // https://jdbc.postgresql.org/documentation/head/connect.html#connection-parameters
 
-  protected def getJdbcConnect(): Connection = {
+  // `preferQueryMode` has been supported until PostgreSQL JDBC drivers v9.4.1210
+  val queryQueryMode: String
+
+  // Set this threshold at 1 for tests (5 by default)
+  val prepareThreshold: Int = 1
+
+  // Set this threshold at 2 for tests (256 by default)
+  val preparedStatementCacheQueries: Int = 2
+
+  // This value of 0 disables the cache
+  val preparedStatementCacheSizeMiB: Int = 0
+
+  // The value of 0 means that in `ResultSet` will be fetch all rows at once
+  val defaultRowFetchSize: Int = 0
+
+  val sendBufferSize: Int = 146988
+  val recvBufferSize: Int = 408300
+
+  val binaryTransferEnable: String = Seq(
+    "TIMESTAMPTZ",
+    "UUID",
+    "INT2_ARRAY",
+    "INT4_ARRAY",
+    "BYTEA",
+    "TEXT_ARRAY",
+    "TIMETZ",
+    "INT8",
+    "INT2",
+    "INT4",
+    "VARCHAR_ARRAY",
+    "INT8_ARRAY",
+    "POINT",
+    "TIMESTAMP",
+    "TIME",
+    "BOX",
+    "FLOAT4",
+    "FLOAT8",
+    "FLOAT4_ARRAY",
+    "FLOAT8_ARRAY").mkString(",")
+
+  val binaryTransferDisable: String = ""
+
+  // These parameters are fixed in the tests
+  private val stringtype: String = "VARCHAR"
+  private val protocolVersion: Int = 3
+
+  private def getJdbcConnect(): Connection = {
     val props = new Properties()
     props.put("user", System.getProperty("user.name"))
     props.put("password", "")
-    props.put("prepareThreshold", "1")
-    props.put("preferQueryMode", serverInstance.queryMode)
-    // props.put("loglevel", "2")
+    props.put("protocolVersion", protocolVersion.toString)
+    props.put("stringtype", stringtype)
+    props.put("prepareThreshold", prepareThreshold.toString)
+    props.put("preparedStatementCacheQueries", preparedStatementCacheQueries.toString)
+    props.put("preparedStatementCacheSizeMiB", preparedStatementCacheSizeMiB.toString)
+    props.put("defaultRowFetchSize", defaultRowFetchSize.toString)
+    props.put("sendBufferSize", sendBufferSize.toString)
+    props.put("recvBufferSize", recvBufferSize.toString)
+    props.put("preferQueryMode", queryQueryMode)
+    props.put("binaryTransferEnable", binaryTransferEnable)
+    props.put("binaryTransferDisable", binaryTransferDisable)
+    // props.put("loggerLevel", "TRACE")
     if (serverInstance.ssl) {
       props.put("ssl", "true")
       props.put("sslfactory", "org.postgresql.ssl.NonValidatingFactory")
@@ -299,6 +352,8 @@ trait PgJdbcTestBase {
 
     DriverManager.getConnection(jdbcUri, props)
   }
+
+  private val jdbcQueryTimeout = 180
 
   def testMultipleConnectionJdbcStatement(fs: (Statement => Unit)*) {
     val connections = fs.map { _ => getJdbcConnect() }
@@ -369,4 +424,18 @@ trait PgJdbcTestBase {
       connection.close()
     }
   }
+
+  private def testSelectiveModeOnly(testMode: String, testName: String)(testBody: => Unit): Unit = {
+    if (queryQueryMode == testMode) {
+      test(testName) { testBody }
+    } else {
+      ignore(s"$testName [skipped when $queryQueryMode mode enabled]")(testBody)
+    }
+  }
+
+  def testSimpleModeOnly(testName: String)(testBody: => Unit): Unit =
+    testSelectiveModeOnly("simple", testName)(testBody)
+
+  def testExtendedModeOnly(testName: String)(testBody: => Unit): Unit =
+    testSelectiveModeOnly("extended", testName)(testBody)
 }

@@ -21,7 +21,8 @@ install:
 
 script:
   # - ENABLE_FAULT_TOLERANCE_TESTS=1 ./build/mvn -q scalastyle:check test
-  - travis_wait 360 ./build/mvn -q scalastyle:check test
+  # - travis_wait 360 ./build/mvn -q scalastyle:check test
+  - ./build/mvn -q scalastyle:check test
 
 after_success:
   # Fails because of too long tests in Travis CI
