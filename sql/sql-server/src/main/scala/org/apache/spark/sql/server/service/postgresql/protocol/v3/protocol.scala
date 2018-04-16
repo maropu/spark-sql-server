@@ -553,12 +553,11 @@ object PgWireProtocol extends Logging {
 
     // An ASCII code of the `Query` message is 'Q'(81)
     81 -> { msg =>
-      val byteArray = new Array[Byte](msg.remaining)
-      msg.get(byteArray)
+      val queries = extractString(msg)
       // Since a query string could contain several queries (separated by semicolons),
       // there might be several such response sequences before the backend finishes processing
       // the query string.
-      val statements = new String(byteArray, StandardCharsets.UTF_8).split(";").map(_.trim).init
+      val statements = queries.split(";").map(_.trim)
 
       logInfo(s"Query: statements=${statements.mkString(", ")}")
 

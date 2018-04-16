@@ -71,6 +71,20 @@ abstract class SQLServerTest(
       super.afterAll()
     }
   }
+
+  def testSelectiveModeOnly(testMode: String, testName: String)(testBody: => Unit): Unit = {
+    if (queryMode == testMode) {
+      test(testName) { testBody }
+    } else {
+      ignore(s"$testName [skipped when $queryMode mode enabled]")(testBody)
+    }
+  }
+
+  def testSimpleModeOnly(testName: String)(testBody: => Unit): Unit =
+    testSelectiveModeOnly("simple", testName)(testBody)
+
+  def testExtendedModeOnly(testName: String)(testBody: => Unit): Unit =
+    testSelectiveModeOnly("extended", testName)(testBody)
 }
 
 class SparkPgSQLServerTest(

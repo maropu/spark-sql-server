@@ -54,11 +54,11 @@ class ProcessOutputCapturer(stream: InputStream, capture: String => Unit) extend
 }
 
 // `preferQueryMode` has been supported until PostgreSQL JDBC drivers v9.4.1210
-// class PgV9_6JdbcSimpleModeSuite extends PgJdbcSuite("9.6", "simple")
+class PgV9_6JdbcSimpleModeSuite extends PgJdbcSuite("9.6", "simple")
 class PgV9_6JdbcExtendedModeSuite extends PgJdbcSuite("9.6", "extended")
-// class PgV8_0JdbcSimpleModeSuite extends PgJdbcSuite("8.0", "simple")
+class PgV8_0JdbcSimpleModeSuite extends PgJdbcSuite("8.0", "simple")
 class PgV8_0JdbcExtendedModeSuite extends PgJdbcSuite("8.0", "extended")
-// class PgV7_4JdbcSimpleModeSuite extends PgJdbcSuite("7.4", "simple")
+class PgV7_4JdbcSimpleModeSuite extends PgJdbcSuite("7.4", "simple")
 class PgV7_4JdbcExtendedModeSuite extends PgJdbcSuite("7.4", "extended")
 
 abstract class PgJdbcSuite(pgVersion: String, queryMode: String)
@@ -608,7 +608,82 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String)
       assert(!rs2.next())
       rs2.close()
     }
+  }
 
+  testSimpleModeOnly("Date/Timestamp types in PreparedStatement") {
+    testJdbcStatement { statement =>
+      Seq(
+        "DROP TABLE IF EXISTS test",
+        """
+          |CREATE TABLE test(
+          |  col1 DATE,
+          |  col2 TIMESTAMP
+          |)
+          """,
+        "INSERT INTO test VALUES ('2016-08-04', '2016-08-04 00:17:13.0')"
+      ).foreach { sqlText =>
+        assert(statement.execute(sqlText.stripMargin))
+      }
+    }
+    // Spark-2.3 has weird casts for DATE types:
+    //
+    // scalastyle:off
+    // scala> sql("CREATE TABLE test(c DATE) USING parquet")
+    // scala> sql("INSERT INTO test VALUES ('2016-08-04')")
+    // scala> val df = sql("SELECT * FROM test WHERE c = '2016-08-04 +09'")
+    // df: org.apache.spark.sql.DataFrame = [c: date]
+    //
+    // scala> df.explain
+    // == Physical Plan ==
+    //   *(1) Project [c#130]
+    // +- *(1) Filter (isnotnull(c#130) && (cast(c#130 as string) = 2016-08-04 +09))
+    // +- *(1) FileScan parquet default.test[c#130] Batched: true, Format: Parquet, Location: InMemoryFileIndex[file:/Users/maropu/IdeaProjects/spark/spark-master/spark-warehouse/test], PartitionFilters: [], PushedFilters: [IsNotNull(c)], ReadSchema: struct<c:date>
+    //
+    // scala> df.show
+    // +---+
+    // |  c|
+    // +---+
+    // +---+
+    // scalastyle:on
+    //
+    // PostgreSQL has a different behaviour below:
+    //
+    // scalastyle:off
+    // postgres=# CREATE TABLE test(c DATE);
+    // postgres=# INSERT INTO test VALUES ('2016-08-04');
+    // postgres=# SELECT * FROM test WHERE c = '2016-08-04 +09';
+    //  c
+    // ------------
+    // 2016-08-04
+    // (1 row)
+    //
+    // postgres=# explain  SELECT * FROM test WHERE c = '2016-08-04 +09';
+    // QUERY PLAN
+    //   ---------------------------------------------------------
+    // Seq Scan on test  (cost=0.00..41.88 rows=13 width=4)
+    // Filter: (c = '2016-08-04'::date)
+    // (2 rows)
+    //
+    // testJdbcPreparedStatement("SELECT col1 FROM test WHERE col1 = ?") { statement =>
+    //   // The prepared statement above is extended to a query below:
+    //   //  - SELECT col7 FROM test WHERE col7 = '2016-08-04 +09'
+    //   statement.setDate(1, Date.valueOf("2016-08-04"))
+    //   val rs = statement.executeQuery()
+    //   assert(rs.next())
+    //   assert(rs.getDate(1) === Date.valueOf("2016-08-04"))
+    // }
+    // scalastyle:on
+    testJdbcPreparedStatement("SELECT col2 FROM test WHERE col2 = ?") { statement =>
+      // The prepared statement above is extended to a query below:
+      //  - SELECT col2 FROM test WHERE col2 = '2016-08-04 00:17:13+09'
+      statement.setTimestamp(1, Timestamp.valueOf("2016-08-04 00:17:13"))
+      val rs = statement.executeQuery()
+      assert(rs.next())
+      assert(rs.getTimestamp(1) === Timestamp.valueOf("2016-08-04 00:17:13"))
+    }
+  }
+
+  testExtendedModeOnly("Date/Timestamp types in PreparedStatement") {
     // The PostgreSQL JDBC drivers send `Date` and `Timestamp` data with Oid.UNSPECIFIED, so
     // the SQL server can't handle these data types now (it can't check the types in a server side).
     val e1 = intercept[SQLException] {
@@ -978,12 +1053,30 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String)
     }
   }
 
-  test("setMaxRows") {
+  testSimpleModeOnly("setMaxRows") {
     testJdbcStatement { statement =>
       assert(statement.execute(
         """
           |CREATE OR REPLACE TEMPORARY VIEW t AS
-          |  SELECT id AS value FROM range(0, 100, 1)
+          |  SELECT id AS value FROM range(0, 10, 1)
+        """.stripMargin))
+      statement.setMaxRows(1)
+      val rs = statement.executeQuery("SELECT * FROM t")
+      // In the simple mode, `setMaxRows` have no effect on results
+      (0 until 10).foreach { _ =>
+        assert(rs.next())
+      }
+      assert(!rs.next())
+      rs.close()
+    }
+  }
+
+  testExtendedModeOnly("setMaxRows") {
+    testJdbcStatement { statement =>
+      assert(statement.execute(
+        """
+          |CREATE OR REPLACE TEMPORARY VIEW t AS
+          |  SELECT id AS value FROM range(0, 10, 1)
         """.stripMargin))
       statement.setMaxRows(1)
       val rs = statement.executeQuery("SELECT * FROM t")
