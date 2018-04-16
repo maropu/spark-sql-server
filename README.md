@@ -10,7 +10,7 @@ This is just a prototype to check feasibility for yet another SQL JDBC/ODBC serv
 
 To start the JDBC/ODBC server, check out this repository and run the following command in the root directory:
 
-    $ ./sbin/start-sql-server.sh
+    $ ./sbin/start-sql-server.sh --conf spark.sql.server.psql.enabled=true
 
 This script accepts all `bin/spark-submit` command line options in Spark, plus options for the SQL server.
 You may run `./sbin/start-sql-server.sh --help` for a complete list of all available options.
@@ -20,6 +20,7 @@ If you use `spark-2.3.0`, you can add the option below to install the JDBC/ODBC 
 
 Then, you run the commands to launch the server:
 
+    scala> sql("SET spark.sql.server.psql.enabled=true")
     scala> sql("SET spark.sql.crossJoin.enabled=true")
     scala> org.apache.spark.sql.server.SQLServer.startWithContext(spark.sqlContext)
 

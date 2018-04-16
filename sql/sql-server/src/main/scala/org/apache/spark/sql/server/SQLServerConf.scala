@@ -66,9 +66,9 @@ object SQLServerConf {
     .createWithDefault("8.4")
 
   val SQLSERVER_PSQL_ENABLED = buildConf("spark.sql.server.psql.enabled")
-    .doc("When set to true, the Spark SQL accepts request from psql clients.")
+    .doc("When set to true, the Spark SQL server accepts requests from psql clients.")
     .booleanConf
-    .createWithDefault(true)
+    .createWithDefault(false)
 
   val SQLSERVER_WORKER_THREADS = buildConf("spark.sql.server.worker.threads")
     .doc("Number of SQLServer worker threads.")
@@ -76,7 +76,7 @@ object SQLServerConf {
     .createWithDefault(4)
 
   val SQLSERVER_BINARY_TRANSFER_MODE = buildConf("spark.sql.server.binaryTransferMode")
-    .doc(" Whether binary transfer mode is enabled.")
+    .doc("Whether binary transfer mode is enabled.")
     .booleanConf
     .createWithDefault(true)
 
