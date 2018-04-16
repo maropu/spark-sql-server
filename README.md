@@ -71,6 +71,8 @@ public class JdbcTest {
 }
 ```
 
+This Spark SQL server supports the v42.x of PostgreSQL JDBC drivers [here](https://jdbc.postgresql.org/download.html).
+
 ## Use the PostgreSQL libpq C library
 
 You can also use [`libpq`](https://www.postgresql.org/docs/current/static/libpq.html)
