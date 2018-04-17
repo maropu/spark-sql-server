@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql.server
 
+import java.util.concurrent.TimeUnit
+
 import scala.language.implicitConversions
 
 import org.apache.spark.internal.config.{ConfigBuilder, ConfigEntry, ConfigReader}
@@ -97,7 +99,13 @@ object SQLServerConf {
     .stringConf
     .createWithDefault("/spark-sql-server")
 
-   val SQLSERVER_SSL_ENABLED = buildConf("spark.sql.server.ssl.enabled")
+  val SQLSERVER_IDLE_SESSION_CLEANUP_DELAY =
+    buildConf("spark.sql.server.idleSessionCleanupDelay")
+      .doc("How long in milliseconds an idle session is removed from a session manager.")
+      .timeConf(TimeUnit.MILLISECONDS)
+      .createWithDefault(TimeUnit.HOURS.toMillis(1)) // 1 hour
+
+  val SQLSERVER_SSL_ENABLED = buildConf("spark.sql.server.ssl.enabled")
     .doc("When set to true, SQLServer enables SSL encryption.")
     .booleanConf
     .createWithDefault(false)
@@ -169,6 +177,8 @@ class SQLServerConf(conf: SQLConf) {
   def sqlServerRecoveryMode: Option[String] = getConf(SQLSERVER_RECOVERY_MODE)
 
   def sqlServerRecoveryDir: String = getConf(SQLSERVER_RECOVERY_DIR)
+
+  def sqlServerIdleSessionCleanupDelay: Long = getConf(SQLSERVER_IDLE_SESSION_CLEANUP_DELAY)
 
   def sqlServerSslEnabled: Boolean = getConf(SQLSERVER_SSL_ENABLED)
 

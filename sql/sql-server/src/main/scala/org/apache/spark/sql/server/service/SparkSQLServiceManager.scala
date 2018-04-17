@@ -19,12 +19,18 @@ package org.apache.spark.sql.server.service
 
 import java.util.{HashMap => jHashMap}
 import java.util.Collections.{synchronizedMap => jSyncMap}
+import java.util.concurrent.TimeUnit
 
+import scala.collection.mutable
+
+import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.server.{SQLServer, SQLServerEnv}
 import org.apache.spark.sql.server.SQLServerConf._
+import org.apache.spark.sql.server.util.RecurringTimer
+import org.apache.spark.util.SystemClock
 
 
 trait SessionInitializer {
@@ -37,6 +43,7 @@ trait SessionState {
   private[service] var _sessionId: Int = _
   private[service] var _sqlContext: SQLContext = _
 
+  def closeWithException(msg: String): Unit = close()
   def close(): Unit = {}
 }
 
@@ -48,14 +55,25 @@ trait SessionService {
   def executeStatement(sessionId: Int, plan: (String, LogicalPlan)): Operation
 }
 
+private[service] case class TimeStampedValue[V](value: V, timestamp: Long)
+
 private[service] class SessionManager(pgServer: SQLServer, init: SessionInitializer)
-    extends CompositeService {
+    extends CompositeService with Logging {
   import SQLServer.{listener => servListener}
 
-  private val sessionIdToState = jSyncMap(new jHashMap[Int, SessionState]())
+  private val IDLE_SESSION_CLEANUP_PERIOD = TimeUnit.MINUTES.toMillis(5) // 5min
+
+  private val sessionIdToState = jSyncMap(new jHashMap[Int, TimeStampedValue[SessionState]]())
+
   private var getSession: String => SQLContext = _
+  private var idleSessionCleanupDelay: Long = _
+  private var idleSessionCleaner: RecurringTimer = _
 
   override def init(conf: SQLConf): Unit = {
+    idleSessionCleanupDelay = conf.sqlServerIdleSessionCleanupDelay
+    if (idleSessionCleanupDelay > 0) {
+      idleSessionCleaner = startIdleSessionCleanupThread(IDLE_SESSION_CLEANUP_PERIOD)
+    }
     getSession = if (conf.sqlServerSingleSessionEnabled) {
       (dbName: String) => {
         SQLServerEnv.sqlContext
@@ -85,21 +103,76 @@ private[service] class SessionManager(pgServer: SQLServer, init: SessionInitiali
     state._sessionId = sessionId
     state._sqlContext = sqlContext
     sqlContext.sharedState.externalCatalog.setCurrentDatabase(dbName)
-    sessionIdToState.put(sessionId, state)
+    sessionIdToState.put(sessionId, TimeStampedValue(state, currentTime))
     servListener.onSessionCreated(sessionId, userName, ipAddress)
     sessionId
   }
 
   def closeSession(sessionId: Int): Unit = {
-    require(sessionIdToState.containsKey(sessionId))
-    servListener.onSessionClosed(sessionId)
-    val state = sessionIdToState.remove(sessionId)
-    state.close()
+    val value = sessionIdToState.remove(sessionId)
+    if (value != null) {
+      val TimeStampedValue(state, _) = value
+      servListener.onSessionClosed(sessionId)
+      state.close()
+    } else {
+      logError(s"A session (sessionId=$sessionId) has been already closed")
+    }
   }
 
   def getSession(sessionId: Int): SessionState = {
-    require(sessionIdToState.containsKey(sessionId))
-    sessionIdToState.get(sessionId)
+    val value = sessionIdToState.get(sessionId)
+    if (value != null) {
+      val TimeStampedValue(state, _) = value
+      // Update timestamp
+      sessionIdToState.replace(sessionId, TimeStampedValue(state, currentTime))
+      state
+    } else {
+      logError(s"A session (sessionId=$sessionId) has been already closed")
+      null
+    }
+  }
+
+  private def currentTime: Long = System.currentTimeMillis
+
+  private def closeSessionWithException(sessionId: Int, msg: String): Unit = {
+    val value = sessionIdToState.remove(sessionId)
+    if (value != null) {
+      val TimeStampedValue(state, _) = value
+      servListener.onSessionClosed(sessionId)
+      state.closeWithException(msg)
+    } else {
+      // Just ignore it
+    }
+  }
+
+  private def checkIdleSessions(): Unit = {
+    val sessionsToRemove = mutable.ArrayBuffer[(Int, Long)]()
+    val checkTime = currentTime
+    val eIter = sessionIdToState.entrySet().iterator()
+    while (eIter.hasNext) {
+      val e = eIter.next()
+      val (sessionId, value) = (e.getKey, e.getValue)
+      val idleTime = checkTime - value.timestamp
+      if (idleTime > idleSessionCleanupDelay) {
+        sessionsToRemove += ((sessionId, idleTime))
+      } else {
+        logInfo(s"Found an active session (sessionId=$sessionId idleTime=$idleTime)")
+      }
+    }
+
+    sessionsToRemove.foreach { case (sessionId, idleTime) =>
+      logWarning(s"Closing an idle session... (sessionId=$sessionId idleTime=$idleTime)")
+      closeSessionWithException(sessionId,
+        s"Closed this session because of long idle time (idleTime=$idleTime)")
+    }
+  }
+
+  private def startIdleSessionCleanupThread(period: Long): RecurringTimer = {
+    val threadName = "Idle Session Cleaner"
+    val timer = new RecurringTimer(new SystemClock(), period, _ => checkIdleSessions(), threadName)
+    timer.start()
+    logDebug(s"Started idle session cleanup thread: $threadName")
+    timer
   }
 }
 

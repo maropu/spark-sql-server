@@ -969,6 +969,13 @@ case class SessionV3State(
   // Holds unprocessed bytes for incoming V3 messages
   var pendingBytes: Array[Byte] = Array.empty
 
+  override def closeWithException(msg: String): Unit = {
+    ctx.write(PgWireProtocol.ErrorResponse(msg))
+    ctx.write(PgWireProtocol.ReadyForQuery)
+    ctx.flush()
+    close()
+  }
+
   override def close(): Unit = {
     closeFunc()
     ctx.close()
