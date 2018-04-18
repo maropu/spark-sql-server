@@ -174,11 +174,11 @@ case class PgWireProtocol(bufferSizeInBytes: Int) {
    */
   def RowDescription(schema: StructType): Array[Byte] = {
     withMessageBuffer { buf =>
-      if (schema.size == 0) {
+      if (schema.isEmpty) {
         buf.put('T'.toByte).putInt(6).putShort(0)
         7
       } else {
-        val length = 6 + schema.map(_.name.length + 19).reduce(_ + _)
+        val length = 6 + schema.map(_.name.length + 19).sum
         buf.put('T'.toByte).putInt(length).putShort(schema.size.toShort)
         // Each column has length(field.name) + 19 bytes
         schema.toSeq.zipWithIndex.map { case (field, index) =>

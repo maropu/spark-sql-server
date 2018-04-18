@@ -19,6 +19,7 @@ package org.apache.spark.sql.server.service.postgresql
 
 import java.sql.SQLException
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.locks.ReentrantReadWriteLock
 
 import scala.util.control.NonFatal
 
@@ -236,8 +237,17 @@ private[postgresql] object PgMetadata extends Logging {
     }
   }
 
-  def initSystemCatalogTables(sqlContext: SQLContext): Unit = {
-    // TODO: Make this initialization transactional
+  private val initLock = new ReentrantReadWriteLock
+
+  private def writeLock[A](f: => A): A = {
+    val lock = initLock.writeLock()
+    lock.lock()
+    try f finally {
+      lock.unlock()
+    }
+  }
+
+  def initSystemCatalogTables(sqlContext: SQLContext): Unit = writeLock {
     if (!sqlContext.sessionState.catalog.databaseExists(catalogDbName)) {
       try {
         sqlContext.sql(s"CREATE DATABASE $catalogDbName")
@@ -473,7 +483,7 @@ private[postgresql] object PgMetadata extends Logging {
     refreshFunctions(dbName, sqlContext)
   }
 
-  def refreshDatabases(dbName: String, sqlContext: SQLContext): Unit = {
+  def refreshDatabases(dbName: String, sqlContext: SQLContext): Unit = writeLock {
     safeCreateCatalogTable("pg_database", sqlContext) { cTableName =>
       s"""
         |CREATE TABLE $cTableName(
@@ -493,7 +503,7 @@ private[postgresql] object PgMetadata extends Logging {
     }
   }
 
-  def refreshTables(dbName: String, sqlContext: SQLContext): Unit = {
+  def refreshTables(dbName: String, sqlContext: SQLContext): Unit = writeLock {
     safeCreateCatalogTable("pg_class", sqlContext) { cTableName =>
       s"""
         |CREATE TABLE $cTableName(
@@ -554,7 +564,7 @@ private[postgresql] object PgMetadata extends Logging {
     }
   }
 
-  def refreshFunctions(dbName: String, sqlContext: SQLContext): Unit = {
+  def refreshFunctions(dbName: String, sqlContext: SQLContext): Unit = writeLock {
     safeCreateCatalogTable("pg_proc", sqlContext) { cTableName =>
       s"""
         |CREATE TABLE $cTableName(
