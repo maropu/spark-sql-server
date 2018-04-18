@@ -1082,6 +1082,16 @@ class AstBuilder(conf: SQLConf) extends SqlBaseBaseVisitor[AnyRef] with Logging 
         invertIfNotDefined(Like(e, expression(ctx.pattern)))
       case SqlBaseParser.RLIKE =>
         invertIfNotDefined(RLike(e, expression(ctx.pattern)))
+      case SqlBaseParser.PGOPERATOR =>
+        // Currently, ignores a database name
+        val dbName = if (ctx.db != null) ctx.db.getText else ""
+        ctx.opName.getText match {
+          case "~" =>
+            invertIfNotDefined(RLike(e, expression(ctx.right)))
+          case _ =>
+            throw new ParseException(
+              s"Unsupported operator name '$dbName.${ctx.opName.getText}'", ctx)
+        }
       case SqlBaseParser.NULL if ctx.NOT != null =>
         IsNotNull(e)
       case SqlBaseParser.NULL =>

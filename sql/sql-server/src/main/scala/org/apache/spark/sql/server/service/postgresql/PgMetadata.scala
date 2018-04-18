@@ -342,14 +342,15 @@ private[postgresql] object PgMetadata extends Logging {
             |  typinput STRING,
             |  typrelid INT,
             |  typbasetype INT,
-            |  typnamespace INT
+            |  typnamespace INT,
+            |  typcollation INT
             |)
           """ +: pgTypes.map { case PgType(oid, name, len, elemOid, input) =>
             // `b` in `typtype` means a primitive type and all the entries in `supportedPgTypes`
             // are primitive types.
             s"""
               |INSERT INTO $cTableName VALUES(
-              |  $oid, '$name', 'b', $len, false, $elemOid, ',', '$input', 0, 0,
+              |  $oid, '$name', 'b', $len, false, $elemOid, ',', '$input', 0, 0, 0,
               |  ${defaultSparkNamespace._1}
               |)
             """
@@ -525,7 +526,9 @@ private[postgresql] object PgMetadata extends Logging {
         |  relforcerowsecurity BOOLEAN,
         |  relreplident STRING,
         |  reltriggers SHORT,
-        |  relhasoids BOOLEAN
+        |  relhasoids BOOLEAN,
+        |  relispartition BOOLEAN,
+        |  relpartbound STRING
         |)
       """ ::
       Nil
@@ -647,7 +650,7 @@ private[postgresql] object PgMetadata extends Logging {
       s"""
         |INSERT INTO $catalogDbName.pg_class VALUES(
         |  $tableOid, 0, '$tableName', 0, '', '$tableTypeId', ${defaultSparkNamespace._1},
-        |  $userRoleOid, null, 0, 0, false, false, false, false, false, '', 0, false
+        |  $userRoleOid, null, 0, 0, false, false, false, false, false, '', 0, false, false, ''
         |)
       """ +: schema.zipWithIndex.map { case (field, index) =>
         val pgType = getPgType(field.dataType)

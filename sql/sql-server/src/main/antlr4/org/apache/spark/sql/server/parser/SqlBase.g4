@@ -554,6 +554,7 @@ predicate
     | NOT? kind=IN '(' expression (',' expression)* ')'
     | NOT? kind=IN '(' query ')'
     | NOT? kind=(RLIKE | LIKE) pattern=valueExpression
+    | NOT? kind=PGOPERATOR '(' (db=identifier '.')? opName=identifier ')' right=valueExpression
     | IS NOT? kind=NULL
     | IS NOT? kind=DISTINCT FROM right=valueExpression
     ;
@@ -793,9 +794,11 @@ NOT: 'NOT' | '!';
 NO: 'NO';
 EXISTS: 'EXISTS';
 BETWEEN: 'BETWEEN';
+PGOPERATOR: 'OPERATOR';
 LIKE: 'LIKE';
 // `~` is a PostgreSQL-style symbol for regular expression
-RLIKE: 'RLIKE' | 'REGEXP' | '~';
+RLIKE: 'RLIKE' | 'REGEXP' | PGRLIKE;
+PGRLIKE: '~';
 IS: 'IS';
 NULL: 'NULL';
 TRUE: 'TRUE';

@@ -116,6 +116,10 @@ private[postgresql] case class PgOperation(
             val dbName = table.identifier.database.getOrElse("default")
             val tableName = table.identifier.table
             PgMetadata.registerTable(dbName, tableName, table.schema, table.tableType, sqlContext)
+          case CreateDataSourceTableCommand(table, _) =>
+            val dbName = table.identifier.database.getOrElse("default")
+            val tableName = table.identifier.table
+            PgMetadata.registerTable(dbName, tableName, table.schema, table.tableType, sqlContext)
           case CreateViewCommand(table, _, _, _, _, child, _, _, _) =>
             val dbName = table.database.getOrElse("default")
             val tableName = table.identifier
