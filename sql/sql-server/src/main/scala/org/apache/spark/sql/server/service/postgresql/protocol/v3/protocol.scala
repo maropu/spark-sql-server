@@ -619,14 +619,15 @@ object PgWireProtocol extends Logging {
 
     // An ASCII code of the `Terminate` message is 'X'(88)
     88 -> { msg =>
-      ("Terminate", (sessionState: SessionV3State) => {
-        sessionState.close()
+      ("Terminate", (_: SessionV3State) => {
+        // Since `PgV3MessageHandler.channelInactive` releases resources corresponding
+        // to a current session, do nothing here.
       })
     },
 
     // An ASCII code of the `CopyDone` message is 'c'(99)
     99 -> { msg =>
-      ("CopyDone", (sessionState: SessionV3State) => {
+      ("CopyDone", (_: SessionV3State) => {
         throw new UnsupportedOperationException("Not supported yet")
       })
     },
@@ -636,7 +637,7 @@ object PgWireProtocol extends Logging {
       val data = new Array[Byte](msg.getInt())
       msg.get(data)
 
-      ("CopyData", (sessionState: SessionV3State) => {
+      ("CopyData", (_: SessionV3State) => {
         throw new UnsupportedOperationException("Not supported yet")
       })
     },
@@ -979,6 +980,11 @@ case class SessionV3State(
   override def close(): Unit = {
     closeFunc()
     ctx.close()
+  }
+
+  override def toString(): String = {
+    s"channelId=${PgV3MessageHandler.getUniqueChannelId(ctx)} " +
+      s"userName=$userName appName=$appName"
   }
 }
 

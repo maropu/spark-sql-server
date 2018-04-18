@@ -43,6 +43,7 @@ trait SessionState {
   private[service] var _sessionId: Int = _
   private[service] var _sqlContext: SQLContext = _
 
+  // Called when an idel session cleaner closes this session
   def closeWithException(msg: String): Unit = close()
   def close(): Unit = {}
 }
@@ -152,16 +153,19 @@ private[service] class SessionManager(pgServer: SQLServer, init: SessionInitiali
     while (eIter.hasNext) {
       val e = eIter.next()
       val (sessionId, value) = (e.getKey, e.getValue)
+      val sessionState = value.value
       val idleTime = checkTime - value.timestamp
       if (idleTime > idleSessionCleanupDelay) {
+        logWarning("Closing an idle session... " +
+          s"(idleTime=$idleTime sessionId=$sessionId $sessionState)")
         sessionsToRemove += ((sessionId, idleTime))
       } else {
-        logInfo(s"Found an active session (sessionId=$sessionId idleTime=$idleTime)")
+        logInfo("Found an active session " +
+          s"(idleTime=$idleTime sessionId=$sessionId $sessionState)")
       }
     }
 
     sessionsToRemove.foreach { case (sessionId, idleTime) =>
-      logWarning(s"Closing an idle session... (sessionId=$sessionId idleTime=$idleTime)")
       closeSessionWithException(sessionId,
         s"Closed this session because of long idle time (idleTime=$idleTime)")
     }
