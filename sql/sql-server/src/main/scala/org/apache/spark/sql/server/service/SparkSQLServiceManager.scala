@@ -19,7 +19,6 @@ package org.apache.spark.sql.server.service
 
 import java.util.{HashMap => jHashMap}
 import java.util.Collections.{synchronizedMap => jSyncMap}
-import java.util.concurrent.TimeUnit
 
 import scala.collection.mutable
 
@@ -62,8 +61,6 @@ private[service] class SessionManager(pgServer: SQLServer, init: SessionInitiali
     extends CompositeService with Logging {
   import SQLServer.{listener => servListener}
 
-  private val IDLE_SESSION_CLEANUP_PERIOD = TimeUnit.MINUTES.toMillis(5) // 5min
-
   private val sessionIdToState = jSyncMap(new jHashMap[Int, TimeStampedValue[SessionState]]())
 
   private var getSession: String => SQLContext = _
@@ -73,7 +70,10 @@ private[service] class SessionManager(pgServer: SQLServer, init: SessionInitiali
   override def init(conf: SQLConf): Unit = {
     idleSessionCleanupDelay = conf.sqlServerIdleSessionCleanupDelay
     if (idleSessionCleanupDelay > 0) {
-      idleSessionCleaner = startIdleSessionCleanupThread(IDLE_SESSION_CLEANUP_PERIOD)
+      // For testing
+      val idleSessionCleanupInterval =
+        conf.getConfString("spark.sql.server.idleSessionCleanupInterval", "300000").toLong
+      idleSessionCleaner = startIdleSessionCleanupThread(period = idleSessionCleanupInterval)
     }
     getSession = if (conf.sqlServerSingleSessionEnabled) {
       (dbName: String) => {
