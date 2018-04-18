@@ -56,10 +56,21 @@ class ProcessOutputCapturer(stream: InputStream, capture: String => Unit) extend
 // TODO: If all the tests enabled, the job of travis CI exceeds the maximum time limit for jobs
 // class PgV10JdbcSimpleModeSuite extends PgJdbcSuite("10", "simple")
 class PgV10JdbcExtendedModeSuite extends PgJdbcSuite("10", "extended")
+// class PgV10JdbcExtendedForPreparedModeSuite extends PgJdbcSuite("10", "extendedForPrepared")
+// class PgV10JdbcExtendedCacheEverythingModeSuite
+//   extends PgJdbcSuite("10", "extendedCacheEverything")
+
 // class PgV9_6JdbcSimpleModeSuite extends PgJdbcSuite("9.6", "simple")
 class PgV9_6JdbcExtendedModeSuite extends PgJdbcSuite("9.6", "extended")
+// class PgV9_6JdbcExtendedForPreparedModeSuite extends PgJdbcSuite("9.6", "extendedForPrepared")
+// class PgV9_6JdbcExtendedCacheEverythingModeSuite
+//   extends PgJdbcSuite("9.6", "extendedCacheEverything")
+
 class PgV8_4JdbcSimpleModeSuite extends PgJdbcSuite("8.4", "simple")
 class PgV8_4JdbcExtendedModeSuite extends PgJdbcSuite("8.4", "extended")
+// class PgV8_4JdbcExtendedForPreparedModeSuite extends PgJdbcSuite("8.4", "extendedForPrepared")
+// class PgV8_4JdbcExtendedCacheEverythingModeSuite
+//   extends PgJdbcSuite("8.4", "extendedCacheEverything")
 
 abstract class PgJdbcSuite(pgVersion: String, queryMode: String)
   extends PgJdbcTest(pgVersion = pgVersion, ssl = false, queryQueryMode = queryMode) {
