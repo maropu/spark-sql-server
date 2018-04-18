@@ -342,8 +342,8 @@ private[postgresql] object PgMetadata extends Logging {
             |  typinput STRING,
             |  typrelid INT,
             |  typbasetype INT,
-            |  typnamespace INT,
-            |  typcollation INT
+            |  typcollation INT,
+            |  typnamespace INT
             |)
           """ +: pgTypes.map { case PgType(oid, name, len, elemOid, input) =>
             // `b` in `typtype` means a primitive type and all the entries in `supportedPgTypes`
