@@ -1,6 +1,8 @@
 [![License](http://img.shields.io/:license-Apache_v2-blue.svg)](https://github.com/maropu/spark-sql-server/blob/master/LICENSE)
 [![Build Status](https://travis-ci.org/maropu/spark-sql-server.svg?branch=master)](https://travis-ci.org/maropu/spark-sql-server)
+<!---
 [![Coverage Status](https://coveralls.io/repos/github/maropu/spark-sql-server/badge.svg?branch=master)](https://coveralls.io/github/maropu/spark-sql-server?branch=master)
+-->
 
 A Spark SQL server based on the PostgreSQL V3 protocol.
 For more information, see [SPARK-15816](https://issues.apache.org/jira/browse/SPARK-15816).
@@ -15,7 +17,7 @@ This script accepts all `bin/spark-submit` command line options in Spark, plus o
 You may run `./sbin/start-sql-server.sh --help` for a complete list of all available options.
 If you use `spark-2.3.0`, you can add the option below to install the JDBC/ODBC server:
 
-    $ ./bin/spark-shell --packages maropu:spark-sql-server:0.1.1
+    $ ./bin/spark-shell --packages maropu:spark-sql-server:0.1.2-spark2.3
 
 Then, you run the commands to launch the server:
 
