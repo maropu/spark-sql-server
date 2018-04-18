@@ -3,8 +3,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/maropu/spark-sql-server/badge.svg?branch=master)](https://coveralls.io/github/maropu/spark-sql-server?branch=master)
 
 A Spark SQL server based on the PostgreSQL V3 protocol.
-This is just a prototype to check feasibility for yet another SQL JDBC/ODBC server in Apache Spark
-(See [SPARK-15816](https://issues.apache.org/jira/browse/SPARK-15816) for related discussions).
+For more information, see [SPARK-15816](https://issues.apache.org/jira/browse/SPARK-15816).
 
 ## Running the Spark SQL JDBC/ODBC server
 
