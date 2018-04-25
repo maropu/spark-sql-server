@@ -63,7 +63,6 @@ private[postgresql] object PgMetadata extends Logging {
   // Catalog tables and they are immutable
   private val _catalogTables1 = Seq(
     // scalastyle:off
-    PgSystemTable( nextUnusedOid, TableIdentifier(   "pg_namespace",                None)),
     PgSystemTable(          1247, TableIdentifier(        "pg_type", Some(catalogDbName))),
     PgSystemTable(          2604, TableIdentifier(     "pg_attrdef", Some(catalogDbName))),
     PgSystemTable(          2606, TableIdentifier(  "pg_constraint", Some(catalogDbName))),
@@ -264,43 +263,6 @@ private[postgresql] object PgMetadata extends Logging {
             |  VALUES(${defaultSparkNamespace._1}, '${defaultSparkNamespace._2}')
           """ ::
           Nil
-        }
-
-        // TODO: The PostgreSQL JDBC driver (`SQLSERVER_VERSION` >= 8.0) issues a query below and
-        // it uses `default.pg_namespace instead of `pg_catalog.pg_namespace`.
-        // So, we currently create `pg_namespace` in both `default` and `pg_catalog`.
-        //
-        // SELECT typinput='array_in'::regproc, typtype
-        //   FROM pg_catalog.pg_type
-        //   LEFT JOIN (
-        //     select ns.oid as nspoid, ns.nspname, r.r
-        //       from pg_namespace as ns
-        //            ^^^^^^^^^^^^
-        //       join (
-        //         select s.r, (current_schemas(false))[s.r] as nspname
-        //           from generate_series(1, array_upper(current_schemas(false), 1)) as s(r)
-        //       ) as r using ( nspname )
-        //   ) as sp
-        //   ON sp.nspoid = typnamespace
-        //   WHERE typname = 'byte'
-        //   ORDER BY sp.r, pg_type.oid DESC
-        //   LIMIT 1;
-        //
-        {
-          "DROP TABLE IF EXISTS pg_namespace" ::
-          s"""
-            |CREATE TABLE pg_namespace(
-            |  oid INT,
-            |  nspname STRING
-            |)
-          """ ::
-          s"""
-            |INSERT INTO pg_namespace
-            |  VALUES(${defaultSparkNamespace._1}, '${defaultSparkNamespace._2}')
-          """ ::
-          Nil
-        }.foreach { sqlText =>
-          sqlContext.sql(sqlText.stripMargin)
         }
 
         safeCreateCatalogTable("pg_roles", sqlContext) { cTableName =>

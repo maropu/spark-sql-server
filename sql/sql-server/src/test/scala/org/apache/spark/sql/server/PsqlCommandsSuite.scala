@@ -119,12 +119,6 @@ class PsqlCommandsV10Suite extends PgJdbcTest(pgVersion = "10") with BeforeAndAf
       )
 
       assert(rs.next())
-      // `pg_namespace` is implicitly added from `metadata.scala` for workaround
-      assert("spark" === rs.getString(1))
-      assert("pg_namespace" === rs.getString(2))
-      assert("table" === rs.getString(3))
-      assert("" === rs.getString(4))
-      assert(rs.next())
       assert("spark" === rs.getString(1))
       assert("t1" === rs.getString(2))
       assert("table" === rs.getString(3))
@@ -443,12 +437,6 @@ class PsqlCommandsV9_6Suite extends PgJdbcTest(pgVersion = "9.6") with BeforeAnd
       )
 
       assert(rs.next())
-      // `pg_namespace` is implicitly added from `metadata.scala` for workaround
-      assert("spark" === rs.getString(1))
-      assert("pg_namespace" === rs.getString(2))
-      assert("table" === rs.getString(3))
-      assert("" === rs.getString(4))
-      assert(rs.next())
       assert("spark" === rs.getString(1))
       assert("t1" === rs.getString(2))
       assert("table" === rs.getString(3))
@@ -729,12 +717,6 @@ class PsqlCommandsV8_4Suite extends PgJdbcTest(pgVersion = "8.4") with BeforeAnd
          """.stripMargin
       )
 
-      assert(rs.next())
-      // `pg_namespace` is implicitly added from `metadata.scala` for workaround
-      assert("spark" === rs.getString(1))
-      assert("pg_namespace" === rs.getString(2))
-      assert("table" === rs.getString(3))
-      assert("" === rs.getString(4))
       assert(rs.next())
       assert("spark" === rs.getString(1))
       assert("t1" === rs.getString(2))
@@ -1018,12 +1000,6 @@ class PsqlCommandsV7_4Suite extends PgJdbcTest(pgVersion = "7.4") with BeforeAnd
          """.stripMargin
       )
 
-      assert(rs.next())
-      // `pg_namespace` is implicitly added from `metadata.scala` for workaround
-      assert("spark" === rs.getString(1))
-      assert("pg_namespace" === rs.getString(2))
-      assert("table" === rs.getString(3))
-      assert("" === rs.getString(4))
       assert(rs.next())
       assert("spark" === rs.getString(1))
       assert("t1" === rs.getString(2))

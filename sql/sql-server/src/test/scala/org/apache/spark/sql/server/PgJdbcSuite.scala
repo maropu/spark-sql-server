@@ -69,8 +69,8 @@ class PgV9_6JdbcExtendedModeSuite extends PgJdbcSuite("9.6", "extended")
 class PgV8_4JdbcSimpleModeSuite extends PgJdbcSuite("8.4", "simple")
 class PgV8_4JdbcExtendedModeSuite extends PgJdbcSuite("8.4", "extended")
 // class PgV8_4JdbcExtendedForPreparedModeSuite extends PgJdbcSuite("8.4", "extendedForPrepared")
-// class PgV8_4JdbcExtendedCacheEverythingModeSuite
-//   extends PgJdbcSuite("8.4", "extendedCacheEverything")
+class PgV8_4JdbcExtendedCacheEverythingModeSuite
+  extends PgJdbcSuite("8.4", "extendedCacheEverything")
 
 abstract class PgJdbcSuite(pgVersion: String, queryMode: String)
   extends PgJdbcTest(pgVersion = pgVersion, ssl = false, queryQueryMode = queryMode) {

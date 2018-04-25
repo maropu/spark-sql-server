@@ -889,7 +889,34 @@ class AstBuilder(conf: SQLConf) extends SqlBaseBaseVisitor[AnyRef] with Logging 
    */
   override def visitTableIdentifier(
       ctx: TableIdentifierContext): TableIdentifier = withOrigin(ctx) {
-    TableIdentifier(ctx.table.getText, Option(ctx.db).map(_.getText))
+
+    // TODO: The PostgreSQL JDBC driver (`SQLSERVER_VERSION` >= 8.0) issues a query below and
+    // it uses `default.pg_namespace instead of `pg_catalog.pg_namespace`.
+    // So, we currently need to replace `pg_namespace` with `pg_catalog.pg_namespace`.
+    //
+    // SELECT typinput='array_in'::regproc, typtype
+    //   FROM pg_catalog.pg_type
+    //   LEFT JOIN (
+    //     select ns.oid as nspoid, ns.nspname, r.r
+    //       from pg_namespace as ns
+    //            ^^^^^^^^^^^^
+    //       join (
+    //         select s.r, (current_schemas(false))[s.r] as nspname
+    //           from generate_series(1, array_upper(current_schemas(false), 1)) as s(r)
+    //       ) as r using ( nspname )
+    //   ) as sp
+    //   ON sp.nspoid = typnamespace
+    //   WHERE typname = 'byte'
+    //   ORDER BY sp.r, pg_type.oid DESC
+    //   LIMIT 1;
+    //
+    if (ctx.table.getText == "pg_namespace") {
+      logWarning("Replaced `pg_namespace` with `pg_catalog.pg_namespace` for the metadata " +
+        "handling of PostgreSQL JDBC drivers")
+      TableIdentifier("pg_namespace", Some("pg_catalog"))
+    } else {
+      TableIdentifier(ctx.table.getText, Option(ctx.db).map(_.getText))
+    }
   }
 
   /**
