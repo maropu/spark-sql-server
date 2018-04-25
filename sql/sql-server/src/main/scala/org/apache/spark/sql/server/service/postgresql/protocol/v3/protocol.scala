@@ -1138,6 +1138,9 @@ class PgV3MessageHandler(cli: SessionService, conf: SQLConf)
       if (name == "psql" && !conf.sqlServerPsqlEnabled) {
         handleException(ctx, "Rejected requests from psql. To accept psql requests, " +
           s"you should set true at ${SQLServerConf.SQLSERVER_PSQL_ENABLED.key}")
+      } else {
+        logWarning("Found a psql request accepted, but since this is mainly used for interactive " +
+          "tests, you don't use this in your production environments")
       }
       name
     }.getOrElse("unknown")

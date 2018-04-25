@@ -44,7 +44,6 @@ function usage {
   echo "  --conf spark.sql.server.port=NUM                    Port number of SQL server interface (Default: 5432)."
   echo "  --conf spark.sql.server.worker.threads=NUM          # of SQLServer worker threads (Default: 4)."
   echo "  --conf spark.sql.server.binaryTransferMode=BOOL     Whether binary transfer mode is enabled (Default: true)."
-  echo "  --conf spark.sql.server.psql.enabled=BOOL           Whether the Spark SQL server accepts requests from psql clients (Default: false)."
   echo "  --conf spark.sql.server.ssl.enabled=BOOL            Enable SSL encryption (Default: false)."
   echo "  --conf spark.sql.server.ssl.path=STR                Keystore path."
   echo "  --conf spark.sql.server.ssl.keystore.passwd=STR     Keystore password."

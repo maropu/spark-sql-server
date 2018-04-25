@@ -67,7 +67,9 @@ object SQLServerConf {
       "The server version must be 8.4, 9.6, or 10")
     .createWithDefault("8.4")
 
+  // This option is mainly used for interactive tests
   val SQLSERVER_PSQL_ENABLED = buildConf("spark.sql.server.psql.enabled")
+    .internal()
     .doc("When set to true, the Spark SQL server accepts requests from psql clients.")
     .booleanConf
     .createWithDefault(false)
