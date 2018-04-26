@@ -237,7 +237,7 @@ Then, launches the SQL server with a Spark standalone mode:
 
 Finally, runs TPC-DS queries against the SQL server:
 
-    $ ./sbin/run-tpcds-benchmark --data-location /tmp/spark-tpcds-data
+    $ ./bin/run-tpcds-benchmark --data-location /tmp/spark-tpcds-data
 
 [This benchmark code](./sql/tpcds/src/main/scala/org/apache/spark/sql/benchmark/TPCDSQueryBenchmark.scala)
 is a good example about how to connect the SQL server with Postgre JDBC drivers.
