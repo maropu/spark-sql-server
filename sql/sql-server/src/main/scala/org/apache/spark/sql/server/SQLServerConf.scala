@@ -84,7 +84,7 @@ object SQLServerConf {
     .booleanConf
     .createWithDefault(true)
 
-   val SQLSERVER_INCREMENTAL_COLLECT_ENABLED =
+  val SQLSERVER_INCREMENTAL_COLLECT_ENABLED =
      buildConf("spark.sql.server.incrementalCollect.enabled")
     .doc("When set to true, Spark collects result rows partition-by-partition.")
     .booleanConf
@@ -112,12 +112,12 @@ object SQLServerConf {
     .booleanConf
     .createWithDefault(false)
 
-   val SQLSERVER_SSL_KEYSTORE_PATH = buildConf("spark.sql.server.ssl.keystore.path")
+  val SQLSERVER_SSL_KEYSTORE_PATH = buildConf("spark.sql.server.ssl.keystore.path")
     .doc("Keystore path")
     .stringConf
     .createOptional
 
-   val SQLSERVER_SSL_KEYSTORE_PASSWD = buildConf("spark.sql.server.ssl.keystore.passwd")
+  val SQLSERVER_SSL_KEYSTORE_PASSWD = buildConf("spark.sql.server.ssl.keystore.passwd")
     .doc("Keystore password")
     .stringConf
     .createOptional
