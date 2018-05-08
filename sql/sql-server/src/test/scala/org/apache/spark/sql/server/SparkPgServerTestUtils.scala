@@ -43,7 +43,8 @@ class PgJdbcTest(
     override val pgVersion: String = "9.6",
     override val ssl: Boolean = false,
     override val queryQueryMode: String = "extended",
-    override val singleSession: Boolean = false) extends SQLServerTest with PgJdbcTestBase {
+    override val singleSession: Boolean = false,
+    override val incrementalCollect: Boolean = true) extends SQLServerTest with PgJdbcTestBase {
 
   override val serverInstance: SparkPgSQLServerTest = server
 }
@@ -57,12 +58,14 @@ abstract class SQLServerTest extends SparkFunSuite with BeforeAndAfterAll with L
   val pgVersion: String
   val ssl: Boolean
   val singleSession: Boolean
+  val incrementalCollect: Boolean
 
   protected val server = new SparkPgSQLServerTest(
     name = this.getClass.getSimpleName,
     pgVersion = pgVersion,
     ssl = ssl,
-    singleSession = singleSession)
+    singleSession = singleSession,
+    incrementalCollect = incrementalCollect)
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -85,13 +88,14 @@ class SparkPgSQLServerTest(
     pgVersion: String,
     val ssl: Boolean,
     singleSession: Boolean,
+    incrementalCollect: Boolean,
     options: Map[String, String] = Map.empty)
   extends Logging {
 
   private val className = SQLServer.getClass.getCanonicalName.stripSuffix("$")
   private val logFileMask = s"starting $className, logging to "
   private val successStartLines = Set(
-    "PgService: Start running the SQL server",
+    "PgProtocolService: Start running the SQL server",
     "Recovery mode 'ZOOKEEPER' enabled"
   )
   private val startScript = "../../sbin/start-sql-server.sh".split("/").mkString(File.separator)
@@ -168,6 +172,7 @@ class SparkPgSQLServerTest(
        | --conf ${SQLServerConf.SQLSERVER_SSL_ENABLED.key}=$ssl
        | --conf ${SQLServerConf.SQLSERVER_SINGLE_SESSION_ENABLED.key}=$singleSession
        | --conf ${SQLServerConf.SQLSERVER_PSQL_ENABLED.key}=true
+       | --conf ${SQLServerConf.SQLSERVER_INCREMENTAL_COLLECT_ENABLED.key}=$incrementalCollect
      """.stripMargin.split("\\s+").toSeq ++
       options.flatMap { case (k, v) => Iterator("--conf", s"$k=$v") }
   }
@@ -405,6 +410,8 @@ trait PgJdbcTestBase {
       connection.createStatement()
     }
 
+    statement.setQueryTimeout(jdbcQueryTimeout)
+
     val (keys, _) = sparkOptions.unzip
     val currentValues = keys.map { key =>
       val rs = statement.executeQuery(s"SET $key")
@@ -414,11 +421,10 @@ trait PgJdbcTestBase {
       statement.execute(s"SET $key=$value")
     }
 
-    statement.setQueryTimeout(jdbcQueryTimeout)
-
     try f(statement) finally {
       keys.zip(currentValues).foreach {
-        case (key, value) => statement.execute(s"SET $key=$value")
+        case (key, value) =>
+          statement.execute(s"SET $key=$value")
       }
       statement.close()
       connection.close()

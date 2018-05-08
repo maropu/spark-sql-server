@@ -30,13 +30,31 @@ abstract class Service extends Logging {
   def stop(): Unit
 }
 
-class CompositeService extends Service {
+abstract class CompositeService extends Service {
 
   private val services = new mutable.ArrayBuffer[Service]()
 
-  protected[this] def addService(service: Service): Unit = services += service
+  protected def addService(service: Service): Unit = services += service
 
-  override def init(conf: SQLConf): Unit = services.foreach(_.init(conf))
-  override def start(): Unit = services.foreach(_.start())
-  override def stop(): Unit = services.foreach(_.stop())
+  // Initializes services in a bottom-up way
+  final override def init(conf: SQLConf): Unit = {
+    services.foreach(_.init(conf))
+    doInit(conf)
+  }
+
+  // Starts services in a bottom-up way
+  final override def start(): Unit = {
+    services.foreach(_.start())
+    doStart()
+  }
+
+  // Stops services in a top-down way
+  final override def stop(): Unit = {
+    doStop()
+    services.foreach(_.stop())
+  }
+
+  def doInit(conf: SQLConf): Unit = {}
+  def doStart(): Unit = {}
+  def doStop(): Unit = {}
 }

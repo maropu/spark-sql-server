@@ -191,6 +191,7 @@ when creating a JDBC connection. Then, you pass `client.truststore` when running
 
     $ java -Djavax.net.ssl.trustStore=client.truststore -Djavax.net.ssl.trustStorePassword=<password> JdbcTest
 
+<!--
 ### Kerberos (GSSAPI) Supports
 
 You can use the SQL server on a Kerberos-enabled cluster only in the YARN mode because Spark supports Kerberos only in that mode.
@@ -202,6 +203,7 @@ To enable GSSAPI, you need to set the following configurations in `start-sql-ser
 
 Then, you set a Kerberos service name (`kerberosServerName`) in `Properties` when creating a JDBC connection.
 See [Connection Parameters](https://jdbc.postgresql.org/documentation/head/connect.html#connection-parameters) for more information.
+-->
 
 ## High Availability
 

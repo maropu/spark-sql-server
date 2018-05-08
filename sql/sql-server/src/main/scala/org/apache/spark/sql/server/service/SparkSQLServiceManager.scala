@@ -19,16 +19,22 @@ package org.apache.spark.sql.server.service
 
 import java.util.{HashMap => jHashMap}
 import java.util.Collections.{synchronizedMap => jSyncMap}
+import java.util.concurrent.atomic.AtomicInteger
 
 import scala.collection.mutable
+
+import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.internal.SQLConf
-import org.apache.spark.sql.server.{SQLServer, SQLServerEnv}
 import org.apache.spark.sql.server.SQLServerConf._
-import org.apache.spark.sql.server.util.RecurringTimer
+import org.apache.spark.sql.server.SQLServerEnv
+import org.apache.spark.sql.server.SQLServerListener
+import org.apache.spark.sql.server.service.postgresql.{PgCatalogInitializer, PgExecutor, PgProtocolService, PgSessionInitializer}
+import org.apache.spark.sql.server.ui.SQLServerTab
+import org.apache.spark.sql.server.util.{RecurringTimer, SQLServerUtils}
 import org.apache.spark.util.SystemClock
 
 
@@ -40,11 +46,24 @@ trait SessionState {
 
   // Holds a session-specific context
   private[service] var _sessionId: Int = _
-  private[service] var _sqlContext: SQLContext = _
 
-  // Called when an idel session cleaner closes this session
+  private[service] var _sqlContext: SQLContext = _
+  private[service] var _servListener: SQLServerListener = _
+
+  private[service] var _uiTab: Option[SQLServerTab] = None
+  private[service] var _schedulePool: Option[String] = None
+  private[service] var _ugi: Option[UserGroupInformation] = None
+
+  // Called when an idle session cleaner closes this session
   def closeWithException(msg: String): Unit = close()
-  def close(): Unit = {}
+
+  def close(): Unit = {
+    // If multi-context mode enabled, stops a per-session context
+    if (SQLServerUtils.checkIfMultiContextModeEnabled(_sqlContext.conf)) {
+      _uiTab.foreach(_.detach())
+      _sqlContext.sparkContext.stop()
+    }
+  }
 }
 
 trait SessionService {
@@ -57,17 +76,21 @@ trait SessionService {
 
 private[service] case class TimeStampedValue[V](value: V, timestamp: Long)
 
-private[service] class SessionManager(pgServer: SQLServer, init: SessionInitializer)
+private[service] class SessionManager(initSession: SessionInitializer)
     extends CompositeService with Logging {
-  import SQLServer.{listener => servListener}
 
+  private val nextSessionId = new AtomicInteger(0)
   private val sessionIdToState = jSyncMap(new jHashMap[Int, TimeStampedValue[SessionState]]())
 
-  private var getSession: String => SQLContext = _
+  // For functions to initialize sessions
+  private var getSessionContext: String => SQLContext = _
+  private var getServerListener: SQLContext => SQLServerListener = _
+  private var getUiTab: (SQLContext, SQLServerListener) => Option[SQLServerTab] = _
+
   private var idleSessionCleanupDelay: Long = _
   private var idleSessionCleaner: RecurringTimer = _
 
-  override def init(conf: SQLConf): Unit = {
+  override def doInit(conf: SQLConf): Unit = {
     idleSessionCleanupDelay = conf.sqlServerIdleSessionCleanupDelay
     if (idleSessionCleanupDelay > 0) {
       // For testing
@@ -75,34 +98,73 @@ private[service] class SessionManager(pgServer: SQLServer, init: SessionInitiali
         conf.getConfString("spark.sql.server.idleSessionCleanupInterval", "300000").toLong
       idleSessionCleaner = startIdleSessionCleanupThread(period = idleSessionCleanupInterval)
     }
-    getSession = if (conf.sqlServerSingleSessionEnabled) {
-      (dbName: String) => {
-        SQLServerEnv.sqlContext
+
+    // Initializes functions depending on execution modes
+    val singleSessionModeEnabled = conf.sqlServerSingleSessionEnabled
+    val multiContextModeEnabled = SQLServerUtils.checkIfMultiContextModeEnabled(conf)
+
+    getSessionContext = if (singleSessionModeEnabled) {
+      // Single-session mode
+      (_: String) => SQLServerEnv.sqlContext
+    } else {
+      if (multiContextModeEnabled) {
+        // Multi-context mode for Kerberos impersonation
+        (dbName: String) => {
+          val sqlContext = SQLServerEnv.newSQLContext()
+          initSession(dbName, sqlContext)
+          sqlContext
+        }
+      } else {
+        // Multi-session mode
+         (dbName: String) => {
+          val sqlContext = SQLServerEnv.sqlContext.newSession()
+          initSession(dbName, sqlContext)
+          sqlContext
+        }
+      }
+    }
+    getServerListener = if (multiContextModeEnabled) {
+      // Multi-context mode for Kerberos impersonation
+      (sqlContext: SQLContext) => SQLServerEnv.newSQLServerListener(sqlContext)
+    } else {
+      // Single/Multi-session mode
+      (_: SQLContext) => SQLServerEnv.sqlServListener
+    }
+    getUiTab = if (multiContextModeEnabled) {
+      // Multi-context mode for Kerberos impersonation
+      (sqlContext: SQLContext, listener: SQLServerListener) => {
+        SQLServerEnv.newUiTab(sqlContext, listener)
       }
     } else {
-      (dbName: String) => {
-        val sqlContext = SQLServerEnv.sqlContext.newSession()
-        init(dbName, sqlContext)
-        sqlContext
-      }
+      // Single/Multi-session mode
+      (_: SQLContext, _: SQLServerListener) => SQLServerEnv.uiTab
     }
   }
 
-  // Just for sanity check
-  override def start(): Unit = { require(SQLServerEnv.sqlContext != null) }
+  override def doStart(): Unit = {
+    if (SQLServerEnv.sqlContext.conf.sqlServerSingleSessionEnabled) {
+      initSession("default", SQLServerEnv.sqlContext)
+    }
+  }
 
-  override def stop(): Unit = {
+  override def doStop(): Unit = {
     if (sessionIdToState.size() > 0) {
-      logWarning(s"this service stopped though, ${sessionIdToState.size()} open sessions exist")
+      logWarning(s"${this.getClass.getSimpleName} stopped though, " +
+        s"${sessionIdToState.size()} opened sessions still existed")
     }
   }
+
+  private def newSessionId(): Int = nextSessionId.getAndIncrement
 
   def openSession(userName: String, passwd: String, ipAddress: String, dbName: String,
       state: SessionState): Int = {
-    val sessionId = SQLServerEnv.newSessionId()
-    val sqlContext = getSession(dbName)
+    val sessionId = newSessionId()
+    val sqlContext = getSessionContext(dbName)
+    val servListener = getServerListener(sqlContext)
     state._sessionId = sessionId
     state._sqlContext = sqlContext
+    state._servListener = servListener
+    state._uiTab = getUiTab(sqlContext, servListener)
     sqlContext.sharedState.externalCatalog.setCurrentDatabase(dbName)
     sessionIdToState.put(sessionId, TimeStampedValue(state, currentTime))
     servListener.onSessionCreated(sessionId, userName, ipAddress)
@@ -113,7 +175,7 @@ private[service] class SessionManager(pgServer: SQLServer, init: SessionInitiali
     val value = sessionIdToState.remove(sessionId)
     if (value != null) {
       val TimeStampedValue(state, _) = value
-      servListener.onSessionClosed(sessionId)
+      state._servListener.onSessionClosed(sessionId)
       state.close()
     } else {
       logError(s"A session (sessionId=$sessionId) has been already closed")
@@ -139,7 +201,7 @@ private[service] class SessionManager(pgServer: SQLServer, init: SessionInitiali
     val value = sessionIdToState.remove(sessionId)
     if (value != null) {
       val TimeStampedValue(state, _) = value
-      servListener.onSessionClosed(sessionId)
+      state._servListener.onSessionClosed(sessionId)
       state.closeWithException(msg)
     } else {
       // Just ignore it
@@ -180,21 +242,15 @@ private[service] class SessionManager(pgServer: SQLServer, init: SessionInitiali
   }
 }
 
-private[server] class SparkSQLServiceManager(
-    sqlServer: SQLServer,
-    executor: OperationExecutor,
-    initializer: SessionInitializer) extends CompositeService with SessionService {
+private[server] class SparkSQLServiceManager extends CompositeService with SessionService {
 
-  private var sessionManager: SessionManager = _
-  private var operationManager: OperationManager = _
+  private val operationExecutor = new PgExecutor()
+  private val sessionManager = new SessionManager(new PgSessionInitializer())
 
-  override def init(conf: SQLConf) {
-    sessionManager = new SessionManager(sqlServer, initializer)
-    addService(sessionManager)
-    operationManager = new OperationManager(sqlServer, executor)
-    addService(operationManager)
-    super.init(conf)
-  }
+  // We must start `PgProtocolService` in the end of services
+  addService(new PgCatalogInitializer())
+  addService(sessionManager)
+  addService(new PgProtocolService(this))
 
   override def openSession(userName: String, passwd: String, ipAddress: String, dbName: String,
       state: SessionState): Int = {
@@ -210,7 +266,6 @@ private[server] class SparkSQLServiceManager(
   }
 
   override def executeStatement(sessionId: Int, plan: (String, LogicalPlan)): Operation = {
-    operationManager.newExecuteStatementOperation(
-      sessionManager.getSession(sessionId)._sqlContext, sessionId, plan)
+    operationExecutor.newOperation(sessionManager.getSession(sessionId), plan)
   }
 }

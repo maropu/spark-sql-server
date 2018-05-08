@@ -1130,50 +1130,63 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String)
 }
 
 // To check cursor-mode enabled in log strings, we put the test in this individual suite
-class PgJdbcCursorModeSuite extends PgJdbcTest(ssl = true) {
+class PgJdbcCursorModeSuite extends PgJdbcTest(ssl = true, incrementalCollect = true) {
 
-  test("cursor mode") {
-    testJdbcStatementWitConf("autoCommitModeEnabled" -> "false", "fetchSize" -> "2") { statement =>
-      val rs = statement.executeQuery("SELECT id FROM range (6)")
-      assert(rs.next())
-      assert(rs.getInt(1) === 0)
-      assert(rs.next())
-      assert(rs.getInt(1) === 1)
-      assert(rs.next())
-      assert(rs.getInt(1) === 2)
-      assert(rs.next())
-      assert(rs.getInt(1) === 3)
-      assert(rs.next())
-      assert(rs.getInt(1) === 4)
-      assert(rs.next())
-      assert(rs.getInt(1) === 5)
-      assert(!rs.next())
-      rs.close()
-    }
-
-    // Check cursor-mode enabled
-    val bufferSrc = Source.fromFile(server.logPath)
-    Utils.tryWithSafeFinally {
-      assert(bufferSrc.getLines().exists(_.contains("Cursor mode enabled: portalName=")))
-    } {
-      bufferSrc.close()
-    }
-  }
-
-  test("collect mode") {
-    testJdbcStatementWitConf(
-        SQLServerConf.SQLSERVER_INCREMENTAL_COLLECT_ENABLED.key -> "true",
-        "autoCommitModeEnabled" -> "false",
-        "fetchSize" -> "1000") { statement =>
-      val rs = statement.executeQuery(
-        "SELECT id, COUNT(1) FROM range(0, 100000, 1, 32) GROUP BY id ORDER BY id ASC")
-      (0 until 100000).foreach { i =>
+  Seq(true, false).foreach { incrementalCollect =>
+    test(s"cursor mode, small fetch size, incrementalCollect=$incrementalCollect") {
+      testJdbcStatementWitConf(
+          SQLServerConf.SQLSERVER_INCREMENTAL_COLLECT_ENABLED.key -> incrementalCollect.toString,
+          "autoCommitModeEnabled" -> "false",
+          "fetchSize" -> "2") { statement =>
+        val rs = statement.executeQuery("SELECT id FROM range (6)")
         assert(rs.next())
-        assert(rs.getLong(1) === i)
-        assert(rs.getInt(2) === 1)
+        assert(rs.getLong(1) === 0)
+        assert(rs.next())
+        assert(rs.getLong(1) === 1)
+        assert(rs.next())
+        assert(rs.getLong(1) === 2)
+        assert(rs.next())
+        assert(rs.getLong(1) === 3)
+        assert(rs.next())
+        assert(rs.getLong(1) === 4)
+        assert(rs.next())
+        assert(rs.getLong(1) === 5)
+        assert(!rs.next())
+        rs.close()
       }
-      assert(!rs.next())
-      rs.close()
+
+      // Check cursor-mode enabled
+      val bufferSrc = Source.fromFile(server.logPath)
+      Utils.tryWithSafeFinally {
+        assert(bufferSrc.getLines().exists(_.contains("Cursor mode enabled: portalName=")))
+      } {
+        bufferSrc.close()
+      }
+    }
+
+    test(s"cursor mode, large fetch size, incrementalCollect=$incrementalCollect") {
+      testJdbcStatementWitConf(
+          SQLServerConf.SQLSERVER_INCREMENTAL_COLLECT_ENABLED.key -> incrementalCollect.toString,
+          "autoCommitModeEnabled" -> "false",
+          "fetchSize" -> "1000") { statement =>
+        val rs = statement.executeQuery(
+          "SELECT id, COUNT(1) FROM range(0, 100000, 1, 32) GROUP BY id ORDER BY id ASC")
+        (0 until 100000).foreach { i =>
+          assert(rs.next())
+          assert(rs.getLong(1) === i)
+          assert(rs.getInt(2) === 1)
+        }
+        assert(!rs.next())
+        rs.close()
+      }
+
+      // Check cursor-mode enabled
+      val bufferSrc = Source.fromFile(server.logPath)
+      Utils.tryWithSafeFinally {
+        assert(bufferSrc.getLines().exists(_.contains("Cursor mode enabled: portalName=")))
+      } {
+        bufferSrc.close()
+      }
     }
   }
 }

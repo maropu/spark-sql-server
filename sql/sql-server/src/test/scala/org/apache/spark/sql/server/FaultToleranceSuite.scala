@@ -163,6 +163,7 @@ class FaultToleranceSuite extends SparkFunSuite with BeforeAndAfterAll with Befo
         pgVersion = "9.6",
         ssl = false,
         singleSession = false,
+        incrementalCollect = true,
         options = serverOption)
       _servCounter += 1
       serv.start()

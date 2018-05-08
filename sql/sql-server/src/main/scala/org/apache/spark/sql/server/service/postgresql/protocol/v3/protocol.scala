@@ -21,7 +21,7 @@ import java.io.FileInputStream
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
-import java.security.{KeyStore, PrivilegedExceptionAction}
+import java.security.KeyStore
 import java.sql.SQLException
 import java.util.{HashMap => jHashMap}
 import java.util.Collections.{synchronizedMap => jSyncMap}
@@ -44,6 +44,7 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.sql.{AnalysisException, SQLContext}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.execution.command.SetCommand
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.server.{SQLServerConf, SQLServerEnv}
 import org.apache.spark.sql.server.SQLServerConf._
@@ -53,6 +54,7 @@ import org.apache.spark.sql.server.service.postgresql.PgMetadata._
 import org.apache.spark.sql.server.service.postgresql.PgParser
 import org.apache.spark.sql.server.service.postgresql.execution.command.BeginCommand
 import org.apache.spark.sql.server.service.postgresql.protocol.v3.PgRowConverters._
+import org.apache.spark.sql.server.util.SQLServerUtils
 import org.apache.spark.sql.types._
 import org.apache.spark.util.Utils._
 
@@ -78,7 +80,7 @@ case class PgWireProtocol(bufferSizeInBytes: Int) {
         throw new SQLException(
           "Cannot generate a V3 protocol message because buffer is not enough for the message. " +
             s"To avoid this exception, you might set higher value at " +
-            s"`${SQLServerConf.SQLSERVER_MESSAGE_BUFFER_SIZE_IN_BYTES.key}`")
+            s"'${SQLServerConf.SQLSERVER_MESSAGE_BUFFER_SIZE_IN_BYTES.key}'")
     } finally {
       messageWriter.rewind()
     }
@@ -217,7 +219,7 @@ object PgWireProtocol extends Logging {
 
   private def resultDataFormatsFor(schema: StructType, state: SessionV3State): Seq[Boolean] = {
     if (state.appName == "psql") {
-      // TODO: `psql` always needs a text transfer mode?
+      // TODO: 'psql' always needs a text transfer mode?
       Seq.fill(schema.length)(false)
     } else if (state.conf.sqlServerBinaryTransferMode) {
       schema.map { f => binaryFormatTypes.contains(f.dataType) }
@@ -255,49 +257,47 @@ object PgWireProtocol extends Logging {
       state: SessionV3State,
       serverPrincipal: String,
       token: Array[Byte]): Boolean = {
-    UserGroupInformation.getCurrentUser()
-        .doAs(new PrivilegedExceptionAction[Boolean] {
+    // Get own Kerberos credentials for accepting connection
+    val manager = GSSManager.getInstance()
+    var gssContext: GSSContext = null
+    try {
+      // This Oid for Kerberos GSS-API mechanism
+      val kerberosMechOid = new Oid("1.2.840.113554.1.2.2")
+      // Oid for kerberos principal name
+      val krb5PrincipalOid = new Oid("1.2.840.113554.1.2.2.1")
 
-      override def run(): Boolean = {
-        import state.v3Protocol.AuthenticationGSSContinue
+      val serverName = manager.createName(serverPrincipal, krb5PrincipalOid)
+      val serverCreds = manager.createCredential(
+        serverName, GSSCredential.DEFAULT_LIFETIME, kerberosMechOid,
+        GSSCredential.ACCEPT_ONLY)
 
-        // Get own Kerberos credentials for accepting connection
-        val manager = GSSManager.getInstance()
-        var gssContext: GSSContext = null
+      gssContext = manager.createContext(serverCreds)
+
+      val outToken = gssContext.acceptSecContext(token, 0, token.length)
+      if (!gssContext.isEstablished) {
+        ctx.write(state.v3Protocol.AuthenticationGSSContinue(outToken))
+        ctx.flush()
+        false
+      } else {
+        state._ugi = if (state.conf.sqlServerDoAsEnabled) {
+          Some(UserGroupInformation.createProxyUser(
+            state.userName, UserGroupInformation.getCurrentUser))
+        } else {
+          Some(UserGroupInformation.getCurrentUser)
+        }
+        true
+      }
+    } catch {
+      case e: GSSException => throw e
+    } finally {
+      if (gssContext != null) {
         try {
-          // This Oid for Kerberos GSS-API mechanism
-          val kerberosMechOid = new Oid("1.2.840.113554.1.2.2")
-          // Oid for kerberos principal name
-          val krb5PrincipalOid = new Oid("1.2.840.113554.1.2.2.1")
-
-          val serverName = manager.createName(serverPrincipal, krb5PrincipalOid)
-          val serverCreds = manager.createCredential(
-            serverName, GSSCredential.DEFAULT_LIFETIME, kerberosMechOid,
-            GSSCredential.ACCEPT_ONLY)
-
-          gssContext = manager.createContext(serverCreds)
-
-          val outToken = gssContext.acceptSecContext(token, 0, token.length)
-          if (!gssContext.isEstablished) {
-            ctx.write(AuthenticationGSSContinue(outToken))
-            ctx.flush()
-            false
-          } else {
-            true
-          }
+          gssContext.dispose()
         } catch {
-          case e: GSSException => throw e
-        } finally {
-          if (gssContext != null) {
-            try {
-              gssContext.dispose()
-            } catch {
-              case NonFatal(_) => // No-op
-            }
-          }
+          case NonFatal(_) => // No-op
         }
       }
-    })
+    }
   }
 
   // TODO: Needs to change `Any` into `Unit`
@@ -396,7 +396,7 @@ object PgWireProtocol extends Logging {
           sessionState.portals.remove(name)
           logInfo(s"Close the '$name' portal (id:${sessionState._sessionId}})")
         } else {
-          logWarning(s"Unknown type received in 'Close`: $tpe")
+          logWarning(s"Unknown type received in 'Close': $tpe")
         }
       })
     },
@@ -420,7 +420,7 @@ object PgWireProtocol extends Logging {
           ctx.write(RowDescription(queryState.schema))
           ctx.flush()
         } else {
-          logWarning(s"Unknown type received in 'Describe`: $tpe")
+          logWarning(s"Unknown type received in 'Describe': $tpe")
         }
       })
     },
@@ -465,11 +465,17 @@ object PgWireProtocol extends Logging {
           val logicalPlan = portalState.queryState.logicalPlan
           logicalPlan match {
             case BeginCommand() =>
-              ctx.write(CommandComplete(s"BEGIN"))
+              ctx.write(CommandComplete("BEGIN"))
+            case SetCommand(kv) =>
+              kv.map { case (k, v) =>
+                ctx.write(CommandComplete(s"SET $k=$v"))
+              }.getOrElse {
+                ctx.write(CommandComplete("SET"))
+              }
             case _ if !portalState.isCursorMode =>
               ctx.write(CommandComplete(s"SELECT $numRows"))
             case _ =>
-              if (numRows == 0) {
+              if (!rowIter.hasNext) {
                 ctx.write(CommandComplete(s"FETCH ${portalState.numFetched}"))
               } else {
                 ctx.write(PortalSuspended)
@@ -657,8 +663,20 @@ object PgWireProtocol extends Logging {
       ("PasswordMessage", (sessionState: SessionV3State) => {
         import sessionState._
         import PgV3MessageHandler._
-        if (doGSSAuthentication(ctx, sessionState, kerberosServerPrincipal, token)) {
-          sendAuthenticationOk(sessionState)
+        if (SQLServerUtils.checkIfKerberosEnabled(conf)) {
+          if (doGSSAuthentication(ctx, sessionState, kerberosServerPrincipal, token)) {
+            sendAuthenticationOk(sessionState)
+          } else {
+            // Authentication failure
+            ctx.write(ErrorResponse(s"Authentication failure: principal=$kerberosServerPrincipal"))
+            ctx.close()
+          }
+        } else {
+          val sockAddr = ctx.channel().remoteAddress().asInstanceOf[InetSocketAddress]
+          val hostName = s"${sockAddr.getHostName()}:${sockAddr.getPort()}"
+          ctx.write(ErrorResponse(s"Authentication requested from $userName@$hostName though, " +
+            "Kerberos is not currently enabled in this SQL server"))
+          ctx.close()
         }
       })
     }
@@ -980,6 +998,7 @@ case class SessionV3State(
   override def close(): Unit = {
     closeFunc()
     ctx.close()
+    super.close()
   }
 
   override def toString(): String = {
@@ -1214,7 +1233,7 @@ class PgV3MessageHandler(cli: SessionService, conf: SQLConf)
       }
       try { processor(sessionState) } catch {
         case NonFatal(e) =>
-          handleException(ctx, s"Exception detected in `$msgTypeName`: ${exceptionString(e)}")
+          handleException(ctx, s"Exception detected in '$msgTypeName': ${exceptionString(e)}")
           SessionV3State.resetState(sessionState)
           return
       }

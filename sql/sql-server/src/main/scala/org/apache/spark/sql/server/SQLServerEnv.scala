@@ -17,21 +17,29 @@
 
 package org.apache.spark.sql.server
 
-import java.util.concurrent.atomic.AtomicInteger
-
-import org.apache.spark.SparkConf
+import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.{SparkSession, SQLContext}
+import org.apache.spark.sql.internal.SQLConf
+import org.apache.spark.sql.server.ui.SQLServerTab
+import org.apache.spark.sql.server.util.SQLServerUtils
 import org.apache.spark.util.Utils
 
 
 object SQLServerEnv extends Logging {
 
-  private val nextSessionId = new AtomicInteger(0)
-
   private var _sqlContext: Option[SQLContext] = None
 
-  lazy val sparkConf = _sqlContext.map(_.sparkContext.conf).getOrElse {
+  @DeveloperApi
+  def withSQLContext(sqlContext: SQLContext): Unit = {
+    require(sqlContext != null)
+    _sqlContext = Option(sqlContext)
+    sqlServListener
+    uiTab
+  }
+
+  lazy val sparkConf: SparkConf = _sqlContext.map(_.sparkContext.conf).getOrElse {
     val sparkConf = new SparkConf(loadDefaults = true)
 
     // If user doesn't specify the appName, we want to get [SparkSQL::localHostName]
@@ -42,26 +50,34 @@ object SQLServerEnv extends Logging {
     sparkConf
       .setAppName(maybeAppName.getOrElse(s"SparkSQL::${Utils.localHostName()}"))
       .set("spark.sql.crossJoin.enabled", "true")
+
+    if (SQLServerUtils.checkIfMultiContextModeEnabled(sparkConf)) {
+      logWarning("Sets true at `spark.driver.allowMultipleContexts` for impersonation " +
+        "in a Kerberos secure cluster")
+      sparkConf.set("spark.driver.allowMultipleContexts", "true")
+    } else {
+      sparkConf
+    }
   }
 
-  lazy val sparkContext = sqlContext.sparkContext
+  lazy val sqlContext: SQLContext = _sqlContext.getOrElse(newSQLContext)
+  lazy val sparkContext: SparkContext = sqlContext.sparkContext
+  lazy val sqlConf: SQLConf = sqlContext.conf
+  lazy val sqlServListener: SQLServerListener = newSQLServerListener(sqlContext)
+  lazy val uiTab: Option[SQLServerTab] = newUiTab(sqlContext, sqlServListener)
 
-  lazy val sqlContext = _sqlContext.getOrElse {
-    val sparkSession = SparkSession.builder.config(sparkConf).enableHiveSupport().getOrCreate()
-    sparkSession.sqlContext
+  def newSQLContext(): SQLContext = {
+    SparkSession.builder.config(sparkConf).enableHiveSupport().getOrCreate().sqlContext
   }
-
-  lazy val sqlConf = sqlContext.conf
-
-  def withSQLContext(sqlContext: SQLContext): Unit = {
-    require(sqlContext != null)
-    _sqlContext = Option(sqlContext)
+  def newSQLServerListener(sqlContext: SQLContext): SQLServerListener = {
+    val listener = new SQLServerListener(sqlContext.conf)
+    sqlContext.sparkContext.addSparkListener(listener)
+    listener
   }
-
-  def newSessionId(): Int = nextSessionId.getAndIncrement
-
-  def cleanup() {
-    _sqlContext.map(_.sparkContext.stop())
-    _sqlContext = None
+  def newUiTab(sqlContext: SQLContext, listener: SQLServerListener): Option[SQLServerTab] = {
+    sqlContext.sparkContext.conf.getBoolean("spark.ui.enabled", true) match {
+      case true => Some(SQLServerTab(SQLServerEnv.sqlContext.sparkContext, listener))
+      case _ => None
+    }
   }
 }

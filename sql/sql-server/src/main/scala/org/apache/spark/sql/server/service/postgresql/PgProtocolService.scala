@@ -24,47 +24,26 @@ import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioServerSocketChannel
 import io.netty.handler.logging.{LoggingHandler, LogLevel}
 
-import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.internal.SQLConf
-import org.apache.spark.sql.server.SQLServer
 import org.apache.spark.sql.server.SQLServerConf._
-import org.apache.spark.sql.server.SQLServerEnv
-import org.apache.spark.sql.server.service.{CompositeService, SessionInitializer, SessionService}
+import org.apache.spark.sql.server.service.CompositeService
+import org.apache.spark.sql.server.service.SessionService
 import org.apache.spark.sql.server.service.postgresql.protocol.v3.PgV3MessageInitializer
 
 
-private[server] class PgSessionInitializer extends SessionInitializer {
-
-  override def apply(dbName: String, sqlContext: SQLContext): Unit = {
-    PgMetadata.initSystemFunctions(sqlContext)
-    PgMetadata.initSessionCatalogTables(sqlContext, dbName)
-  }
-}
-
-private[server] class PgService(pgServer: SQLServer, cli: SessionService)
-    extends CompositeService {
+private[service] class PgProtocolService(cli: SessionService) extends CompositeService {
 
   var port: Int = _
   var workerThreads: Int = _
   var msgHandlerInitializer: ChannelInitializer[SocketChannel] = _
 
-  override def init(conf: SQLConf): Unit = {
+  override def doInit(conf: SQLConf): Unit = {
     port = conf.sqlServerPort
     workerThreads = conf.sqlServerWorkerThreads
     msgHandlerInitializer = new PgV3MessageInitializer(cli, conf)
   }
 
-  override def start(): Unit = {
-    require(SQLServerEnv.sqlContext != null)
-
-    // Load system catalogs for the PostgreSQL v3 protocol
-    PgMetadata.initSystemCatalogTables(SQLServerEnv.sqlContext)
-    if (SQLServerEnv.sqlConf.sqlServerSingleSessionEnabled) {
-      val init = new PgSessionInitializer()
-      // In a single-session mode, we just load catalog entries from a 'default` database
-      init("default", SQLServerEnv.sqlContext)
-    }
-
+  override def doStart(): Unit = {
     val bossGroup = new NioEventLoopGroup(1)
     val workerGroup = new NioEventLoopGroup(workerThreads)
     try {

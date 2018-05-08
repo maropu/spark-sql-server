@@ -17,15 +17,12 @@
 
 package org.apache.spark.sql.server.service
 
-import java.util.{Map => jMap}
 import javax.annotation.concurrent.ThreadSafe
 
-import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.server.{SQLServer, SQLServerEnv}
 import org.apache.spark.sql.server.SQLServerConf._
-import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.server.SQLServerEnv
 
 
 sealed trait OperationState
@@ -77,31 +74,8 @@ trait Operation {
 
 trait OperationExecutor {
 
-  // Create a new instance for service-specific operations
+  // Creates a new instance for service-specific operations
   def newOperation(
-    sqlContext: SQLContext,
-    sessionId: Int,
-    plan: (String, LogicalPlan), // (query statement, analyzed logical plan)
-    activePools: jMap[Int, String]): Operation
-}
-
-private[service] class OperationManager(pgServer: SQLServer, executor: OperationExecutor)
-    extends CompositeService {
-
-  private val sessionIdToOperations = java.util.Collections.synchronizedMap(
-    new java.util.HashMap[Int, java.util.ArrayList[Operation]]())
-  private val sessionIdToActivePool = java.util.Collections.synchronizedMap(
-    new java.util.HashMap[Int, String]())
-
-  def newExecuteStatementOperation(
-      sqlContext: SQLContext,
-      sessionId: Int,
-      plan: (String, LogicalPlan)): Operation = {
-    val op = executor.newOperation(sqlContext, sessionId, plan, sessionIdToActivePool)
-    if (!sessionIdToOperations.containsKey(sessionId)) {
-      sessionIdToOperations.put(sessionId, new java.util.ArrayList())
-    }
-    sessionIdToOperations.get(sessionId).add(op)
-    op
-  }
+    sessionState: SessionState,
+    query: (String, LogicalPlan)): Operation
 }

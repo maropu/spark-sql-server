@@ -88,7 +88,7 @@ object SQLServerConf {
      buildConf("spark.sql.server.incrementalCollect.enabled")
     .doc("When set to true, Spark collects result rows partition-by-partition.")
     .booleanConf
-    .createWithDefault(true)
+    .createWithDefault(false)
 
   val SQLSERVER_RECOVERY_MODE = buildConf("spark.sql.server.recoveryMode")
     .doc("Set to ZOOKEEPER to enable recovery mode with Zookeeper.")
@@ -126,6 +126,11 @@ object SQLServerConf {
     .doc("Set a Fair Scheduler pool for a JDBC client session.")
     .stringConf
     .createWithDefault("FIFO")
+
+  val SQLSERVER_DOAS_ENABLED = buildConf("spark.sql.yarn.doAs.enabled")
+    .doc("Whether authentication impersonates connected users.")
+    .booleanConf
+    .createWithDefault(true)
 
   val SQLSERVER_UI_STATEMENT_LIMIT = buildConf("spark.sql.server.ui.retainedStatements")
     .doc("The number of SQL statements kept in the JDBC/ODBC web UI history.")
@@ -189,6 +194,8 @@ class SQLServerConf(conf: SQLConf) {
   def sqlServerSslKeyStorePasswd: Option[String] = getConf(SQLSERVER_SSL_KEYSTORE_PASSWD)
 
   def sqlServerPool: String = getConf(SQLSERVER_POOL)
+
+  def sqlServerDoAsEnabled: Boolean = getConf(SQLSERVER_DOAS_ENABLED)
 
   def sqlServerUiStatementLimit: Int = getConf(SQLSERVER_UI_STATEMENT_LIMIT)
 

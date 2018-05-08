@@ -61,7 +61,7 @@ class PgWireProtocolSuite extends SparkFunSuite {
     assert(errMsg.contains(
       "Cannot generate a V3 protocol message because buffer is not enough for the message. " +
         "To avoid this exception, you might set higher value at " +
-        "`spark.sql.server.messageBufferSizeInBytes`")
+        "'spark.sql.server.messageBufferSizeInBytes'")
     )
   }
 }

@@ -111,7 +111,7 @@ object TPCDSQueryBenchmark extends Logging {
         results.append(f(rs))
       }
       rs.close()
-      results.toSeq
+      results
     }
 
     case class QueryCase(queryName: String, sql: String, resultFile: File)

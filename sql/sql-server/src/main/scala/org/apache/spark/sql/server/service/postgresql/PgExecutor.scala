@@ -17,19 +17,20 @@
 
 package org.apache.spark.sql.server.service.postgresql
 
+import java.security.PrivilegedExceptionAction
 import java.sql.SQLException
-import java.util.{Map => jMap, UUID}
+import java.util.UUID
 
 import scala.util.control.NonFatal
 
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.{Dataset, SQLContext}
+import org.apache.spark.sql.Dataset
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.catalog.CatalogTableType
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.datasources.CreateTable
-import org.apache.spark.sql.server.{SQLServer, SQLServerConf, SQLServerEnv}
+import org.apache.spark.sql.server.SQLServerConf
 import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.service._
 import org.apache.spark.sql.server.service.{Operation, OperationExecutor}
@@ -37,107 +38,122 @@ import org.apache.spark.util.{Utils => SparkUtils}
 
 
 private[postgresql] case class PgOperation(
-    sessionId: Int,
-    query: (String, LogicalPlan))(
-    sqlContext: SQLContext,
-    activePools: java.util.Map[Int, String]) extends Operation with Logging {
-  import sqlContext._
-  import SQLServer.{listener => servListener}
+    sessionState: SessionState,
+    query: (String, LogicalPlan)) extends Operation with Logging {
+  import sessionState._
 
-  private val statementId = UUID.randomUUID().toString()
+  private[this] val statementId = UUID.randomUUID().toString
 
   override def cancel(): Unit = {
     logInfo(
       s"""Cancelling query with $statementId:
+         |Query:
          |${query._1}
+         |Analyzed Plan:
          |${query._2}
        """.stripMargin)
-    sparkContext.cancelJobGroup(statementId)
-    servListener.onStatementCanceled(statementId)
+    _sqlContext.sparkContext.cancelJobGroup(statementId)
+    _servListener.onStatementCanceled(statementId)
     setState(CANCELED)
   }
 
   override def close(): Unit = {
     // RDDs will be cleaned automatically upon garbage collection.
-    sparkContext.clearJobGroup()
+    _sqlContext.sparkContext.clearJobGroup()
     logDebug(s"CLOSING $statementId")
     setState(CLOSED)
   }
 
   private[this] var _cachedRowIterator: Iterator[InternalRow] = _
 
-  override def run(): Iterator[InternalRow] = {
+  private def executeInternal(): Iterator[InternalRow] = {
     if (state == INITIALIZED) {
       setState(RUNNING)
       logInfo(
         s"""Running query with $statementId:
+           |Query:
            |${query._1}
+           |Analyzed Plan:
            |${query._2}
          """.stripMargin)
 
-      // Always use the latest class loader provided by SQLContext's state.
-      Thread.currentThread().setContextClassLoader(sqlContext.sharedState.jarClassLoader)
+      // Always uses the latest class loader provided by SQLContext's state.
+      Thread.currentThread().setContextClassLoader(_sqlContext.sharedState.jarClassLoader)
 
-      servListener.onStatementStart(statementId, sessionId, query._1, statementId)
-      sparkContext.setJobGroup(statementId, query._1, true)
+      _servListener.onStatementStart(statementId, _sessionId, query._1, statementId)
+      _sqlContext.sparkContext.setJobGroup(statementId, query._1, true)
 
-      if (activePools.containsKey(sessionId)) {
-        val pool = activePools.get(sessionId)
-        sparkContext.setLocalProperty("spark.scheduler.pool", pool)
+      // Initializes a value in fair Scheduler Pools
+      _schedulePool.foreach { pool =>
+        _sqlContext.sparkContext.setLocalProperty("spark.scheduler.pool", pool)
       }
 
       val resultRowIterator = try {
-        val df = Dataset.ofRows(sqlContext.sparkSession, query._2)
+        val df = Dataset.ofRows(_sqlContext.sparkSession, query._2)
         logDebug(df.queryExecution.toString())
-        servListener.onStatementParsed(statementId, df.queryExecution.toString())
+        _servListener.onStatementParsed(statementId, df.queryExecution.toString())
 
-        val useIncrementalCollect = SQLServerEnv.sqlConf.sqlServerIncrementalCollectEnabled
+        val useIncrementalCollect = sessionState._sqlContext.conf.sqlServerIncrementalCollectEnabled
         val rowIter = if (useIncrementalCollect) {
           df.queryExecution.executedPlan.executeToIterator()
         } else {
-          df.queryExecution.executedPlan.executeCollect().iterator
+          // Needs to use `List` so that `Iterator#take` can proceed an internal cursor, e.g.,
+          //
+          // scala> val iter = Array(1, 2, 3, 4, 5, 6).toIterator
+          // scala> iter.take(1).next
+          // res2: Int = 1
+          // scala> iter.take(1).next
+          // res3: Int = 1
+          // ...
+          // scala> val iter = Array(1, 2, 3, 4, 5, 6).toList.toIterator
+          // scala> iter.take(1).next
+          // res4: Int = 1
+          // scala> iter.take(1).next
+          // res5: Int = 2
+          // ...
+          df.queryExecution.executedPlan.executeCollect().toList.toIterator
         }
 
         // Based on the assumption that DDL commands succeed, we then update internal states
         query._2 match {
-          case SetCommand(Some((SQLServerConf.SQLSERVER_POOL.key, Some(value)))) =>
-            logInfo(s"Setting spark.scheduler.pool=$value for future statements in this session.")
-            activePools.put(sessionId, value)
+          case SetCommand(Some((SQLServerConf.SQLSERVER_POOL.key, Some(pool)))) =>
+            logInfo(s"Setting spark.scheduler.pool=$pool for future statements in this session.")
+            _schedulePool = Some(pool)
           case CreateDatabaseCommand(dbName, _, _, _, _) =>
-            PgMetadata.registerDatabase(dbName, sqlContext)
+            PgMetadata.registerDatabase(dbName, _sqlContext)
           case CreateTable(desc, _, _) =>
             val dbName = desc.identifier.database.getOrElse("default")
             val tableName = desc.identifier.table
-            PgMetadata.registerTable(dbName, tableName, desc.schema, desc.tableType, sqlContext)
+            PgMetadata.registerTable(dbName, tableName, desc.schema, desc.tableType, _sqlContext)
           case CreateTableCommand(table, _) =>
             val dbName = table.identifier.database.getOrElse("default")
             val tableName = table.identifier.table
-            PgMetadata.registerTable(dbName, tableName, table.schema, table.tableType, sqlContext)
+            PgMetadata.registerTable(dbName, tableName, table.schema, table.tableType, _sqlContext)
           case CreateDataSourceTableCommand(table, _) =>
             val dbName = table.identifier.database.getOrElse("default")
             val tableName = table.identifier.table
-            PgMetadata.registerTable(dbName, tableName, table.schema, table.tableType, sqlContext)
+            PgMetadata.registerTable(dbName, tableName, table.schema, table.tableType, _sqlContext)
           case CreateViewCommand(table, _, _, _, _, child, _, _, _) =>
             val dbName = table.database.getOrElse("default")
             val tableName = table.identifier
-            val qe = sqlContext.sparkSession.sessionState.executePlan(child)
+            val qe = _sqlContext.sparkSession.sessionState.executePlan(child)
             val schema = qe.analyzed.schema
-            PgMetadata.registerTable(dbName, tableName, schema, CatalogTableType.VIEW, sqlContext)
+            PgMetadata.registerTable(dbName, tableName, schema, CatalogTableType.VIEW, _sqlContext)
           case CreateFunctionCommand(dbNameOption, funcName, _, _, _, _, _) =>
             val dbName = dbNameOption.getOrElse("default")
-            PgMetadata.registerFunction(dbName, funcName, sqlContext)
+            PgMetadata.registerFunction(dbName, funcName, _sqlContext)
           case DropDatabaseCommand(dbName, _, _) =>
             logInfo(s"Drop a database `$dbName` and refresh database catalog information")
-            PgMetadata.refreshDatabases(dbName, sqlContext)
+            PgMetadata.refreshDatabases(dbName, _sqlContext)
           case DropTableCommand(table, _, _, _) =>
             val dbName = table.database.getOrElse("default")
             val tableName = table.identifier
             logInfo(s"Drop a table `$dbName.$tableName` and refresh table catalog information")
-            PgMetadata.refreshTables(dbName, sqlContext)
+            PgMetadata.refreshTables(dbName, _sqlContext)
           case DropFunctionCommand(dbNameOption, funcName, _, _) =>
             val dbName = dbNameOption.getOrElse("default")
             logInfo(s"Drop a function `$dbName.$funcName` and refresh function catalog information")
-            PgMetadata.refreshFunctions(dbName, sqlContext)
+            PgMetadata.refreshFunctions(dbName, _sqlContext)
           case _ =>
         }
         rowIter
@@ -146,7 +162,9 @@ private[postgresql] case class PgOperation(
           if (state == CANCELED) {
             val errMsg =
               s"""Cancelled query with $statementId
+                 |Query:
                  |${query._1}
+                 |Analyzed Plan:
                  |${query._2}
                """.stripMargin
             logWarning(errMsg)
@@ -155,19 +173,21 @@ private[postgresql] case class PgOperation(
             val exceptionString = SparkUtils.exceptionString(e)
             val errMsg =
               s"""Caught an error executing query with with $statementId:
+                 |Query:
                  |${query._1}
+                 |Analyzed Plan:
                  |${query._2}
                  |Exception message:
                  |$exceptionString
                """.stripMargin
             logError(errMsg)
-            servListener.onStatementError(statementId, e.getMessage, exceptionString)
+            _servListener.onStatementError(statementId, e.getMessage, exceptionString)
             setState(ERROR)
             throw new SQLException(errMsg)
           }
       }
 
-      servListener.onStatementFinish(statementId)
+      _servListener.onStatementFinish(statementId)
       setState(FINISHED)
       _cachedRowIterator = resultRowIterator
       resultRowIterator
@@ -176,16 +196,24 @@ private[postgresql] case class PgOperation(
       _cachedRowIterator
     }
   }
+
+  override def run(): Iterator[InternalRow] = {
+    _ugi.map { ugi =>
+      ugi.doAs(new PrivilegedExceptionAction[Iterator[InternalRow]]() {
+        override def run() = {
+          executeInternal()
+        }
+      })
+    }.getOrElse {
+      executeInternal()
+    }
+  }
 }
 
 private[server] class PgExecutor extends OperationExecutor {
 
-  // Create a new instance for service-specific operations
-  override def newOperation(
-      sqlContext: SQLContext,
-      sessionId: Int,
-      plan: (String, LogicalPlan),
-      activePools: jMap[Int, String]): Operation = {
-    new PgOperation(sessionId, plan)(sqlContext, activePools)
+  // Creates a new instance for service-specific operations
+  override def newOperation(sessionState: SessionState, query: (String, LogicalPlan)): Operation = {
+    new PgOperation(sessionState, query)
   }
 }

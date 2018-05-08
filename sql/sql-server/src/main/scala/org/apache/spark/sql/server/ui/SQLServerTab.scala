@@ -19,7 +19,7 @@ package org.apache.spark.sql.server.ui
 
 import org.apache.spark.{SparkContext, SparkException}
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.server.SQLServer
+import org.apache.spark.sql.server.SQLServerListener
 import org.apache.spark.sql.server.ui.SQLServerTab._
 import org.apache.spark.ui.{SparkUI, SparkUITab}
 
@@ -28,24 +28,27 @@ import org.apache.spark.ui.{SparkUI, SparkUITab}
  * Spark Web UI tab that shows statistics of jobs running in the SQL server.
  * This assumes the given SparkContext has enabled its SparkUI.
  */
-class SQLServerTab(sparkContext: SparkContext)
+case class SQLServerTab(
+    sparkContext: SparkContext,
+    listener: SQLServerListener)
   extends SparkUITab(getSparkUI(sparkContext), "sqlserver") with Logging {
 
   override val name = "JDBC/ODBC Server"
 
-  val parent = getSparkUI(sparkContext)
-  val listener = SQLServer.listener
+  private val parent = getSparkUI(sparkContext)
 
   attachPage(new SQLServerPage(this))
   attachPage(new SQLServerSessionPage(this))
+
   parent.attachTab(this)
 
   def detach() {
-    getSparkUI(sparkContext).detachTab(this)
+    parent.detachTab(this)
   }
 }
 
 object SQLServerTab {
+
   def getSparkUI(sparkContext: SparkContext): SparkUI = {
     sparkContext.ui.getOrElse {
       throw new SparkException("Parent SparkUI to attach this tab to not found!")

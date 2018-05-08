@@ -25,13 +25,13 @@ import scala.xml.Node
 import org.apache.commons.lang3.StringEscapeUtils
 
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.server.SQLServer.{ExecutionInfo, ExecutionState, SessionInfo}
+import org.apache.spark.sql.server.{ExecutionInfo, ExecutionState, SessionInfo}
 import org.apache.spark.ui._
 import org.apache.spark.ui.UIUtils._
 
 
 /** Page for Spark Web UI that shows statistics of the SQL gateway server */
-private[ui] class SQLServerPage(parent: SQLServerTab) extends WebUIPage("") with Logging {
+private[ui] case class SQLServerPage(parent: SQLServerTab) extends WebUIPage("") with Logging {
 
   private val listener = parent.listener
   private val startTime = Calendar.getInstance().getTime()
