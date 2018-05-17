@@ -19,7 +19,6 @@ package org.apache.spark.sql.server
 
 import scala.util.control.NonFatal
 
-import org.apache.spark.SparkConf
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.deploy.master.{LeaderElectable, MonarchyLeaderAgent, ZooKeeperLeaderElectionAgentAccessor}
@@ -73,36 +72,24 @@ object SQLServer extends Logging {
     }
   }
 
-  private def mergeSparkConf(sqlConf: SQLConf, sparkConf: SparkConf): Unit = {
-    sparkConf.getAll.foreach { case (k, v) =>
-      sqlConf.setConfString(k, v)
-    }
-  }
-
   def main(args: Array[String]) {
     initDaemon(log)
 
     // Initializes Spark variables depending on execution modes
-    val sqlConf = SQLServerEnv.sparkConf.get(
-        SQLSERVER_EXECUTION_MODE.key, SQLSERVER_EXECUTION_MODE.defaultValueString) match {
-      case "multi-context" =>
-        val newSqlConf = new SQLConf()
-        mergeSparkConf(newSqlConf, SQLServerEnv.sparkConf)
-        newSqlConf
-      case _ =>
+    SQLServerEnv.sqlConf.sqlServerExecutionMode  match {
+      case "single-session" | "multi-session" =>
         SQLServerEnv.sqlServListener
         SQLServerEnv.uiTab
         ShutdownHookManager.addShutdownHook { () =>
           SQLServerEnv.uiTab.foreach(_.detach())
           SQLServerEnv.sparkContext.stop()
         }
-        SQLServerEnv.sqlConf
     }
 
     val sqlServer = new SQLServer()
     try {
       // Initializes a Spark SQL server with given configurations
-      sqlServer.init(sqlConf)
+      sqlServer.init(SQLServerEnv.sqlConf)
       sqlServer.start()
     } catch {
       case NonFatal(e) =>

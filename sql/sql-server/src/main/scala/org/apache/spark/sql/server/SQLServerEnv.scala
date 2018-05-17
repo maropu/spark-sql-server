@@ -28,6 +28,7 @@ import org.apache.spark.util.Utils
 
 object SQLServerEnv extends Logging {
 
+  // For test use
   private var _sqlContext: Option[SQLContext] = None
 
   @DeveloperApi
@@ -36,6 +37,12 @@ object SQLServerEnv extends Logging {
     _sqlContext = Option(sqlContext)
     sqlServListener
     uiTab
+  }
+
+  private def mergeSparkConf(sqlConf: SQLConf, sparkConf: SparkConf): Unit = {
+    sparkConf.getAll.foreach { case (k, v) =>
+      sqlConf.setConfString(k, v)
+    }
   }
 
   lazy val sparkConf: SparkConf = _sqlContext.map(_.sparkContext.conf).getOrElse {
@@ -51,9 +58,14 @@ object SQLServerEnv extends Logging {
       .set("spark.sql.crossJoin.enabled", "true")
   }
 
+  lazy val sqlConf: SQLConf = _sqlContext.map(_.conf).getOrElse {
+    val newSqlConf = new SQLConf()
+    mergeSparkConf(sqlConf, sparkConf)
+    newSqlConf
+  }
+
   lazy val sqlContext: SQLContext = _sqlContext.getOrElse(newSQLContext())
   lazy val sparkContext: SparkContext = sqlContext.sparkContext
-  lazy val sqlConf: SQLConf = sqlContext.conf
   lazy val sqlServListener: SQLServerListener = newSQLServerListener(sqlContext)
   lazy val uiTab: Option[SQLServerTab] = newUiTab(sqlContext, sqlServListener)
 
