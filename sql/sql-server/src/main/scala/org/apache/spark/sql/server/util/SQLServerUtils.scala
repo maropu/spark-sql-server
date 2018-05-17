@@ -19,7 +19,6 @@ package org.apache.spark.sql.server.util
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.internal.SQLConf
-import org.apache.spark.sql.server.SQLServerConf._
 
 object SQLServerUtils {
 
@@ -29,16 +28,5 @@ object SQLServerUtils {
 
   def checkIfKerberosEnabled(conf: SQLConf): Boolean = {
     conf.contains("spark.yarn.keytab")
-  }
-
-  def checkIfMultiContextModeEnabled(conf: SparkConf): Boolean = {
-    val kerberosEnabled = conf.contains("spark.yarn.keytab")
-    val doAsEnabled = conf.get("spark.sql.yarn.doAs.enabled", "true").toBoolean
-    kerberosEnabled && doAsEnabled
-  }
-
-  def checkIfMultiContextModeEnabled(conf: SQLConf): Boolean = {
-    val kerberosEnabled = conf.contains("spark.yarn.keytab")
-    kerberosEnabled && conf.sqlServerDoAsEnabled
   }
 }

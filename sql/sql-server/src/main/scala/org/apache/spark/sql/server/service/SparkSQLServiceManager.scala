@@ -34,7 +34,7 @@ import org.apache.spark.sql.server.SQLServerEnv
 import org.apache.spark.sql.server.SQLServerListener
 import org.apache.spark.sql.server.service.postgresql.{PgCatalogInitializer, PgExecutor, PgProtocolService, PgSessionInitializer}
 import org.apache.spark.sql.server.ui.SQLServerTab
-import org.apache.spark.sql.server.util.{RecurringTimer, SQLServerUtils}
+import org.apache.spark.sql.server.util.RecurringTimer
 import org.apache.spark.util.SystemClock
 
 
@@ -59,9 +59,11 @@ trait SessionState {
 
   def close(): Unit = {
     // If multi-context mode enabled, stops a per-session context
-    if (SQLServerUtils.checkIfMultiContextModeEnabled(_sqlContext.conf)) {
-      _uiTab.foreach(_.detach())
-      _sqlContext.sparkContext.stop()
+    _sqlContext.conf.sqlServerExecutionMode match {
+      case "multi-context" =>
+        _uiTab.foreach(_.detach())
+        _sqlContext.sparkContext.stop()
+      case _ =>
     }
   }
 }
@@ -100,50 +102,53 @@ private[service] class SessionManager(initSession: SessionInitializer)
     }
 
     // Initializes functions depending on execution modes
-    val singleSessionModeEnabled = conf.sqlServerSingleSessionEnabled
-    val multiContextModeEnabled = SQLServerUtils.checkIfMultiContextModeEnabled(conf)
-
-    getSessionContext = if (singleSessionModeEnabled) {
-      // Single-session mode
-      (_: String) => SQLServerEnv.sqlContext
-    } else {
-      if (multiContextModeEnabled) {
-        // Multi-context mode for Kerberos impersonation
+    getSessionContext = conf.sqlServerExecutionMode match {
+      case "single-session" =>
+        (_: String) => {
+          SQLServerEnv.sqlContext
+        }
+      case "multi-session" =>
         (dbName: String) => {
           val sqlContext = SQLServerEnv.newSQLContext()
           initSession(dbName, sqlContext)
           sqlContext
         }
-      } else {
-        // Multi-session mode
-         (dbName: String) => {
+      case "multi-context" =>
+        (dbName: String) => {
           val sqlContext = SQLServerEnv.sqlContext.newSession()
           initSession(dbName, sqlContext)
           sqlContext
         }
-      }
     }
-    getServerListener = if (multiContextModeEnabled) {
-      // Multi-context mode for Kerberos impersonation
-      (sqlContext: SQLContext) => SQLServerEnv.newSQLServerListener(sqlContext)
-    } else {
-      // Single/Multi-session mode
-      (_: SQLContext) => SQLServerEnv.sqlServListener
+
+    getServerListener = conf.sqlServerExecutionMode match {
+      case "multi-context" =>
+        (sqlContext: SQLContext) => {
+          SQLServerEnv.newSQLServerListener(sqlContext)
+        }
+      case _ =>
+        (_: SQLContext) => {
+          SQLServerEnv.sqlServListener
+        }
     }
-    getUiTab = if (multiContextModeEnabled) {
-      // Multi-context mode for Kerberos impersonation
-      (sqlContext: SQLContext, listener: SQLServerListener) => {
-        SQLServerEnv.newUiTab(sqlContext, listener)
-      }
-    } else {
-      // Single/Multi-session mode
-      (_: SQLContext, _: SQLServerListener) => SQLServerEnv.uiTab
+
+    getUiTab = conf.sqlServerExecutionMode match {
+      case "multi-context" =>
+        (sqlContext: SQLContext, listener: SQLServerListener) => {
+          SQLServerEnv.newUiTab(sqlContext, listener)
+        }
+      case _ =>
+        (_: SQLContext, _: SQLServerListener) => {
+          SQLServerEnv.uiTab
+        }
     }
   }
 
   override def doStart(): Unit = {
-    if (SQLServerEnv.sqlContext.conf.sqlServerSingleSessionEnabled) {
-      initSession("default", SQLServerEnv.sqlContext)
+    SQLServerEnv.sqlContext.conf.sqlServerExecutionMode match {
+      case "multi-context" =>
+        initSession("default", SQLServerEnv.sqlContext)
+      case _ =>
     }
   }
 

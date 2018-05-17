@@ -23,7 +23,6 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.sql.{SparkSession, SQLContext}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.server.ui.SQLServerTab
-import org.apache.spark.sql.server.util.SQLServerUtils
 import org.apache.spark.util.Utils
 
 
@@ -50,17 +49,9 @@ object SQLServerEnv extends Logging {
     sparkConf
       .setAppName(maybeAppName.getOrElse(s"SparkSQL::${Utils.localHostName()}"))
       .set("spark.sql.crossJoin.enabled", "true")
-
-    if (SQLServerUtils.checkIfMultiContextModeEnabled(sparkConf)) {
-      logWarning("Sets true at `spark.driver.allowMultipleContexts` for impersonation " +
-        "in a Kerberos secure cluster")
-      sparkConf.set("spark.driver.allowMultipleContexts", "true")
-    } else {
-      sparkConf
-    }
   }
 
-  lazy val sqlContext: SQLContext = _sqlContext.getOrElse(newSQLContext)
+  lazy val sqlContext: SQLContext = _sqlContext.getOrElse(newSQLContext())
   lazy val sparkContext: SparkContext = sqlContext.sparkContext
   lazy val sqlConf: SQLConf = sqlContext.conf
   lazy val sqlServListener: SQLServerListener = newSQLServerListener(sqlContext)

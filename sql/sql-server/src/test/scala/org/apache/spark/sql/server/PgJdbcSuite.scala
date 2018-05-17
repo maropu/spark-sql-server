@@ -1222,7 +1222,7 @@ class PgJdbcWithSslSuite extends PgJdbcTest(ssl = true) {
   }
 }
 
-class PgJdbcSingleSessionSuite extends PgJdbcTest(singleSession = true) {
+class PgJdbcSingleSessionSuite extends PgJdbcTest(executionMode = "single-session") {
 
   test("share the temporary functions across JDBC connections") {
     testMultipleConnectionJdbcStatement(

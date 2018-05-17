@@ -161,8 +161,8 @@ class FaultToleranceSuite extends SparkFunSuite with BeforeAndAfterAll with Befo
       val serv = new SparkPgSQLServerTest(
         name = s"fault-tolrance-test-${_servCounter}",
         pgVersion = "9.6",
+        executionMode = "multi-session",
         ssl = false,
-        singleSession = false,
         incrementalCollect = true,
         options = serverOption)
       _servCounter += 1

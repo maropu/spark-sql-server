@@ -43,7 +43,7 @@ class PgJdbcTest(
     override val pgVersion: String = "9.6",
     override val ssl: Boolean = false,
     override val queryQueryMode: String = "extended",
-    override val singleSession: Boolean = false,
+    override val executionMode: String = "multi-context",
     override val incrementalCollect: Boolean = true) extends SQLServerTest with PgJdbcTestBase {
 
   override val serverInstance: SparkPgSQLServerTest = server
@@ -56,15 +56,15 @@ abstract class SQLServerTest extends SparkFunSuite with BeforeAndAfterAll with L
 
   // Parameters for the Spark SQL server
   val pgVersion: String
+  val executionMode: String
   val ssl: Boolean
-  val singleSession: Boolean
   val incrementalCollect: Boolean
 
   protected val server = new SparkPgSQLServerTest(
     name = this.getClass.getSimpleName,
     pgVersion = pgVersion,
+    executionMode = executionMode,
     ssl = ssl,
-    singleSession = singleSession,
     incrementalCollect = incrementalCollect)
 
   override protected def beforeAll(): Unit = {
@@ -86,8 +86,8 @@ abstract class SQLServerTest extends SparkFunSuite with BeforeAndAfterAll with L
 class SparkPgSQLServerTest(
     name: String,
     pgVersion: String,
+    executionMode: String,
     val ssl: Boolean,
-    singleSession: Boolean,
     incrementalCollect: Boolean,
     options: Map[String, String] = Map.empty)
   extends Logging {
@@ -169,8 +169,8 @@ class SparkPgSQLServerTest(
        | --conf spark.sql.warehouse.dir=$testTempDir/spark-warehouse
        | --conf ${SQLServerConf.SQLSERVER_PORT.key}=$port
        | --conf ${SQLServerConf.SQLSERVER_VERSION.key}=$pgVersion
+       | --conf ${SQLServerConf.SQLSERVER_EXECUTION_MODE.key}=$executionMode
        | --conf ${SQLServerConf.SQLSERVER_SSL_ENABLED.key}=$ssl
-       | --conf ${SQLServerConf.SQLSERVER_SINGLE_SESSION_ENABLED.key}=$singleSession
        | --conf ${SQLServerConf.SQLSERVER_PSQL_ENABLED.key}=true
        | --conf ${SQLServerConf.SQLSERVER_INCREMENTAL_COLLECT_ENABLED.key}=$incrementalCollect
      """.stripMargin.split("\\s+").toSeq ++

@@ -83,18 +83,20 @@ object SQLServer extends Logging {
     initDaemon(log)
 
     // Initializes Spark variables depending on execution modes
-    val sqlConf = if (SQLServerUtils.checkIfMultiContextModeEnabled(SQLServerEnv.sparkConf)) {
-      val newSqlConf = new SQLConf()
-      mergeSparkConf(newSqlConf, SQLServerEnv.sparkConf)
-      newSqlConf
-    } else {
-      SQLServerEnv.sqlServListener
-      SQLServerEnv.uiTab
-      ShutdownHookManager.addShutdownHook { () =>
-        SQLServerEnv.uiTab.foreach(_.detach())
-        SQLServerEnv.sparkContext.stop()
-      }
-      SQLServerEnv.sqlConf
+    val sqlConf = SQLServerEnv.sparkConf.get(
+        SQLSERVER_EXECUTION_MODE.key, SQLSERVER_EXECUTION_MODE.defaultValueString) match {
+      case "multi-context" =>
+        val newSqlConf = new SQLConf()
+        mergeSparkConf(newSqlConf, SQLServerEnv.sparkConf)
+        newSqlConf
+      case _ =>
+        SQLServerEnv.sqlServListener
+        SQLServerEnv.uiTab
+        ShutdownHookManager.addShutdownHook { () =>
+          SQLServerEnv.uiTab.foreach(_.detach())
+          SQLServerEnv.sparkContext.stop()
+        }
+        SQLServerEnv.sqlConf
     }
 
     val sqlServer = new SQLServer()

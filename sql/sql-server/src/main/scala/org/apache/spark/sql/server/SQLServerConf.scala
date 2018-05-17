@@ -63,9 +63,15 @@ object SQLServerConf {
     .internal()
     .stringConf
     // Keeps "7.4" for tests
-    .checkValue(version => Seq("7.4", "8.4", "9.6", "10").contains(version),
+    .checkValue(Seq("7.4", "8.4", "9.6", "10").contains(_),
       "The server version must be 8.4, 9.6, or 10")
     .createWithDefault("8.4")
+
+  val SQLSERVER_EXECUTION_MODE = buildConf("spark.sql.server.executionMode")
+    .stringConf
+    .checkValue(Seq("single-session", "multi-session", "multi-context").contains(_),
+      "The execution mode must be `single-session`, `multi-session`, `multi-context`")
+    .createWithDefault("multi-session")
 
   // This option is mainly used for interactive tests
   val SQLSERVER_PSQL_ENABLED = buildConf("spark.sql.server.psql.enabled")
@@ -142,11 +148,6 @@ object SQLServerConf {
     .intConf
     .createWithDefault(200)
 
-  val SQLSERVER_SINGLE_SESSION_ENABLED = buildConf("spark.sql.server.singleSession")
-    .doc("When true, create a session per each user.")
-    .booleanConf
-    .createWithDefault(false)
-
   val SQLSERVER_IDLE_OPERATION_TIMEOUT = buildConf("spark.sql.server.idleOperationTimeout")
     .doc("Operation will be closed when it's not accessed for this duration of time," +
       " which can be disabled by setting to zero value. With positive value," +
@@ -172,6 +173,8 @@ class SQLServerConf(conf: SQLConf) {
   def sqlServerPort: Int = getConf(SQLSERVER_PORT)
 
   def sqlServerVersion: String = getConf(SQLSERVER_VERSION)
+
+  def sqlServerExecutionMode: String = getConf(SQLSERVER_EXECUTION_MODE)
 
   def sqlServerPsqlEnabled: Boolean = getConf(SQLSERVER_PSQL_ENABLED)
 
@@ -200,8 +203,6 @@ class SQLServerConf(conf: SQLConf) {
   def sqlServerUiStatementLimit: Int = getConf(SQLSERVER_UI_STATEMENT_LIMIT)
 
   def sqlServerUiSessionLimit: Int = getConf(SQLSERVER_UI_SESSION_LIMIT)
-
-  def sqlServerSingleSessionEnabled: Boolean = getConf(SQLSERVER_SINGLE_SESSION_ENABLED)
 
   def sqlServerIdleOperationTimeout: Long = getConf(SQLSERVER_IDLE_OPERATION_TIMEOUT)
 
