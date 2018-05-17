@@ -26,6 +26,7 @@ import org.apache.spark.sql.internal.SQLConf
 
 
 object SQLServerConf {
+  import SQLConf.buildStaticConf
 
   /**
    * Implicitly inject the [[SQLServerConf]] into [[SQLConf]].
@@ -49,7 +50,7 @@ object SQLServerConf {
 
   def buildConf(key: String): ConfigBuilder = ConfigBuilder(key).onCreate(register)
 
-  val SQLSERVER_PORT = buildConf("spark.sql.server.port")
+  val SQLSERVER_PORT = buildStaticConf("spark.sql.server.port")
     .doc("Port number of SQLServer interface.")
     .intConf
     .createWithDefault(5432)
@@ -59,7 +60,7 @@ object SQLServerConf {
   // See an URL below for valid version numbers:
   // https://github.com/pgjdbc/pgjdbc/blob/REL42.2.2/pgjdbc/src/main/java/org/postgresql/core/ServerVersion.java
   // scalastyle:on line.size.limit
-  val SQLSERVER_VERSION = buildConf("spark.sql.server.version")
+  val SQLSERVER_VERSION = buildStaticConf("spark.sql.server.version")
     .internal()
     .stringConf
     // Keeps "7.4" for tests
@@ -67,7 +68,7 @@ object SQLServerConf {
       "The server version must be 8.4, 9.6, or 10")
     .createWithDefault("8.4")
 
-  val SQLSERVER_EXECUTION_MODE = buildConf("spark.sql.server.executionMode")
+  val SQLSERVER_EXECUTION_MODE = buildStaticConf("spark.sql.server.executionMode")
     .stringConf
     .checkValue(Seq("single-session", "multi-session", "multi-context").contains(_),
       "The execution mode must be `single-session`, `multi-session`, `multi-context`")
@@ -80,12 +81,12 @@ object SQLServerConf {
     .booleanConf
     .createWithDefault(false)
 
-  val SQLSERVER_WORKER_THREADS = buildConf("spark.sql.server.worker.threads")
+  val SQLSERVER_WORKER_THREADS = buildStaticConf("spark.sql.server.worker.threads")
     .doc("Number of SQLServer worker threads.")
     .intConf
     .createWithDefault(4)
 
-  val SQLSERVER_BINARY_TRANSFER_MODE = buildConf("spark.sql.server.binaryTransferMode")
+  val SQLSERVER_BINARY_TRANSFER_MODE = buildStaticConf("spark.sql.server.binaryTransferMode")
     .doc("Whether binary transfer mode is enabled.")
     .booleanConf
     .createWithDefault(true)
@@ -96,12 +97,12 @@ object SQLServerConf {
     .booleanConf
     .createWithDefault(false)
 
-  val SQLSERVER_RECOVERY_MODE = buildConf("spark.sql.server.recoveryMode")
+  val SQLSERVER_RECOVERY_MODE = buildStaticConf("spark.sql.server.recoveryMode")
     .doc("Set to ZOOKEEPER to enable recovery mode with Zookeeper.")
     .stringConf
     .createOptional
 
-  val SQLSERVER_RECOVERY_DIR = buildConf("spark.sql.server.recoveryDirectory")
+  val SQLSERVER_RECOVERY_DIR = buildStaticConf("spark.sql.server.recoveryDirectory")
     .doc("The directory in which Spark will store recovery state, accessible " +
       "from the Spark SQL server's perspective.")
     .stringConf
@@ -113,42 +114,42 @@ object SQLServerConf {
       .timeConf(TimeUnit.MILLISECONDS)
       .createWithDefault(TimeUnit.HOURS.toMillis(1)) // 1 hour
 
-  val SQLSERVER_SSL_ENABLED = buildConf("spark.sql.server.ssl.enabled")
+  val SQLSERVER_SSL_ENABLED = buildStaticConf("spark.sql.server.ssl.enabled")
     .doc("When set to true, SQLServer enables SSL encryption.")
     .booleanConf
     .createWithDefault(false)
 
-  val SQLSERVER_SSL_KEYSTORE_PATH = buildConf("spark.sql.server.ssl.keystore.path")
+  val SQLSERVER_SSL_KEYSTORE_PATH = buildStaticConf("spark.sql.server.ssl.keystore.path")
     .doc("Keystore path")
     .stringConf
     .createOptional
 
-  val SQLSERVER_SSL_KEYSTORE_PASSWD = buildConf("spark.sql.server.ssl.keystore.passwd")
+  val SQLSERVER_SSL_KEYSTORE_PASSWD = buildStaticConf("spark.sql.server.ssl.keystore.passwd")
     .doc("Keystore password")
     .stringConf
     .createOptional
 
-  val SQLSERVER_POOL = buildConf("spark.sql.server.scheduler.pool")
+  val SQLSERVER_POOL = buildStaticConf("spark.sql.server.scheduler.pool")
     .doc("Set a Fair Scheduler pool for a JDBC client session.")
     .stringConf
     .createWithDefault("FIFO")
 
-  val SQLSERVER_DOAS_ENABLED = buildConf("spark.sql.yarn.doAs.enabled")
+  val SQLSERVER_DOAS_ENABLED = buildStaticConf("spark.sql.yarn.doAs.enabled")
     .doc("Whether authentication impersonates connected users.")
     .booleanConf
     .createWithDefault(true)
 
-  val SQLSERVER_UI_STATEMENT_LIMIT = buildConf("spark.sql.server.ui.retainedStatements")
+  val SQLSERVER_UI_STATEMENT_LIMIT = buildStaticConf("spark.sql.server.ui.retainedStatements")
     .doc("The number of SQL statements kept in the JDBC/ODBC web UI history.")
     .intConf
     .createWithDefault(200)
 
-  val SQLSERVER_UI_SESSION_LIMIT = buildConf("spark.sql.server.ui.retainedSessions")
+  val SQLSERVER_UI_SESSION_LIMIT = buildStaticConf("spark.sql.server.ui.retainedSessions")
     .doc("The number of SQL client sessions kept in the JDBC/ODBC web UI history.")
     .intConf
     .createWithDefault(200)
 
-  val SQLSERVER_IDLE_OPERATION_TIMEOUT = buildConf("spark.sql.server.idleOperationTimeout")
+  val SQLSERVER_IDLE_OPERATION_TIMEOUT = buildStaticConf("spark.sql.server.idleOperationTimeout")
     .doc("Operation will be closed when it's not accessed for this duration of time," +
       " which can be disabled by setting to zero value. With positive value," +
       " it's checked for operations in terminal state only (FINISHED, CANCELED, CLOSED, ERROR)." +
@@ -157,7 +158,7 @@ object SQLServerConf {
     .createWithDefault(3600 * 5)
 
   val SQLSERVER_MESSAGE_BUFFER_SIZE_IN_BYTES =
-    buildConf("spark.sql.server.messageBufferSizeInBytes")
+    buildStaticConf("spark.sql.server.messageBufferSizeInBytes")
       .doc("Maximum bytes of a single record we assume when converting Spark internal rows " +
         "into binary data in the PostgreSQL V3 protocol")
       .internal()
