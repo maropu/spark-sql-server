@@ -76,7 +76,7 @@ object SQLServer extends Logging {
     initDaemon(log)
 
     // Initializes Spark variables depending on execution modes
-    SQLServerEnv.sqlConf.sqlServerExecutionMode  match {
+    SQLServerEnv.sqlConf.sqlServerExecutionMode match {
       case "single-session" | "multi-session" =>
         SQLServerEnv.sqlServListener
         SQLServerEnv.uiTab
@@ -84,6 +84,7 @@ object SQLServer extends Logging {
           SQLServerEnv.uiTab.foreach(_.detach())
           SQLServerEnv.sparkContext.stop()
         }
+      case _ =>
     }
 
     val sqlServer = new SQLServer()
