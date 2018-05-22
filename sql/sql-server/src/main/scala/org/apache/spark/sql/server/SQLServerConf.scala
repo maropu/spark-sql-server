@@ -216,7 +216,8 @@ class SQLServerConf(conf: SQLConf) {
    * yet, return `defaultValue` in [[ConfigEntry]].
    */
   private def getConf[T](entry: ConfigEntry[T]): T = {
-    require(sqlConfEntries.get(entry.key) == entry, s"$entry is not registered")
+    require(sqlConfEntries.get(entry.key) == entry || SQLConf.staticConfKeys.contains(entry.key),
+      s"$entry is not registered")
     entry.readFrom(reader)
   }
 }
