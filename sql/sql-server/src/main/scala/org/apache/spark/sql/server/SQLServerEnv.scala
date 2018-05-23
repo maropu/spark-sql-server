@@ -60,7 +60,7 @@ object SQLServerEnv extends Logging {
 
   lazy val sqlConf: SQLConf = _sqlContext.map(_.conf).getOrElse {
     val newSqlConf = new SQLConf()
-    mergeSparkConf(sqlConf, sparkConf)
+    mergeSparkConf(newSqlConf, sparkConf)
     newSqlConf
   }
 
