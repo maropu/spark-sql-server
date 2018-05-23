@@ -15,15 +15,22 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.server.service
+package org.apache.spark.sql.server.service.postgresql
 
-import org.apache.livy.{Job, JobContext}
+import java.sql.SQLException
+
+import org.apache.spark.sql.catalyst.parser.ParseException
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.server.SQLServerEnv
 
 
-class InteractiveQueryJob extends Job[Boolean] {
+private[service] object PgUtils {
 
-  override def call(jobContext: JobContext): Boolean = {
-    Thread.sleep(100000000000L)
-    true
+  private val parser = new PgParser(SQLServerEnv.sqlConf)
+
+  def parse(query: String): LogicalPlan = try {
+    parser.parsePlan(query)
+  } catch {
+    case e: ParseException => throw new SQLException(e.getMessage)
   }
 }

@@ -17,7 +17,7 @@
 
 package org.apache.spark.sql.server.service
 
-import java.util.{HashMap => jHashMap}
+import java.util.{HashMap => jHashMap, UUID}
 import java.util.Collections.{synchronizedMap => jSyncMap}
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -32,37 +32,35 @@ import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.SQLServerEnv
 import org.apache.spark.sql.server.SQLServerListener
-import org.apache.spark.sql.server.service.postgresql.{PgCatalogInitializer, PgExecutor, PgProtocolService, PgSessionInitializer}
+import org.apache.spark.sql.server.service.livy.{LivyProxyContext, LivyProxyExecutor, LivyServerService}
+import org.apache.spark.sql.server.service.postgresql.{PgCatalogInitializer, PgCatalogUpdater, PgProtocolService, PgSessionInitializer}
 import org.apache.spark.sql.server.ui.SQLServerTab
 import org.apache.spark.sql.server.util.RecurringTimer
 import org.apache.spark.util.SystemClock
 
 
-trait SessionInitializer {
-  def apply(dbName: String, sqlContext: SQLContext): Unit
-}
+// Base trait for `SQLContext` and `LivyProxyContext`
+trait SessionContext
+
+case class SQLContextHolder(sqlContext: SQLContext) extends SessionContext
 
 trait SessionState {
 
   // Holds a session-specific context
   private[service] var _sessionId: Int = _
 
-  private[service] var _sqlContext: SQLContext = _
-  private[service] var _servListener: SQLServerListener = _
+  private[service] var _context: SessionContext = _
 
+  private[service] var _servListener: Option[SQLServerListener] = _
   private[service] var _uiTab: Option[SQLServerTab] = None
   private[service] var _schedulePool: Option[String] = None
   private[service] var _ugi: Option[UserGroupInformation] = None
 
   // Called when an idle session cleaner closes this session
   def closeWithException(msg: String): Unit = close()
-
   def close(): Unit = {
-    // If multi-context mode enabled, stops a per-session context
-    _sqlContext.conf.sqlServerExecutionMode match {
-      case "multi-context" =>
-        _uiTab.foreach(_.detach())
-        _sqlContext.sparkContext.stop()
+    _context match {
+      case ctx: LivyProxyContext => ctx.stop()
       case _ =>
     }
   }
@@ -78,16 +76,16 @@ trait SessionService {
 
 private[service] case class TimeStampedValue[V](value: V, timestamp: Long)
 
-private[service] class SessionManager(initSession: SessionInitializer)
+private[service] class SessionManager(initSession: (String, SQLContext) => Unit)
     extends CompositeService with Logging {
 
   private val nextSessionId = new AtomicInteger(0)
   private val sessionIdToState = jSyncMap(new jHashMap[Int, TimeStampedValue[SessionState]]())
 
   // For functions to initialize sessions
-  private var getSessionContext: String => SQLContext = _
-  private var getServerListener: SQLContext => SQLServerListener = _
-  private var getUiTab: (SQLContext, SQLServerListener) => Option[SQLServerTab] = _
+  private var getSessionContext: (Int, String) => SessionContext = _
+  private var getServerListener: () => Option[SQLServerListener] = _
+  private var getUiTab: () => Option[SQLServerTab] = _
 
   private var idleSessionCleanupDelay: Long = _
   private var idleSessionCleaner: RecurringTimer = _
@@ -104,49 +102,41 @@ private[service] class SessionManager(initSession: SessionInitializer)
     // Initializes functions depending on execution modes
     getSessionContext = conf.sqlServerExecutionMode match {
       case "single-session" =>
-        (_: String) => {
-          SQLServerEnv.sqlContext
+        (_: Int, _: String) => {
+          SQLContextHolder(SQLServerEnv.sqlContext)
         }
       case "multi-session" =>
-        (dbName: String) => {
-          val sqlContext = SQLServerEnv.newSQLContext()
-          initSession(dbName, sqlContext)
-          sqlContext
-        }
-      case "multi-context" =>
-        (dbName: String) => {
+        (_: Int, dbName: String) => {
           val sqlContext = SQLServerEnv.sqlContext.newSession()
           initSession(dbName, sqlContext)
-          sqlContext
+          SQLContextHolder(sqlContext)
+        }
+      case "multi-context" =>
+        (sessionId: Int, dbName: String) => {
+          val livyContext = new LivyProxyContext()
+          livyContext.init(serviceName = s"rpc-service-session-$sessionId", sessionId, dbName)
+          livyContext
         }
     }
 
     getServerListener = conf.sqlServerExecutionMode match {
+      case "single-session" | "multi-session" =>
+        () => SQLServerEnv.sqlServListener
       case "multi-context" =>
-        (sqlContext: SQLContext) => {
-          SQLServerEnv.newSQLServerListener(sqlContext)
-        }
-      case _ =>
-        (_: SQLContext) => {
-          SQLServerEnv.sqlServListener
-        }
+        () => None
     }
 
     getUiTab = conf.sqlServerExecutionMode match {
+      case "single-session" | "multi-session" =>
+        () => SQLServerEnv.uiTab
       case "multi-context" =>
-        (sqlContext: SQLContext, listener: SQLServerListener) => {
-          SQLServerEnv.newUiTab(sqlContext, listener)
-        }
-      case _ =>
-        (_: SQLContext, _: SQLServerListener) => {
-          SQLServerEnv.uiTab
-        }
+        () => None
     }
   }
 
   override def doStart(): Unit = {
     SQLServerEnv.sqlContext.conf.sqlServerExecutionMode match {
-      case "multi-context" =>
+      case "single-session" =>
         initSession("default", SQLServerEnv.sqlContext)
       case _ =>
     }
@@ -164,15 +154,19 @@ private[service] class SessionManager(initSession: SessionInitializer)
   def openSession(userName: String, passwd: String, ipAddress: String, dbName: String,
       state: SessionState): Int = {
     val sessionId = newSessionId()
-    val sqlContext = getSessionContext(dbName)
-    val servListener = getServerListener(sqlContext)
+    val sessionContext = getSessionContext(sessionId, dbName)
+    val servListener = getServerListener()
     state._sessionId = sessionId
-    state._sqlContext = sqlContext
+    state._context = sessionContext
     state._servListener = servListener
-    state._uiTab = getUiTab(sqlContext, servListener)
-    sqlContext.sharedState.externalCatalog.setCurrentDatabase(dbName)
+    state._uiTab = getUiTab()
+    sessionContext match {
+      case SQLContextHolder(sqlContext) =>
+        sqlContext.sharedState.externalCatalog.setCurrentDatabase(dbName)
+      case _ =>
+    }
     sessionIdToState.put(sessionId, TimeStampedValue(state, currentTime))
-    servListener.onSessionCreated(sessionId, userName, ipAddress)
+    servListener.foreach(_.onSessionCreated(sessionId, userName, ipAddress))
     sessionId
   }
 
@@ -180,7 +174,7 @@ private[service] class SessionManager(initSession: SessionInitializer)
     val value = sessionIdToState.remove(sessionId)
     if (value != null) {
       val TimeStampedValue(state, _) = value
-      state._servListener.onSessionClosed(sessionId)
+      state._servListener.foreach(_.onSessionClosed(sessionId))
       state.close()
     } else {
       logError(s"A session (sessionId=$sessionId) has been already closed")
@@ -206,7 +200,7 @@ private[service] class SessionManager(initSession: SessionInitializer)
     val value = sessionIdToState.remove(sessionId)
     if (value != null) {
       val TimeStampedValue(state, _) = value
-      state._servListener.onSessionClosed(sessionId)
+      state._servListener.foreach(_.onSessionClosed(sessionId))
       state.closeWithException(msg)
     } else {
       // Just ignore it
@@ -249,13 +243,29 @@ private[service] class SessionManager(initSession: SessionInitializer)
 
 private[server] class SparkSQLServiceManager extends CompositeService with SessionService {
 
-  private val operationExecutor = new PgExecutor()
-  private val sessionManager = new SessionManager(new PgSessionInitializer())
+  private val frontendService = new PgProtocolService(this)
+  private val sessionManager = new SessionManager(
+    (dbName: String, sqlContext: SQLContext) => PgSessionInitializer(dbName, sqlContext))
+
+  private val executorImpl = SQLServerEnv.sqlConf.sqlServerExecutionMode match {
+    case "single-session" | "multi-session" =>
+      val catalogUpdater = (sqlContext: SQLContext, analyzedPlan: LogicalPlan) => {
+        PgCatalogUpdater(sqlContext, analyzedPlan)
+      }
+      new ExecutorImpl(catalogUpdater)
+    case "multi-context" =>
+      new LivyProxyExecutor()
+  }
 
   // We must start `PgProtocolService` in the end of services
-  addService(new PgCatalogInitializer())
+  SQLServerEnv.sqlConf.sqlServerExecutionMode match {
+    case "single-session" | "multi-session" =>
+      addService(new PgCatalogInitializer())
+    case "multi-context" =>
+      addService(new LivyServerService(frontendService))
+  }
   addService(sessionManager)
-  addService(new PgProtocolService(this))
+  addService(frontendService)
 
   override def openSession(userName: String, passwd: String, ipAddress: String, dbName: String,
       state: SessionState): Int = {
@@ -271,6 +281,9 @@ private[server] class SparkSQLServiceManager extends CompositeService with Sessi
   }
 
   override def executeStatement(sessionId: Int, plan: (String, LogicalPlan)): Operation = {
-    operationExecutor.newOperation(sessionManager.getSession(sessionId), plan)
+    executorImpl.newOperation(
+      sessionState = sessionManager.getSession(sessionId),
+      statementId = UUID.randomUUID().toString,
+      plan)
   }
 }

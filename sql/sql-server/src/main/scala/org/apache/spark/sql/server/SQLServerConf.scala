@@ -75,7 +75,7 @@ object SQLServerConf {
     .createWithDefault("multi-session")
 
   // This option is mainly used for interactive tests
-  val SQLSERVER_PSQL_ENABLED = buildConf("spark.sql.server.psql.enabled")
+  val SQLSERVER_PSQL_ENABLED = buildStaticConf("spark.sql.server.psql.enabled")
     .internal()
     .doc("When set to true, the Spark SQL server accepts requests from psql clients.")
     .booleanConf
@@ -85,6 +85,12 @@ object SQLServerConf {
     .doc("Number of SQLServer worker threads.")
     .intConf
     .createWithDefault(4)
+
+  val SQLSERVER_LIVY_HOME = buildStaticConf("spark.sql.server.livyHome")
+    .internal()
+    .doc("Relative path to Livy directory")
+    .stringConf
+    .createWithDefault(sys.env.getOrElse("LIVY_HOME", "."))
 
   val SQLSERVER_BINARY_TRANSFER_MODE = buildStaticConf("spark.sql.server.binaryTransferMode")
     .doc("Whether binary transfer mode is enabled.")
@@ -171,43 +177,45 @@ class SQLServerConf(conf: SQLConf) {
 
   private val reader = new ConfigReader(conf.settings)
 
-  def sqlServerPort: Int = getConf(SQLSERVER_PORT)
+  def sqlServerPort: Int = getStaticConf(SQLSERVER_PORT)
 
-  def sqlServerVersion: String = getConf(SQLSERVER_VERSION)
+  def sqlServerVersion: String = getStaticConf(SQLSERVER_VERSION)
 
-  def sqlServerExecutionMode: String = getConf(SQLSERVER_EXECUTION_MODE)
+  def sqlServerExecutionMode: String = getStaticConf(SQLSERVER_EXECUTION_MODE)
 
-  def sqlServerPsqlEnabled: Boolean = getConf(SQLSERVER_PSQL_ENABLED)
+  def sqlServerPsqlEnabled: Boolean = getStaticConf(SQLSERVER_PSQL_ENABLED)
 
-  def sqlServerWorkerThreads: Int = getConf(SQLSERVER_WORKER_THREADS)
+  def sqlServerWorkerThreads: Int = getStaticConf(SQLSERVER_WORKER_THREADS)
 
-  def sqlServerBinaryTransferMode: Boolean = getConf(SQLSERVER_BINARY_TRANSFER_MODE)
+  def sqlServerLivyHome: String = getStaticConf(SQLSERVER_LIVY_HOME)
+
+  def sqlServerBinaryTransferMode: Boolean = getStaticConf(SQLSERVER_BINARY_TRANSFER_MODE)
 
   def sqlServerIncrementalCollectEnabled: Boolean = getConf(SQLSERVER_INCREMENTAL_COLLECT_ENABLED)
 
-  def sqlServerRecoveryMode: Option[String] = getConf(SQLSERVER_RECOVERY_MODE)
+  def sqlServerRecoveryMode: Option[String] = getStaticConf(SQLSERVER_RECOVERY_MODE)
 
-  def sqlServerRecoveryDir: String = getConf(SQLSERVER_RECOVERY_DIR)
+  def sqlServerRecoveryDir: String = getStaticConf(SQLSERVER_RECOVERY_DIR)
 
   def sqlServerIdleSessionCleanupDelay: Long = getConf(SQLSERVER_IDLE_SESSION_CLEANUP_DELAY)
 
-  def sqlServerSslEnabled: Boolean = getConf(SQLSERVER_SSL_ENABLED)
+  def sqlServerSslEnabled: Boolean = getStaticConf(SQLSERVER_SSL_ENABLED)
 
-  def sqlServerSslKeyStorePath: Option[String] = getConf(SQLSERVER_SSL_KEYSTORE_PATH)
+  def sqlServerSslKeyStorePath: Option[String] = getStaticConf(SQLSERVER_SSL_KEYSTORE_PATH)
 
-  def sqlServerSslKeyStorePasswd: Option[String] = getConf(SQLSERVER_SSL_KEYSTORE_PASSWD)
+  def sqlServerSslKeyStorePasswd: Option[String] = getStaticConf(SQLSERVER_SSL_KEYSTORE_PASSWD)
 
-  def sqlServerPool: String = getConf(SQLSERVER_POOL)
+  def sqlServerPool: String = getStaticConf(SQLSERVER_POOL)
 
-  def sqlServerDoAsEnabled: Boolean = getConf(SQLSERVER_DOAS_ENABLED)
+  def sqlServerDoAsEnabled: Boolean = getStaticConf(SQLSERVER_DOAS_ENABLED)
 
-  def sqlServerUiStatementLimit: Int = getConf(SQLSERVER_UI_STATEMENT_LIMIT)
+  def sqlServerUiStatementLimit: Int = getStaticConf(SQLSERVER_UI_STATEMENT_LIMIT)
 
-  def sqlServerUiSessionLimit: Int = getConf(SQLSERVER_UI_SESSION_LIMIT)
+  def sqlServerUiSessionLimit: Int = getStaticConf(SQLSERVER_UI_SESSION_LIMIT)
 
-  def sqlServerIdleOperationTimeout: Long = getConf(SQLSERVER_IDLE_OPERATION_TIMEOUT)
+  def sqlServerIdleOperationTimeout: Long = getStaticConf(SQLSERVER_IDLE_OPERATION_TIMEOUT)
 
-  def sqlServerMessageBufferSizeInBytes: Int = getConf(SQLSERVER_MESSAGE_BUFFER_SIZE_IN_BYTES)
+  def sqlServerMessageBufferSizeInBytes: Int = getStaticConf(SQLSERVER_MESSAGE_BUFFER_SIZE_IN_BYTES)
 
   /** ********************** SQLConf functionality methods ************ */
 
@@ -217,6 +225,11 @@ class SQLServerConf(conf: SQLConf) {
    */
   private def getConf[T](entry: ConfigEntry[T]): T = {
     require(sqlConfEntries.get(entry.key) == entry, s"$entry is not registered")
+    entry.readFrom(reader)
+  }
+
+  private def getStaticConf[T](entry: ConfigEntry[T]): T = {
+    require(SQLConf.staticConfKeys.contains(entry.key), s"$entry is not registered")
     entry.readFrom(reader)
   }
 }

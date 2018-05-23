@@ -1,0 +1,133 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.spark.sql.server.service.livy
+
+import scala.util.control.NonFatal
+
+import org.apache.livy.{Job, JobContext}
+
+import org.apache.spark.SparkEnv
+import org.apache.spark.rpc.{RpcCallContext, RpcEndpoint, RpcEndpointRef, RpcEnv}
+import org.apache.spark.sql.{SparkSession, SQLContext}
+import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.server.SQLServerEnv
+import org.apache.spark.sql.server.service.{ExecutorImpl, NOP, Operation, SessionContext, SessionState, SQLContextHolder}
+import org.apache.spark.sql.server.service.postgresql.{PgCatalogInitializer, PgCatalogUpdater, PgSessionInitializer, PgUtils}
+import org.apache.spark.sql.types.StructType
+
+
+case class SchemaQuery(sql: String)
+case class SchemaResponse(schema: StructType)
+case class ExecuteQuery(statementId: String, sql: String)
+case class ResultSetResponse(resultRows: Seq[InternalRow])
+case class ErrorResponse(e: Throwable)
+case class CancelRequest(statementId: String)
+case class CancelResponse()
+
+private class LivySessionState extends SessionState
+
+private object LivySessionState {
+
+  def apply(sessionId: Int, context: SessionContext): LivySessionState = {
+    val state = new LivySessionState()
+    state._sessionId = sessionId
+    state._context = context
+    // TODO: Needs to implement this
+    state._servListener = None
+    state._uiTab = None
+    state._schedulePool = None
+    state._ugi = None
+    state
+  }
+}
+
+private class ExecutorEndpoint(override val rpcEnv: RpcEnv, sessionState: LivySessionState)
+    extends RpcEndpoint {
+
+  private val executorImpl = {
+    val catalogUpdater = (sqlContext: SQLContext, analyzedPlan: LogicalPlan) => {
+      PgCatalogUpdater(sqlContext, analyzedPlan)
+    }
+    new ExecutorImpl(catalogUpdater)
+  }
+  private val sqlContext = sessionState._context match {
+    case SQLContextHolder(ctx) => ctx
+    case ctx => sys.error(s"${this.getClass.getSimpleName} cannot handle $ctx")
+  }
+
+  private var activeOperation: Operation = NOP
+
+  private def analyzePlan(query: String): LogicalPlan = {
+    val sesseionSpecificAnalyzer = sqlContext.sessionState.analyzer
+    sesseionSpecificAnalyzer.execute(PgUtils.parse(query))
+  }
+
+  override def receiveAndReply(context: RpcCallContext): PartialFunction[Any, Unit] = synchronized {
+    case SchemaQuery(sql) =>
+      try { context.reply(SchemaResponse(analyzePlan(sql).schema)) } catch {
+        case NonFatal(e) => context.reply(ErrorResponse(e))
+      }
+
+    case ExecuteQuery(statementId, sql) =>
+      try {
+        val logicalPlan = PgUtils.parse(sql)
+        activeOperation = executorImpl.newOperation(sessionState, statementId, (sql, logicalPlan))
+        // TODO: Needs to support incremental collects
+        val rowIter = activeOperation.run()
+        // To make it serializable, uses `toArray`
+        context.reply(ResultSetResponse(rowIter.toArray.toSeq))
+      } catch {
+        case NonFatal(e) => context.reply(ErrorResponse(e))
+      }
+
+    case CancelRequest(statementId) =>
+      if (statementId == activeOperation.statementId()) {
+        activeOperation.cancel()
+        context.reply(CancelResponse)
+      } else {
+        context.reply(ErrorResponse(new IllegalStateException(
+          s"Failed to cancel a query with `$statementId`: " +
+          s"the running query with `${activeOperation.statementId()}` found.")))
+      }
+  }
+}
+
+class OpenSessionJob(sessionId: Int, dbName: String) extends Job[RpcEndpointRef] {
+
+  override def call(jobContext: JobContext): RpcEndpointRef = {
+    val sqlContext = jobContext.sparkSession[SparkSession].sqlContext
+    require(sqlContext != null, "SQLContext cannot be initialized")
+    SQLServerEnv.withSQLContext(sqlContext)
+
+    // TODO: Reconsider this
+    PgCatalogInitializer(sqlContext)
+    PgSessionInitializer(dbName, sqlContext)
+
+    val rpcEnv = SparkEnv.get.rpcEnv
+    val sessionState = LivySessionState(sessionId, SQLContextHolder(sqlContext))
+    val endpoint = new ExecutorEndpoint(rpcEnv, sessionState)
+    val endpointRef = rpcEnv.setupEndpoint(OpenSessionJob.ENDPOINT_NAME, endpoint)
+    endpointRef
+  }
+}
+
+object OpenSessionJob {
+
+  val ENDPOINT_NAME = "sql-server-session"
+}

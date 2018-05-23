@@ -24,17 +24,27 @@
 _DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 if [ -z "${SPARK_HOME}" ]; then
-  # Preserve the calling directory
   _CALLING_DIR="$(pwd)"
 
   # Install the proper version of Spark for launching the SQL server
   . ${_DIR}/../thirdparty/install.sh
   install_spark
 
-  # Reset the current working directory
   cd "${_CALLING_DIR}"
 else
   SPARK_DIR=${SPARK_HOME}
+fi
+
+if [ -z "${LIVY_HOME}" ]; then
+  _CALLING_DIR="$(pwd)"
+
+  # Install the proper version of Livy for multi-context mode
+  . ${_DIR}/../thirdparty/install.sh
+  install_livy
+
+  cd "${_CALLING_DIR}"
+else
+  LIVY_DIR=${LIVY_HOME}
 fi
 
 function usage {
@@ -42,6 +52,7 @@ function usage {
   "${SPARK_DIR}"/bin/spark-submit --help 2>&1 | grep -v Usage 1>&2
   echo "SQL server options:"
   echo "  --conf spark.sql.server.port=NUM                    Port number of SQL server interface (Default: 5432)."
+  echo "  --conf spark.sql.server.executionMode=STR           Execution mode: single-session, multi-session, or multi-context (Default: multi-session)".
   echo "  --conf spark.sql.server.worker.threads=NUM          # of SQLServer worker threads (Default: 4)."
   echo "  --conf spark.sql.server.binaryTransferMode=BOOL     Whether binary transfer mode is enabled (Default: true)."
   echo "  --conf spark.sql.server.ssl.enabled=BOOL            Enable SSL encryption (Default: false)."
@@ -78,5 +89,6 @@ echo "Using \`spark-submit\` from path: $SPARK_DIR" 1>&2
 CLASS="org.apache.spark.sql.server.SQLServer"
 PROPERTY_FILE=${_DIR}/../conf/spark-defaults.conf
 APP_NAME="Spark SQL Server"
-exec "${SPARK_DIR}"/sbin/spark-daemon.sh submit $CLASS 1 --name "${APP_NAME}" --properties-file ${PROPERTY_FILE} "$@" ${RESOURCES}
+exec "${SPARK_DIR}"/sbin/spark-daemon.sh submit $CLASS 1 --name "${APP_NAME}" --properties-file ${PROPERTY_FILE} \
+  --conf spark.sql.server.livyHome=${LIVY_DIR} "$@" ${RESOURCES}
 

@@ -10,6 +10,7 @@ jdk:
 branches:
   only:
     - master
+    - ImpersonationSpike
 
 notifications:
   email: false

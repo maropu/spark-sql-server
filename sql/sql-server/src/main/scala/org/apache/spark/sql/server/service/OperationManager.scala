@@ -23,6 +23,7 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.SQLServerEnv
+import org.apache.spark.sql.types.StructType
 
 
 sealed trait OperationState
@@ -49,8 +50,10 @@ trait Operation {
   private val timeout = SQLServerEnv.sqlConf.sqlServerIdleOperationTimeout
   private var lastAccessTime: Long = System.currentTimeMillis()
 
-  protected var state: OperationState = INITIALIZED
+  @volatile protected var state: OperationState = INITIALIZED
 
+  def statementId(): String
+  def outputSchema(): StructType
   def run(): Iterator[InternalRow]
   def cancel(): Unit
   def close(): Unit
@@ -67,9 +70,19 @@ trait Operation {
       Seq(FINISHED, CANCELED, CLOSED, ERROR).contains(state) &&
         lastAccessTime + timeout <= current
     } else {
-      lastAccessTime + -timeout <= current
+      lastAccessTime - timeout <= current
     }
   }
+}
+
+object NOP extends Operation {
+
+  override val statementId: String = "nop"
+  override val outputSchema: StructType = new StructType()
+
+  override def run(): Iterator[InternalRow] = Iterator.empty
+  override def cancel(): Unit = {}
+  override def close(): Unit = {}
 }
 
 trait OperationExecutor {
@@ -77,5 +90,6 @@ trait OperationExecutor {
   // Creates a new instance for service-specific operations
   def newOperation(
     sessionState: SessionState,
+    statementId: String,
     query: (String, LogicalPlan)): Operation
 }

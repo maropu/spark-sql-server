@@ -41,17 +41,15 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.ietf.jgss.{GSSContext, GSSCredential, GSSException, GSSManager, Oid}
 
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.{AnalysisException, SQLContext}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.SetCommand
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.server.{SQLServerConf, SQLServerEnv}
 import org.apache.spark.sql.server.SQLServerConf._
-import org.apache.spark.sql.server.parser.ParseException
 import org.apache.spark.sql.server.service.{Operation, SessionService, SessionState}
 import org.apache.spark.sql.server.service.postgresql.PgMetadata._
-import org.apache.spark.sql.server.service.postgresql.PgParser
+import org.apache.spark.sql.server.service.postgresql.PgUtils
 import org.apache.spark.sql.server.service.postgresql.execution.command.BeginCommand
 import org.apache.spark.sql.server.service.postgresql.protocol.v3.PgRowConverters._
 import org.apache.spark.sql.server.util.SQLServerUtils
@@ -217,7 +215,7 @@ object PgWireProtocol extends Logging {
     BinaryType, ShortType, IntegerType, LongType, FloatType, DoubleType, DateType, TimestampType
   )
 
-  private def resultDataFormatsFor(schema: StructType, state: SessionV3State): Seq[Boolean] = {
+  private def resultDataFormatsFor(schema: StructType, state: V3SessionState): Seq[Boolean] = {
     if (state.appName == "psql") {
       // TODO: 'psql' always needs a text transfer mode?
       Seq.fill(schema.length)(false)
@@ -254,7 +252,7 @@ object PgWireProtocol extends Logging {
   // "jdbc:postgresql://[host]/[database]?user=[name]&kerberosServerName=spark"
   private def doGSSAuthentication(
       ctx: ChannelHandlerContext,
-      state: SessionV3State,
+      state: V3SessionState,
       serverPrincipal: String,
       token: Array[Byte]): Boolean = {
     // Get own Kerberos credentials for accepting connection
@@ -301,7 +299,7 @@ object PgWireProtocol extends Logging {
   }
 
   // TODO: Needs to change `Any` into `Unit`
-  private type MessageProcessorType = (SessionV3State) => Any
+  private type MessageProcessorType = (V3SessionState) => Any
 
   /**
    * Internal registry of client message processors.
@@ -346,9 +344,8 @@ object PgWireProtocol extends Logging {
       logInfo(s"Bind: portalName='$portalName' queryName='$queryName' formats=$formats "
         + s"params=$params resultFormats=$resultFormats")
 
-      ("Bind", (sessionState: SessionV3State) => {
+      ("Bind", (sessionState: V3SessionState) => {
         import sessionState._
-        import PgV3MessageHandler._
 
         val queryState = sessionState.queries(queryName)
 
@@ -363,19 +360,19 @@ object PgWireProtocol extends Logging {
         logInfo(s"Bound plan:\n$boundPlan")
 
         // Build a portal state
-        val analyzed = analyzePlan(boundPlan, sessionState._sqlContext)
-        val plan = (queryState.statement, analyzed)
+        val plan = (queryState.statement, boundPlan)
         val execState = cli.executeStatement(sessionState._sessionId, plan)
-        val schema = analyzed.schema
+        val schema = execState.outputSchema()
         val outputFormats = resultDataFormatsFor(schema, sessionState)
         val rowWriter = PgRowConverters(conf, schema, outputFormats)
-        val portalState = PortalState(
-          queryState.withRowWriter(rowWriter), execState, !portalName.isEmpty)
+        val newQueryState = queryState.withRowWriter(schema, rowWriter)
+        val portalState = PortalState(newQueryState, execState, !portalName.isEmpty)
         if (portalState.isCursorMode) {
           logInfo(s"Cursor mode enabled: portalName='$portalName'")
         }
 
         // Update a session state
+        sessionState.queries(queryName) = newQueryState
         sessionState.portals(portalName) = portalState
         sessionState.activePortal = Some(portalName)
 
@@ -388,12 +385,12 @@ object PgWireProtocol extends Logging {
     67 -> { msg =>
       val (tpe, name) = (msg.get(), extractString(msg))
 
-      ("Close", (sessionState: SessionV3State) => {
+      ("Close", (sessionState: V3SessionState) => {
         if (tpe == 83) { // Close a prepared statement
           sessionState.queries.remove(name)
           logInfo(s"Close the '$name' prepared statement (id:${sessionState._sessionId})")
         } else if (tpe == 80) { // Close a portal
-          sessionState.portals.remove(name)
+          sessionState.portals.remove(name).foreach(_.execState.close())
           logInfo(s"Close the '$name' portal (id:${sessionState._sessionId}})")
         } else {
           logWarning(s"Unknown type received in 'Close': $tpe")
@@ -405,19 +402,19 @@ object PgWireProtocol extends Logging {
     68 -> { msg =>
       val (tpe, name) = (msg.get(), extractString(msg))
 
-      ("Describe", (sessionState: SessionV3State) => {
+      ("Describe", (sessionState: V3SessionState) => {
         import sessionState._
         import sessionState.v3Protocol._
 
         if (tpe == 83) { // Describe a prepared statement
           logInfo(s"Describe the '$name' prepared statement (id:${sessionState._sessionId})")
           val queryState = sessionState.queries(name)
-          ctx.write(RowDescription(queryState.schema))
+          ctx.write(RowDescription(queryState._schema))
           ctx.flush()
         } else if (tpe == 80) { // Describe a portal
           logInfo(s"Describe the '$name' portal i(id:${sessionState._sessionId})")
           val queryState = sessionState.portals(name).queryState
-          ctx.write(RowDescription(queryState.schema))
+          ctx.write(RowDescription(queryState._schema))
           ctx.flush()
         } else {
           logWarning(s"Unknown type received in 'Describe': $tpe")
@@ -431,13 +428,13 @@ object PgWireProtocol extends Logging {
 
       logInfo(s"Execute: portalName='$portalName', maxRows=$maxRows")
 
-      ("Execute", (sessionState: SessionV3State) => {
+      ("Execute", (sessionState: V3SessionState) => {
         try {
           import sessionState._
           import sessionState.v3Protocol._
 
           val portalState = sessionState.portals(portalName)
-          val rowConveter = portalState.queryState.rowWriter.get
+          val rowConveter = portalState.queryState._rowWriter.get
           val rowIter = if (portalState.numFetched == 0) {
             val iter = portalState.execState.run()
             portalState.resultRowIter = iter
@@ -484,7 +481,7 @@ object PgWireProtocol extends Logging {
           ctx.flush()
         } catch {
           case NonFatal(e) =>
-            sessionState.portals.remove(portalName)
+            sessionState.portals.remove(portalName).foreach(_.execState.close())
             throw e
         }
       })
@@ -516,14 +513,14 @@ object PgWireProtocol extends Logging {
       }
       val resultFormat = msg.getShort()
 
-      ("FunctionCall", (sessionState: SessionV3State) => {
+      ("FunctionCall", (sessionState: V3SessionState) => {
         throw new UnsupportedOperationException("Not supported yet")
       })
     },
 
     // An ASCII code of the `Flush` message is 'H'(72)
     72 -> { msg =>
-      ("Flush", (sessionState: SessionV3State) => {
+      ("Flush", (sessionState: V3SessionState) => {
         throw new UnsupportedOperationException("Not supported yet")
       })
     },
@@ -543,15 +540,20 @@ object PgWireProtocol extends Logging {
 
       logInfo(s"Parse: queryName='$queryName' query='$query' objIds=$params")
 
-      ("Parse", (sessionState: SessionV3State) => {
+      ("Parse", (sessionState: V3SessionState) => {
         import sessionState._
-        import PgV3MessageHandler._
 
-        // Checks if `PostgreSqlParser` can parse the input query
-        PgV3MessageHandler.assertAnalyzed(query, _sqlContext)
-
-        val parsed = parsePlan(query)
-        val schema = analyzePlan(parsed, sessionState._sqlContext).schema
+        val parsed = PgUtils.parse(query)
+        val schema = {
+          import org.apache.spark.sql.server.service.SQLContextHolder
+          _context match {
+            case SQLContextHolder(ctx) =>
+              val sesseionSpecificAnalyzer = ctx.sessionState.analyzer
+              sesseionSpecificAnalyzer.execute(parsed).schema
+            case _ =>
+              new StructType()
+          }
+        }
         sessionState.queries(queryName) = QueryState(query, parsed, params, schema)
         ctx.write(ParseComplete)
         ctx.flush()
@@ -568,10 +570,9 @@ object PgWireProtocol extends Logging {
 
       logInfo(s"Query: statements=${statements.mkString(", ")}")
 
-      ("Query", (sessionState: SessionV3State) => {
+      ("Query", (sessionState: V3SessionState) => {
         import sessionState.v3Protocol._
         import sessionState._
-        import PgV3MessageHandler._
 
         if (statements.size > 0) {
           logDebug(s"input queries are ${statements.mkString(", ")}")
@@ -588,15 +589,14 @@ object PgWireProtocol extends Logging {
 
             // Checks if `PostgreSqlParser` can parse the input query and executes the query
             // in `PostgreSQLExecutor`.
-            val analyzedPlan = analyzePlan(query, _sqlContext)
-            val plan = (query, analyzedPlan)
+            val plan = (query, PgUtils.parse(query))
             val execState = cli.executeStatement(sessionState._sessionId, plan)
             val resultRowIter = execState.run()
 
             // The response to a SELECT query (or other queries that return row sets, such as
             // EXPLAIN or SHOW) normally consists of RowDescription, zero or more DataRow
             // messages, and then CommandComplete.
-            val schema = analyzedPlan.schema
+            val schema = execState.outputSchema()
             ctx.write(RowDescription(schema))
 
             val formats = resultDataFormatsFor(schema, sessionState)
@@ -616,7 +616,7 @@ object PgWireProtocol extends Logging {
 
     // An ASCII code of the `Sync` message is 'S'(83)
     83 -> { msg =>
-      ("Sync", (sessionState: SessionV3State) => {
+      ("Sync", (sessionState: V3SessionState) => {
         import sessionState._
         ctx.write(ReadyForQuery)
         ctx.flush()
@@ -625,7 +625,7 @@ object PgWireProtocol extends Logging {
 
     // An ASCII code of the `Terminate` message is 'X'(88)
     88 -> { msg =>
-      ("Terminate", (_: SessionV3State) => {
+      ("Terminate", (_: V3SessionState) => {
         // Since `PgV3MessageHandler.channelInactive` releases resources corresponding
         // to a current session, do nothing here.
       })
@@ -633,7 +633,7 @@ object PgWireProtocol extends Logging {
 
     // An ASCII code of the `CopyDone` message is 'c'(99)
     99 -> { msg =>
-      ("CopyDone", (_: SessionV3State) => {
+      ("CopyDone", (_: V3SessionState) => {
         throw new UnsupportedOperationException("Not supported yet")
       })
     },
@@ -643,14 +643,14 @@ object PgWireProtocol extends Logging {
       val data = new Array[Byte](msg.getInt())
       msg.get(data)
 
-      ("CopyData", (_: SessionV3State) => {
+      ("CopyData", (_: V3SessionState) => {
         throw new UnsupportedOperationException("Not supported yet")
       })
     },
 
     // An ASCII code of the `CopyFail` message is 'f'(102)
     102 -> { msg =>
-      ("CopyFail", (sessionState: SessionV3State) => {
+      ("CopyFail", (sessionState: V3SessionState) => {
         throw new UnsupportedOperationException("Not supported yet")
       })
     },
@@ -660,7 +660,7 @@ object PgWireProtocol extends Logging {
       val token = new Array[Byte](msg.remaining)
       msg.get(token)
 
-      ("PasswordMessage", (sessionState: SessionV3State) => {
+      ("PasswordMessage", (sessionState: V3SessionState) => {
         import sessionState._
         import PgV3MessageHandler._
         if (SQLServerUtils.checkIfKerberosEnabled(conf)) {
@@ -715,7 +715,7 @@ object PgWireProtocol extends Logging {
     buf.array()
   }
 
-  def sendAuthenticationOk(sessionState: SessionV3State): Unit = {
+  def sendAuthenticationOk(sessionState: V3SessionState): Unit = {
     import sessionState.v3Protocol._
     import sessionState._
 
@@ -948,12 +948,13 @@ case class QueryState(
   statement: String,
   logicalPlan: LogicalPlan, // Parsed, but not analyzed
   paramIds: Seq[Int],
-  schema: StructType,
+  // Schema for `rowWriter`
+  _schema: StructType = new StructType(),
   // This writer is initialized in `Bind` messages because it depends
   // on `outputFormats` provided by the messages.
-  rowWriter: Option[RowWriter] = None) {
+  _rowWriter: Option[RowWriter] = None) {
 
-  def withRowWriter(rowWriter: RowWriter): QueryState = {
+  def withRowWriter(schema: StructType, rowWriter: RowWriter): QueryState = {
     QueryState(statement, logicalPlan, paramIds, schema, Some(rowWriter))
   }
 }
@@ -967,7 +968,7 @@ case class PortalState(queryState: QueryState, execState: Operation, isCursorMod
   var numFetched: Int = 0
 }
 
-case class SessionV3State(
+case class V3SessionState(
     ctx: ChannelHandlerContext,
     cli: SessionService,
     v3Protocol: PgWireProtocol,
@@ -1007,9 +1008,9 @@ case class SessionV3State(
   }
 }
 
-object SessionV3State {
+object V3SessionState {
 
-  def resetState(state: SessionV3State): Unit = {
+  def resetState(state: V3SessionState): Unit = {
     state.activePortal = None
     state.pendingBytes = Array.empty
   }
@@ -1063,7 +1064,7 @@ class PgV3MessageHandler(cli: SessionService, conf: SQLConf)
       dbName: String): SessionState = {
     val v3Protocol = PgWireProtocol(conf.sqlServerMessageBufferSizeInBytes)
     val closeFunc: () => Unit = () => { channelIdToSessionId.remove(channelId) }
-    val state = SessionV3State(ctx, cli, v3Protocol, conf, userName, appName, secretKey, closeFunc)
+    val state = V3SessionState(ctx, cli, v3Protocol, conf, userName, appName, secretKey, closeFunc)
     val sessionId = cli.openSession(userName, passwd, hostAddr, dbName, state)
     channelIdToSessionId.put(channelId, sessionId)
     logInfo(s"Open a session (sessionId=$sessionId, channelId=$channelId " +
@@ -1081,14 +1082,14 @@ class PgV3MessageHandler(cli: SessionService, conf: SQLConf)
     }
   }
 
-  private def getSessionState(ctx: ChannelHandlerContext): SessionV3State = {
+  private def getSessionState(ctx: ChannelHandlerContext): V3SessionState = {
     val channelId = getUniqueChannelId(ctx)
     val sessionId = channelIdToSessionId.get(channelId)
-    cli.getSessionState(sessionId).asInstanceOf[SessionV3State]
+    cli.getSessionState(sessionId).asInstanceOf[V3SessionState]
   }
 
-  private def getSessionState(sessionId: Int): SessionV3State = {
-    cli.getSessionState(sessionId).asInstanceOf[SessionV3State]
+  private def getSessionState(sessionId: Int): V3SessionState = {
+    cli.getSessionState(sessionId).asInstanceOf[V3SessionState]
   }
 
   private def handleException(ctx: ChannelHandlerContext, errMsg: String): Unit = {
@@ -1170,7 +1171,7 @@ class PgV3MessageHandler(cli: SessionService, conf: SQLConf)
     val dbName = props.getOrElse("database", "default")
     val sessionState = openSession(
       ctx, getUniqueChannelId(ctx), secretKey, appName, userName, passwd, hostAddr, dbName
-    ).asInstanceOf[SessionV3State]
+    ).asInstanceOf[V3SessionState]
 
     // Check if Kerberos authentication is enabled
     if (conf.contains("spark.yarn.keytab")) {
@@ -1181,7 +1182,7 @@ class PgV3MessageHandler(cli: SessionService, conf: SQLConf)
     }
   }
 
-  private def getBytesToProcess(msgBuffer: ByteBuffer, state: SessionV3State) = {
+  private def getBytesToProcess(msgBuffer: ByteBuffer, state: V3SessionState) = {
     // Since a message possibly spans over multiple in-coming data in `channelRead0` calls,
     // we need to check enough data to process first. We push complete messages into
     // `bytesToProcess`; otherwise it puts left data in `pendingBytes` for a next call.
@@ -1228,13 +1229,13 @@ class PgV3MessageHandler(cli: SessionService, conf: SQLConf)
       } catch {
         case NonFatal(e) =>
           handleException(ctx, exceptionString(e))
-          SessionV3State.resetState(sessionState)
+          V3SessionState.resetState(sessionState)
           return
       }
       try { processor(sessionState) } catch {
         case NonFatal(e) =>
           handleException(ctx, s"Exception detected in '$msgTypeName': ${exceptionString(e)}")
-          SessionV3State.resetState(sessionState)
+          V3SessionState.resetState(sessionState)
           return
       }
     }
@@ -1243,41 +1244,8 @@ class PgV3MessageHandler(cli: SessionService, conf: SQLConf)
 
 object PgV3MessageHandler {
 
-  private val conf = SQLServerEnv.sqlConf
-  private val parser = new PgParser(conf)
-
   // Returns Kerberos principal like 'spark/fully.qualified.domain.name@YOUR-REALM.COM'
-  def kerberosServerPrincipal: String = conf.getConfString("spark.yarn.principal")
-
-  def parsePlan(query: String): LogicalPlan = try {
-    parser.parsePlan(query)
-  } catch {
-    case e: ParseException => throw new SQLException(e.getMessage)
-  }
-
-  def analyzePlan(query: String, sqlContext: SQLContext): LogicalPlan = {
-    val sesseionSpecificAnalyzer = sqlContext.sessionState.analyzer
-    sesseionSpecificAnalyzer.execute(parsePlan(query))
-  }
-
-  def analyzePlan(parsedPlan: LogicalPlan, sqlContext: SQLContext): LogicalPlan = {
-    val sesseionSpecificAnalyzer = sqlContext.sessionState.analyzer
-    sesseionSpecificAnalyzer.execute(parsedPlan)
-  }
-
-  def assertAnalyzed(query: String, sqlContext: SQLContext): Unit = {
-    // Analyzer is invoked outside the try block to avoid calling it again from within the
-    // catch block below.
-    val analyzed = analyzePlan(query, sqlContext)
-    try {
-      sqlContext.sessionState.analyzer.checkAnalysis(analyzed)
-    } catch {
-      case e: AnalysisException =>
-        val ae = new AnalysisException(e.message, e.line, e.startPosition, Option(analyzed))
-        ae.setStackTrace(e.getStackTrace)
-        throw ae
-    }
-  }
+  def kerberosServerPrincipal: String = SQLServerEnv.sparkConf.get("spark.yarn.principal")
 
   def getUniqueChannelId(ctx: ChannelHandlerContext): Int = {
     // A netty developer said we could use `Channel#hashCode()` as an unique id in:

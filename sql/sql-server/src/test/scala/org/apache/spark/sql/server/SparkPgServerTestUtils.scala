@@ -43,7 +43,7 @@ class PgJdbcTest(
     override val pgVersion: String = "9.6",
     override val ssl: Boolean = false,
     override val queryQueryMode: String = "extended",
-    override val executionMode: String = "multi-context",
+    override val executionMode: String = "multi-session",
     override val incrementalCollect: Boolean = true) extends SQLServerTest with PgJdbcTestBase {
 
   override val serverInstance: SparkPgSQLServerTest = server
@@ -108,14 +108,13 @@ class SparkPgSQLServerTest(
      val metastoreURL =
        s"jdbc:derby:memory:;databaseName=$tempDir;create=true"
      Files.write(
-       s"""
-         |<configuration>
-         |  <property>
-         |    <name>javax.jdo.option.ConnectionURL</name>
-         |    <value>$metastoreURL</value>
-         |  </property>
-         |</configuration>
-       """.stripMargin,
+       s"""<configuration>
+          |  <property>
+          |    <name>javax.jdo.option.ConnectionURL</name>
+          |    <value>$metastoreURL</value>
+          |  </property>
+          |</configuration>
+        """.stripMargin,
        new File(s"$tempDir/hive-site.xml"),
        StandardCharsets.UTF_8)
 

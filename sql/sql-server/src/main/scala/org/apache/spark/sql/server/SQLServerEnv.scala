@@ -60,14 +60,14 @@ object SQLServerEnv extends Logging {
 
   lazy val sqlConf: SQLConf = _sqlContext.map(_.conf).getOrElse {
     val newSqlConf = new SQLConf()
-    mergeSparkConf(sqlConf, sparkConf)
+    mergeSparkConf(newSqlConf, sparkConf)
     newSqlConf
   }
 
   lazy val sqlContext: SQLContext = _sqlContext.getOrElse(newSQLContext())
   lazy val sparkContext: SparkContext = sqlContext.sparkContext
-  lazy val sqlServListener: SQLServerListener = newSQLServerListener(sqlContext)
-  lazy val uiTab: Option[SQLServerTab] = newUiTab(sqlContext, sqlServListener)
+  lazy val sqlServListener: Option[SQLServerListener] = Some(newSQLServerListener(sqlContext))
+  lazy val uiTab: Option[SQLServerTab] = newUiTab(sqlContext, sqlServListener.get)
 
   def newSQLContext(): SQLContext = {
     SparkSession.builder.config(sparkConf).enableHiveSupport().getOrCreate().sqlContext

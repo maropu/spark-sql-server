@@ -43,6 +43,7 @@
     <scala.version>2.11.8</scala.version>
     <scala.binary.version>2.11</scala.binary.version>
     <spark.version>2.3.0</spark.version>
+    <livy.version>0.5.0-incubating</livy.version>
     <zookeeper.version>3.4.6</zookeeper.version>
     <hadoop.version>2.7.3</hadoop.version>
     <curator.version>2.6.0</curator.version>
@@ -169,6 +170,13 @@
         <groupId>org.postgresql</groupId>
         <artifactId>postgresql</artifactId>
         <version>${postgresql.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.livy</groupId>
+        <artifactId>livy-client-http</artifactId>
+        <version>${livy.version}</version>
+        <scope>compile</scope>
       </dependency>
 
       <dependency>

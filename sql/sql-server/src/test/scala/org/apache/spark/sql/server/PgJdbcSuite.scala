@@ -54,26 +54,51 @@ class ProcessOutputCapturer(stream: InputStream, capture: String => Unit) extend
 }
 
 // TODO: If all the tests enabled, the job of travis CI exceeds the maximum time limit for jobs
-// class PgV10JdbcSimpleModeSuite extends PgJdbcSuite("10", "simple")
-class PgV10JdbcExtendedModeSuite extends PgJdbcSuite("10", "extended")
-// class PgV10JdbcExtendedForPreparedModeSuite extends PgJdbcSuite("10", "extendedForPrepared")
+class PgV10JdbcSimpleMultiSessionModeSuite
+  extends PgJdbcSuite("10", "simple", "multi-session")
+// class PgV10JdbcSimpleMultiContextModeSuite
+//   extends PgJdbcSuite("10", "simple", "multi-context")
+class PgV10JdbcExtendedMultiSessionModeSuite
+  extends PgJdbcSuite("10", "extended", "multi-session")
+// class PgV10JdbcExtendedMultiContextModeSuite
+//   extends PgJdbcSuite("10", "extended", "multi-context")
+// class PgV10JdbcExtendedForPreparedModeSuite
+//   extends PgJdbcSuite("10", "extendedForPrepared")
 // class PgV10JdbcExtendedCacheEverythingModeSuite
 //   extends PgJdbcSuite("10", "extendedCacheEverything")
 
-// class PgV9_6JdbcSimpleModeSuite extends PgJdbcSuite("9.6", "simple")
-class PgV9_6JdbcExtendedModeSuite extends PgJdbcSuite("9.6", "extended")
-// class PgV9_6JdbcExtendedForPreparedModeSuite extends PgJdbcSuite("9.6", "extendedForPrepared")
+// class PgV9_6JdbcSimpleMultiSessionModeSuite
+//   extends PgJdbcSuite("9.6", "simple", "multi-session")
+// class PgV9_6JdbcSimpleMultiContextModeSuite
+//   extends PgJdbcSuite("9.6", "simple", "multi-context")
+class PgV9_6JdbcExtendedMultiSessionModeSuite
+  extends PgJdbcSuite("9.6", "extended", "multi-session")
+// class PgV9_6JdbcExtendedMultiContextModeSuite
+//   extends PgJdbcSuite("9.6", "extended", "multi-context")
+// class PgV9_6JdbcExtendedForPreparedModeSuite
+//   extends PgJdbcSuite("9.6", "extendedForPrepared")
 // class PgV9_6JdbcExtendedCacheEverythingModeSuite
 //   extends PgJdbcSuite("9.6", "extendedCacheEverything")
 
-class PgV8_4JdbcSimpleModeSuite extends PgJdbcSuite("8.4", "simple")
-class PgV8_4JdbcExtendedModeSuite extends PgJdbcSuite("8.4", "extended")
-// class PgV8_4JdbcExtendedForPreparedModeSuite extends PgJdbcSuite("8.4", "extendedForPrepared")
+// class PgV8_4JdbcSimpleMultiSessionModeSuite
+//   extends PgJdbcSuite("8.4", "simple", "multi-session")
+// class PgV8_4JdbcSimpleMultiContextModeSuite
+//   extends PgJdbcSuite("8.4", "simple", "multi-context")
+// class PgV8_4JdbcExtendedMultiSessionModeSuite
+//   extends PgJdbcSuite("8.4", "extended", "multi-session")
+// class PgV8_4JdbcExtendedMultiContextModeSuite
+//   extends PgJdbcSuite("8.4", "extended", "multi-context")
+// class PgV8_4JdbcExtendedForPreparedModeSuite
+//   extends PgJdbcSuite("8.4", "extendedForPrepared")
 // class PgV8_4JdbcExtendedCacheEverythingModeSuite
 //   extends PgJdbcSuite("8.4", "extendedCacheEverything")
 
-abstract class PgJdbcSuite(pgVersion: String, queryMode: String)
-  extends PgJdbcTest(pgVersion = pgVersion, ssl = false, queryQueryMode = queryMode) {
+abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: String)
+  extends PgJdbcTest(
+    pgVersion = pgVersion,
+    ssl = false,
+    queryQueryMode = queryMode,
+    executionMode = executionMode) {
 
   val hiveVersion = "1.2.1"
 

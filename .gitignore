@@ -74,6 +74,7 @@ work/
 thirdparty/scala-*
 thirdparty/zinc-*
 thirdparty/spark-*
+thirdparty/livy-*
 thirdparty/apache-maven-*
 
 # For Hive

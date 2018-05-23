@@ -15,26 +15,15 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.server.service.postgresql
-
-import org.apache.spark.sql.SQLContext
-import org.apache.spark.sql.server.SQLServerEnv
-import org.apache.spark.sql.server.service.{CompositeService, SessionInitializer}
+package org.apache.spark.sql.server.util
 
 
-private[service] class PgCatalogInitializer extends CompositeService {
+object ShutdownHookManager {
 
-  override def doStart(): Unit = {
-    // We must load system catalogs for the PostgreSQL v3 protocol before
-    // `PgProtocolService.start`.
-    PgMetadata.initSystemCatalogTables(SQLServerEnv.sqlContext)
-  }
-}
-
-private[service] class PgSessionInitializer extends SessionInitializer {
-
-  override def apply(dbName: String, sqlContext: SQLContext): Unit = {
-    PgMetadata.initSystemFunctions(sqlContext)
-    PgMetadata.initSessionCatalogTables(sqlContext, dbName)
+  // TODO: Reconsider this
+  def addShutdownHook(hook: () => Unit): Unit = {
+    Runtime.getRuntime.addShutdownHook(new Thread {
+      override def run(): Unit = hook()
+    })
   }
 }
