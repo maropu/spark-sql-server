@@ -30,5 +30,5 @@ install_spark
 # Reset the current working directory
 cd "${_CALLING_DIR}"
 
-echo "Install \`spark\` in ${SPARK_DIR}" 1>&2
+echo "Installed \`spark\` in ${SPARK_DIR}" 1>&2
 

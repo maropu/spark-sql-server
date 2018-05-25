@@ -27,8 +27,7 @@ import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.service.{CompositeService, SparkSQLServiceManager}
-import org.apache.spark.sql.server.util.SQLServerUtils
-import org.apache.spark.util.ShutdownHookManager
+import org.apache.spark.sql.server.util.{ShutdownHookManager, SQLServerUtils}
 import org.apache.spark.util.Utils._
 
 
@@ -75,19 +74,27 @@ object SQLServer extends Logging {
   def main(args: Array[String]) {
     initDaemon(log)
 
+    val sqlServer = new SQLServer()
+
+    if (SQLServerEnv.sqlConf.sqlServerExecutionMode == "multi-context") {
+      logWarning(s"Although multi-context mode enabled, but this mode is experimental")
+    }
+
     // Initializes Spark variables depending on execution modes
     SQLServerEnv.sqlConf.sqlServerExecutionMode match {
       case "single-session" | "multi-session" =>
-        SQLServerEnv.sqlServListener
-        SQLServerEnv.uiTab
         ShutdownHookManager.addShutdownHook { () =>
+          sqlServer.stop()
           SQLServerEnv.uiTab.foreach(_.detach())
           SQLServerEnv.sparkContext.stop()
         }
-      case _ =>
+
+      case "multi-context" =>
+        ShutdownHookManager.addShutdownHook { () =>
+          sqlServer.stop()
+        }
     }
 
-    val sqlServer = new SQLServer()
     try {
       // Initializes a Spark SQL server with given configurations
       sqlServer.init(SQLServerEnv.sqlConf)
@@ -96,8 +103,6 @@ object SQLServer extends Logging {
       case NonFatal(e) =>
         logError("Error starting SQLServer", e)
         System.exit(-1)
-    } finally {
-     sqlServer.stop()
     }
   }
 }

@@ -17,8 +17,11 @@
 
 package org.apache.spark.sql.server.util
 
+import java.lang.reflect.Field
+
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.internal.SQLConf
+import org.apache.spark.util.Utils
 
 object SQLServerUtils {
 
@@ -28,5 +31,25 @@ object SQLServerUtils {
 
   def checkIfKerberosEnabled(conf: SQLConf): Boolean = {
     conf.contains("spark.yarn.keytab")
+  }
+
+  // https://blog.sebastian-daschner.com/entries/changing_env_java
+  def injectEnvVar(key: String, value: String): Unit = {
+    val clazz = Utils.classForName("java.lang.ProcessEnvironment")
+    injectIntoUnmodifiableMap(key, value, clazz)
+  }
+
+  private def getDeclaredField(clazz: Class[_], fieldName: String): Field = {
+    val field = clazz.getDeclaredField(fieldName)
+    field.setAccessible(true)
+    field
+  }
+
+  private def injectIntoUnmodifiableMap(key: String, value: String, clazz: Class[_]): Unit = {
+    val unmodifiableEnvField = getDeclaredField(clazz, "theUnmodifiableEnvironment")
+    val unmodifiableEnv = unmodifiableEnvField.get(null)
+    val unmodifiableMapClazz = Utils.classForName("java.util.Collections$UnmodifiableMap")
+    val field = getDeclaredField(unmodifiableMapClazz, "m")
+    field.get(unmodifiableEnv).asInstanceOf[java.util.Map[String, String]].put(key, value)
   }
 }

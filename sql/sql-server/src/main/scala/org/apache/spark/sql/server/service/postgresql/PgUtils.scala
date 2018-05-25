@@ -17,22 +17,20 @@
 
 package org.apache.spark.sql.server.service.postgresql
 
-import io.netty.channel.ChannelInitializer
-import io.netty.channel.socket.SocketChannel
+import java.sql.SQLException
 
-import org.apache.spark.sql.internal.SQLConf
-import org.apache.spark.sql.server.service.{FrontendService, SessionService}
-import org.apache.spark.sql.server.service.postgresql.protocol.v3.PgV3MessageInitializer
+import org.apache.spark.sql.catalyst.parser.ParseException
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.server.SQLServerEnv
 
 
-private[service] class PgProtocolService(cli: SessionService) extends FrontendService {
+private[service] object PgUtils {
 
-  private var _msgHandlerInitializer: ChannelInitializer[SocketChannel] = _
+  private val parser = new PgParser(SQLServerEnv.sqlConf)
 
-  override def messageHandler: ChannelInitializer[SocketChannel] = _msgHandlerInitializer
-
-  override def doInit(conf: SQLConf): Unit = {
-    super.doInit(conf)
-    _msgHandlerInitializer = new PgV3MessageInitializer(cli, conf)
+  def parse(query: String): LogicalPlan = try {
+    parser.parsePlan(query)
+  } catch {
+    case e: ParseException => throw new SQLException(e.getMessage)
   }
 }

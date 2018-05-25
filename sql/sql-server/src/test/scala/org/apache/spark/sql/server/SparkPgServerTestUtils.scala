@@ -108,14 +108,13 @@ class SparkPgSQLServerTest(
      val metastoreURL =
        s"jdbc:derby:memory:;databaseName=$tempDir;create=true"
      Files.write(
-       s"""
-         |<configuration>
-         |  <property>
-         |    <name>javax.jdo.option.ConnectionURL</name>
-         |    <value>$metastoreURL</value>
-         |  </property>
-         |</configuration>
-       """.stripMargin,
+       s"""<configuration>
+          |  <property>
+          |    <name>javax.jdo.option.ConnectionURL</name>
+          |    <value>$metastoreURL</value>
+          |  </property>
+          |</configuration>
+        """.stripMargin,
        new File(s"$tempDir/hive-site.xml"),
        StandardCharsets.UTF_8)
 
