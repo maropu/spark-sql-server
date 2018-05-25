@@ -39,7 +39,7 @@ class PgV3ProtocolScenarioSuite extends PgV3ProtocolTest {
 
   testIfSupported("unsupported SQL strings") {
     def expectedErrorMessage(message: String, cmd: String): Seq[String] =
-      Seq(s"Exception detected in '$message'", s"Operation not allowed: $cmd")
+      Seq(s"Exception detected in `$message`", s"Operation not allowed: $cmd")
 
     Seq("COMMIT", "ROLLBACK").foreach { cmd =>
       val e1 = intercept[Exception] {
