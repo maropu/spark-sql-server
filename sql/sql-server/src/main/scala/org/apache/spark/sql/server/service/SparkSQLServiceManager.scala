@@ -57,15 +57,7 @@ trait SessionState {
   // Called when an idle session cleaner closes this session
   def closeWithException(msg: String): Unit = close()
 
-  def close(): Unit = {
-    // If multi-context mode enabled, stops a per-session context
-    _sqlContext.conf.sqlServerExecutionMode match {
-      case "multi-context" =>
-        _uiTab.foreach(_.detach())
-        _sqlContext.sparkContext.stop()
-      case _ =>
-    }
-  }
+  def close(): Unit = {}
 }
 
 trait SessionService {
@@ -109,22 +101,20 @@ private[service] class SessionManager(initSession: SessionInitializer)
         }
       case "multi-session" =>
         (dbName: String) => {
-          val sqlContext = SQLServerEnv.newSQLContext()
+          val sqlContext = SQLServerEnv.sqlContext.newSession()
           initSession(dbName, sqlContext)
           sqlContext
         }
       case "multi-context" =>
-        (dbName: String) => {
-          val sqlContext = SQLServerEnv.sqlContext.newSession()
-          initSession(dbName, sqlContext)
-          sqlContext
+        (_: String) => {
+          throw new NotImplementedError("Not implemented yet")
         }
     }
 
     getServerListener = conf.sqlServerExecutionMode match {
       case "multi-context" =>
-        (sqlContext: SQLContext) => {
-          SQLServerEnv.newSQLServerListener(sqlContext)
+        (_: SQLContext) => {
+          throw new NotImplementedError("Not implemented yet")
         }
       case _ =>
         (_: SQLContext) => {
@@ -134,8 +124,8 @@ private[service] class SessionManager(initSession: SessionInitializer)
 
     getUiTab = conf.sqlServerExecutionMode match {
       case "multi-context" =>
-        (sqlContext: SQLContext, listener: SQLServerListener) => {
-          SQLServerEnv.newUiTab(sqlContext, listener)
+        (_: SQLContext, _: SQLServerListener) => {
+          throw new NotImplementedError("Not implemented yet")
         }
       case _ =>
         (_: SQLContext, _: SQLServerListener) => {
@@ -146,7 +136,7 @@ private[service] class SessionManager(initSession: SessionInitializer)
 
   override def doStart(): Unit = {
     SQLServerEnv.sqlContext.conf.sqlServerExecutionMode match {
-      case "multi-context" =>
+      case "single-session" =>
         initSession("default", SQLServerEnv.sqlContext)
       case _ =>
     }

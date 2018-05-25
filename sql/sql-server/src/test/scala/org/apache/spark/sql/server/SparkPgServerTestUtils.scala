@@ -43,7 +43,7 @@ class PgJdbcTest(
     override val pgVersion: String = "9.6",
     override val ssl: Boolean = false,
     override val queryQueryMode: String = "extended",
-    override val executionMode: String = "multi-context",
+    override val executionMode: String = "multi-session",
     override val incrementalCollect: Boolean = true) extends SQLServerTest with PgJdbcTestBase {
 
   override val serverInstance: SparkPgSQLServerTest = server
