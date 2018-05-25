@@ -20,7 +20,7 @@ package org.apache.spark.sql.server
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.sql._
-import java.util.{Properties, UUID}
+import java.util.{Properties, TimeZone, UUID}
 
 import scala.collection.mutable
 import scala.concurrent.Promise
@@ -95,7 +95,7 @@ class SparkPgSQLServerTest(
   private val className = SQLServer.getClass.getCanonicalName.stripSuffix("$")
   private val logFileMask = s"starting $className, logging to "
   private val successStartLines = Set(
-    "PgProtocolService: Start running the SQL server",
+    "PgService: Start running the SQL server",
     "Recovery mode 'ZOOKEEPER' enabled"
   )
   private val startScript = "../../sbin/start-sql-server.sh".split("/").mkString(File.separator)
@@ -165,6 +165,7 @@ class SparkPgSQLServerTest(
        | --master local
        | --driver-class-path $testTempDir
        | --driver-java-options -Dlog4j.debug
+       | --conf spark.sql.session.timeZone=GMT
        | --conf spark.ui.enabled=false
        | --conf spark.sql.warehouse.dir=$testTempDir/spark-warehouse
        | --conf ${SQLServerConf.SQLSERVER_PORT.key}=$port
@@ -355,6 +356,7 @@ trait PgJdbcTestBase {
       props.put("sslfactory", "org.postgresql.ssl.NonValidatingFactory")
     }
 
+    TimeZone.setDefault(TimeZone.getTimeZone("GMT"))
     DriverManager.getConnection(jdbcUri, props)
   }
 

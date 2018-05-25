@@ -72,6 +72,7 @@ object UDT {
 class PgRowConvertersSuite extends SparkFunSuite {
 
   private val conf = new SQLConf()
+  conf.setConf(SQLConf.SESSION_LOCAL_TIMEZONE, "GMT")
 
   test("primitive types") {
     Seq(
