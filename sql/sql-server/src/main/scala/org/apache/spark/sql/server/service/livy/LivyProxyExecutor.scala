@@ -60,18 +60,7 @@ private[livy] case class LivyProxyOperation(
           rows.toIterator
         case ErrorResponse(e) =>
           setState(ERROR)
-          val exceptionString = SparkUtils.exceptionString(e)
-          val errMsg =
-            s"""Caught an error executing query with with $statementId:
-               |Query:
-               |${query._1}
-               |Analyzed Plan:
-               |${query._2}
-               |Exception message:
-               |$exceptionString
-             """.stripMargin
-          logError(errMsg)
-          throw new SQLException(errMsg)
+          throw new SQLException(SparkUtils.exceptionString(e))
       }
     } else {
       // Since this operation already has been done, just returns the cached result
@@ -83,14 +72,8 @@ private[livy] case class LivyProxyOperation(
     livyRpcEndpoint.askSync[AnyRef](CancelRequest(statementId)) match {
       case CancelResponse =>
         setState(CANCELED)
-      case ErrorResponse(_) =>
-        val errMsg =
-          s"""Cancelled query with $statementId
-             |Query:
-             |${query._1}
-             |Analyzed Plan:
-             |${query._2}
-           """.stripMargin
+      case ErrorResponse(e) =>
+        val errMsg = SparkUtils.exceptionString(e)
         logWarning(errMsg)
         throw new SQLException(errMsg)
     }

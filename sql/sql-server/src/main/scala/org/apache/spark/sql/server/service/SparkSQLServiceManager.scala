@@ -77,11 +77,18 @@ trait SessionService {
 
 private[service] case class TimeStampedValue[V](value: V, timestamp: Long)
 
-private[service] class SessionManager(initSession: (String, SQLContext) => Unit)
-    extends CompositeService with Logging {
+private[service] class SessionManager(
+    frontend: FrontendService,
+    initSession: (String, SQLContext) => Unit) extends CompositeService with Logging {
 
   private val nextSessionId = new AtomicInteger(0)
   private val sessionIdToState = jSyncMap(new jHashMap[Int, TimeStampedValue[SessionState]]())
+
+  SQLServerEnv.sqlConf.sqlServerExecutionMode match {
+    case "multi-context" =>
+      addService(new LivyServerService(frontend))
+    case _ =>
+  }
 
   // For functions to initialize sessions
   private var getSessionContext: (Int, String) => SessionContext = _
@@ -114,7 +121,15 @@ private[service] class SessionManager(initSession: (String, SQLContext) => Unit)
         }
       case "multi-context" =>
         (sessionId: Int, dbName: String) => {
-          val livyContext = new LivyProxyContext()
+          val livyService = services.headOption.map {
+            case s: LivyServerService => s
+            case other =>
+              sys.error(s"${classOf[LivyServerService].getSimpleName} expected, but " +
+                s"${other.getClass.getSimpleName} found.")
+          }.getOrElse {
+            sys.error(s"No service attached as a child in ${this.getClass.getSimpleName}.")
+          }
+          val livyContext = new LivyProxyContext(conf, livyService)
           livyContext.init(serviceName = s"rpc-service-session-$sessionId", sessionId, dbName)
           livyContext
         }
@@ -246,7 +261,10 @@ private[server] class SparkSQLServiceManager extends CompositeService with Sessi
 
   private val frontendService = new PgProtocolService(this)
   private val sessionManager = new SessionManager(
-    (dbName: String, sqlContext: SQLContext) => PgSessionInitializer(dbName, sqlContext))
+    frontendService,
+    (dbName: String, sqlContext: SQLContext) => {
+      PgSessionInitializer(dbName, sqlContext)
+    })
 
   private val executorImpl = SQLServerEnv.sqlConf.sqlServerExecutionMode match {
     case "single-session" | "multi-session" =>
@@ -262,8 +280,7 @@ private[server] class SparkSQLServiceManager extends CompositeService with Sessi
   SQLServerEnv.sqlConf.sqlServerExecutionMode match {
     case "single-session" | "multi-session" =>
       addService(new PgCatalogInitializer())
-    case "multi-context" =>
-      addService(new LivyServerService(frontendService))
+    case _ =>
   }
   addService(sessionManager)
   addService(frontendService)

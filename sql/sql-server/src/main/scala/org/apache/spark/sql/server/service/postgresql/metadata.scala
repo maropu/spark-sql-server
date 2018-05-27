@@ -116,8 +116,10 @@ private [service] object PgCatalogUpdater extends Logging {
 
 /**
  * This is the PostgreSQL system information such as catalog tables and functions.
+  *
+  * TODO: Adds `private[postgresql]`
  */
-private[postgresql] object PgMetadata extends Logging {
+private[server] object PgMetadata extends Logging {
 
   // Since v7.3, all the catalog tables have been moved in a `pg_catalog` database
   private[sql] val catalogDbName = "pg_catalog"
@@ -137,7 +139,7 @@ private[postgresql] object PgMetadata extends Logging {
 
   private def nextUnusedOid = _nextUnusedOid.getAndIncrement
 
-  // Catalog tables and they are immutable
+  // Catalog tables and they are immutable (these table names should be reserved for a parse)
   private val _catalogTables1 = Seq(
     // scalastyle:off
     PgSystemTable(          1247, TableIdentifier(        "pg_type", Some(catalogDbName))),
@@ -165,7 +167,8 @@ private[postgresql] object PgMetadata extends Logging {
     // scalastyle:on
   )
 
-  private val catalogTables = _catalogTables1 ++ _catalogTables2
+  // TODO: Makes private
+  val catalogTables = _catalogTables1 ++ _catalogTables2
 
   private val pgCatalogOidMap: Map[Int, PgSystemTable] = catalogTables.map(t => t.oid -> t).toMap
 

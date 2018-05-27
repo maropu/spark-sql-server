@@ -26,10 +26,13 @@ import scala.collection.mutable
 
 import com.google.common.io.Files
 
+import org.apache.spark.SecurityManager
 import org.apache.spark.internal.Logging
+import org.apache.spark.rpc.RpcEnv
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.server.SQLServerConf
 import org.apache.spark.sql.server.SQLServerConf._
+import org.apache.spark.sql.server.SQLServerEnv
 import org.apache.spark.sql.server.service.{CompositeService, FrontendService}
 import org.apache.spark.sql.server.util.SQLServerUtils
 import org.apache.spark.util.Utils
@@ -44,6 +47,8 @@ private[service] class LivyServerService(frontend: FrontendService) extends Comp
   private var livyStartScript: String = _
   private var livyProcess: Process = _
   private var livyThread: Thread = _
+
+  private[livy] var rpcEnv: RpcEnv = _
 
   override def doInit(conf: SQLConf): Unit = {
     sparkJar = conf.settings.get("spark.jars")
@@ -61,8 +66,10 @@ private[service] class LivyServerService(frontend: FrontendService) extends Comp
     val sparkHome = sys.env.getOrElse("SPARK_HOME", {
       throw new IllegalArgumentException("SPARK_HOME not defined correctly.")
     })
-    val hiveSiteFile = new File(s"$sparkHome/conf", "hive-site.xml")
-    if (!hiveSiteFile.exists()) {
+
+    val hiveSiteFileOption = SQLServerUtils.findFileOnClassPath("hive-site.xml")
+    if (hiveSiteFileOption.isEmpty) {
+      val hiveSiteFile = new File(s"$sparkHome/conf", "hive-site.xml")
       val metastoreURL = s"jdbc:derby:memory:;databaseName=${UUID.randomUUID()};create=true"
       val hiveSite =
         s"""<configuration>
@@ -78,7 +85,7 @@ private[service] class LivyServerService(frontend: FrontendService) extends Comp
            |$hiveSite
          """.stripMargin)
     } else {
-      logInfo(s"hive-site.xml found in $sparkHome/conf")
+      logInfo(s"hive-site.xml found in ${hiveSiteFileOption.map(_.getParentFile.getAbsolutePath)}")
     }
 
     // Reconsider this: Why Livy doesn't set these jars correctly?
@@ -111,7 +118,7 @@ private[service] class LivyServerService(frontend: FrontendService) extends Comp
            |livy.server.spark-home = $sparkHome
            |livy.spark.master = $master
            |# livy.spark.deploy-mode = cluster
-           |livy.spark.scala-version = $scalaVersion
+           |# livy.spark.scala-version = $scalaVersion
            |livy.spark.version = $sparkVersion
            |livy.server.host = $LIVY_SERVER_HOST
            |livy.server.port = $LIVY_SERVER_PORT
@@ -172,20 +179,40 @@ private[service] class LivyServerService(frontend: FrontendService) extends Comp
       }
     })
     livyThread.start()
+
+    // Creates `RpcEnv` for connections to a Livy server
+    val sparkConf = SQLServerEnv.sparkConf
+    val startServiceFunc = (port: Int) => {
+      val service = RpcEnv.create(LivyServerService.LIVY_SERVICE_NAME, "localhost", port, sparkConf,
+        new SecurityManager(sparkConf))
+      (service, port)
+    }
+    // TODO: startPort = 0?
+    val (_rpcEnv, port) = Utils.startServiceOnPort[RpcEnv](
+      startPort = 12345, startServiceFunc, sparkConf, LivyServerService.LIVY_SERVICE_NAME)
+    logInfo(s"RpcEnv '${LivyServerService.LIVY_SERVICE_NAME}' started on port $port")
+    rpcEnv = _rpcEnv
   }
 
   override def doStop(): Unit = {
     require(livyProcess != null && livyThread != null)
-    livyProcess.destroy()
-    livyThread.interrupt()
-    try {
-      livyThread.join(SECONDS.toMillis(10))
-    } catch {
-      case _: InterruptedException =>
-        logWarning("Interrupted before Livy thread was finished.");
+    if (rpcEnv != null) {
+      rpcEnv.shutdown()
     }
-    if (livyThread.isAlive) {
-      logWarning("Failed to stop Livy thread.")
+    if (livyProcess != null) {
+      livyProcess.destroy()
+    }
+    if (livyThread != null) {
+      livyThread.interrupt()
+      try {
+        livyThread.join(SECONDS.toMillis(10))
+      } catch {
+        case _: InterruptedException =>
+          logWarning("Interrupted before Livy thread was finished.");
+      }
+      if (livyThread.isAlive) {
+        logWarning("Failed to stop Livy thread.")
+      }
     }
   }
 }
@@ -196,4 +223,5 @@ private[livy] object LivyServerService extends Logging {
   val LIVY_SERVER_HOST = "0.0.0.0"
   val LIVY_SERVER_PORT = 8998
   val LIVY_SERVER_URI = s"http://$LIVY_SERVER_HOST:$LIVY_SERVER_PORT"
+  val LIVY_SERVICE_NAME = "livy-server-service-rpc"
 }

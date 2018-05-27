@@ -18,50 +18,58 @@
 package org.apache.spark.sql.server.service.livy
 
 import java.net.URI
+import java.util.concurrent.ExecutionException
 
+import scala.collection.JavaConverters._
 import scala.util.Random
 
 import org.apache.livy.{LivyClient, LivyClientBuilder}
 
-import org.apache.spark.SecurityManager
 import org.apache.spark.internal.Logging
-import org.apache.spark.rpc.{RpcEndpointRef, RpcEnv}
-import org.apache.spark.sql.server.SQLServerEnv
+import org.apache.spark.rpc.RpcEndpointRef
+import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.server.service.SessionContext
-import org.apache.spark.util.Utils
 
 
-class LivyProxyContext extends SessionContext with Logging {
+class LivyProxyContext(sqlConf: SQLConf, livyService: LivyServerService)
+    extends SessionContext with Logging {
 
   private var livyClient: LivyClient = _
-  private var rpcEnv: RpcEnv = _
 
-  // TODO: Add logics to reopen a session in case of any failure (e.g., Spark job crushes)
+  // TODO: Adds logics to reopen a session in case of any failure (e.g., Spark job crushes)
   private[livy] var rpcEndpoint: RpcEndpointRef = _
+
+  private def sparkConfBlacklist: Seq[String] = Seq(
+    "spark.sql.server.",
+    "spark.master",
+    "spark.jars",
+    "spark.submit.deployMode"
+  )
 
   def init(serviceName: String, sessionId: Int, dbName: String): Unit = {
     livyClient = LivyProxyContext.retryRandom(numRetriesLeft = 32, maxBackOffMillis = 10000) {
-      new LivyClientBuilder()
+      var builder = new LivyClientBuilder()
         .setURI(new URI(LivyServerService.LIVY_SERVER_URI))
-        .build()
+
+      // Passes configurations in the SQL server into `SQLContext` that Livy launches
+      val sparkConfMap = sqlConf.settings.asScala.filterNot {
+        case (key, _) => sparkConfBlacklist.exists(key.contains)
+      }
+      logInfo(
+        s"""Spark properties for the SQLContext that Livy launches:
+           |  ${sparkConfMap.map { case (k, v) => s"key=$k value=$v" }.mkString("\n  ")}
+         """.stripMargin)
+      sparkConfMap.foreach { case (key, value) =>
+        builder = builder.setConf(key, value)
+      }
+      builder.build()
     }
-    val conf = SQLServerEnv.sparkConf
-    val startServiceFunc = (port: Int) => {
-      val service = RpcEnv.create(serviceName, "localhost", port, conf, new SecurityManager(conf))
-      (service, port)
-    }
-    val (_rpcEnv, port) = Utils.startServiceOnPort[RpcEnv](
-      startPort = 10000, startServiceFunc, conf, serviceName)
-    logInfo(s"RpcEnv '$serviceName' started on port $port")
     val endpointRef = livyClient.submit(new OpenSessionJob(sessionId, dbName)).get()
-    rpcEnv = _rpcEnv
-    rpcEndpoint = rpcEnv.setupEndpointRef(endpointRef.address, OpenSessionJob.ENDPOINT_NAME)
+    rpcEndpoint = livyService.rpcEnv.setupEndpointRef(
+      endpointRef.address, OpenSessionJob.ENDPOINT_NAME)
   }
 
   def stop(): Unit = {
-    if (rpcEnv != null) {
-      rpcEnv.shutdown()
-    }
     if (livyClient != null) {
       livyClient.stop(true)
     }
@@ -79,7 +87,7 @@ object LivyProxyContext extends Logging {
       // The function failed, either retry or throw the exception
       case util.Failure(e) => e match {
         // Retry: Throttling or other Retryable exception has occurred
-        case _: RuntimeException if numRetriesLeft > 1 =>
+        case _: RuntimeException | _: ExecutionException if numRetriesLeft > 1 =>
           val backOffMillis = Random.nextInt(maxBackOffMillis)
           Thread.sleep(backOffMillis)
           logWarning(s"Retryable Exception: Random backOffMillis=$backOffMillis")

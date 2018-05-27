@@ -17,7 +17,9 @@
 
 package org.apache.spark.sql.server.util
 
+import java.io.File
 import java.lang.reflect.Field
+import java.util.StringTokenizer
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.internal.SQLConf
@@ -31,6 +33,29 @@ object SQLServerUtils {
 
   def checkIfKerberosEnabled(conf: SQLConf): Boolean = {
     conf.contains("spark.yarn.keytab")
+  }
+
+  def findFileOnClassPath(fileName: String): Option[File] = {
+    val classpath = System.getProperty("java.class.path")
+    val pathSeparator = System.getProperty("path.separator")
+    val tokenizer = new StringTokenizer(classpath, pathSeparator)
+    while (tokenizer.hasMoreTokens) {
+      val pathElement = tokenizer.nextToken()
+      val directoryOrJar = new File(pathElement)
+      val absoluteDirectoryOrJar = directoryOrJar.getAbsoluteFile
+      if (absoluteDirectoryOrJar.isFile) {
+        val target = new File(absoluteDirectoryOrJar.getParent, fileName)
+        if (target.exists()) {
+          return Some(target)
+        }
+      } else {
+        val target = new File(directoryOrJar, fileName)
+        if (target.exists()) {
+          return Some(target)
+        }
+      }
+    }
+    None
   }
 
   // https://blog.sebastian-daschner.com/entries/changing_env_java

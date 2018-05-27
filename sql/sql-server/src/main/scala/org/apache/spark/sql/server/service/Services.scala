@@ -32,7 +32,7 @@ abstract class Service extends Logging {
 
 abstract class CompositeService extends Service {
 
-  private val services = new mutable.ArrayBuffer[Service]()
+  protected val services = new mutable.ArrayBuffer[Service]()
 
   protected def addService(service: Service): Unit = services += service
 

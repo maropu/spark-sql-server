@@ -38,8 +38,8 @@ import org.apache.spark.sql.catalyst.parser.ParserUtils
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.internal.SQLConf
-import org.apache.spark.sql.server.parser._
 import org.apache.spark.sql.server.parser.SqlBaseParser._
+import org.apache.spark.sql.server.service.postgresql.PgMetadata
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.CalendarInterval
 import org.apache.spark.util.random.RandomSampler
@@ -890,6 +890,8 @@ class AstBuilder(conf: SQLConf) extends SqlBaseBaseVisitor[AnyRef] with Logging 
   override def visitTableIdentifier(
       ctx: TableIdentifierContext): TableIdentifier = withOrigin(ctx) {
 
+    val dbOption = Option(ctx.db).map(_.getText)
+
     // TODO: The PostgreSQL JDBC driver (`SQLSERVER_VERSION` >= 8.0) issues a query below and
     // it uses `default.pg_namespace instead of `pg_catalog.pg_namespace`.
     // So, we currently need to replace `pg_namespace` with `pg_catalog.pg_namespace`.
@@ -910,12 +912,15 @@ class AstBuilder(conf: SQLConf) extends SqlBaseBaseVisitor[AnyRef] with Logging 
     //   ORDER BY sp.r, pg_type.oid DESC
     //   LIMIT 1;
     //
-    if (ctx.table.getText == "pg_namespace") {
-      logWarning("Replaced `pg_namespace` with `pg_catalog.pg_namespace` for the metadata " +
-        "handling of PostgreSQL JDBC drivers")
-      TableIdentifier("pg_namespace", Some("pg_catalog"))
-    } else {
-      TableIdentifier(ctx.table.getText, Option(ctx.db).map(_.getText))
+    PgMetadata.catalogTables.find(_.table.identifier == ctx.table.getText).map { catalogTable =>
+      if (dbOption.isEmpty && catalogTable.table.database.isDefined) {
+        logWarning(s"Added a database name `${catalogTable.table.database.get}` " +
+          s"for a table `${catalogTable.table.identifier}` for the metadata handling " +
+          "of PostgreSQL JDBC drivers")
+      }
+      catalogTable.table
+    }.getOrElse {
+      TableIdentifier(ctx.table.getText, dbOption)
     }
   }
 
