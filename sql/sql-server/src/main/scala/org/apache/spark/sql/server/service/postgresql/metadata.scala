@@ -326,6 +326,7 @@ private[server] object PgMetadata extends Logging {
     }
   }
 
+  // TODO: To save initialization time, translates these static tables into JSON files
   def initSystemCatalogTables(sqlContext: SQLContext): Unit = writeLock {
     if (!sqlContext.sessionState.catalog.databaseExists(catalogDbName)) {
       try {
