@@ -54,14 +54,14 @@ class ProcessOutputCapturer(stream: InputStream, capture: String => Unit) extend
 }
 
 // TODO: If all the tests enabled, the job of travis CI exceeds the maximum time limit for jobs
-class PgV10JdbcSimpleMultiSessionModeSuite
-  extends PgJdbcSuite("10", "simple", "multi-session")
-// class PgV10JdbcSimpleMultiContextModeSuite
-//   extends PgJdbcSuite("10", "simple", "multi-context")
-class PgV10JdbcExtendedMultiSessionModeSuite
-  extends PgJdbcSuite("10", "extended", "multi-session")
-// class PgV10JdbcExtendedMultiContextModeSuite
-//   extends PgJdbcSuite("10", "extended", "multi-context")
+// class PgV10JdbcSimpleMultiSessionModeSuite
+//   extends PgJdbcSuite("10", "simple", "multi-session")
+class PgV10JdbcSimpleMultiContextModeSuite
+  extends PgJdbcSuite("10", "simple", "multi-context")
+// class PgV10JdbcExtendedMultiSessionModeSuite
+//   extends PgJdbcSuite("10", "extended", "multi-session")
+class PgV10JdbcExtendedMultiContextModeSuite
+  extends PgJdbcSuite("10", "extended", "multi-context")
 // class PgV10JdbcExtendedForPreparedModeSuite
 //   extends PgJdbcSuite("10", "extendedForPrepared")
 // class PgV10JdbcExtendedCacheEverythingModeSuite
@@ -71,8 +71,8 @@ class PgV10JdbcExtendedMultiSessionModeSuite
 //   extends PgJdbcSuite("9.6", "simple", "multi-session")
 // class PgV9_6JdbcSimpleMultiContextModeSuite
 //   extends PgJdbcSuite("9.6", "simple", "multi-context")
-class PgV9_6JdbcExtendedMultiSessionModeSuite
-  extends PgJdbcSuite("9.6", "extended", "multi-session")
+// class PgV9_6JdbcExtendedMultiSessionModeSuite
+//   extends PgJdbcSuite("9.6", "extended", "multi-session")
 // class PgV9_6JdbcExtendedMultiContextModeSuite
 //   extends PgJdbcSuite("9.6", "extended", "multi-context")
 // class PgV9_6JdbcExtendedForPreparedModeSuite
