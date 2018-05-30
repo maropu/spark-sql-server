@@ -21,7 +21,9 @@ import java.sql.SQLException
 
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.expressions.Literal
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.server.catalyst.expressions.ParameterPlaceHolder
 import org.apache.spark.sql.server.service._
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.{Utils => SparkUtils}
@@ -43,9 +45,26 @@ private[livy] case class LivyProxyOperation(
   override def statementId: String = _statementId
 
   override def outputSchema(): StructType = {
-    livyRpcEndpoint.askSync[AnyRef](SchemaQuery(query._1)) match {
+    livyRpcEndpoint.askSync[AnyRef](SchemaRequest(query._1)) match {
       case SchemaResponse(schema) => schema
       case ErrorResponse(e) => throw new SQLException(SparkUtils.exceptionString(e))
+    }
+  }
+
+  private val hasParamHolder: Boolean = {
+    query._2.collectFirst {
+      case p if p.expressions.exists(_.isInstanceOf[ParameterPlaceHolder]) => p
+    }.isDefined
+  }
+
+  private var simpleMode: Boolean = true
+
+  override def prepare(params: Map[Int, Literal]): Unit = {
+    livyRpcEndpoint.askSync[AnyRef](PrepareRequest(statementId, query._1, params)) match {
+      case PrepareResponse() =>
+        simpleMode = false
+      case ErrorResponse(e) =>
+        throw new SQLException(SparkUtils.exceptionString(e))
     }
   }
 
@@ -54,7 +73,12 @@ private[livy] case class LivyProxyOperation(
   override def run(): Iterator[InternalRow] = {
     if (state == INITIALIZED) {
       setState(RUNNING)
-      livyRpcEndpoint.askSync[AnyRef](ExecuteQuery(statementId, query._1)) match {
+      val message = if (simpleMode) {
+        ExecuteSimpleQuery(statementId, query._1)
+      } else {
+        ExecuteExtendedQuery(statementId)
+      }
+      livyRpcEndpoint.askSync[AnyRef](message) match {
         case ResultSetResponse(rows) =>
           setState(FINISHED)
           rows.toIterator

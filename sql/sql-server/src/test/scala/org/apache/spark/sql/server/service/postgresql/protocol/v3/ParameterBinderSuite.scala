@@ -24,6 +24,7 @@ import org.apache.spark.sql.catalyst.expressions.{And, EqualTo, Literal}
 import org.apache.spark.sql.catalyst.plans.PlanTest
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.server.catalyst.expressions.ParameterPlaceHolder
+import org.apache.spark.sql.server.service.ParamBinder
 import org.apache.spark.sql.types._
 
 

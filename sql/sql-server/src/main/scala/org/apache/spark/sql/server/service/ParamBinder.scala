@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.server.service.postgresql.protocol.v3
+package org.apache.spark.sql.server.service
 
 import java.sql.SQLException
 

@@ -348,20 +348,17 @@ object PgWireProtocol extends Logging {
         import sessionState._
 
         val queryState = sessionState.queries(queryName)
+        val execState = cli.executeStatement(
+          sessionState._sessionId, query = (queryState.statement, queryState.logicalPlan))
 
-        // Convert `params` to [[Literal]] parameters
+        // Converts `params` to [[Literal]] parameters
         val litParams = PgParamConverters(params, queryState.paramIds, formats)
-        litParams.foreach { case (index, param) =>
-          logInfo(s"""Bind param: $$$index -> $param""")
-        }
+        execState.prepare(litParams.toMap)
+        logInfo(
+          s"""Bound params:
+             |  ${litParams.map {case (idx, param) => s"""$$$idx -> $param""" }.mkString("\n  ")}
+           """.stripMargin)
 
-        // Bind input parameters in a query
-        val boundPlan = ParamBinder.bind(queryState.logicalPlan, litParams.toMap)
-        logInfo(s"Bound plan:\n$boundPlan")
-
-        // Build a portal state
-        val plan = (queryState.statement, boundPlan)
-        val execState = cli.executeStatement(sessionState._sessionId, plan)
         val schema = execState.outputSchema()
         val outputFormats = resultDataFormatsFor(schema, sessionState)
         val rowWriter = PgRowConverters(conf, schema, outputFormats)
@@ -371,7 +368,7 @@ object PgWireProtocol extends Logging {
           logInfo(s"Cursor mode enabled: portalName='$portalName'")
         }
 
-        // Update a session state
+        // Updates a session state
         sessionState.queries(queryName) = newQueryState
         sessionState.portals(portalName) = portalState
         sessionState.activePortal = Some(portalName)

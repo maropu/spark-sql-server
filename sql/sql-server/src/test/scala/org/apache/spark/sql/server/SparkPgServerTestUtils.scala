@@ -284,10 +284,9 @@ class SparkPgSQLServerTest(
 
   private def dumpServerLogs(): Unit = {
     logError(
-      s"""
-         |=====================================
-         |PgJdbcSuite  failure output
-         |=====================================
+      s"""=========================================
+         |Start PgJdbcSuite failure output
+         |=========================================
          |${diagnosisBuffer.mkString("\n")}
          |=========================================
          |End PgJdbcSuite failure output

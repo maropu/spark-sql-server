@@ -25,18 +25,21 @@ import scala.util.control.NonFatal
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.{Dataset, SQLContext}
 import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.expressions.Literal
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.SetCommand
 import org.apache.spark.sql.server.SQLServerConf
 import org.apache.spark.sql.server.SQLServerConf._
+import org.apache.spark.sql.server.catalyst.expressions.ParameterPlaceHolder
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.{Utils => SparkUtils}
 
 
 private case class OperationImpl(
     sessionState: SessionState,
-    // `query._1` is a parameterized query string and `query._2` is
-    // a logical plan bound with given parameters.
+    // `query._1` is the query string that might have parameterized variables (`$1`, `$2`, ...)
+    // and `query._2` is the logical plan that might have parameter holders
+    // (`ParameterPlaceHolder`) for the variables.
     query: (String, LogicalPlan))(
     _statementId: String,
     catalogUpdater: (SQLContext, LogicalPlan) => Unit) extends Operation with Logging {
@@ -48,7 +51,10 @@ private case class OperationImpl(
     case ctx => sys.error(s"${this.getClass.getSimpleName} cannot handle $ctx")
   }
 
-  private val analyzedPlan: LogicalPlan = {
+  // If `prepare` called, sets the result here
+  private var _boundPlan: Option[LogicalPlan] = None
+
+  private lazy val analyzedPlan: LogicalPlan = _boundPlan.getOrElse {
     sqlContext.sessionState.analyzer.execute(query._2)
   }
 
@@ -74,11 +80,29 @@ private case class OperationImpl(
     setState(CLOSED)
   }
 
-  override def outputSchema(): StructType = analyzedPlan.schema
+  override def outputSchema(): StructType = {
+    require(!hasParamHolder(analyzedPlan))
+    analyzedPlan.schema
+  }
+
+  private def hasParamHolder(plan: LogicalPlan): Boolean = {
+    plan.collectFirst {
+      case p if p.expressions.exists(_.isInstanceOf[ParameterPlaceHolder]) => p
+    }.isDefined
+  }
+
+  override def prepare(params: Map[Int, Literal]): Unit = {
+    // Binds input parameters in a query
+    val boundPlan = ParamBinder.bind(query._2, params)
+    logInfo(s"Bound plan:\n$boundPlan")
+    _boundPlan = Some(boundPlan)
+  }
 
   private[this] var _cachedRowIterator: Iterator[InternalRow] = _
 
   private def executeInternal(): Iterator[InternalRow] = {
+    require(!hasParamHolder(analyzedPlan))
+
     if (state == INITIALIZED) {
       setState(RUNNING)
       logInfo(

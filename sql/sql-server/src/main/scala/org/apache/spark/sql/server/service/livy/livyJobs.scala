@@ -25,6 +25,7 @@ import org.apache.spark.SparkEnv
 import org.apache.spark.rpc.{RpcCallContext, RpcEndpoint, RpcEndpointRef, RpcEnv}
 import org.apache.spark.sql.{SparkSession, SQLContext}
 import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.expressions.Literal
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.server.SQLServerEnv
 import org.apache.spark.sql.server.service.{ExecutorImpl, NOP, Operation, SessionContext, SessionState, SQLContextHolder}
@@ -32,9 +33,12 @@ import org.apache.spark.sql.server.service.postgresql.{PgCatalogInitializer, PgC
 import org.apache.spark.sql.types.StructType
 
 
-case class SchemaQuery(sql: String)
+case class SchemaRequest(sql: String)
 case class SchemaResponse(schema: StructType)
-case class ExecuteQuery(statementId: String, sql: String)
+case class PrepareRequest(statementId: String, sql: String, params: Map[Int, Literal])
+case class PrepareResponse()
+case class ExecuteExtendedQuery(statementId: String)
+case class ExecuteSimpleQuery(statementId: String, sql: String)
 case class ResultSetResponse(resultRows: Seq[InternalRow])
 case class ErrorResponse(e: Throwable)
 case class CancelRequest(statementId: String)
@@ -79,12 +83,33 @@ private class ExecutorEndpoint(override val rpcEnv: RpcEnv, sessionState: LivySe
   }
 
   override def receiveAndReply(context: RpcCallContext): PartialFunction[Any, Unit] = synchronized {
-    case SchemaQuery(sql) =>
+    case SchemaRequest(sql) =>
       try { context.reply(SchemaResponse(analyzePlan(sql).schema)) } catch {
         case NonFatal(e) => context.reply(ErrorResponse(e))
       }
 
-    case ExecuteQuery(statementId, sql) =>
+    case PrepareRequest(statementId, sql, params) =>
+      try {
+        val logicalPlan = PgUtils.parse(sql)
+        activeOperation = executorImpl.newOperation(sessionState, statementId, (sql, logicalPlan))
+        activeOperation.prepare(params)
+        context.reply(PrepareResponse())
+      } catch {
+        case NonFatal(e) => context.reply(ErrorResponse(e))
+      }
+
+    case ExecuteExtendedQuery(statementId) =>
+      require(statementId == activeOperation.statementId())
+      try {
+        // TODO: Needs to support incremental collects
+        val rowIter = activeOperation.run()
+        // To make it serializable, uses `toArray`
+        context.reply(ResultSetResponse(rowIter.toArray.toSeq))
+      } catch {
+        case NonFatal(e) => context.reply(ErrorResponse(e))
+      }
+
+    case ExecuteSimpleQuery(statementId, sql) =>
       try {
         val logicalPlan = PgUtils.parse(sql)
         activeOperation = executorImpl.newOperation(sessionState, statementId, (sql, logicalPlan))

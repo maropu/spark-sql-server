@@ -20,6 +20,7 @@ package org.apache.spark.sql.server.service
 import javax.annotation.concurrent.ThreadSafe
 
 import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.expressions.Literal
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.SQLServerEnv
@@ -54,6 +55,7 @@ trait Operation {
 
   def statementId(): String
   def outputSchema(): StructType
+  def prepare(params: Map[Int, Literal]): Unit
   def run(): Iterator[InternalRow]
   def cancel(): Unit
   def close(): Unit
@@ -80,6 +82,7 @@ object NOP extends Operation {
   override val statementId: String = "nop"
   override val outputSchema: StructType = new StructType()
 
+  override def prepare(params: Map[Int, Literal]): Unit = {}
   override def run(): Iterator[InternalRow] = Iterator.empty
   override def cancel(): Unit = {}
   override def close(): Unit = {}

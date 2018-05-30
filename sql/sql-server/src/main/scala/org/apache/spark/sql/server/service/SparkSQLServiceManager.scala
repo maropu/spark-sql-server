@@ -72,7 +72,7 @@ trait SessionService {
     state: SessionState): Int
   def getSessionState(sessionId: Int): SessionState
   def closeSession(sessionId: Int): Unit
-  def executeStatement(sessionId: Int, plan: (String, LogicalPlan)): Operation
+  def executeStatement(sessionId: Int, query: (String, LogicalPlan)): Operation
 }
 
 private[service] case class TimeStampedValue[V](value: V, timestamp: Long)
