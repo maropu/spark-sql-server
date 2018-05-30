@@ -93,7 +93,8 @@ private case class OperationImpl(
 
   override def prepare(params: Map[Int, Literal]): Unit = {
     // Binds input parameters in a query
-    val boundPlan = ParamBinder.bind(query._2, params)
+    val analyzed = sqlContext.sessionState.analyzer.execute(query._2)
+    val boundPlan = ParamBinder.bind(analyzed, params)
     logInfo(s"Bound plan:\n$boundPlan")
     _boundPlan = Some(boundPlan)
   }
