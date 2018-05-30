@@ -54,17 +54,8 @@ class LivyProxyContext(sqlConf: SQLConf, livyService: LivyServerService)
       case (key, _) => sparkConfBlacklist.exists(key.contains)
     }
     val livyClientConf = Map(
-      "client.shutdown-timeout" -> "1h",
-      "server.idle-timeout" -> "1h",
-      "server.connect.timeout" -> "1h",
-      "client.connect.timeout" -> "1h",
-      "job-cancel.trigger-interval" -> "1h",
-      "job-cancel.timeout" -> "1h",
-      "connection.timeout" -> "1h",
-      "connection.idle.timeout" -> "1h",
-      "connection.socket.timeout" -> "1h",
-      "job.initial-poll-interval" -> "1h",
-      "job.max-poll-interval" -> "1h"
+      "job-cancel.trigger-interval" -> "100ms",
+      "job-cancel.timeout" -> "24h"
     )
     logInfo(
       s"""Spark properties for the SQLContext that Livy launches:

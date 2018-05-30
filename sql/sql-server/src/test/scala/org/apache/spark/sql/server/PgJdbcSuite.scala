@@ -54,12 +54,12 @@ class ProcessOutputCapturer(stream: InputStream, capture: String => Unit) extend
 }
 
 // TODO: If all the tests enabled, the job of travis CI exceeds the maximum time limit for jobs
-// class PgV10JdbcSimpleMultiSessionModeSuite
-//   extends PgJdbcSuite("10", "simple", "multi-session")
-class PgV10JdbcSimpleMultiContextModeSuite
-  extends PgJdbcSuite("10", "simple", "multi-context")
-// class PgV10JdbcExtendedMultiSessionModeSuite
-//   extends PgJdbcSuite("10", "extended", "multi-session")
+class PgV10JdbcSimpleMultiSessionModeSuite
+  extends PgJdbcSuite("10", "simple", "multi-session")
+// class PgV10JdbcSimpleMultiContextModeSuite
+//   extends PgJdbcSuite("10", "simple", "multi-context")
+class PgV10JdbcExtendedMultiSessionModeSuite
+  extends PgJdbcSuite("10", "extended", "multi-session")
 class PgV10JdbcExtendedMultiContextModeSuite
   extends PgJdbcSuite("10", "extended", "multi-context")
 // class PgV10JdbcExtendedForPreparedModeSuite

@@ -70,6 +70,7 @@ private[service] class LivyServerService(frontend: FrontendService) extends Comp
     val hiveSiteFileOption = SQLServerUtils.findFileOnClassPath("hive-site.xml")
     if (hiveSiteFileOption.isEmpty) {
       val hiveSiteFile = new File(s"$sparkHome/conf", "hive-site.xml")
+      // If `hive-site.xml` not found in classpath, uses an in-memory derby metastore
       val metastoreURL = s"jdbc:derby:memory:;databaseName=${UUID.randomUUID()};create=true"
       val hiveSite =
         s"""<configuration>
@@ -88,7 +89,7 @@ private[service] class LivyServerService(frontend: FrontendService) extends Comp
       logInfo(s"hive-site.xml found in ${hiveSiteFileOption.map(_.getParentFile.getAbsolutePath)}")
     }
 
-    // Reconsider this: Why Livy doesn't set these jars correctly?
+    // TODO: Reconsiders this: Why Livy doesn't set these jars correctly?
     val livyRscJars = {
       val rscJarsDir = new File(livyHome, "rsc-jars")
       require(rscJarsDir.isDirectory, "Cannot find 'client-jars' directory under LIVY_HOME.")

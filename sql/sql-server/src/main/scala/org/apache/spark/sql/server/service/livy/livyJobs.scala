@@ -33,6 +33,7 @@ import org.apache.spark.sql.server.service.postgresql.{PgCatalogInitializer, PgC
 import org.apache.spark.sql.types.StructType
 
 
+// Messages between a SQL server and a Livy job
 case class SchemaRequest(sql: String)
 case class SchemaResponse(schema: StructType)
 case class PrepareRequest(statementId: String, sql: String, params: Map[Int, Literal])
@@ -52,7 +53,7 @@ private object LivySessionState {
     val state = new LivySessionState()
     state._sessionId = sessionId
     state._context = context
-    // TODO: Needs to implement this
+    // TODO: Needs to implement this?
     state._servListener = None
     state._uiTab = None
     state._schedulePool = None
@@ -140,7 +141,7 @@ class OpenSessionJob(sessionId: Int, dbName: String) extends Job[RpcEndpointRef]
     require(sqlContext != null, "SQLContext cannot be initialized")
     SQLServerEnv.withSQLContext(sqlContext)
 
-    // TODO: Reconsider this
+    // Initializes a catalog state for a SQL server
     PgCatalogInitializer(sqlContext)
     PgSessionInitializer(dbName, sqlContext)
 
