@@ -113,6 +113,32 @@ int main(int argc, char **argv) {
 }
 ```
 
+## Available options
+
+    $ ./sbin/start-sql-server.sh -h
+    Usage: ./sbin/start-sql-server.sh [options] [SQL server options]
+
+    SQL server options:
+      --conf spark.sql.server.port=NUM                    Port number of SQL server interface (Default: 5432).
+      --conf spark.sql.server.executionMode=STR           Execution mode: single-session, multi-session, or multi-context (Default: multi-session).
+      --conf spark.sql.server.worker.threads=NUM          # of SQLServer worker threads (Default: 4).
+      --conf spark.sql.server.binaryTransferMode=BOOL     Whether binary transfer mode is enabled (Default: true).
+      --conf spark.sql.server.ssl.enabled=BOOL            Enable SSL encryption (Default: false).
+      --conf spark.sql.server.ssl.path=STR                Keystore path.
+      --conf spark.sql.server.ssl.keystore.passwd=STR     Keystore password.
+      --conf spark.sql.server.ssl.certificate.passwd=STR  Certificate password.
+
+## Execution modes
+
+You can select one of thee different isolation levels: `single-session`, `multi-session`(default), and `multi-context`(experimental).
+In the `single-session` mode, all the sessions in the SQL server share a single `SparkSession`.
+In the `multi-session` mode, each session has an independent `SparkSession` with isolated SQL configurations, temporary tables,
+and registered functions, but shares an underlying `SparkContext` and cached data.
+In the `multi-context` mode, each session has the `SparkSession` that
+[Apache Livy](https://livy.incubator.apache.org/) launches on an independent JVM.
+
+![Overview of execution modes](resources/execution_modes.png)
+
 ## GUI clients
 
 You can also use some GUI clients (e.g., [PGnJ](http://thomasmango.com/projects/pgnj/));
@@ -121,7 +147,7 @@ You can also use some GUI clients (e.g., [PGnJ](http://thomasmango.com/projects/
 
 Note that you need to set `false` at `spark.sql.server.binaryTransferMode` for the `PGnJ` client.
 
-## Cursor mode
+## Cursor modes
 
 To enable a cursor mode on your JDBC driver, you make sure autocommit is off and you need to set fetch size
 throught `Statement.setFetchSize` (See descriptions in [Chapter 5. Issuing a Query and Processing the Result](https://jdbc.postgresql.org/documentation/head/query.html#query-with-cursor));
