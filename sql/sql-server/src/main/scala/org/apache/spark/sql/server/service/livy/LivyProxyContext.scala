@@ -47,26 +47,58 @@ class LivyProxyContext(sqlConf: SQLConf, livyService: LivyServerService)
   )
 
   def init(serviceName: String, sessionId: Int, dbName: String): Unit = {
-    livyClient = LivyProxyContext.retryRandom(numRetriesLeft = 32, maxBackOffMillis = 10000) {
-      var builder = new LivyClientBuilder()
-        .setURI(new URI(LivyServerService.LIVY_SERVER_URI))
+    logInfo(s"serviceName=$serviceName sessionId=$sessionId dbName=$dbName")
 
-      // Passes configurations in the SQL server into `SQLContext` that Livy launches
-      val sparkConfMap = sqlConf.settings.asScala.filterNot {
-        case (key, _) => sparkConfBlacklist.exists(key.contains)
-      }
-      logInfo(
-        s"""Spark properties for the SQLContext that Livy launches:
-           |  ${sparkConfMap.map { case (k, v) => s"key=$k value=$v" }.mkString("\n  ")}
-         """.stripMargin)
-      sparkConfMap.foreach { case (key, value) =>
+    // Configurations that Livy passes into `SQLContext`
+    val sparkConf = sqlConf.settings.asScala.filterNot {
+      case (key, _) => sparkConfBlacklist.exists(key.contains)
+    }
+    val livyClientConf = Map(
+      "client.shutdown-timeout" -> "1h",
+      "server.idle-timeout" -> "1h",
+      "server.connect.timeout" -> "1h",
+      "client.connect.timeout" -> "1h",
+      "job-cancel.trigger-interval" -> "1h",
+      "job-cancel.timeout" -> "1h",
+      "connection.timeout" -> "1h",
+      "connection.idle.timeout" -> "1h",
+      "connection.socket.timeout" -> "1h",
+      "job.initial-poll-interval" -> "1h",
+      "job.max-poll-interval" -> "1h"
+    )
+    logInfo(
+      s"""Spark properties for the SQLContext that Livy launches:
+         |  ${sparkConf.map { case (k, v) => s"key=$k value=$v" }.mkString("\n  ")}
+       """.stripMargin)
+
+    // Submits a job to open a session, initializes a RPC endpoint in the session, and
+    // registers the endpoint in `RpcEnv`.
+    val (_livyClient, _rpcEndpoint) =
+        LivyProxyContext.retryRandom(numRetriesLeft = 4, maxBackOffMillis = 10000) {
+      // Starts a Livy session
+      var builder = new LivyClientBuilder().setURI(new URI(LivyServerService.LIVY_SERVER_URI))
+      (livyClientConf ++ sparkConf).foreach { case (key, value) =>
         builder = builder.setConf(key, value)
       }
-      builder.build()
+      val client = builder.build()
+
+      val endpoint = try {
+        // Submits a job to open a session and initializes a RPC endpoint
+        val endpointRef = client.submit(new OpenSessionJob(sessionId, dbName)).get()
+        // Then, registers the endpoint in `RpcEnv`
+        livyService.rpcEnv.setupEndpointRef(
+          endpointRef.address, OpenSessionJob.ENDPOINT_NAME)
+      } catch {
+        case e: Throwable =>
+          client.stop(true)
+          throw e
+      }
+
+      (client, endpoint)
     }
-    val endpointRef = livyClient.submit(new OpenSessionJob(sessionId, dbName)).get()
-    rpcEndpoint = livyService.rpcEnv.setupEndpointRef(
-      endpointRef.address, OpenSessionJob.ENDPOINT_NAME)
+
+    livyClient = _livyClient
+    rpcEndpoint = _rpcEndpoint
   }
 
   def stop(): Unit = {

@@ -66,51 +66,48 @@ private[service] object PgSessionInitializer {
 
 private [service] object PgCatalogUpdater extends Logging {
 
-  def apply(sqlContext: SQLContext, analyzedPlan: LogicalPlan): Unit = {
-    // If psql enabled, updates catalog data based on DDL commands
-    if (sqlContext.conf.sqlServerPsqlEnabled) {
-      analyzedPlan match {
-        case CreateDatabaseCommand(dbName, _, _, _, _) =>
-          PgMetadata.registerDatabase(dbName, sqlContext)
-        case CreateTable(desc, _, _) =>
-          val dbName = desc.identifier.database.getOrElse("default")
-          val tableName = desc.identifier.table
-          PgMetadata.registerTable(dbName, tableName, desc.schema, desc.tableType, sqlContext)
-        case CreateTableCommand(table, _) =>
-          val dbName = table.identifier.database.getOrElse("default")
-          val tableName = table.identifier.table
-          PgMetadata.registerTable(
-            dbName, tableName, table.schema, table.tableType, sqlContext)
-        case CreateDataSourceTableCommand(table, _) =>
-          val dbName = table.identifier.database.getOrElse("default")
-          val tableName = table.identifier.table
-          PgMetadata.registerTable(
-            dbName, tableName, table.schema, table.tableType, sqlContext)
-        case CreateViewCommand(table, _, _, _, _, child, _, _, _) =>
-          val dbName = table.database.getOrElse("default")
-          val tableName = table.identifier
-          val qe = sqlContext.sparkSession.sessionState.executePlan(child)
-          val schema = qe.analyzed.schema
-          PgMetadata.registerTable(
-            dbName, tableName, schema, CatalogTableType.VIEW, sqlContext)
-        case CreateFunctionCommand(dbNameOption, funcName, _, _, _, _, _) =>
-          val dbName = dbNameOption.getOrElse("default")
-          PgMetadata.registerFunction(dbName, funcName, sqlContext)
-        case DropDatabaseCommand(dbName, _, _) =>
-          logInfo(s"Drop a database `$dbName` and refresh database catalog data")
-          PgMetadata.refreshDatabases(dbName, sqlContext)
-        case DropTableCommand(table, _, _, _) =>
-          val dbName = table.database.getOrElse("default")
-          val tableName = table.identifier
-          logInfo(s"Drop a table `$dbName.$tableName` and refresh table catalog data")
-          PgMetadata.refreshTables(dbName, sqlContext)
-        case DropFunctionCommand(dbNameOption, funcName, _, _) =>
-          val dbName = dbNameOption.getOrElse("default")
-          logInfo(s"Drop a function `$dbName.$funcName` and refresh function catalog data")
-          PgMetadata.refreshFunctions(dbName, sqlContext)
-        case _ =>
-      }
-    }
+  // These catalog updates are needed to handle `java.sql.DatabaseMetaData`
+  // for PostgreSQL JDBC drivers.
+  def apply(sqlContext: SQLContext, analyzedPlan: LogicalPlan): Unit = analyzedPlan match {
+    case CreateDatabaseCommand(dbName, _, _, _, _) =>
+      PgMetadata.registerDatabase(dbName, sqlContext)
+    case CreateTable(desc, _, _) =>
+      val dbName = desc.identifier.database.getOrElse("default")
+      val tableName = desc.identifier.table
+      PgMetadata.registerTable(dbName, tableName, desc.schema, desc.tableType, sqlContext)
+    case CreateTableCommand(table, _) =>
+      val dbName = table.identifier.database.getOrElse("default")
+      val tableName = table.identifier.table
+      PgMetadata.registerTable(
+        dbName, tableName, table.schema, table.tableType, sqlContext)
+    case CreateDataSourceTableCommand(table, _) =>
+      val dbName = table.identifier.database.getOrElse("default")
+      val tableName = table.identifier.table
+      PgMetadata.registerTable(
+        dbName, tableName, table.schema, table.tableType, sqlContext)
+    case CreateViewCommand(table, _, _, _, _, child, _, _, _) =>
+      val dbName = table.database.getOrElse("default")
+      val tableName = table.identifier
+      val qe = sqlContext.sparkSession.sessionState.executePlan(child)
+      val schema = qe.analyzed.schema
+      PgMetadata.registerTable(
+        dbName, tableName, schema, CatalogTableType.VIEW, sqlContext)
+    case CreateFunctionCommand(dbNameOption, funcName, _, _, _, _, _) =>
+      val dbName = dbNameOption.getOrElse("default")
+      PgMetadata.registerFunction(dbName, funcName, sqlContext)
+    case DropDatabaseCommand(dbName, _, _) =>
+      logInfo(s"Drop a database `$dbName` and refresh database catalog data")
+      PgMetadata.refreshDatabases(dbName, sqlContext)
+    case DropTableCommand(table, _, _, _) =>
+      val dbName = table.database.getOrElse("default")
+      val tableName = table.identifier
+      logInfo(s"Drop a table `$dbName.$tableName` and refresh table catalog data")
+      PgMetadata.refreshTables(dbName, sqlContext)
+    case DropFunctionCommand(dbNameOption, funcName, _, _) =>
+      val dbName = dbNameOption.getOrElse("default")
+      logInfo(s"Drop a function `$dbName.$funcName` and refresh function catalog data")
+      PgMetadata.refreshFunctions(dbName, sqlContext)
+    case _ =>
   }
 }
 

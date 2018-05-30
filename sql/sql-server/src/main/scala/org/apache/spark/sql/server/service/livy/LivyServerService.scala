@@ -128,7 +128,7 @@ private[service] class LivyServerService(frontend: FrontendService) extends Comp
            |livy.rsc.jars = $livyRscJars,$sparkJar
            |livy.server.session.timeout-check = true
            |livy.server.session.timeout = $livySessionTimeout
-           |livy.server.session.state-retain.sec = 600s
+           |livy.server.session.state-retain.sec = 0s
            |
            |# Spark settings
            |spark.jars = $sparkJar

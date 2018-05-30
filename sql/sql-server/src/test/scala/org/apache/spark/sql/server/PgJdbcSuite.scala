@@ -487,7 +487,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
     }
   }
 
-  testSimpleQueryModeOnly("multiple query statements") {
+  testSelectiveQueryModes("simple")("multiple query statements") {
     testJdbcStatement { statement =>
       val numQuries = 3
 
@@ -668,7 +668,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
     }
   }
 
-  testSimpleQueryModeOnly("Date/Timestamp types in PreparedStatement") {
+  testSelectiveQueryModes("simple")("Date/Timestamp types in PreparedStatement") {
     testJdbcStatement { statement =>
       Seq(
         "DROP TABLE IF EXISTS test",
@@ -741,7 +741,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
     }
   }
 
-  testExtendedQueryModeOnly("Date/Timestamp types in PreparedStatement") {
+  testSelectiveQueryModes("extended")("Date/Timestamp types in PreparedStatement") {
     // The PostgreSQL JDBC drivers send `Date` and `Timestamp` data with Oid.UNSPECIFIED, so
     // the SQL server can't handle these data types now (it can't check the types in a server side).
     val e1 = intercept[SQLException] {
@@ -783,7 +783,9 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
     }
   }
 
-  test("multiple session") {
+  // TODO: `multi-context` mode cannot handle `testSelectiveExecutionModes` correctly because
+  // multiple `SQLContext` cannot share a single Derby metastore.
+  testSelectiveExecutionModes("single-session", "multi-session")("multiple session") {
     import org.apache.spark.sql.internal.SQLConf
     var defaultVal: String = null
     var data: mutable.ArrayBuffer[Int] = null
@@ -909,7 +911,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
     )
   }
 
-  test("test ADD JAR") {
+  testSelectiveExecutionModes("single-session", "multi-session")("test ADD JAR") {
     testMultipleConnectionJdbcStatement(
       { statement =>
         val jarPath = "src/test/resources/hive-hcatalog-core-0.13.1.jar"
@@ -951,7 +953,8 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
     )
   }
 
-  test("independent state across JDBC connections") {
+  testSelectiveExecutionModes("single-session", "multi-session")(
+      "independent state across JDBC connections") {
     testMultipleConnectionJdbcStatement(
       { statement =>
         val jarPath = "src/test/resources/TestUDTF.jar"
@@ -1111,7 +1114,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
     }
   }
 
-  testSimpleQueryModeOnly("setMaxRows") {
+  testSelectiveQueryModes("simple")("setMaxRows") {
     testJdbcStatement { statement =>
       assert(statement.execute(
         """
@@ -1129,7 +1132,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
     }
   }
 
-  testExtendedQueryModeOnly("setMaxRows") {
+  testSelectiveQueryModes("extended")("setMaxRows") {
     testJdbcStatement { statement =>
       assert(statement.execute(
         """
@@ -1249,7 +1252,8 @@ class PgJdbcWithSslSuite extends PgJdbcTest(ssl = true) {
 
 class PgJdbcSingleSessionSuite extends PgJdbcTest(executionMode = "single-session") {
 
-  test("share the temporary functions across JDBC connections") {
+  testSelectiveExecutionModes("single-session", "multi-session")(
+      "share the temporary functions across JDBC connections") {
     testMultipleConnectionJdbcStatement(
       { statement =>
         val jarPath = "src/test/resources/TestUDTF.jar"

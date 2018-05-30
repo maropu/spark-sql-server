@@ -40,6 +40,7 @@ import org.apache.spark.util.{ThreadUtils, Utils}
  * A base class that manages a pair of JDBC driver connections and a SQL server instance.
  */
 class PgJdbcTest(
+
     override val pgVersion: String = "9.6",
     override val ssl: Boolean = false,
     override val queryQueryMode: String = "extended",
@@ -47,6 +48,22 @@ class PgJdbcTest(
     override val incrementalCollect: Boolean = true) extends SQLServerTest with PgJdbcTestBase {
 
   override val serverInstance: SparkPgSQLServerTest = server
+
+  def testSelectiveQueryModes(modes: String*)(testName: String)(testBody: => Unit): Unit = {
+    if (modes.contains(queryQueryMode)) {
+      test(testName) { testBody }
+    } else {
+      ignore(s"$testName [skipped when $queryQueryMode mode selected]")(testBody)
+    }
+  }
+
+  def testSelectiveExecutionModes(modes: String*)(testName: String)(testBody: => Unit): Unit = {
+    if (modes.contains(executionMode)) {
+      test(testName) { testBody }
+    } else {
+      ignore(s"$testName [skipped when $executionMode mode selected]")(testBody)
+    }
+  }
 }
 
 /**
@@ -105,8 +122,17 @@ class SparkPgSQLServerTest(
      val tempDir = Utils.createTempDir(namePrefix = UUID.randomUUID().toString).getCanonicalPath
 
      // Write a hive-site.xml containing a setting of `hive.metastore.warehouse.dir`
-     val metastoreURL =
-       s"jdbc:derby:memory:;databaseName=$tempDir;create=true"
+     val metastoreURL = executionMode match {
+       case "single-session" | "multi-session" =>
+         s"jdbc:derby:memory:;databaseName=$tempDir;create=true"
+       case "multi-context" =>
+         // To keep states (e.g., databases and tables) between sessions (`SQLContext`s),
+         // we need to share a single Derby metastore.
+         //
+         // TODO: Since a Derby metastore cannot be shared between `SQLContext`s,
+         // we cannot handle some operations (e.g., `testMultipleConnectionJdbcStatement`).
+         s"jdbc:derby:;databaseName=$tempDir/metastore_db;create=true"
+     }
      Files.write(
        s"""<configuration>
           |  <property>
@@ -429,18 +455,4 @@ trait PgJdbcTestBase {
       connection.close()
     }
   }
-
-  private def testSelectiveModeOnly(testMode: String, testName: String)(testBody: => Unit): Unit = {
-    if (queryQueryMode == testMode) {
-      test(testName) { testBody }
-    } else {
-      ignore(s"$testName [skipped when $queryQueryMode mode enabled]")(testBody)
-    }
-  }
-
-  def testSimpleQueryModeOnly(testName: String)(testBody: => Unit): Unit =
-    testSelectiveModeOnly("simple", s"$testName - simple query mode only")(testBody)
-
-  def testExtendedQueryModeOnly(testName: String)(testBody: => Unit): Unit =
-    testSelectiveModeOnly("extended", s"$testName - extended query mode only")(testBody)
 }
