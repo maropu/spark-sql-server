@@ -149,6 +149,7 @@ private[service] class LivyServerService(frontend: FrontendService) extends Comp
     frontend.bossGroup.shutdownGracefully()
   }
 
+  // TODO: Adds logics to attach to an existing Livy process
   override def doStart(): Unit = {
     livyProcess = Utils.executeCommand(
       command = livyStartScript :: Nil,
@@ -156,7 +157,7 @@ private[service] class LivyServerService(frontend: FrontendService) extends Comp
     val livyTask = new Runnable() {
       override def run(): Unit = {
         try {
-          // TODO: Add logics to restart a livy process in case of any failure (e.g., Livy crushes)
+          // TODO: Adds logics to restart a livy process in case of any failure (e.g., Livy crushes)
           val exitCode = livyProcess.waitFor()
           if (exitCode != 0) {
             val errMsg = s"Livy process exited with code $exitCode."
