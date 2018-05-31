@@ -92,11 +92,10 @@ private case class OperationImpl(
   }
 
   override def prepare(params: Map[Int, Literal]): Unit = {
-    // Binds input parameters in a query
-    val analyzed = sqlContext.sessionState.analyzer.execute(query._2)
-    val boundPlan = ParamBinder.bind(analyzed, params)
-    logInfo(s"Bound plan:\n$boundPlan")
-    _boundPlan = Some(boundPlan)
+    // First, binds parameters in a logical plan then analyzes it
+    val boundPlan = ParamBinder.bind(query._2, params)
+    val analyzed = sqlContext.sessionState.analyzer.execute(boundPlan)
+    _boundPlan = Some(analyzed)
   }
 
   private[this] var _cachedRowIterator: Iterator[InternalRow] = _
