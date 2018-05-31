@@ -124,6 +124,11 @@ class SQLServer extends CompositeService with LeaderElectable {
   private var kinitExecutor: ScheduledExecutorService = _
   private var kinitFailCount: Int = 0
 
+  SQLServerEnv.sqlConf.sqlServerExecutionMode match {
+    case "single-session" | "multi-session" =>
+      addService(new CustomOptimizerRuleService())
+    case _ =>
+  }
   addService(new SparkSQLServiceManager())
 
   private def runKinit(keytab: String, principal: String): Boolean = {
