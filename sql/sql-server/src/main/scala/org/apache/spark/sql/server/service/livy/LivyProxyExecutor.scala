@@ -23,7 +23,6 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Literal
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.server.catalyst.expressions.ParameterPlaceHolder
 import org.apache.spark.sql.server.service._
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.{Utils => SparkUtils}
@@ -51,12 +50,6 @@ private[livy] case class LivyProxyOperation(
     }
   }
 
-  private val hasParamHolder: Boolean = {
-    query._2.collectFirst {
-      case p if p.expressions.exists(_.isInstanceOf[ParameterPlaceHolder]) => p
-    }.isDefined
-  }
-
   private var simpleMode: Boolean = true
 
   override def prepare(params: Map[Int, Literal]): Unit = {
@@ -78,14 +71,16 @@ private[livy] case class LivyProxyOperation(
       } else {
         ExecuteExtendedQuery(statementId)
       }
-      livyRpcEndpoint.askSync[AnyRef](message) match {
+      val resultRowIterator = livyRpcEndpoint.askSync[AnyRef](message) match {
         case ResultSetResponse(rows) =>
           setState(FINISHED)
-          rows.toIterator
+          rows.toList.toIterator
         case ErrorResponse(e) =>
           setState(ERROR)
           throw new SQLException(SparkUtils.exceptionString(e))
       }
+      _cachedRowIterator = resultRowIterator
+      resultRowIterator
     } else {
       // Since this operation already has been done, just returns the cached result
       _cachedRowIterator
