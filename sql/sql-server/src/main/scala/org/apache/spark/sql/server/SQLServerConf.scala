@@ -140,7 +140,7 @@ object SQLServerConf {
     .stringConf
     .createWithDefault("FIFO")
 
-  val SQLSERVER_DOAS_ENABLED = buildStaticConf("spark.sql.yarn.doAs.enabled")
+  val SQLSERVER_IMPERSONATION_ENABLED = buildStaticConf("spark.sql.yarn.impersonation.enabled")
     .doc("Whether authentication impersonates connected users.")
     .booleanConf
     .createWithDefault(true)
@@ -207,7 +207,7 @@ class SQLServerConf(conf: SQLConf) {
 
   def sqlServerPool: String = getStaticConf(SQLSERVER_POOL)
 
-  def sqlServerDoAsEnabled: Boolean = getStaticConf(SQLSERVER_DOAS_ENABLED)
+  def sqlServerImpersonationEnabled: Boolean = getStaticConf(SQLSERVER_IMPERSONATION_ENABLED)
 
   def sqlServerUiStatementLimit: Int = getStaticConf(SQLSERVER_UI_STATEMENT_LIMIT)
 

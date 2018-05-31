@@ -17,10 +17,11 @@
 
 package org.apache.spark.sql.server
 
+import java.util.concurrent.{Executors, ScheduledExecutorService, ThreadFactory, TimeUnit}
+
 import scala.util.control.NonFatal
 
 import org.apache.spark.annotation.DeveloperApi
-import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.deploy.master.{LeaderElectable, MonarchyLeaderAgent, ZooKeeperLeaderElectionAgentAccessor}
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SQLContext
@@ -109,6 +110,9 @@ object SQLServer extends Logging {
 
 class SQLServer extends CompositeService with LeaderElectable {
 
+  private val KERBEROS_REFRESH_INTERVAL = TimeUnit.HOURS.toMillis(1)
+  private val KERBEROS_FAIL_THRESHOLD = 5
+
   private val RECOVERY_MODE = SQLServerEnv.sqlConf.sqlServerRecoveryMode
   private val RECOVERY_DIR = SQLServerEnv.sqlConf.sqlServerRecoveryDir + "/leader_election"
 
@@ -117,19 +121,70 @@ class SQLServer extends CompositeService with LeaderElectable {
   @volatile private var started = false
   @volatile private var state = RecoveryState.STANDBY
 
+  private var kinitExecutor: ScheduledExecutorService = _
+  private var kinitFailCount: Int = 0
+
   addService(new SparkSQLServiceManager())
+
+  private def runKinit(keytab: String, principal: String): Boolean = {
+    val commands = Seq("kinit", "-kt", keytab, principal)
+    val proc = new ProcessBuilder(commands: _*).inheritIO().start()
+    proc.waitFor() match {
+      case 0 =>
+        logInfo("Ran kinit command successfully.")
+        kinitFailCount = 0
+        true
+      case _ =>
+        logWarning("Fail to run kinit command.")
+        kinitFailCount += 1
+        false
+    }
+  }
+
+  private def startKinitThread(keytab: String, principal: String): Unit = {
+    val kinitTask = new Runnable() {
+      override def run(): Unit = {
+        if (runKinit(keytab, principal)) {
+          // Schedules another kinit run with a fixed delay
+          kinitExecutor.schedule(this, KERBEROS_REFRESH_INTERVAL, TimeUnit.MILLISECONDS)
+        } else {
+          // Schedules another retry at once or fails if too many kinit failures happen
+          if (kinitFailCount >= KERBEROS_FAIL_THRESHOLD) {
+            kinitExecutor.submit(this)
+            // throw new RuntimeException(s"kinit failed $KERBEROS_FAIL_THRESHOLD times.")
+          } else {
+            kinitExecutor.submit(this)
+          }
+        }
+      }
+    }
+    kinitExecutor.schedule(
+      kinitTask, KERBEROS_REFRESH_INTERVAL, TimeUnit.MILLISECONDS)
+  }
 
   override def doInit(conf: SQLConf): Unit = {
     require(conf.getConfString("spark.sql.crossJoin.enabled") == "true",
       "`spark.sql.crossJoin.enabled` must be true because general DBMS-like engines can " +
         "handle cross joins in SQL queries.")
 
-    // Settings for a Kerberos secure cluster
-    if (SQLServerUtils.checkIfKerberosEnabled(conf)) {
-      // To authenticate the SQL server, the following 2 params must be set
-      val principalName = conf.getConfString("spark.yarn.keytab")
-      val keytabFilename = conf.getConfString("spark.yarn.principal")
-      SparkHadoopUtil.get.loginUserFromKeytab(principalName, keytabFilename)
+    // If Kerberos enabled, run kinit periodically. runKinit() should be called before any Hadoop
+    // operation, otherwise Kerberos exception will be thrown.
+    if (SQLServerUtils.isKerberosEnabled(conf)) {
+      kinitExecutor = Executors.newScheduledThreadPool(1, new ThreadFactory() {
+          override def newThread(r: Runnable): Thread = {
+            val thread = new Thread(r)
+            thread.setName("kinit-thread")
+            thread.setDaemon(true)
+            thread
+          }
+        }
+      )
+      val keytabFilename = SQLServerUtils.kerberosKeytab(conf)
+      val principalName = SQLServerUtils.kerberosPrincipal(conf)
+      if (!runKinit(keytabFilename, principalName)) {
+        // throw new RuntimeException("Failed to run kinit.")
+      }
+      startKinitThread(keytabFilename, principalName)
     }
   }
 

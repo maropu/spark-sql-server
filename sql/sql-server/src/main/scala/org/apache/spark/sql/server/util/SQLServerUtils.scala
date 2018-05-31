@@ -21,18 +21,28 @@ import java.io.File
 import java.lang.reflect.Field
 import java.util.StringTokenizer
 
-import org.apache.spark.SparkConf
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.util.Utils
 
+
 object SQLServerUtils {
 
-  def checkIfKerberosEnabled(conf: SparkConf): Boolean = {
+  def isKerberosEnabled(conf: SQLConf): Boolean = {
     conf.contains("spark.yarn.keytab")
   }
 
-  def checkIfKerberosEnabled(conf: SQLConf): Boolean = {
-    conf.contains("spark.yarn.keytab")
+  def kerberosKeytab(conf: SQLConf): String = {
+    val key = "spark.yarn.keytab"
+    val keytabFilename = conf.getConfString(key)
+    require(keytabFilename != null, s"Kerberos requires `$key` to be provided.")
+    keytabFilename
+  }
+
+  def kerberosPrincipal(conf: SQLConf): String = {
+    val key = "spark.yarn.principal"
+    val principalName = conf.getConfString(key)
+    require(principalName != null, s"Kerberos requires `$key` to be provided.")
+    principalName
   }
 
   def findFileOnClassPath(fileName: String): Option[File] = {

@@ -57,7 +57,6 @@ private object LivySessionState {
     state._servListener = None
     state._uiTab = None
     state._schedulePool = None
-    state._ugi = None
     state
   }
 }

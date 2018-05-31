@@ -37,8 +37,6 @@ import io.netty.channel.socket.SocketChannel
 import io.netty.handler.codec.bytes.{ByteArrayDecoder, ByteArrayEncoder}
 import io.netty.handler.ssl.{SslContext, SslHandler}
 import io.netty.handler.ssl.util.SelfSignedCertificate
-import org.apache.hadoop.security.UserGroupInformation
-import org.ietf.jgss.{GSSContext, GSSCredential, GSSException, GSSManager, Oid}
 
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
@@ -52,7 +50,6 @@ import org.apache.spark.sql.server.service.postgresql.PgMetadata._
 import org.apache.spark.sql.server.service.postgresql.PgUtils
 import org.apache.spark.sql.server.service.postgresql.execution.command.BeginCommand
 import org.apache.spark.sql.server.service.postgresql.protocol.v3.PgRowConverters._
-import org.apache.spark.sql.server.util.SQLServerUtils
 import org.apache.spark.sql.types._
 import org.apache.spark.util.Utils._
 
@@ -245,56 +242,6 @@ object PgWireProtocol extends Logging {
       new String(localBuf, StandardCharsets.UTF_8)
     } else {
       ""
-    }
-  }
-
-  // An URL string in PostgreSQL JDBC drivers is something like
-  // "jdbc:postgresql://[host]/[database]?user=[name]&kerberosServerName=spark"
-  private def doGSSAuthentication(
-      ctx: ChannelHandlerContext,
-      state: V3SessionState,
-      serverPrincipal: String,
-      token: Array[Byte]): Boolean = {
-    // Get own Kerberos credentials for accepting connection
-    val manager = GSSManager.getInstance()
-    var gssContext: GSSContext = null
-    try {
-      // This Oid for Kerberos GSS-API mechanism
-      val kerberosMechOid = new Oid("1.2.840.113554.1.2.2")
-      // Oid for kerberos principal name
-      val krb5PrincipalOid = new Oid("1.2.840.113554.1.2.2.1")
-
-      val serverName = manager.createName(serverPrincipal, krb5PrincipalOid)
-      val serverCreds = manager.createCredential(
-        serverName, GSSCredential.DEFAULT_LIFETIME, kerberosMechOid,
-        GSSCredential.ACCEPT_ONLY)
-
-      gssContext = manager.createContext(serverCreds)
-
-      val outToken = gssContext.acceptSecContext(token, 0, token.length)
-      if (!gssContext.isEstablished) {
-        ctx.write(state.v3Protocol.AuthenticationGSSContinue(outToken))
-        ctx.flush()
-        false
-      } else {
-        state._ugi = if (state.conf.sqlServerDoAsEnabled) {
-          Some(UserGroupInformation.createProxyUser(
-            state.userName, UserGroupInformation.getCurrentUser))
-        } else {
-          Some(UserGroupInformation.getCurrentUser)
-        }
-        true
-      }
-    } catch {
-      case e: GSSException => throw e
-    } finally {
-      if (gssContext != null) {
-        try {
-          gssContext.dispose()
-        } catch {
-          case NonFatal(_) => // No-op
-        }
-      }
     }
   }
 
@@ -647,7 +594,7 @@ object PgWireProtocol extends Logging {
 
     // An ASCII code of the `CopyFail` message is 'f'(102)
     102 -> { msg =>
-      ("CopyFail", (sessionState: V3SessionState) => {
+      ("CopyFail", (_: V3SessionState) => {
         throw new UnsupportedOperationException("Not supported yet")
       })
     },
@@ -657,24 +604,8 @@ object PgWireProtocol extends Logging {
       val token = new Array[Byte](msg.remaining)
       msg.get(token)
 
-      ("PasswordMessage", (sessionState: V3SessionState) => {
-        import sessionState._
-        import PgV3MessageHandler._
-        if (SQLServerUtils.checkIfKerberosEnabled(conf)) {
-          if (doGSSAuthentication(ctx, sessionState, kerberosServerPrincipal, token)) {
-            sendAuthenticationOk(sessionState)
-          } else {
-            // Authentication failure
-            ctx.write(ErrorResponse(s"Authentication failure: principal=$kerberosServerPrincipal"))
-            ctx.close()
-          }
-        } else {
-          val sockAddr = ctx.channel().remoteAddress().asInstanceOf[InetSocketAddress]
-          val hostName = s"${sockAddr.getHostName()}:${sockAddr.getPort()}"
-          ctx.write(ErrorResponse(s"Authentication requested from $userName@$hostName though, " +
-            "Kerberos is not currently enabled in this SQL server"))
-          ctx.close()
-        }
+      ("PasswordMessage", (_: V3SessionState) => {
+        throw new UnsupportedOperationException("Not supported yet")
       })
     }
   )
@@ -1240,9 +1171,6 @@ class PgV3MessageHandler(cli: SessionService, conf: SQLConf)
 }
 
 object PgV3MessageHandler {
-
-  // Returns Kerberos principal like 'spark/fully.qualified.domain.name@YOUR-REALM.COM'
-  def kerberosServerPrincipal: String = SQLServerEnv.sparkConf.get("spark.yarn.principal")
 
   def getUniqueChannelId(ctx: ChannelHandlerContext): Int = {
     // A netty developer said we could use `Channel#hashCode()` as an unique id in:

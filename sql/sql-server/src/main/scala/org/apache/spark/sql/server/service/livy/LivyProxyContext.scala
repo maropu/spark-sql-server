@@ -28,7 +28,9 @@ import org.apache.livy.{LivyClient, LivyClientBuilder}
 import org.apache.spark.internal.Logging
 import org.apache.spark.rpc.RpcEndpointRef
 import org.apache.spark.sql.internal.SQLConf
+import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.service.SessionContext
+import org.apache.spark.sql.server.util.SQLServerUtils
 
 
 class LivyProxyContext(sqlConf: SQLConf, livyService: LivyServerService)
@@ -46,7 +48,7 @@ class LivyProxyContext(sqlConf: SQLConf, livyService: LivyServerService)
     "spark.submit.deployMode"
   )
 
-  def init(serviceName: String, sessionId: Int, dbName: String): Unit = {
+  def init(serviceName: String, sessionId: Int, userName: String, dbName: String): Unit = {
     logInfo(s"serviceName=$serviceName sessionId=$sessionId dbName=$dbName")
 
     // Configurations that Livy passes into `SQLContext`
@@ -68,9 +70,17 @@ class LivyProxyContext(sqlConf: SQLConf, livyService: LivyServerService)
         LivyProxyContext.retryRandom(numRetriesLeft = 4, maxBackOffMillis = 10000) {
       // Starts a Livy session
       var builder = new LivyClientBuilder().setURI(new URI(LivyServerService.LIVY_SERVER_URI))
+
       (livyClientConf ++ sparkConf).foreach { case (key, value) =>
         builder = builder.setConf(key, value)
       }
+
+      // If Kerberos and impersonation enabled, sets `userName` at `proxy-user`
+      if (SQLServerUtils.isKerberosEnabled(sqlConf) && sqlConf.sqlServerImpersonationEnabled) {
+        logInfo(s"Kerberos and impersonation enabled: proxy-user=$userName")
+        builder = builder.setConf("proxy-user", userName)
+      }
+
       val client = builder.build()
 
       val endpoint = try {

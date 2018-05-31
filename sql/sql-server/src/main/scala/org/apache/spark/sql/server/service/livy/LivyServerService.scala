@@ -50,6 +50,19 @@ private[service] class LivyServerService(frontend: FrontendService) extends Comp
 
   private[livy] var rpcEnv: RpcEnv = _
 
+  private def kerberosParams(conf: SQLConf): String = {
+    Seq(
+      "livy.server.auth.type" -> "kerberos",
+      "livy.impersonation.enabled" -> conf.sqlServerImpersonationEnabled,
+      "livy.server.auth.kerberos.principal" -> SQLServerUtils.kerberosPrincipal(conf),
+      "livy.server.auth.kerberos.keytab" -> SQLServerUtils.kerberosKeytab(conf),
+      "livy.server.launch.kerberos.principal" -> SQLServerUtils.kerberosPrincipal(conf),
+      "livy.server.launch.kerberos.keytab" -> SQLServerUtils.kerberosKeytab(conf)
+    ).map { case (key, value) =>
+      s"$key = $value"
+    }.mkString("\n")
+  }
+
   override def doInit(conf: SQLConf): Unit = {
     sparkJar = conf.settings.get("spark.jars")
     livyStartScript = s"${conf.sqlServerLivyHome}/$LIVY_START_SCRIPT"
@@ -130,6 +143,7 @@ private[service] class LivyServerService(frontend: FrontendService) extends Comp
            |livy.server.session.timeout-check = true
            |livy.server.session.timeout = $livySessionTimeout
            |livy.server.session.state-retain.sec = 0s
+           |${if (SQLServerUtils.isKerberosEnabled(conf)) kerberosParams(conf) else ""}
            |
            |# Spark settings
            |spark.jars = $sparkJar

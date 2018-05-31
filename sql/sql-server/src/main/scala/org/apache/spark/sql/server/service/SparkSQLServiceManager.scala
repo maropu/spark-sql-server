@@ -23,8 +23,6 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import scala.collection.mutable
 
-import org.apache.hadoop.security.UserGroupInformation
-
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
@@ -54,7 +52,6 @@ trait SessionState {
   private[service] var _servListener: Option[SQLServerListener] = _
   private[service] var _uiTab: Option[SQLServerTab] = None
   private[service] var _schedulePool: Option[String] = None
-  private[service] var _ugi: Option[UserGroupInformation] = None
 
   // Called when an idle session cleaner closes this session
   def closeWithException(msg: String): Unit = close()
@@ -91,7 +88,7 @@ private[service] class SessionManager(
   }
 
   // For functions to initialize sessions
-  private var getSessionContext: (Int, String) => SessionContext = _
+  private var getSessionContext: (Int, String, String) => SessionContext = _
   private var getServerListener: () => Option[SQLServerListener] = _
   private var getUiTab: () => Option[SQLServerTab] = _
 
@@ -110,17 +107,17 @@ private[service] class SessionManager(
     // Initializes functions depending on execution modes
     getSessionContext = conf.sqlServerExecutionMode match {
       case "single-session" =>
-        (_: Int, _: String) => {
+        (_: Int, _: String, _: String) => {
           SQLContextHolder(SQLServerEnv.sqlContext)
         }
       case "multi-session" =>
-        (_: Int, dbName: String) => {
+        (_: Int, _: String, dbName: String) => {
           val sqlContext = SQLServerEnv.sqlContext.newSession()
           initSession(dbName, sqlContext)
           SQLContextHolder(sqlContext)
         }
       case "multi-context" =>
-        (sessionId: Int, dbName: String) => {
+        (sessionId: Int, userName: String, dbName: String) => {
           val livyService = services.headOption.map {
             case s: LivyServerService => s
             case other =>
@@ -130,7 +127,7 @@ private[service] class SessionManager(
             sys.error(s"No service attached as a child in ${this.getClass.getSimpleName}.")
           }
           val livyContext = new LivyProxyContext(conf, livyService)
-          livyContext.init(serviceName = s"rpc-service-session-$sessionId", sessionId, dbName)
+          livyContext.init(s"rpc-service-session-$sessionId", sessionId, userName, dbName)
           livyContext
         }
     }
@@ -170,7 +167,7 @@ private[service] class SessionManager(
   def openSession(userName: String, passwd: String, ipAddress: String, dbName: String,
       state: SessionState): Int = {
     val sessionId = newSessionId()
-    val sessionContext = getSessionContext(sessionId, dbName)
+    val sessionContext = getSessionContext(sessionId, userName, dbName)
     val servListener = getServerListener()
     state._sessionId = sessionId
     state._context = sessionContext

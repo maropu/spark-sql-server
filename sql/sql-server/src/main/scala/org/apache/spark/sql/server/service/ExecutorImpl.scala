@@ -202,17 +202,7 @@ private case class OperationImpl(
     }
   }
 
-  override def run(): Iterator[InternalRow] = {
-    _ugi.map { ugi =>
-      ugi.doAs(new PrivilegedExceptionAction[Iterator[InternalRow]]() {
-        override def run() = {
-          executeInternal()
-        }
-      })
-    }.getOrElse {
-      executeInternal()
-    }
-  }
+  override def run(): Iterator[InternalRow] = executeInternal()
 }
 
 private[service] class ExecutorImpl(catalogUpdater: (SQLContext, LogicalPlan) => Unit)
