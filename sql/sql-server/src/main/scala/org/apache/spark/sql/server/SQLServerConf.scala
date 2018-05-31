@@ -140,7 +140,7 @@ object SQLServerConf {
     .stringConf
     .createWithDefault("FIFO")
 
-  val SQLSERVER_IMPERSONATION_ENABLED = buildStaticConf("spark.sql.yarn.impersonation.enabled")
+  val SQLSERVER_IMPERSONATION_ENABLED = buildStaticConf("spark.yarn.impersonation.enabled")
     .doc("Whether authentication impersonates connected users.")
     .booleanConf
     .createWithDefault(true)
