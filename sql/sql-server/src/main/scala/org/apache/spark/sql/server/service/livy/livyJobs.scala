@@ -75,14 +75,14 @@ private class ExecutorEndpoint(override val rpcEnv: RpcEnv, sessionState: LivySe
     case ctx => sys.error(s"${this.getClass.getSimpleName} cannot handle $ctx")
   }
 
-  private var activeOperation: Operation = NOP
+  @volatile private var activeOperation: Operation = NOP
 
   private def analyzePlan(query: String): LogicalPlan = {
     val sesseionSpecificAnalyzer = sqlContext.sessionState.analyzer
     sesseionSpecificAnalyzer.execute(PgUtils.parse(query))
   }
 
-  override def receiveAndReply(context: RpcCallContext): PartialFunction[Any, Unit] = synchronized {
+  override def receiveAndReply(context: RpcCallContext): PartialFunction[Any, Unit] = {
     case SchemaRequest(sql) =>
       try { context.reply(SchemaResponse(analyzePlan(sql).schema)) } catch {
         case NonFatal(e) => context.reply(ErrorResponse(e))
@@ -121,6 +121,7 @@ private class ExecutorEndpoint(override val rpcEnv: RpcEnv, sessionState: LivySe
         case NonFatal(e) => context.reply(ErrorResponse(e))
       }
 
+    // TODO: Currently, the cancel request doesn't work well...
     case CancelRequest(statementId) =>
       if (statementId == activeOperation.statementId()) {
         activeOperation.cancel()

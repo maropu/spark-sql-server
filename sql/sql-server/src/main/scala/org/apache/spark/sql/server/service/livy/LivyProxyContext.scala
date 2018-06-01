@@ -54,8 +54,13 @@ class LivyProxyContext(sqlConf: SQLConf, livyService: LivyServerService)
     // Configurations that Livy passes into `SQLContext`
     val sparkConf = sqlConf.settings.asScala.filterNot {
       case (key, _) => sparkConfBlacklist.exists(key.contains)
-    }
-    val livyClientConf = Map(
+    } ++ Map(
+      "spark.rpc.askTimeout" -> "720s",
+      // task thread + cancel thread for Spark Netty RPC
+      "spark.rpc.io.numConnectionsPerPeer" -> "2",
+      "spark.rpc.io.threads" -> "2"
+    )
+    val livyClientConf = Seq(
       "job-cancel.trigger-interval" -> "100ms",
       "job-cancel.timeout" -> "24h"
     )
