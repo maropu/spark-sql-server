@@ -17,7 +17,7 @@ This script accepts all `bin/spark-submit` command line options in Spark, plus o
 You may run `./sbin/start-sql-server.sh --help` for a complete list of all available options.
 If you use `spark-2.3.0`, you can add the option below to install the JDBC/ODBC server:
 
-    $ ./bin/spark-shell --packages maropu:spark-sql-server:0.1.2-spark2.3
+    $ ./bin/spark-shell --packages maropu:spark-sql-server:0.1.5-spark2.3
 
 Then, you run the commands to launch the server:
 
@@ -231,6 +231,7 @@ Then, you set a Kerberos service name (`kerberosServerName`) in `Properties` whe
 See [Connection Parameters](https://jdbc.postgresql.org/documentation/head/connect.html#connection-parameters) for more information.
 -->
 
+<!--
 ## High Availability
 
 A high availability policy of the Spark SQL server is along with [stand-alone Master one](http://spark.apache.org/docs/latest/spark-standalone.html#high-availability);
@@ -248,6 +249,7 @@ with the same ZooKeeper configuration (ZooKeeper URL and directory) as follows;
 To support simple connection fail-over, PostgreSQL JDBC drivers can define multiple endpoints (host and port pairs)
 in the connection url separated by commas.
 See [Connection Fail-over](https://jdbc.postgresql.org/documentation/head/connect.html#connection-failover) for more information.
+-->
 
 ## Run TPC-DS queries in Spark via the SQL server
 
