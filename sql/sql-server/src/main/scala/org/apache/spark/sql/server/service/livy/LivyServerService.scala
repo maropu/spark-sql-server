@@ -223,9 +223,8 @@ private[service] class LivyServerService(frontend: FrontendService) extends Comp
         new SecurityManager(sparkConf))
       (service, port)
     }
-    // TODO: startPort = 0?
     val (_rpcEnv, port) = Utils.startServiceOnPort[RpcEnv](
-      startPort = 12345, startServiceFunc, sparkConf, LivyServerService.LIVY_SERVICE_NAME)
+      startPort = 0, startServiceFunc, sparkConf, LivyServerService.LIVY_SERVICE_NAME)
     logInfo(s"RpcEnv '${LivyServerService.LIVY_SERVICE_NAME}' started on port $port")
     rpcEnv = _rpcEnv
   }
