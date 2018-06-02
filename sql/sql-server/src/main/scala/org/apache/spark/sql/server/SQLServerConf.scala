@@ -86,6 +86,11 @@ object SQLServerConf {
     .intConf
     .createWithDefault(4)
 
+  val SQLSERVER_EXTRA_OPTIMIZER_RULES = buildConf("spark.sql.server.extraOptimizerRules")
+    .doc("List of extra optimizer rules for Catalyst.")
+    .stringConf
+    .createOptional
+
   val SQLSERVER_LIVY_HOME = buildStaticConf("spark.sql.server.livyHome")
     .internal()
     .doc("Relative path to Livy directory")
@@ -186,6 +191,8 @@ class SQLServerConf(conf: SQLConf) {
   def sqlServerPsqlEnabled: Boolean = getStaticConf(SQLSERVER_PSQL_ENABLED)
 
   def sqlServerWorkerThreads: Int = getStaticConf(SQLSERVER_WORKER_THREADS)
+
+  def sqlServerExtraOptimizerRules: Option[String] = getConf(SQLSERVER_EXTRA_OPTIMIZER_RULES)
 
   def sqlServerLivyHome: String = getStaticConf(SQLSERVER_LIVY_HOME)
 

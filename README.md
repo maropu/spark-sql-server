@@ -7,7 +7,7 @@
 A Spark SQL server based on the PostgreSQL V3 protocol.
 For more information, see [SPARK-15816](https://issues.apache.org/jira/browse/SPARK-15816).
 
-## Running the Spark SQL JDBC/ODBC server
+## Run the Spark SQL JDBC/ODBC server
 
 To start the JDBC/ODBC server, check out this repository and run the following command in the root directory:
 
@@ -169,6 +169,16 @@ throught `Statement.setFetchSize` (See descriptions in [Chapter 5. Issuing a Que
 Also, you could set `spark.sql.server.incrementalCollect.enabled` for memory efficiency
 when launching the SQL server. If enabled, the SQL server collects result data partition-by-parititon.
 
+## Install custom optimizer rules
+
+To install user-defined optimizer rules in `SparkSession`, you can pass new optimizer rule names and the jar
+that has [the implmentation of the rules](./examples/src/main/scala/org/apache/spark/examples/optimizerRules.scala);
+
+    $ ./sbin/start-sql-server.sh \
+        --conf spark.jars=./target/examples_2.11_2.3.0_0.1.5-spark2.3-SNAPSHOT.jar \
+        --conf spark.sql.server.extraOptimizerRules=org.apache.spark.examples.EmptyRule1,spark.sql.server.extraOptimizerRule2
+
+<!--
 ## PostgreSQL syntax
 
 The SQL server supports some of PostgreSQL dialect;
@@ -186,10 +196,11 @@ The SQL server supports some of PostgreSQL dialect;
       10 | 10
       15 | 15
     (2 rows)
+-->
 
 ## Authentication
 
-### SSL Encryption
+### SSL encryption
 
 To enable SSL encryption, you need to set the following configurations in `start-sql-server.sh`;
 
@@ -218,7 +229,7 @@ when creating a JDBC connection. Then, you pass `client.truststore` when running
     $ java -Djavax.net.ssl.trustStore=client.truststore -Djavax.net.ssl.trustStorePassword=<password> JdbcTest
 
 <!--
-### Kerberos (GSSAPI) Supports
+### Kerberos (GSSAPI) supports
 
 You can use the SQL server on a Kerberos-enabled cluster only in the YARN mode because Spark supports Kerberos only in that mode.
 To enable GSSAPI, you need to set the following configurations in `start-sql-server.sh`;
@@ -232,7 +243,7 @@ See [Connection Parameters](https://jdbc.postgresql.org/documentation/head/conne
 -->
 
 <!--
-## High Availability
+## High availability
 
 A high availability policy of the Spark SQL server is along with [stand-alone Master one](http://spark.apache.org/docs/latest/spark-standalone.html#high-availability);
 by utilizing ZooKeeper, you can launch multiple SQL servers connected to the same ZooKeeper instance.
