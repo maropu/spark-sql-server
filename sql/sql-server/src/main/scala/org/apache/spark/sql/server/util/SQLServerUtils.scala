@@ -31,6 +31,10 @@ object SQLServerUtils {
     conf.contains("spark.yarn.keytab")
   }
 
+  def isRunningOnYarn(conf: SQLConf): Boolean = {
+    conf.settings.get("spark.master").startsWith("yarn")
+  }
+
   def kerberosKeytab(conf: SQLConf): String = {
     val key = "spark.yarn.keytab"
     val keytabFilename = conf.getConfString(key)

@@ -41,11 +41,15 @@ import org.apache.spark.util.Utils
 private[service] class LivyServerService(frontend: FrontendService) extends CompositeService {
   import LivyServerService._
 
+  // TODO: Makes this variable configurable
+  private val LIVY_PROCESS_FAIL_THRESHOLD = 5
+
   private var sparkJar: String = _
   private var livyHome: String = _
   private var livyConfDir: String = _
   private var livyStartScript: String = _
   private var livyProcess: Process = _
+  private var livyProcessFailCount: Int = 0
   private var livyThread: Thread = _
 
   private[livy] var rpcEnv: RpcEnv = _
@@ -124,8 +128,15 @@ private[service] class LivyServerService(frontend: FrontendService) extends Comp
     val livySessionTimeout = 2 * conf.sqlServerIdleSessionCleanupDelay
 
     livyConfDir = {
-      val tempDir = Utils.createTempDir(namePrefix = "livy-").getCanonicalPath
-      // TODO: How to pass Spark configurations into sessions?
+      val tempDir = Utils.createTempDir(namePrefix = "livy").getCanonicalPath
+
+      // Creates a state-store directory for recovery
+      val stateStoreDir = new File(tempDir, "state-store")
+      if (!stateStoreDir.mkdir()) {
+        throw new RuntimeException("Cannot create a state-store directory for recovery.")
+      }
+
+      import SQLServerUtils._
       val livyConfPath = s"$tempDir/livy.conf"
       val livyConf =
         s"""# Livy settings
@@ -143,7 +154,13 @@ private[service] class LivyServerService(frontend: FrontendService) extends Comp
            |livy.server.session.timeout-check = true
            |livy.server.session.timeout = $livySessionTimeout
            |livy.server.session.state-retain.sec = 0s
-           |${if (SQLServerUtils.isKerberosEnabled(conf)) kerberosParams(conf) else ""}
+           |# Recovery settings
+           |livy.server.recovery.mode = off
+           |# livy.server.recovery.mode = ${if (isRunningOnYarn(conf)) "on" else "off"}
+           |livy.server.recovery.state-store = filesystem
+           |livy.server.recovery.state-store.url = file://${stateStoreDir.getAbsolutePath}
+           |# Kerberos settings
+           |${if (isKerberosEnabled(conf)) kerberosParams(conf) else ""}
            |
            |# Spark settings
            |spark.jars = $sparkJar
@@ -166,22 +183,25 @@ private[service] class LivyServerService(frontend: FrontendService) extends Comp
 
   // TODO: Adds logics to attach to an existing Livy process
   override def doStart(): Unit = {
-    livyProcess = Utils.executeCommand(
-      command = livyStartScript :: Nil,
-      extraEnvironment = Map("LIVY_HOME" -> livyHome, "LIVY_CONF_DIR" -> livyConfDir))
     val livyTask = new Runnable() {
       override def run(): Unit = {
         try {
-          // TODO: Adds logics to restart a livy process in case of any failure (e.g., Livy crushes)
-          val exitCode = livyProcess.waitFor()
-          if (exitCode != 0) {
-            val errMsg = s"Livy process exited with code $exitCode."
-            logWarning(errMsg)
-            fail(new IOException(errMsg))
+          while (livyProcessFailCount < LIVY_PROCESS_FAIL_THRESHOLD) {
+            livyProcess = Utils.executeCommand(
+              command = livyStartScript :: Nil,
+              extraEnvironment = Map("LIVY_HOME" -> livyHome, "LIVY_CONF_DIR" -> livyConfDir))
+            val exitCode = livyProcess.waitFor()
+            logWarning(s"Livy process exited with code $exitCode and try to restart...")
+            livyProcessFailCount += 1
           }
+          val errMsg = s"Livy failed $LIVY_PROCESS_FAIL_THRESHOLD times and " +
+            "try to stop the SQL server..."
+          logWarning(errMsg)
+          fail(new IOException(errMsg))
         } catch {
           case _: InterruptedException =>
-            logWarning("Waiting thread interrupted, killing child process.")
+            // we expect `doStop` throws this exception
+            logInfo("Waiting thread interrupted for shutdown.")
         }
       }
     }

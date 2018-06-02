@@ -110,6 +110,7 @@ object SQLServer extends Logging {
 
 class SQLServer extends CompositeService with LeaderElectable {
 
+  // TODO: Makes these variables configurable
   private val KERBEROS_REFRESH_INTERVAL = TimeUnit.HOURS.toMillis(1)
   private val KERBEROS_FAIL_THRESHOLD = 5
 
@@ -156,7 +157,7 @@ class SQLServer extends CompositeService with LeaderElectable {
           // Schedules another retry at once or fails if too many kinit failures happen
           if (kinitFailCount >= KERBEROS_FAIL_THRESHOLD) {
             kinitExecutor.submit(this)
-            // throw new RuntimeException(s"kinit failed $KERBEROS_FAIL_THRESHOLD times.")
+            throw new RuntimeException(s"kinit failed $KERBEROS_FAIL_THRESHOLD times.")
           } else {
             kinitExecutor.submit(this)
           }
