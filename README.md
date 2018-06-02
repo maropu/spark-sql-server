@@ -9,7 +9,8 @@ For more information, see [SPARK-15816](https://issues.apache.org/jira/browse/SP
 
 ## Run the Spark SQL JDBC/ODBC server
 
-To start the JDBC/ODBC server, check out this repository and run the following command in the root directory:
+To start the JDBC/ODBC server, you need to check out this repository and run the following command
+in the root directory:
 
     $ ./sbin/start-sql-server.sh --conf spark.sql.server.psql.enabled=true
 
@@ -171,8 +172,10 @@ when launching the SQL server. If enabled, the SQL server collects result data p
 
 ## Install custom optimizer rules
 
-To install user-defined optimizer rules in `SparkSession`, you can pass new optimizer rule names and the jar
-that has [the implmentation of the rules](./examples/src/main/scala/org/apache/spark/examples/optimizerRules.scala);
+Spark has already implmented a lot of efficient optimization rules in the Catalyst and the Spark community continues to
+develop it now. In some usecases, domain-specific knowledge and rules could make Spark more efficient and so
+it is useful to append user-defined optimizer rules. To install them, you need to pass new optimizer rule names and
+the jar that includes [the implmentation of the rules](./examples/src/main/scala/org/apache/spark/examples/optimizerRules.scala);
 
     $ ./sbin/start-sql-server.sh \
         --conf spark.jars=./target/examples_2.11_2.3.0_0.1.5-spark2.3-SNAPSHOT.jar \
