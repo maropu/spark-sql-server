@@ -51,6 +51,8 @@ private case class OperationImpl(
     case ctx => sys.error(s"${this.getClass.getSimpleName} cannot handle $ctx")
   }
 
+  private val useIncrementalCollect = sqlContext.conf.sqlServerIncrementalCollectEnabled
+
   // If `prepare` called, sets the result here
   private var _boundPlan: Option[LogicalPlan] = None
 
@@ -129,7 +131,6 @@ private case class OperationImpl(
         logDebug(df.queryExecution.toString())
         _servListener.foreach(_.onStatementParsed(statementId, df.queryExecution.toString()))
 
-        val useIncrementalCollect = sqlContext.conf.sqlServerIncrementalCollectEnabled
         val rowIter = if (useIncrementalCollect) {
           df.queryExecution.executedPlan.executeToIterator()
         } else {

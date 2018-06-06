@@ -23,9 +23,11 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Literal
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.server.SQLServerConf._
+import org.apache.spark.sql.server.SQLServerEnv
 import org.apache.spark.sql.server.service._
 import org.apache.spark.sql.types.StructType
-import org.apache.spark.util.{Utils => SparkUtils}
+import org.apache.spark.util.{CompletionIterator, Utils => SparkUtils}
 
 
 private[livy] case class LivyProxyOperation(
@@ -75,6 +77,39 @@ private[livy] case class LivyProxyOperation(
         case ResultSetResponse(rows) =>
           setState(FINISHED)
           rows.toList.toIterator
+
+        case IncrementalCollectStart =>
+          val localIterator = new Iterator[InternalRow] {
+
+            private def fetchNextIter(): Iterator[InternalRow] = {
+              livyRpcEndpoint.askSync[AnyRef](RequestNextResultSet(statementId)) match {
+                case ResultSetResponse(rows) if rows.nonEmpty => rows.toList.toIterator
+                case ResultSetResponse(_) =>
+                  sys.error("`ResultSetResponse` should has a non-empty iterator")
+                case IncrementalCollectEnd => Iterator.empty
+                case ErrorResponse(e) =>
+                  setState(ERROR)
+                  throw new SQLException(SparkUtils.exceptionString(e))
+              }
+            }
+
+            private var currentIter = fetchNextIter()
+
+            override def hasNext: Boolean = {
+              val _hasNext = currentIter.hasNext
+              if (!_hasNext) {
+                currentIter = fetchNextIter()
+                currentIter.hasNext
+              } else {
+                _hasNext
+              }
+            }
+
+            override def next(): InternalRow = currentIter.next()
+          }
+
+          CompletionIterator[InternalRow, Iterator[InternalRow]](localIterator, setState(FINISHED))
+
         case ErrorResponse(e) =>
           setState(ERROR)
           throw new SQLException(SparkUtils.exceptionString(e))

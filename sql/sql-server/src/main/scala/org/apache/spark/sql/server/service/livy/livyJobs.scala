@@ -28,6 +28,7 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Literal
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.server.{CustomOptimizerRuleInitializer, SQLServerEnv}
+import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.service.{ExecutorImpl, NOP, Operation, SessionContext, SessionState, SQLContextHolder}
 import org.apache.spark.sql.server.service.postgresql.{PgCatalogInitializer, PgCatalogUpdater, PgSessionInitializer, PgUtils}
 import org.apache.spark.sql.types.StructType
@@ -41,6 +42,9 @@ case class PrepareResponse()
 case class ExecuteExtendedQuery(statementId: String)
 case class ExecuteSimpleQuery(statementId: String, sql: String)
 case class ResultSetResponse(resultRows: Seq[InternalRow])
+case class IncrementalCollectStart()
+case class IncrementalCollectEnd()
+case class RequestNextResultSet(statementId: String)
 case class ErrorResponse(e: Throwable)
 case class CancelRequest(statementId: String)
 case class CancelResponse()
@@ -70,10 +74,13 @@ private class ExecutorEndpoint(override val rpcEnv: RpcEnv, sessionState: LivySe
     }
     new ExecutorImpl(catalogUpdater)
   }
+
   private val sqlContext = sessionState._context match {
     case SQLContextHolder(ctx) => ctx
     case ctx => sys.error(s"${this.getClass.getSimpleName} cannot handle $ctx")
   }
+
+  private val useIncrementalCollect = sqlContext.conf.sqlServerIncrementalCollectEnabled
 
   @volatile private var activeOperation: Operation = NOP
 
@@ -101,10 +108,13 @@ private class ExecutorEndpoint(override val rpcEnv: RpcEnv, sessionState: LivySe
     case ExecuteExtendedQuery(statementId) =>
       require(statementId == activeOperation.statementId())
       try {
-        // TODO: Needs to support incremental collects
-        val rowIter = activeOperation.run()
-        // To make it serializable, uses `toArray`
-        context.reply(ResultSetResponse(rowIter.toArray.toSeq))
+        if (useIncrementalCollect) {
+          context.reply(IncrementalCollectStart())
+        } else {
+          val rowIter = activeOperation.run()
+          // To make it serializable, uses `toArray`
+          context.reply(ResultSetResponse(rowIter.toArray.toSeq))
+        }
       } catch {
         case NonFatal(e) => context.reply(ErrorResponse(e))
       }
@@ -113,10 +123,28 @@ private class ExecutorEndpoint(override val rpcEnv: RpcEnv, sessionState: LivySe
       try {
         val logicalPlan = PgUtils.parse(sql)
         activeOperation = executorImpl.newOperation(sessionState, statementId, (sql, logicalPlan))
-        // TODO: Needs to support incremental collects
-        val rowIter = activeOperation.run()
-        // To make it serializable, uses `toArray`
-        context.reply(ResultSetResponse(rowIter.toArray.toSeq))
+        if (useIncrementalCollect) {
+          context.reply(IncrementalCollectStart())
+        } else {
+          val rowIter = activeOperation.run()
+          // To make it serializable, uses `toArray`
+          context.reply(ResultSetResponse(rowIter.toArray.toSeq))
+        }
+      } catch {
+        case NonFatal(e) => context.reply(ErrorResponse(e))
+      }
+
+    case RequestNextResultSet(statementId) =>
+      require(statementId == activeOperation.statementId())
+      try {
+        // TODO: Returns partition-by-partition instead of row-by-row
+        val iter = activeOperation.run()
+        if (iter.hasNext) {
+          val result = iter.next()
+          context.reply(ResultSetResponse(result :: Nil))
+        } else {
+          context.reply(IncrementalCollectEnd())
+        }
       } catch {
         case NonFatal(e) => context.reply(ErrorResponse(e))
       }
