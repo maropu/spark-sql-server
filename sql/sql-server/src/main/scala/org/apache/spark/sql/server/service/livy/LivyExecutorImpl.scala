@@ -17,8 +17,14 @@
 
 package org.apache.spark.sql.server.service.livy
 
+import java.io.{ByteArrayOutputStream, DataOutputStream}
+
+import org.apache.spark.SparkEnv
+import org.apache.spark.io.CompressionCodec
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.expressions.UnsafeRow
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.server.service._
 
@@ -29,6 +35,32 @@ private class LivyOperation(
     catalogUpdater: (SQLContext, LogicalPlan) => Unit)
   extends OperationImpl(sessionState, query)(_statementId, catalogUpdater) {
 
+  /**
+   * Packing the UnsafeRows into byte array for faster serialization.
+   * The byte arrays are in the following format:
+   * [size] [bytes of UnsafeRow] [size] [bytes of UnsafeRow] ... [-1]
+   *
+   * UnsafeRow is highly compressible (at least 8 bytes for any column), the byte array is also
+   * compressed.
+   */
+  private def getByteArrayRdd(rdd: RDD[InternalRow]): RDD[InternalRow] = {
+    rdd.mapPartitionsInternal { iter =>
+      val buffer = new Array[Byte](4 << 10) // 4K
+      val codec = CompressionCodec.createCodec(SparkEnv.get.conf)
+      val bos = new ByteArrayOutputStream()
+      val out = new DataOutputStream(codec.compressedOutputStream(bos))
+      while (iter.hasNext) {
+        val row = iter.next().asInstanceOf[UnsafeRow]
+        out.writeInt(row.getSizeInBytes)
+        row.writeToStream(out, buffer)
+      }
+      out.writeInt(-1)
+      out.flush()
+      out.close()
+      Iterator(InternalRow.fromSeq(bos.toByteArray :: Nil))
+    }
+  }
+
   private[this] var _cachedRowIterator: Iterator[InternalRow] = _
 
   override def run(): Iterator[InternalRow] = {
@@ -36,8 +68,7 @@ private class LivyOperation(
       val df = executeInternal()
 
       val resultRowIterator = if (useIncrementalCollect) {
-        // TODO: Implements this
-        df.queryExecution.executedPlan.executeToIterator()
+        getByteArrayRdd(df.queryExecution.executedPlan.execute()).toLocalIterator
       } else {
         // Needs to use `List` so that `Iterator#take` can proceed an internal cursor, e.g.,
         //

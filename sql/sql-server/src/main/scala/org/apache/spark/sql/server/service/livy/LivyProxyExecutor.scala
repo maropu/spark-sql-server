@@ -17,14 +17,17 @@
 
 package org.apache.spark.sql.server.service.livy
 
+import java.io.{ByteArrayInputStream, DataInputStream}
 import java.sql.SQLException
 
 import org.apache.spark.internal.Logging
+import org.apache.spark.io.CompressionCodec
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.Literal
+import org.apache.spark.sql.catalyst.expressions.{Literal, UnsafeRow}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.server.SQLServerEnv
 import org.apache.spark.sql.server.service._
-import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.types.{ArrayType, ByteType, StructType}
 import org.apache.spark.util.{CompletionIterator, Utils => SparkUtils}
 
 
@@ -43,7 +46,7 @@ private class LivyProxyOperation(
 
   override def statementId: String = _statementId
 
-  override def outputSchema(): StructType = {
+  override lazy val outputSchema: StructType = {
     livyRpcEndpoint.askSync[AnyRef](SchemaRequest(query._1)) match {
       case SchemaResponse(schema) => schema
       case ErrorResponse(e) => throw new SQLException(SparkUtils.exceptionString(e))
@@ -79,9 +82,35 @@ private class LivyProxyOperation(
         case IncrementalCollectStart =>
           val localIterator = new Iterator[InternalRow] {
 
+            /**
+             * Decodes the byte arrays back to UnsafeRows and put them into buffer.
+             */
+            private def decodeUnsafeRows(bytes: InternalRow): Iterator[InternalRow] = {
+              val nFields = outputSchema.length
+
+              val codec = CompressionCodec.createCodec(SQLServerEnv.sparkConf)
+              val byteArray = bytes.get(0, ArrayType(ByteType)).asInstanceOf[Array[Byte]]
+              logInfo(s"fetched byte size: ${byteArray.length}")
+              val bis = new ByteArrayInputStream(byteArray)
+              val ins = new DataInputStream(codec.compressedInputStream(bis))
+
+              new Iterator[InternalRow] {
+                private var sizeOfNextRow = ins.readInt()
+                override def hasNext: Boolean = sizeOfNextRow >= 0
+                override def next(): InternalRow = {
+                  val bs = new Array[Byte](sizeOfNextRow)
+                  ins.readFully(bs)
+                  val row = new UnsafeRow(nFields)
+                  row.pointTo(bs, sizeOfNextRow)
+                  sizeOfNextRow = ins.readInt()
+                  row
+                }
+              }
+            }
+
             private def fetchNextIter(): Iterator[InternalRow] = {
               livyRpcEndpoint.askSync[AnyRef](RequestNextResultSet(statementId)) match {
-                case ResultSetResponse(rows) if rows.nonEmpty => rows.toList.toIterator
+                case ResultSetResponse(rows) if rows.size == 1 => decodeUnsafeRows(rows.head)
                 case ResultSetResponse(_) =>
                   sys.error("`ResultSetResponse` should have a non-empty iterator")
                 case IncrementalCollectEnd => Iterator.empty
