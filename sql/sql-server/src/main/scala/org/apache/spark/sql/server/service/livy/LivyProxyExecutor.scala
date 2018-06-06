@@ -81,7 +81,9 @@ private class LivyProxyOperation(
 
             private def fetchNextIter(): Iterator[InternalRow] = {
               livyRpcEndpoint.askSync[AnyRef](RequestNextResultSet(statementId)) match {
-                case ResultSetResponse(rows) => rows.toList.toIterator
+                case ResultSetResponse(rows) if rows.nonEmpty => rows.toList.toIterator
+                case ResultSetResponse(_) =>
+                  sys.error("`ResultSetResponse` should have a non-empty iterator")
                 case IncrementalCollectEnd => Iterator.empty
                 case ErrorResponse(e) =>
                   setState(ERROR)

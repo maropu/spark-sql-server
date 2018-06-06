@@ -99,8 +99,6 @@ private class OperationImpl(
     _boundPlan = Some(analyzed)
   }
 
-  private[this] var _cachedRowIterator: Iterator[InternalRow] = _
-
   protected def executeInternal(): DataFrame = {
     require(!hasParamHolder(analyzedPlan))
 
@@ -176,6 +174,8 @@ private class OperationImpl(
 
     resultDf
   }
+
+  private[this] var _cachedRowIterator: Iterator[InternalRow] = _
 
   override def run(): Iterator[InternalRow] = {
     if (state == INITIALIZED) {

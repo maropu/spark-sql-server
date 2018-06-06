@@ -43,7 +43,7 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.SetCommand
 import org.apache.spark.sql.internal.SQLConf
-import org.apache.spark.sql.server.{SQLServerConf, SQLServerEnv}
+import org.apache.spark.sql.server.SQLServerConf
 import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.service.{Operation, SessionService, SessionState}
 import org.apache.spark.sql.server.service.postgresql.PgMetadata._
@@ -405,7 +405,7 @@ object PgWireProtocol extends Logging {
           // Sends back a complete message depending on a portal state
           val logicalPlan = portalState.queryState.logicalPlan
           logicalPlan match {
-            case BeginCommand() =>
+            case BeginCommand(_) =>
               ctx.write(CommandComplete("BEGIN"))
             case SetCommand(kv) =>
               kv.map { case (k, v) =>
