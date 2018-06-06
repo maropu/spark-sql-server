@@ -17,13 +17,12 @@
 
 package org.apache.spark.sql.server.service
 
-import java.security.PrivilegedExceptionAction
 import java.sql.SQLException
 
 import scala.util.control.NonFatal
 
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.{Dataset, SQLContext}
+import org.apache.spark.sql.{DataFrame, Dataset, SQLContext}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Literal
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
@@ -35,7 +34,7 @@ import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.{Utils => SparkUtils}
 
 
-private case class OperationImpl(
+private class OperationImpl(
     sessionState: SessionState,
     // `query._1` is the query string that might have parameterized variables (`$1`, `$2`, ...)
     // and `query._2` is the logical plan that might have parameter holders
@@ -51,7 +50,7 @@ private case class OperationImpl(
     case ctx => sys.error(s"${this.getClass.getSimpleName} cannot handle $ctx")
   }
 
-  private val useIncrementalCollect = sqlContext.conf.sqlServerIncrementalCollectEnabled
+  protected val useIncrementalCollect = sqlContext.conf.sqlServerIncrementalCollectEnabled
 
   // If `prepare` called, sets the result here
   private var _boundPlan: Option[LogicalPlan] = None
@@ -102,99 +101,106 @@ private case class OperationImpl(
 
   private[this] var _cachedRowIterator: Iterator[InternalRow] = _
 
-  private def executeInternal(): Iterator[InternalRow] = {
+  protected def executeInternal(): DataFrame = {
     require(!hasParamHolder(analyzedPlan))
 
-    if (state == INITIALIZED) {
-      setState(RUNNING)
-      logInfo(
-        s"""Running query with $statementId:
-           |Query:
-           |${query._1}
-           |Analyzed Plan:
-           |$analyzedPlan
-         """.stripMargin)
+    setState(RUNNING)
+    logInfo(
+      s"""Running query with $statementId:
+         |Query:
+         |${query._1}
+         |Analyzed Plan:
+         |$analyzedPlan
+       """.stripMargin)
 
-      // Always uses the latest class loader provided by SQLContext's state.
-      Thread.currentThread().setContextClassLoader(sqlContext.sharedState.jarClassLoader)
+    // Always uses the latest class loader provided by SQLContext's state.
+    Thread.currentThread().setContextClassLoader(sqlContext.sharedState.jarClassLoader)
 
-      _servListener.foreach(_.onStatementStart(statementId, _sessionId, query._1, statementId))
-      sqlContext.sparkContext.setJobGroup(statementId, query._1, true)
+    _servListener.foreach(_.onStatementStart(statementId, _sessionId, query._1, statementId))
+    sqlContext.sparkContext.setJobGroup(statementId, query._1, true)
 
-      // Initializes a value in fair Scheduler Pools
-      _schedulePool.foreach { pool =>
-        sqlContext.sparkContext.setLocalProperty("spark.scheduler.pool", pool)
+    // Initializes a value in fair Scheduler Pools
+    _schedulePool.foreach { pool =>
+      sqlContext.sparkContext.setLocalProperty("spark.scheduler.pool", pool)
+    }
+
+    val resultDf = try {
+      val df = Dataset.ofRows(sqlContext.sparkSession, analyzedPlan)
+      logDebug(df.queryExecution.toString())
+      _servListener.foreach(_.onStatementParsed(statementId, df.queryExecution.toString()))
+
+      // Updates configurations based on SET commands
+      analyzedPlan match {
+        case SetCommand(Some((SQLServerConf.SQLSERVER_POOL.key, Some(pool)))) =>
+          logInfo(s"Setting spark.scheduler.pool=$pool for future statements in this session.")
+          _schedulePool = Some(pool)
+        case _ =>
       }
 
-      val resultRowIterator = try {
-        val df = Dataset.ofRows(sqlContext.sparkSession, analyzedPlan)
-        logDebug(df.queryExecution.toString())
-        _servListener.foreach(_.onStatementParsed(statementId, df.queryExecution.toString()))
+      // Updates an internal catalog based on DDL commands
+      catalogUpdater(sqlContext, analyzedPlan)
 
-        val rowIter = if (useIncrementalCollect) {
-          df.queryExecution.executedPlan.executeToIterator()
+      df
+    } catch {
+      case NonFatal(e) =>
+        if (state == CANCELED) {
+          val errMsg =
+            s"""Cancelled query with $statementId
+               |Query:
+               |${query._1}
+               |Analyzed Plan:
+               |$analyzedPlan
+             """.stripMargin
+          logWarning(errMsg)
+          throw new SQLException(errMsg)
         } else {
-          // Needs to use `List` so that `Iterator#take` can proceed an internal cursor, e.g.,
-          //
-          // scala> val iter = Array(1, 2, 3, 4, 5, 6).toIterator
-          // scala> iter.take(1).next
-          // res2: Int = 1
-          // scala> iter.take(1).next
-          // res3: Int = 1
-          // ...
-          // scala> val iter = Array(1, 2, 3, 4, 5, 6).toList.toIterator
-          // scala> iter.take(1).next
-          // res4: Int = 1
-          // scala> iter.take(1).next
-          // res5: Int = 2
-          // ...
-          df.queryExecution.executedPlan.executeCollect().toList.toIterator
+          setState(ERROR)
+          val exceptionString = SparkUtils.exceptionString(e)
+          val errMsg =
+            s"""Caught an error executing query with with $statementId:
+               |Query:
+               |${query._1}
+               |Analyzed Plan:
+               |$analyzedPlan
+               |Exception message:
+               |$exceptionString
+             """.stripMargin
+          logError(errMsg)
+          _servListener.foreach(_.onStatementError(statementId, e.getMessage, exceptionString))
+          throw new SQLException(errMsg)
         }
+    }
 
-        // Updates configurations based on SET commands
-        analyzedPlan match {
-          case SetCommand(Some((SQLServerConf.SQLSERVER_POOL.key, Some(pool)))) =>
-            logInfo(s"Setting spark.scheduler.pool=$pool for future statements in this session.")
-            _schedulePool = Some(pool)
-          case _ =>
-        }
+    _servListener.foreach(_.onStatementFinish(statementId))
+    setState(FINISHED)
 
-        // Updates an internal catalog based on DDL commands
-        catalogUpdater(sqlContext, analyzedPlan)
+    resultDf
+  }
 
-        rowIter
-      } catch {
-        case NonFatal(e) =>
-          if (state == CANCELED) {
-            val errMsg =
-              s"""Cancelled query with $statementId
-                 |Query:
-                 |${query._1}
-                 |Analyzed Plan:
-                 |$analyzedPlan
-               """.stripMargin
-            logWarning(errMsg)
-            throw new SQLException(errMsg)
-          } else {
-            setState(ERROR)
-            val exceptionString = SparkUtils.exceptionString(e)
-            val errMsg =
-              s"""Caught an error executing query with with $statementId:
-                 |Query:
-                 |${query._1}
-                 |Analyzed Plan:
-                 |$analyzedPlan
-                 |Exception message:
-                 |$exceptionString
-               """.stripMargin
-            logError(errMsg)
-            _servListener.foreach(_.onStatementError(statementId, e.getMessage, exceptionString))
-            throw new SQLException(errMsg)
-          }
+  override def run(): Iterator[InternalRow] = {
+    if (state == INITIALIZED) {
+      val df = executeInternal()
+
+      val resultRowIterator = if (useIncrementalCollect) {
+        df.queryExecution.executedPlan.executeToIterator()
+      } else {
+        // Needs to use `List` so that `Iterator#take` can proceed an internal cursor, e.g.,
+        //
+        // scala> val iter = Array(1, 2, 3, 4, 5, 6).toIterator
+        // scala> iter.take(1).next
+        // res2: Int = 1
+        // scala> iter.take(1).next
+        // res3: Int = 1
+        // ...
+        // scala> val iter = Array(1, 2, 3, 4, 5, 6).toList.toIterator
+        // scala> iter.take(1).next
+        // res4: Int = 1
+        // scala> iter.take(1).next
+        // res5: Int = 2
+        // ...
+        df.queryExecution.executedPlan.executeCollect().toList.toIterator
       }
 
-      _servListener.foreach(_.onStatementFinish(statementId))
-      setState(FINISHED)
       _cachedRowIterator = resultRowIterator
       resultRowIterator
     } else {
@@ -202,8 +208,6 @@ private case class OperationImpl(
       _cachedRowIterator
     }
   }
-
-  override def run(): Iterator[InternalRow] = executeInternal()
 }
 
 private[service] class ExecutorImpl(catalogUpdater: (SQLContext, LogicalPlan) => Unit)
