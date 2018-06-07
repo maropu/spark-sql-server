@@ -59,6 +59,9 @@ function usage {
   echo "  --conf spark.sql.server.ssl.path=STR                Keystore path."
   echo "  --conf spark.sql.server.ssl.keystore.passwd=STR     Keystore password."
   echo "  --conf spark.sql.server.ssl.certificate.passwd=STR  Certificate password."
+  echo "  --conf spark.yarn.keytab=STR                        Keytab file location."
+  echo "  --conf spark.yarn.principal=STR                     Principal name in a secure cluster."
+  echo "  --conf spark.yarn.impersonation.enabled=BOOL        Whether authentication impersonates connected users (Default: false)."
   echo
 }
 

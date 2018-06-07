@@ -36,7 +36,7 @@ you need to turn off the SSL mode to connect the SQL server:
 
     $ psql postgresql://localhost:5432/default?sslmode=disable
 
-## Use PostgreSQL JDBC drivers
+## Use PostgreSQL JDBC drivers in Java
 
 To connect the SQL server, you can use mature and widely-used [PostgreSQL JDBC drivers](https://jdbc.postgresql.org/).
 You can get the driver, add it to a class path, and write code like;
@@ -87,32 +87,41 @@ to connect the SQL server from C clients:
 #include <libpq-fe.h>
 
 static void exit_nicely(PGconn *conn) {
-    PQfinish(conn);
-    exit(1);
+  PQfinish(conn);
+  exit(1);
 }
 
 int main(int argc, char **argv) {
-    // Connect to a 'default' database in the SPARK SQL server''
-    PGconn *conn = PQconnectdb("host=localhost port=5432 dbname=default");
-    if (PQstatus(conn) != CONNECTION_OK) {
-        exit_nicely(conn);
-    }
+  // Connect to a 'default' database in the SPARK SQL server
+  PGconn *conn = PQconnectdb("host=localhost port=5432 dbname=default");
+  if (PQstatus(conn) != CONNECTION_OK) {
+    exit_nicely(conn);
+  }
 
-    // Do something...
-    PGresult *res = PQexec(conn, "SELECT * FROM VALUES (1, 1), (1, 2) AS t(a, b)");
-    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-        PQclear(res);
-        exit_nicely(conn);
-    }
-    for (int i = 0; i < PQntuples(res); i++) {
-        printf("a=%s b=%s\n", PQgetvalue(res, i, 0), PQgetvalue(res, i, 1));
-    }
-
+  // Do something...
+  PGresult *res = PQexec(conn, "SELECT * FROM VALUES (1, 1), (1, 2) AS t(a, b)");
+  if (PQresultStatus(res) != PGRES_TUPLES_OK) {
     PQclear(res);
-    PQfinish(conn);
-    return 0;
+    exit_nicely(conn);
+  }
+  for (int i = 0; i < PQntuples(res); i++) {
+    printf("a=%s b=%s\n", PQgetvalue(res, i, 0), PQgetvalue(res, i, 1));
+  }
+
+  PQclear(res);
+  PQfinish(conn);
+  return 0;
 }
 ```
+
+## Pandas DataFrame via JDBC
+
+You can directly load SQL result data as Pandas DataFrame by using some libraries
+(e.g., [psycopg2](http://initd.org/psycopg/) and [pg8000](https://github.com/mfenniak/pg8000));
+
+    >>> import psycopg2
+    >>> connection = psycopg2.connect("host=localhost port=5432 dbname=default user=maropu sslmode=disable")
+    >>> df = pd.read_sql(sql="SELECT * FROM t;", con=connection)
 
 ## Available options
 
@@ -128,6 +137,9 @@ int main(int argc, char **argv) {
       --conf spark.sql.server.ssl.path=STR                Keystore path.
       --conf spark.sql.server.ssl.keystore.passwd=STR     Keystore password.
       --conf spark.sql.server.ssl.certificate.passwd=STR  Certificate password.
+      --conf spark.yarn.keytab=STR                        Keytab file location.
+      --conf spark.yarn.principal=STR                     Principal name in a secure cluster.
+      --conf spark.yarn.impersonation.enabled=BOOL        Whether authentication impersonates connected users (Default: false).
 
 ## Execution modes
 

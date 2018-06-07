@@ -22,17 +22,20 @@ import java.lang.reflect.Field
 import java.util.StringTokenizer
 
 import org.apache.spark.sql.internal.SQLConf
+import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.util.Utils
 
 
 object SQLServerUtils {
 
-  def isKerberosEnabled(conf: SQLConf): Boolean = {
-    conf.contains("spark.yarn.keytab")
-  }
-
   def isRunningOnYarn(conf: SQLConf): Boolean = {
     conf.settings.get("spark.master").startsWith("yarn")
+  }
+
+  def isKerberosEnabled(conf: SQLConf): Boolean = {
+    require(!conf.sqlServerImpersonationEnabled || conf.sqlServerExecutionMode == "multi-context",
+      "Impersonation can be enabled in multi-context mode only")
+    conf.contains("spark.yarn.keytab") && conf.contains("spark.yarn.principal")
   }
 
   def kerberosKeytab(conf: SQLConf): String = {

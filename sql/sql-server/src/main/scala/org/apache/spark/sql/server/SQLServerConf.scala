@@ -168,7 +168,7 @@ object SQLServerConf {
   val SQLSERVER_IMPERSONATION_ENABLED = buildStaticConf("spark.yarn.impersonation.enabled")
     .doc("Whether authentication impersonates connected users.")
     .booleanConf
-    .createWithDefault(true)
+    .createWithDefault(false)
 
   val SQLSERVER_UI_STATEMENT_LIMIT = buildStaticConf("spark.sql.server.ui.retainedStatements")
     .doc("The number of SQL statements kept in the JDBC/ODBC web UI history.")
