@@ -175,11 +175,11 @@ when launching the SQL server. If enabled, the SQL server collects result data p
 Spark has already implmented a lot of efficient optimization rules in the Catalyst and the Spark community continues to
 develop it now. In some usecases, domain-specific knowledge and rules could make Spark more efficient and so
 it is useful to append user-defined optimizer rules. To install them, you need to pass new optimizer rule names and
-the jar that includes [the implmentation of the rules](./examples/src/main/scala/org/apache/spark/examples/optimizerRules.scala);
+the jar that includes [the implmentation of the rules](./examples/catalyst/src/main/scala/org/apache/spark/catalyst/examples/optimizerRules.scala);
 
     $ ./sbin/start-sql-server.sh \
-        --conf spark.jars=./target/examples_2.11_2.3.0_0.1.5-spark2.3-SNAPSHOT.jar \
-        --conf spark.sql.server.extraOptimizerRules=org.apache.spark.examples.EmptyRule1,spark.sql.server.extraOptimizerRule2
+        --conf spark.jars=./target/catalyst_2.11_2.3.0_0.1.5-spark2.3-SNAPSHOT.jar \
+        --conf spark.sql.server.extraOptimizerRules=org.apache.spark.catalyst.examples.EmptyRule1,spark.sql.server.extraOptimizerRule2
 
 <!--
 ## PostgreSQL syntax

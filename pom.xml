@@ -32,8 +32,8 @@
 
   <modules>
     <module>sql/sql-server</module>
-    <module>sql/tpcds</module>
-    <module>examples</module>
+    <module>examples/catalyst</module>
+    <module>examples/tpcds</module>
   </modules>
 
   <properties>

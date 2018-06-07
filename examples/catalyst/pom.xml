@@ -23,13 +23,13 @@
     <groupId>org.apache.spark</groupId>
     <artifactId>spark-sql-server_2.11</artifactId>
     <version>0.1.5-spark2.3-SNAPSHOT</version>
-    <relativePath>../pom.xml</relativePath>
+    <relativePath>../../pom.xml</relativePath>
   </parent>
 
   <groupId>org.apache.spark</groupId>
-  <artifactId>examples_2.11</artifactId>
+  <artifactId>catalyst_2.11</artifactId>
   <packaging>jar</packaging>
-  <name>Example code for the Spark SQL server</name>
+  <name>Custom optimizer rule examples</name>
 
   <dependencies>
     <dependency>

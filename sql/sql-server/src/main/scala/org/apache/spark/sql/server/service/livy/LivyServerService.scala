@@ -144,8 +144,8 @@ private[service] class LivyServerService(frontend: FrontendService) extends Comp
            |# livy.spark.deploy-mode = cluster
            |# livy.spark.scala-version = $scalaVersion
            |livy.spark.version = $sparkVersion
-           |livy.server.host = ${conf.sqlServerLivyHome}
-           |livy.server.port = ${conf.sqlServerPort}
+           |livy.server.host = ${conf.sqlServerLivyHost}
+           |livy.server.port = ${conf.sqlServerLivyPort}
            |livy.ui.enabled = false
            |# The SQL server needs the Hive support
            |livy.repl.enable-hive-context = true

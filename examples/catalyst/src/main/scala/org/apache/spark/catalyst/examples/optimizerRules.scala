@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.spark.examples
+package org.apache.spark.catalyst.examples
 
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
