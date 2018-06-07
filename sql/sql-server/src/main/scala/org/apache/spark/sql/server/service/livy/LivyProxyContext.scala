@@ -74,7 +74,8 @@ class LivyProxyContext(sqlConf: SQLConf, livyService: LivyServerService)
     val (_livyClient, _rpcEndpoint) =
         LivyProxyContext.retryRandom(numRetriesLeft = 4, maxBackOffMillis = 10000) {
       // Starts a Livy session
-      var builder = new LivyClientBuilder().setURI(new URI(LivyServerService.LIVY_SERVER_URI))
+      val livyUrl = s"http://${sqlConf.sqlServerLivyHost}:${sqlConf.sqlServerLivyPort}"
+      var builder = new LivyClientBuilder().setURI(new URI(livyUrl))
 
       (livyClientConf ++ sparkConf).foreach { case (key, value) =>
         builder = builder.setConf(key, value)

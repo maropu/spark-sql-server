@@ -91,11 +91,31 @@ object SQLServerConf {
     .stringConf
     .createOptional
 
-  val SQLSERVER_LIVY_HOME = buildStaticConf("spark.sql.server.livyHome")
+  val SQLSERVER_LIVY_HOME = buildStaticConf("spark.sql.server.livy.home")
     .internal()
     .doc("Relative path to Livy directory")
     .stringConf
     .createWithDefault(sys.env.getOrElse("LIVY_HOME", "."))
+
+  val SQLSERVER_LIVY_HOST = buildStaticConf("spark.sql.server.livy.host")
+    .internal()
+    .doc("Livy host address that the SQL server launches")
+    .stringConf
+    .createWithDefault("0.0.0.0")
+
+  // Since the default port of Livy is 8998, we use 8999 instead
+  val SQLSERVER_LIVY_PORT = buildStaticConf("spark.sql.server.livy.port")
+    .internal()
+    .doc("Livy port that the SQL server launches")
+    .intConf
+    .createWithDefault(8999)
+
+  val SQLSERVER_LIVY_PROCESS_FAIL_THRESHOLD =
+    buildStaticConf("spark.sql.server.livy.processFailThreshold")
+      .internal()
+      .doc("Threshold for a Livy process to fail when trying to restart.")
+      .intConf
+      .createWithDefault(5)
 
   val SQLSERVER_BINARY_TRANSFER_MODE = buildStaticConf("spark.sql.server.binaryTransferMode")
     .doc("Whether binary transfer mode is enabled.")
@@ -195,6 +215,13 @@ class SQLServerConf(conf: SQLConf) {
   def sqlServerExtraOptimizerRules: Option[String] = getConf(SQLSERVER_EXTRA_OPTIMIZER_RULES)
 
   def sqlServerLivyHome: String = getStaticConf(SQLSERVER_LIVY_HOME)
+
+  def sqlServerLivyHost: String = getStaticConf(SQLSERVER_LIVY_HOST)
+
+  def sqlServerLivyPort: Int = getStaticConf(SQLSERVER_LIVY_PORT)
+
+  def sqlServerLivyProcessFailThreshold: Int =
+    getStaticConf(SQLSERVER_LIVY_PROCESS_FAIL_THRESHOLD)
 
   def sqlServerBinaryTransferMode: Boolean = getStaticConf(SQLSERVER_BINARY_TRANSFER_MODE)
 

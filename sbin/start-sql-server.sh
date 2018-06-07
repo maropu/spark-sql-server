@@ -90,5 +90,5 @@ CLASS="org.apache.spark.sql.server.SQLServer"
 PROPERTY_FILE=${_DIR}/../conf/spark-defaults.conf
 APP_NAME="Spark SQL Server"
 exec "${SPARK_DIR}"/sbin/spark-daemon.sh submit $CLASS 1 --name "${APP_NAME}" --properties-file ${PROPERTY_FILE} \
-  --conf spark.sql.server.livyHome=${LIVY_DIR} "$@" ${RESOURCES}
+  --conf spark.sql.server.livy.home=${LIVY_DIR} "$@" ${RESOURCES}
 

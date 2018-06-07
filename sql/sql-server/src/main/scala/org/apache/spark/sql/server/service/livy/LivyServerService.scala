@@ -41,15 +41,13 @@ import org.apache.spark.util.Utils
 private[service] class LivyServerService(frontend: FrontendService) extends CompositeService {
   import LivyServerService._
 
-  // TODO: Makes this variable configurable
-  private val LIVY_PROCESS_FAIL_THRESHOLD = 5
-
   private var sparkJar: String = _
   private var livyHome: String = _
   private var livyConfDir: String = _
   private var livyStartScript: String = _
   private var livyProcess: Process = _
   private var livyProcessFailCount: Int = 0
+  private var livyProcessFailThreshold: Int = _
   private var livyThread: Thread = _
 
   private[livy] var rpcEnv: RpcEnv = _
@@ -71,6 +69,7 @@ private[service] class LivyServerService(frontend: FrontendService) extends Comp
     sparkJar = conf.settings.get("spark.jars")
     livyStartScript = s"${conf.sqlServerLivyHome}/$LIVY_START_SCRIPT"
     livyHome = conf.sqlServerLivyHome
+    livyProcessFailThreshold = conf.sqlServerLivyProcessFailThreshold
     if (!new File(livyStartScript).exists()) {
       throw new IllegalArgumentException(s"'$livyStartScript' not found: " +
         s"`${SQLServerConf.SQLSERVER_LIVY_HOME.key}` not defined correctly.")
@@ -145,8 +144,8 @@ private[service] class LivyServerService(frontend: FrontendService) extends Comp
            |# livy.spark.deploy-mode = cluster
            |# livy.spark.scala-version = $scalaVersion
            |livy.spark.version = $sparkVersion
-           |livy.server.host = $LIVY_SERVER_HOST
-           |livy.server.port = $LIVY_SERVER_PORT
+           |livy.server.host = ${conf.sqlServerLivyHome}
+           |livy.server.port = ${conf.sqlServerPort}
            |livy.ui.enabled = false
            |# The SQL server needs the Hive support
            |livy.repl.enable-hive-context = true
@@ -181,12 +180,12 @@ private[service] class LivyServerService(frontend: FrontendService) extends Comp
     frontend.bossGroup.shutdownGracefully()
   }
 
-  // TODO: Adds logics to attach to an existing Livy process
+  // TODO: We might possibly attach to an existing Livy process?
   override def doStart(): Unit = {
     val livyTask = new Runnable() {
       override def run(): Unit = {
         try {
-          while (livyProcessFailCount < LIVY_PROCESS_FAIL_THRESHOLD) {
+          while (livyProcessFailCount < livyProcessFailThreshold) {
             livyProcess = Utils.executeCommand(
               command = livyStartScript :: Nil,
               extraEnvironment = Map("LIVY_HOME" -> livyHome, "LIVY_CONF_DIR" -> livyConfDir))
@@ -194,7 +193,7 @@ private[service] class LivyServerService(frontend: FrontendService) extends Comp
             logWarning(s"Livy process exited with code $exitCode and try to restart...")
             livyProcessFailCount += 1
           }
-          val errMsg = s"Livy failed $LIVY_PROCESS_FAIL_THRESHOLD times and " +
+          val errMsg = s"Livy failed $livyProcessFailThreshold times and " +
             "try to stop the SQL server..."
           logWarning(errMsg)
           fail(new IOException(errMsg))
@@ -255,8 +254,5 @@ private[service] class LivyServerService(frontend: FrontendService) extends Comp
 private[livy] object LivyServerService extends Logging {
 
   val LIVY_START_SCRIPT = "bin/livy-server"
-  val LIVY_SERVER_HOST = "0.0.0.0"
-  val LIVY_SERVER_PORT = 8998
-  val LIVY_SERVER_URI = s"http://$LIVY_SERVER_HOST:$LIVY_SERVER_PORT"
   val LIVY_SERVICE_NAME = "livy-server-service-rpc"
 }
