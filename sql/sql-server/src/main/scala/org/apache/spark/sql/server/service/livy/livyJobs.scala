@@ -72,7 +72,7 @@ private class ExecutorEndpoint(override val rpcEnv: RpcEnv, sessionState: LivySe
     val catalogUpdater = (sqlContext: SQLContext, analyzedPlan: LogicalPlan) => {
       PgCatalogUpdater(sqlContext, analyzedPlan)
     }
-    new ExecutorImpl(catalogUpdater)
+    new LivyExecutorImpl(catalogUpdater)
   }
 
   private val sqlContext = sessionState._context match {

@@ -76,7 +76,7 @@ private class LivyProxyOperation(
           setState(FINISHED)
           rows.toList.toIterator
 
-        case IncrementalCollectStart =>
+        case IncrementalCollectStart() =>
           val localIterator = new Iterator[InternalRow] {
 
             /**
@@ -110,7 +110,7 @@ private class LivyProxyOperation(
                 case ResultSetResponse(rows) if rows.size == 1 => decodeUnsafeRows(rows.head)
                 case ResultSetResponse(_) =>
                   sys.error("`ResultSetResponse` should have a non-empty iterator")
-                case IncrementalCollectEnd => Iterator.empty
+                case IncrementalCollectEnd() => Iterator.empty
                 case ErrorResponse(e) =>
                   setState(ERROR)
                   throw new SQLException(SparkUtils.exceptionString(e))

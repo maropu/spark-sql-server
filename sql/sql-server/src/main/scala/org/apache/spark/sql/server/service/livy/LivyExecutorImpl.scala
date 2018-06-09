@@ -104,6 +104,6 @@ private[livy] class LivyExecutorImpl(catalogUpdater: (SQLContext, LogicalPlan) =
       sessionState: SessionState,
       statementId: String,
       query: (String, LogicalPlan)): Operation = {
-    new OperationImpl(sessionState, query)(statementId, catalogUpdater)
+    new LivyOperation(sessionState, query)(statementId, catalogUpdater)
   }
 }
