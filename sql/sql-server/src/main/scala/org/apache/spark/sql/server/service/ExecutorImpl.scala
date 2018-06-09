@@ -50,7 +50,7 @@ private class OperationImpl(
     case ctx => sys.error(s"${this.getClass.getSimpleName} cannot handle $ctx")
   }
 
-  protected val useIncrementalCollect = sqlContext.conf.sqlServerIncrementalCollectEnabled
+  protected def useIncrementalCollect = sqlContext.conf.sqlServerIncrementalCollectEnabled
 
   // If `prepare` called, sets the result here
   private var _boundPlan: Option[LogicalPlan] = None
@@ -86,7 +86,7 @@ private class OperationImpl(
     setState(CLOSED)
   }
 
-  override def outputSchema(): StructType = {
+  override lazy val outputSchema: StructType = {
     require(!hasParamHolder(analyzedPlan))
     analyzedPlan.schema
   }

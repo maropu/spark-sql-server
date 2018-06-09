@@ -389,13 +389,13 @@ object PgWireProtocol extends Logging {
 
           var numRows = 0
           if (maxRows == 0) {
-            rowIter.foreach { iter =>
-              ctx.write(DataRow(iter, rowConveter))
+            rowIter.foreach { row =>
+              ctx.write(DataRow(row, rowConveter))
               numRows += 1
             }
           } else {
-            rowIter.take(maxRows).foreach { iter =>
-              ctx.write(DataRow(iter, rowConveter))
+            rowIter.take(maxRows).foreach { row =>
+              ctx.write(DataRow(row, rowConveter))
               numRows += 1
             }
             // Accumulate fetched #rows in this query

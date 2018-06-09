@@ -126,7 +126,7 @@ object SQLServerConf {
   val SQLSERVER_LIVY_RPC_FAIL_THRESHOLD =
     buildStaticConf("spark.sql.server.livy.rpcFailThreshold")
       .internal()
-      .doc("Threshold for a Livy RPC to fail when trying to reconnect.")
+      .doc("Threshold for a Spark Netty RPC to fail when trying to reconnect.")
       .intConf
       .createWithDefault(3)
 

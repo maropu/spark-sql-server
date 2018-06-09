@@ -80,7 +80,7 @@ private class ExecutorEndpoint(override val rpcEnv: RpcEnv, sessionState: LivySe
     case ctx => sys.error(s"${this.getClass.getSimpleName} cannot handle $ctx")
   }
 
-  private val useIncrementalCollect = sqlContext.conf.sqlServerIncrementalCollectEnabled
+  private def useIncrementalCollect = sqlContext.conf.sqlServerIncrementalCollectEnabled
 
   @volatile private var activeOperation: Operation = NOP
 
@@ -112,10 +112,11 @@ private class ExecutorEndpoint(override val rpcEnv: RpcEnv, sessionState: LivySe
     case ExecuteExtendedQuery(statementId) =>
       require(statementId == activeOperation.statementId())
       try {
+        // To respect DDL/SET, we need to run it here
+        val rowIter = activeOperation.run()
         if (useIncrementalCollect) {
           context.reply(IncrementalCollectStart())
         } else {
-          val rowIter = activeOperation.run()
           // To make it serializable, uses `toArray`
           context.reply(ResultSetResponse(rowIter.toArray.toSeq))
         }
@@ -129,10 +130,11 @@ private class ExecutorEndpoint(override val rpcEnv: RpcEnv, sessionState: LivySe
       try {
         val logicalPlan = PgUtils.parse(sql)
         activeOperation = executorImpl.newOperation(sessionState, statementId, (sql, logicalPlan))
+        // To respect DDL/SET, we need to run it here
+        val rowIter = activeOperation.run()
         if (useIncrementalCollect) {
           context.reply(IncrementalCollectStart())
         } else {
-          val rowIter = activeOperation.run()
           // To make it serializable, uses `toArray`
           context.reply(ResultSetResponse(rowIter.toArray.toSeq))
         }

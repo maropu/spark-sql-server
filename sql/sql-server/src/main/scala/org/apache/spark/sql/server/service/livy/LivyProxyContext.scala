@@ -42,7 +42,6 @@ class LivyProxyContext(sqlConf: SQLConf, livyService: LivyServerService)
   private var rpcEndpoint: RpcEndpointRef = _
 
   private val sparkConfBlacklist: Seq[String] = Seq(
-    "spark.sql.server.",
     "spark.master",
     "spark.jars",
     "spark.submit.deployMode"
@@ -130,11 +129,11 @@ class LivyProxyContext(sqlConf: SQLConf, livyService: LivyServerService)
         success = true
       } catch {
         case NonFatal(_) if failCount < 3 =>
-          logWarning(s"Livy RPC failed, so try to start a Spark job again...")
+          logWarning("Spark Netty RPC failed, so try to start a Spark job again...")
           failCount += 1
           connect()
         case e =>
-          logError(s"Livy RPC failed ${sqlConf.sqlServerLivyRpcFailThreshold} times")
+          logError(s"Spark Netty RPC failed ${sqlConf.sqlServerLivyRpcFailThreshold} times")
           throw e
       }
     }

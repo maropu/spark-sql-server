@@ -26,6 +26,7 @@ import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.UnsafeRow
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.execution.ProjectExec
 import org.apache.spark.sql.server.service._
 
 private class LivyOperation(
@@ -68,7 +69,9 @@ private class LivyOperation(
       val df = executeInternal()
 
       val resultRowIterator = if (useIncrementalCollect) {
-        getByteArrayRdd(df.queryExecution.executedPlan.execute()).toLocalIterator
+        val plan = df.queryExecution.executedPlan
+        // To make rows `UnsafeRow`, wraps `ProjectExec` here
+        getByteArrayRdd(ProjectExec(plan.output, plan).execute()).toLocalIterator
       } else {
         // Needs to use `List` so that `Iterator#take` can proceed an internal cursor, e.g.,
         //
