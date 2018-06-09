@@ -62,16 +62,21 @@ private class OperationImpl(
   override def statementId(): String = _statementId
 
   override def cancel(): Unit = {
-    logInfo(
-      s"""Cancelling query with $statementId:
-         |Query:
-         |${query._1}
-         |Analyzed Plan:
-         |$analyzedPlan
-       """.stripMargin)
-    sqlContext.sparkContext.cancelJobGroup(statementId)
-    _servListener.foreach(_.onStatementCanceled(statementId))
-    setState(CANCELED)
+    // Since Spark jobs might be invoked in a state `FINISHED`, we accept it here
+    if (state == RUNNING || state == FINISHED) {
+      logInfo(
+        s"""Cancelling query with $statementId:
+           |Query:
+           |${query._1}
+           |Analyzed Plan:
+           |$analyzedPlan
+         """.stripMargin)
+      sqlContext.sparkContext.cancelJobGroup(statementId)
+      _servListener.foreach(_.onStatementCanceled(statementId))
+      setState(CANCELED)
+    } else {
+      logWarning(s"Tried to cancel query with $statementId though, this is not a running state.")
+    }
   }
 
   override def close(): Unit = {

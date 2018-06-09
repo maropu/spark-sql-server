@@ -89,10 +89,12 @@ private class ExecutorEndpoint(override val rpcEnv: RpcEnv, sessionState: LivySe
     sesseionSpecificAnalyzer.execute(PgUtils.parse(query))
   }
 
-  override def receiveAndReply(context: RpcCallContext): PartialFunction[Any, Unit] = {
+  private def _receiveAndReply(context: RpcCallContext): PartialFunction[Any, Unit] = {
     case SchemaRequest(sql) =>
       try { context.reply(SchemaResponse(analyzePlan(sql).schema)) } catch {
-        case NonFatal(e) => context.reply(ErrorResponse(e))
+        case NonFatal(e) =>
+          activeOperation = NOP
+          context.reply(ErrorResponse(e))
       }
 
     case PrepareRequest(statementId, sql, params) =>
@@ -102,7 +104,9 @@ private class ExecutorEndpoint(override val rpcEnv: RpcEnv, sessionState: LivySe
         activeOperation.prepare(params)
         context.reply(PrepareResponse())
       } catch {
-        case NonFatal(e) => context.reply(ErrorResponse(e))
+        case NonFatal(e) =>
+          activeOperation = NOP
+          context.reply(ErrorResponse(e))
       }
 
     case ExecuteExtendedQuery(statementId) =>
@@ -116,7 +120,9 @@ private class ExecutorEndpoint(override val rpcEnv: RpcEnv, sessionState: LivySe
           context.reply(ResultSetResponse(rowIter.toArray.toSeq))
         }
       } catch {
-        case NonFatal(e) => context.reply(ErrorResponse(e))
+        case NonFatal(e) =>
+          activeOperation = NOP
+          context.reply(ErrorResponse(e))
       }
 
     case ExecuteSimpleQuery(statementId, sql) =>
@@ -131,13 +137,14 @@ private class ExecutorEndpoint(override val rpcEnv: RpcEnv, sessionState: LivySe
           context.reply(ResultSetResponse(rowIter.toArray.toSeq))
         }
       } catch {
-        case NonFatal(e) => context.reply(ErrorResponse(e))
+        case NonFatal(e) =>
+          activeOperation = NOP
+          context.reply(ErrorResponse(e))
       }
 
     case RequestNextResultSet(statementId) =>
       require(statementId == activeOperation.statementId())
       try {
-        // TODO: Returns partition-by-partition instead of row-by-row
         val iter = activeOperation.run()
         if (iter.hasNext) {
           val result = iter.next()
@@ -146,10 +153,11 @@ private class ExecutorEndpoint(override val rpcEnv: RpcEnv, sessionState: LivySe
           context.reply(IncrementalCollectEnd())
         }
       } catch {
-        case NonFatal(e) => context.reply(ErrorResponse(e))
+        case NonFatal(e) =>
+          activeOperation = NOP
+          context.reply(ErrorResponse(e))
       }
 
-    // TODO: Currently, the cancel request doesn't work well...
     case CancelRequest(statementId) =>
       if (statementId == activeOperation.statementId()) {
         activeOperation.cancel()
@@ -159,6 +167,14 @@ private class ExecutorEndpoint(override val rpcEnv: RpcEnv, sessionState: LivySe
           s"Failed to cancel a query with `$statementId`: " +
           s"the running query with `${activeOperation.statementId()}` found.")))
       }
+  }
+
+  override def receiveAndReply(context: RpcCallContext): PartialFunction[Any, Unit] = {
+    if (sqlContext.sparkContext.isStopped) {
+      throw new IllegalStateException("SparkContext already stopped, so stopping this job")
+    } else {
+      _receiveAndReply(context)
+    }
   }
 }
 

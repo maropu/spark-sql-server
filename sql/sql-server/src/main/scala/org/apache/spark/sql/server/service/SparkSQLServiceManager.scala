@@ -128,6 +128,7 @@ private[service] class SessionManager(
           }
           val livyContext = new LivyProxyContext(conf, livyService)
           livyContext.init(s"rpc-service-session-$sessionId", sessionId, userName, dbName)
+          livyContext.connect()
           livyContext
         }
     }

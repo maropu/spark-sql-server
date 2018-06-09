@@ -110,12 +110,25 @@ object SQLServerConf {
     .intConf
     .createWithDefault(8999)
 
+  val SQLSERVER_LIVY_UI_ENABLED = buildStaticConf("spark.sql.server.livy.ui.enabled")
+    .internal()
+    .doc("Whether Livy UI is enabled.")
+    .booleanConf
+    .createWithDefault(false)
+
   val SQLSERVER_LIVY_PROCESS_FAIL_THRESHOLD =
     buildStaticConf("spark.sql.server.livy.processFailThreshold")
       .internal()
       .doc("Threshold for a Livy process to fail when trying to restart.")
       .intConf
       .createWithDefault(5)
+
+  val SQLSERVER_LIVY_RPC_FAIL_THRESHOLD =
+    buildStaticConf("spark.sql.server.livy.rpcFailThreshold")
+      .internal()
+      .doc("Threshold for a Livy RPC to fail when trying to reconnect.")
+      .intConf
+      .createWithDefault(3)
 
   val SQLSERVER_BINARY_TRANSFER_MODE = buildStaticConf("spark.sql.server.binaryTransferMode")
     .doc("Whether binary transfer mode is enabled.")
@@ -220,8 +233,11 @@ class SQLServerConf(conf: SQLConf) {
 
   def sqlServerLivyPort: Int = getStaticConf(SQLSERVER_LIVY_PORT)
 
-  def sqlServerLivyProcessFailThreshold: Int =
-    getStaticConf(SQLSERVER_LIVY_PROCESS_FAIL_THRESHOLD)
+  def sqlServerLivyUiEnabled: Boolean = getStaticConf(SQLSERVER_LIVY_UI_ENABLED)
+
+  def sqlServerLivyProcessFailThreshold: Int = getStaticConf(SQLSERVER_LIVY_PROCESS_FAIL_THRESHOLD)
+
+  def sqlServerLivyRpcFailThreshold: Int = getStaticConf(SQLSERVER_LIVY_RPC_FAIL_THRESHOLD)
 
   def sqlServerBinaryTransferMode: Boolean = getStaticConf(SQLSERVER_BINARY_TRANSFER_MODE)
 

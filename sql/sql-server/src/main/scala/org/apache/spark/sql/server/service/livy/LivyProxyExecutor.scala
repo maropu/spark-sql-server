@@ -36,18 +36,15 @@ private class LivyProxyOperation(
     query: (String, LogicalPlan))(
     _statementId: String) extends Operation with Logging {
 
-  private val livyRpcEndpoint = sessionState._context match {
-    case ctx: LivyProxyContext =>
-      require(ctx.rpcEndpoint != null, "`LivyProxyContext` not initialized yet")
-      ctx.rpcEndpoint
-    case ctx =>
-      sys.error(s"${this.getClass.getSimpleName} cannot handle $ctx")
+  private val livyContext = sessionState._context match {
+    case ctx: LivyProxyContext => ctx
+    case other => sys.error(s"${this.getClass.getSimpleName} cannot handle $other")
   }
 
   override def statementId: String = _statementId
 
   override lazy val outputSchema: StructType = {
-    livyRpcEndpoint.askSync[AnyRef](SchemaRequest(query._1)) match {
+    livyContext.ask(SchemaRequest(query._1)) match {
       case SchemaResponse(schema) => schema
       case ErrorResponse(e) => throw new SQLException(SparkUtils.exceptionString(e))
     }
@@ -56,7 +53,7 @@ private class LivyProxyOperation(
   private var simpleMode: Boolean = true
 
   override def prepare(params: Map[Int, Literal]): Unit = {
-    livyRpcEndpoint.askSync[AnyRef](PrepareRequest(statementId, query._1, params)) match {
+    livyContext.ask(PrepareRequest(statementId, query._1, params)) match {
       case PrepareResponse() =>
         simpleMode = false
       case ErrorResponse(e) =>
@@ -74,7 +71,7 @@ private class LivyProxyOperation(
       } else {
         ExecuteExtendedQuery(statementId)
       }
-      val resultRowIterator = livyRpcEndpoint.askSync[AnyRef](message) match {
+      val resultRowIterator = livyContext.ask(message) match {
         case ResultSetResponse(rows) =>
           setState(FINISHED)
           rows.toList.toIterator
@@ -109,7 +106,7 @@ private class LivyProxyOperation(
             }
 
             private def fetchNextIter(): Iterator[InternalRow] = {
-              livyRpcEndpoint.askSync[AnyRef](RequestNextResultSet(statementId)) match {
+              livyContext.ask(RequestNextResultSet(statementId)) match {
                 case ResultSetResponse(rows) if rows.size == 1 => decodeUnsafeRows(rows.head)
                 case ResultSetResponse(_) =>
                   sys.error("`ResultSetResponse` should have a non-empty iterator")
@@ -150,13 +147,25 @@ private class LivyProxyOperation(
   }
 
   override def cancel(): Unit = {
-    livyRpcEndpoint.askSync[AnyRef](CancelRequest(statementId)) match {
-      case CancelResponse =>
-        setState(CANCELED)
-      case ErrorResponse(e) =>
-        val errMsg = SparkUtils.exceptionString(e)
-        logWarning(errMsg)
-        throw new SQLException(errMsg)
+    // Since Spark jobs might be invoked in a state `FINISHED`, we accept it here
+    if (state == RUNNING || state == FINISHED) {
+      logInfo(
+        s"""Cancelling query with $statementId:
+           |Query:
+           |${query._1}
+           |Analyzed Plan:
+           |${query._2}
+         """.stripMargin)
+      livyContext.ask(CancelRequest(statementId)) match {
+        case CancelResponse =>
+          setState(CANCELED)
+        case ErrorResponse(e) =>
+          val errMsg = SparkUtils.exceptionString(e)
+          logWarning(errMsg)
+          throw new SQLException(errMsg)
+      }
+    } else {
+      logWarning(s"Tried to cancel query with $statementId though, this is not a running state.")
     }
   }
 

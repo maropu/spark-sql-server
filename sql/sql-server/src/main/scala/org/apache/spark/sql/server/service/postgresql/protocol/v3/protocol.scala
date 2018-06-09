@@ -318,7 +318,7 @@ object PgWireProtocol extends Logging {
         // Updates a session state
         sessionState.queries(queryName) = newQueryState
         sessionState.portals(portalName) = portalState
-        sessionState.activePortal = Some(portalName)
+        sessionState.activeExecState = Some(execState)
 
         ctx.write(BindComplete)
         ctx.flush()
@@ -415,9 +415,11 @@ object PgWireProtocol extends Logging {
               }
             case _ if !portalState.isCursorMode =>
               ctx.write(CommandComplete(s"SELECT $numRows"))
+              sessionState.activeExecState = None
             case _ =>
               if (!rowIter.hasNext) {
                 ctx.write(CommandComplete(s"FETCH ${portalState.numFetched}"))
+                sessionState.activeExecState = None
               } else {
                 ctx.write(PortalSuspended)
               }
@@ -535,6 +537,9 @@ object PgWireProtocol extends Logging {
             // in `PostgreSQLExecutor`.
             val plan = (query, PgUtils.parse(query))
             val execState = cli.executeStatement(sessionState._sessionId, plan)
+            sessionState.activeExecState = Some(execState)
+
+            // Runs it...
             val resultRowIter = execState.run()
 
             // The response to a SELECT query (or other queries that return row sets, such as
@@ -551,6 +556,7 @@ object PgWireProtocol extends Logging {
               numRows += 1
             }
             ctx.write(CommandComplete(s"SELECT $numRows"))
+            sessionState.activeExecState = None
           }
         }
         ctx.write(ReadyForQuery)
@@ -910,9 +916,9 @@ case class V3SessionState(
   val queries: mutable.Map[String, QueryState] = mutable.Map.empty
   val portals: mutable.Map[String, PortalState] = mutable.Map.empty
 
-  // Holds a current active portal of query execution and this variable possibly accessed
+  // Holds a current active state of query execution and this variable possibly accessed
   // by asynchronous JDBC cancellation requests.
-  @volatile var activePortal: Option[String] = None
+  @volatile var activeExecState: Option[Operation] = None
 
   // Holds unprocessed bytes for incoming V3 messages
   var pendingBytes: Array[Byte] = Array.empty
@@ -939,7 +945,7 @@ case class V3SessionState(
 object V3SessionState {
 
   def resetState(state: V3SessionState): Unit = {
-    state.activePortal = None
+    state.activeExecState = None
     state.pendingBytes = Array.empty
   }
 }
@@ -1057,8 +1063,8 @@ class PgV3MessageHandler(cli: SessionService, conf: SQLConf)
         return
       }
       logWarning(s"Canceling the running query: channelId=$channelId")
-      sessionState.activePortal.foreach { portalName =>
-        sessionState.portals(portalName).execState.cancel()
+      sessionState.activeExecState.foreach { execState =>
+        execState.cancel()
       }
       ctx.close()
       return

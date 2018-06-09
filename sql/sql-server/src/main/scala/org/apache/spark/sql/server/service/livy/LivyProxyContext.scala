@@ -22,6 +22,7 @@ import java.util.concurrent.ExecutionException
 
 import scala.collection.JavaConverters._
 import scala.util.Random
+import scala.util.control.NonFatal
 
 import org.apache.livy.{LivyClient, LivyClientBuilder}
 
@@ -36,12 +37,11 @@ import org.apache.spark.sql.server.util.SQLServerUtils
 class LivyProxyContext(sqlConf: SQLConf, livyService: LivyServerService)
     extends SessionContext with Logging {
 
+  private var connectMethod: Option[() => Unit] = None
   private var livyClient: LivyClient = _
+  private var rpcEndpoint: RpcEndpointRef = _
 
-  // TODO: Adds logics to reopen a session in case of any failure (e.g., Spark job crushes)
-  private[livy] var rpcEndpoint: RpcEndpointRef = _
-
-  private def sparkConfBlacklist: Seq[String] = Seq(
+  private val sparkConfBlacklist: Seq[String] = Seq(
     "spark.sql.server.",
     "spark.master",
     "spark.jars",
@@ -55,10 +55,11 @@ class LivyProxyContext(sqlConf: SQLConf, livyService: LivyServerService)
     val sparkConf = sqlConf.settings.asScala.filterNot {
       case (key, _) => sparkConfBlacklist.exists(key.contains)
     } ++ Map(
-      "spark.rpc.askTimeout" -> "720s",
-      // task thread + cancel thread for Spark Netty RPC
-      "spark.rpc.io.numConnectionsPerPeer" -> "2",
-      "spark.rpc.io.threads" -> "2"
+      "spark.rpc.askTimeout" -> "720s"
+      // We need to have at least two threads for Spark Netty RPC: task thread + cancel thread
+      // "spark.rpc.netty.dispatcher.numThreads" -> "2",
+      // "spark.rpc.io.numConnectionsPerPeer" -> "2",
+      // "spark.rpc.io.threads" -> "2"
     )
     val livyClientConf = Seq(
       "job-cancel.trigger-interval" -> "100ms",
@@ -69,43 +70,75 @@ class LivyProxyContext(sqlConf: SQLConf, livyService: LivyServerService)
          |  ${sparkConf.map { case (k, v) => s"key=$k value=$v" }.mkString("\n  ")}
        """.stripMargin)
 
-    // Submits a job to open a session, initializes a RPC endpoint in the session, and
-    // registers the endpoint in `RpcEnv`.
-    val (_livyClient, _rpcEndpoint) =
-        LivyProxyContext.retryRandom(numRetriesLeft = 4, maxBackOffMillis = 10000) {
-      // Starts a Livy session
-      val livyUrl = s"http://${sqlConf.sqlServerLivyHost}:${sqlConf.sqlServerLivyPort}"
-      var builder = new LivyClientBuilder().setURI(new URI(livyUrl))
+    val _connectMethod = () => {
+      // Submits a job to open a session, initializes a RPC endpoint in the session, and
+      // registers the endpoint in `RpcEnv`.
+      val (_livyClient, _rpcEndpoint) =
+          LivyProxyContext.retryRandom(numRetriesLeft = 4, maxBackOffMillis = 10000) {
+        // Starts a Livy session
+        val livyUrl = s"http://${sqlConf.sqlServerLivyHost}:${sqlConf.sqlServerLivyPort}"
+        var builder = new LivyClientBuilder().setURI(new URI(livyUrl))
 
-      (livyClientConf ++ sparkConf).foreach { case (key, value) =>
-        builder = builder.setConf(key, value)
+        (livyClientConf ++ sparkConf).foreach { case (key, value) =>
+          builder = builder.setConf(key, value)
+        }
+
+        // If Kerberos and impersonation enabled, sets `userName` at `proxy-user`
+        if (SQLServerUtils.isKerberosEnabled(sqlConf) && sqlConf.sqlServerImpersonationEnabled) {
+          logInfo(s"Kerberos and impersonation enabled: proxy-user=$userName")
+          builder = builder.setConf("proxy-user", userName)
+        }
+
+        val client = builder.build()
+
+        val endpoint = try {
+          // Submits a job to open a session and initializes a RPC endpoint
+          val endpointRef = client.submit(new OpenSessionJob(sessionId, dbName)).get()
+          // Then, registers the endpoint in `RpcEnv`
+          livyService.rpcEnv.setupEndpointRef(
+            endpointRef.address, OpenSessionJob.ENDPOINT_NAME)
+        } catch {
+          case e: Throwable =>
+            client.stop(true)
+            throw e
+        }
+
+        (client, endpoint)
       }
 
-      // If Kerberos and impersonation enabled, sets `userName` at `proxy-user`
-      if (SQLServerUtils.isKerberosEnabled(sqlConf) && sqlConf.sqlServerImpersonationEnabled) {
-        logInfo(s"Kerberos and impersonation enabled: proxy-user=$userName")
-        builder = builder.setConf("proxy-user", userName)
-      }
-
-      val client = builder.build()
-
-      val endpoint = try {
-        // Submits a job to open a session and initializes a RPC endpoint
-        val endpointRef = client.submit(new OpenSessionJob(sessionId, dbName)).get()
-        // Then, registers the endpoint in `RpcEnv`
-        livyService.rpcEnv.setupEndpointRef(
-          endpointRef.address, OpenSessionJob.ENDPOINT_NAME)
-      } catch {
-        case e: Throwable =>
-          client.stop(true)
-          throw e
-      }
-
-      (client, endpoint)
+      livyClient = _livyClient
+      rpcEndpoint = _rpcEndpoint
     }
 
-    livyClient = _livyClient
-    rpcEndpoint = _rpcEndpoint
+    connectMethod = Some(_connectMethod)
+  }
+
+  def connect(): Unit = {
+    val func = connectMethod.getOrElse {
+      sys.error("init() should be called before connect() called.")
+    }
+    func()
+  }
+
+  def ask(message: AnyRef): AnyRef = {
+    var failCount = 0
+    var success = false
+    var result: AnyRef = null
+    while (!success) {
+      try {
+        result = rpcEndpoint.askSync[AnyRef](message)
+        success = true
+      } catch {
+        case NonFatal(_) if failCount < 3 =>
+          logWarning(s"Livy RPC failed, so try to start a Spark job again...")
+          failCount += 1
+          connect()
+        case e =>
+          logError(s"Livy RPC failed ${sqlConf.sqlServerLivyRpcFailThreshold} times")
+          throw e
+      }
+    }
+    result
   }
 
   def stop(): Unit = {

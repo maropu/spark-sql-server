@@ -146,7 +146,7 @@ private[service] class LivyServerService(frontend: FrontendService) extends Comp
            |livy.spark.version = $sparkVersion
            |livy.server.host = ${conf.sqlServerLivyHost}
            |livy.server.port = ${conf.sqlServerLivyPort}
-           |livy.ui.enabled = false
+           |livy.ui.enabled = ${conf.sqlServerLivyUiEnabled}
            |# The SQL server needs the Hive support
            |livy.repl.enable-hive-context = true
            |livy.rsc.jars = $livyRscJars,$sparkJar
@@ -193,8 +193,7 @@ private[service] class LivyServerService(frontend: FrontendService) extends Comp
             logWarning(s"Livy process exited with code $exitCode and try to restart...")
             livyProcessFailCount += 1
           }
-          val errMsg = s"Livy failed $livyProcessFailThreshold times and " +
-            "try to stop the SQL server..."
+          val errMsg = s"Livy failed $livyProcessFailThreshold times."
           logWarning(errMsg)
           fail(new IOException(errMsg))
         } catch {
