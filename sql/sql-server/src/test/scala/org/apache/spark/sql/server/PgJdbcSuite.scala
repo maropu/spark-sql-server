@@ -28,6 +28,8 @@ import scala.concurrent.duration._
 import scala.io.Source
 import scala.sys.process.BasicIO
 
+import org.postgresql.util.PSQLException
+
 import org.apache.spark.SparkException
 import org.apache.spark.util.{ThreadUtils, Utils}
 
@@ -97,7 +99,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
   extends PgJdbcTest(
     pgVersion = pgVersion,
     ssl = false,
-    queryQueryMode = queryMode,
+    queryMode = queryMode,
     executionMode = executionMode) {
 
   val hiveVersion = "1.2.1"
@@ -1232,6 +1234,34 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
           assert(!rs.next())
           rs.close()
         }
+    }
+  }
+}
+
+// class PgJdbcExtendedNoTestingSuite extends PgJdbcNoTestingSuite("extended")
+// class PgJdbcSimpleNoTestingSuite extends PgJdbcNoTestingSuite("simple")
+
+abstract class PgJdbcNoTestingSuite(queryMode: String)
+    extends PgJdbcTest(queryMode = queryMode, isTesting = false) {
+
+  // In the PostgreSQL expected behaviour, `SET` returns no rows
+  test("SET returns no row") {
+    testJdbcStatement { statement =>
+      val expectedErrMsg = "No results were returned by the query"
+      var errMsg = intercept[PSQLException] {
+        statement.executeQuery("SET foo=bar")
+      }.getMessage
+      assert(errMsg.contains(expectedErrMsg))
+
+      errMsg = intercept[PSQLException] {
+        statement.executeQuery("SET foo")
+      }.getMessage
+      assert(errMsg.contains(expectedErrMsg))
+
+      errMsg = intercept[PSQLException] {
+        statement.executeQuery("SET -v")
+      }.getMessage
+      assert(errMsg.contains(expectedErrMsg))
     }
   }
 }

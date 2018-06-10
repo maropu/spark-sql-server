@@ -40,20 +40,20 @@ import org.apache.spark.util.{ThreadUtils, Utils}
  * A base class that manages a pair of JDBC driver connections and a SQL server instance.
  */
 class PgJdbcTest(
-
     override val pgVersion: String = "9.6",
     override val ssl: Boolean = false,
-    override val queryQueryMode: String = "extended",
+    override val queryMode: String = "extended",
     override val executionMode: String = "multi-session",
-    override val incrementalCollect: Boolean = true) extends SQLServerTest with PgJdbcTestBase {
+    override val incrementalCollect: Boolean = true,
+    override val isTesting: Boolean = true) extends SQLServerTest with PgJdbcTestBase {
 
   override val serverInstance: SparkPgSQLServerTest = server
 
   def testSelectiveQueryModes(modes: String*)(testName: String)(testBody: => Unit): Unit = {
-    if (modes.contains(queryQueryMode)) {
+    if (modes.contains(queryMode)) {
       test(testName) { testBody }
     } else {
-      ignore(s"$testName [skipped when $queryQueryMode mode selected]")(testBody)
+      ignore(s"$testName [skipped when $queryMode mode selected]")(testBody)
     }
   }
 
@@ -76,13 +76,15 @@ abstract class SQLServerTest extends SparkFunSuite with BeforeAndAfterAll with L
   val executionMode: String
   val ssl: Boolean
   val incrementalCollect: Boolean
+  val isTesting: Boolean
 
   protected val server = new SparkPgSQLServerTest(
     name = this.getClass.getSimpleName,
     pgVersion = pgVersion,
     executionMode = executionMode,
     ssl = ssl,
-    incrementalCollect = incrementalCollect)
+    incrementalCollect = incrementalCollect,
+    isTesting = isTesting)
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -106,6 +108,7 @@ class SparkPgSQLServerTest(
     executionMode: String,
     val ssl: Boolean,
     incrementalCollect: Boolean,
+    isTesting: Boolean,
     options: Map[String, String] = Map.empty)
   extends Logging {
 
@@ -192,7 +195,7 @@ class SparkPgSQLServerTest(
        | --driver-java-options -Dlog4j.debug
        | --conf spark.ui.enabled=false
        | --conf spark.sql.warehouse.dir=$testTempDir/spark-warehouse
-       | --conf spark.sql.server.testing=true
+       | --conf spark.sql.server.testing=$isTesting
        | --conf ${SQLServerConf.SQLSERVER_PORT.key}=$port
        | --conf ${SQLServerConf.SQLSERVER_VERSION.key}=$pgVersion
        | --conf ${SQLServerConf.SQLSERVER_EXECUTION_MODE.key}=$executionMode
@@ -314,7 +317,7 @@ trait PgJdbcTestBase {
   // https://jdbc.postgresql.org/documentation/head/connect.html#connection-parameters
 
   // `preferQueryMode` has been supported until PostgreSQL JDBC drivers v9.4.1210
-  val queryQueryMode: String
+  val queryMode: String
 
   // Set this threshold at 1 for tests (5 by default)
   val prepareThreshold: Int = 1
@@ -371,7 +374,7 @@ trait PgJdbcTestBase {
     props.put("defaultRowFetchSize", defaultRowFetchSize.toString)
     props.put("sendBufferSize", sendBufferSize.toString)
     props.put("recvBufferSize", recvBufferSize.toString)
-    props.put("preferQueryMode", queryQueryMode)
+    props.put("preferQueryMode", queryMode)
     props.put("binaryTransferEnable", binaryTransferEnable)
     props.put("binaryTransferDisable", binaryTransferDisable)
     // props.put("loggerLevel", "TRACE")

@@ -164,6 +164,7 @@ class FaultToleranceSuite extends SparkFunSuite with BeforeAndAfterAll with Befo
         executionMode = "multi-session",
         ssl = false,
         incrementalCollect = true,
+        isTesting = true,
         options = serverOption)
       _servCounter += 1
       serv.start()

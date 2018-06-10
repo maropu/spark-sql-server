@@ -41,7 +41,7 @@ import io.netty.handler.ssl.util.SelfSignedCertificate
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.execution.command.SetCommand
+import org.apache.spark.sql.execution.command.{RunnableCommand, SetCommand}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.server.SQLServerConf
 import org.apache.spark.sql.server.SQLServerConf._
@@ -351,19 +351,25 @@ object PgWireProtocol extends Logging {
         import sessionState._
         import sessionState.v3Protocol._
 
-        if (tpe == 83) { // Describe a prepared statement
+        val (schema, plan) = if (tpe == 83) {
+          // Describes a prepared statement
           logInfo(s"Describe the '$name' prepared statement (id:${sessionState._sessionId})")
           val queryState = sessionState.queries(name)
-          ctx.write(RowDescription(queryState._schema))
-          ctx.flush()
-        } else if (tpe == 80) { // Describe a portal
+          (queryState._schema, queryState.logicalPlan)
+        } else if (tpe == 80) {
+          // Describes a portal
           logInfo(s"Describe the '$name' portal i(id:${sessionState._sessionId})")
           val queryState = sessionState.portals(name).queryState
-          ctx.write(RowDescription(queryState._schema))
-          ctx.flush()
+          (queryState._schema, queryState.logicalPlan)
         } else {
-          logWarning(s"Unknown type received in 'Describe': $tpe")
+          sys.error(s"Unknown type received in 'Describe': $tpe")
         }
+
+        plan match {
+          case _: RunnableCommand =>
+          case _ => ctx.write(RowDescription(schema))
+        }
+        ctx.flush()
       })
     },
 
@@ -387,10 +393,6 @@ object PgWireProtocol extends Logging {
           // Sends back a complete message depending on a portal state
           val logicalPlan = portalState.queryState.logicalPlan
           logicalPlan match {
-            case BeginCommand(_) =>
-              ctx.write(CommandComplete("BEGIN"))
-              sessionState.activeExecState = None
-
             case SetCommand(_) =>
               if (SQLServerUtils.isTesting) {
                 // In the PostgreSQL expected behaviour, `SET` returns no rows. But, it is useful
@@ -399,6 +401,10 @@ object PgWireProtocol extends Logging {
                 rowIter.foreach { row => ctx.write(DataRow(row, rowConveter)) }
               }
               ctx.write(CommandComplete("SET"))
+              sessionState.activeExecState = None
+
+            case cmd: RunnableCommand =>
+              ctx.write(CommandComplete(cmd.simpleString))
               sessionState.activeExecState = None
 
             case _ =>
