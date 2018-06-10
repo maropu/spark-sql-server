@@ -130,7 +130,7 @@ object SQLServerConf {
       .intConf
       .createWithDefault(3)
 
-  val SQLSERVER_BINARY_TRANSFER_MODE = buildStaticConf("spark.sql.server.binaryTransferMode")
+  val SQLSERVER_BINARY_TRANSFER_MODE = buildConf("spark.sql.server.binaryTransferMode")
     .doc("Whether binary transfer mode is enabled.")
     .booleanConf
     .createWithDefault(true)
@@ -239,7 +239,7 @@ class SQLServerConf(conf: SQLConf) {
 
   def sqlServerLivyRpcFailThreshold: Int = getStaticConf(SQLSERVER_LIVY_RPC_FAIL_THRESHOLD)
 
-  def sqlServerBinaryTransferMode: Boolean = getStaticConf(SQLSERVER_BINARY_TRANSFER_MODE)
+  def sqlServerBinaryTransferMode: Boolean = getConf(SQLSERVER_BINARY_TRANSFER_MODE)
 
   def sqlServerIncrementalCollectEnabled: Boolean = getConf(SQLSERVER_INCREMENTAL_COLLECT_ENABLED)
 
