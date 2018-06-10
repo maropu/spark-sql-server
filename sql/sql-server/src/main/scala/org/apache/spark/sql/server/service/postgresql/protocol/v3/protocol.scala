@@ -365,10 +365,13 @@ object PgWireProtocol extends Logging {
           sys.error(s"Unknown type received in 'Describe': $tpe")
         }
 
-        plan match {
-          case _: RunnableCommand =>
-          case _ => ctx.write(RowDescription(schema))
-        }
+        // TODO: Needs to return nothing for runnable commands (e.g.., SET).
+        //
+        // plan match {
+        //   case _: RunnableCommand =>
+        //   case _ => ctx.write(RowDescription(schema))
+        // }
+        ctx.write(RowDescription(schema))
         ctx.flush()
       })
     },
@@ -403,9 +406,13 @@ object PgWireProtocol extends Logging {
               ctx.write(CommandComplete("SET"))
               sessionState.activeExecState = None
 
-            case cmd: RunnableCommand =>
-              ctx.write(CommandComplete(cmd.simpleString))
+            case BeginCommand(_) =>
+              ctx.write(CommandComplete("BEGIN"))
               sessionState.activeExecState = None
+
+            // case cmd: RunnableCommand =>
+            //   ctx.write(CommandComplete(cmd.simpleString))
+            //   sessionState.activeExecState = None
 
             case _ =>
               var numRows = 0
