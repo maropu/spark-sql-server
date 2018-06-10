@@ -29,6 +29,7 @@ import org.apache.livy.{LivyClient, LivyClientBuilder}
 import org.apache.spark.internal.Logging
 import org.apache.spark.rpc.RpcEndpointRef
 import org.apache.spark.sql.internal.SQLConf
+import org.apache.spark.sql.server.SQLServerConf
 import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.service.SessionContext
 import org.apache.spark.sql.server.util.SQLServerUtils
@@ -42,6 +43,18 @@ class LivyProxyContext(sqlConf: SQLConf, livyService: LivyServerService)
   private var rpcEndpoint: RpcEndpointRef = _
 
   private val sparkConfBlacklist: Seq[String] = Seq(
+    SQLServerConf.SQLSERVER_PORT.key,
+    SQLServerConf.SQLSERVER_VERSION.key,
+    SQLServerConf.SQLSERVER_EXECUTION_MODE.key,
+    SQLServerConf.SQLSERVER_PSQL_ENABLED.key,
+    SQLServerConf.SQLSERVER_WORKER_THREADS.key,
+    SQLServerConf.SQLSERVER_RECOVERY_MODE.key,
+    SQLServerConf.SQLSERVER_RECOVERY_DIR.key,
+    SQLServerConf.SQLSERVER_IDLE_SESSION_CLEANUP_DELAY.key,
+    SQLServerConf.SQLSERVER_IMPERSONATION_ENABLED.key,
+    "spark.sql.server.livy.",
+    "spark.sql.server.ssl.",
+    "spark.sql.server.ui.",
     "spark.master",
     "spark.jars",
     "spark.submit.deployMode"
