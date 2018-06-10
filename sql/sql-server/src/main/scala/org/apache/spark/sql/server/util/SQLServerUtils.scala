@@ -23,10 +23,19 @@ import java.util.StringTokenizer
 
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.server.SQLServerConf._
+import org.apache.spark.sql.server.SQLServerEnv
 import org.apache.spark.util.Utils
 
 
 object SQLServerUtils {
+
+  /**
+   * Indicates whether the SQL server is currently running unit tests.
+   */
+  def isTesting: Boolean = {
+    SQLServerEnv.sparkConf.contains("spark.sql.server.testing") &&
+      SQLServerEnv.sparkConf.get("spark.sql.server.testing") == "true"
+  }
 
   def isRunningOnYarn(conf: SQLConf): Boolean = {
     conf.settings.get("spark.master").startsWith("yarn")

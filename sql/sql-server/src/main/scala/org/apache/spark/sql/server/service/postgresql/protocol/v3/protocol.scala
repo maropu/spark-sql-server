@@ -50,6 +50,7 @@ import org.apache.spark.sql.server.service.postgresql.PgMetadata._
 import org.apache.spark.sql.server.service.postgresql.PgUtils
 import org.apache.spark.sql.server.service.postgresql.execution.command.BeginCommand
 import org.apache.spark.sql.server.service.postgresql.protocol.v3.PgRowConverters._
+import org.apache.spark.sql.server.util.SQLServerUtils
 import org.apache.spark.sql.types._
 import org.apache.spark.util.Utils._
 
@@ -379,49 +380,53 @@ object PgWireProtocol extends Logging {
 
           val portalState = sessionState.portals(portalName)
           val rowConveter = portalState.queryState._rowWriter.get
-          val rowIter = if (portalState.numFetched == 0) {
-            val iter = portalState.execState.run()
-            portalState.resultRowIter = iter
-            iter
-          } else {
-            portalState.resultRowIter
-          }
 
-          var numRows = 0
-          if (maxRows == 0) {
-            rowIter.foreach { row =>
-              ctx.write(DataRow(row, rowConveter))
-              numRows += 1
-            }
-          } else {
-            rowIter.take(maxRows).foreach { row =>
-              ctx.write(DataRow(row, rowConveter))
-              numRows += 1
-            }
-            // Accumulate fetched #rows in this query
-            portalState.numFetched += numRows
-          }
+          // Runs it...
+          val rowIter = portalState.execState.run()
 
           // Sends back a complete message depending on a portal state
           val logicalPlan = portalState.queryState.logicalPlan
           logicalPlan match {
             case BeginCommand(_) =>
               ctx.write(CommandComplete("BEGIN"))
-            case SetCommand(kv) =>
-              kv.map { case (k, v) =>
-                ctx.write(CommandComplete(s"SET $k=$v"))
-              }.getOrElse {
-                ctx.write(CommandComplete("SET"))
-              }
-            case _ if !portalState.isCursorMode =>
-              ctx.write(CommandComplete(s"SELECT $numRows"))
               sessionState.activeExecState = None
+
+            case SetCommand(_) =>
+              if (SQLServerUtils.isTesting) {
+                // In the PostgreSQL expected behaviour, `SET` returns no rows. But, it is useful
+                // to get current values for parameters. So, if testing mode enabled,
+                // returns a current value for a given parameter.
+                rowIter.foreach { row => ctx.write(DataRow(row, rowConveter)) }
+              }
+              ctx.write(CommandComplete("SET"))
+              sessionState.activeExecState = None
+
             case _ =>
-              if (!rowIter.hasNext) {
-                ctx.write(CommandComplete(s"FETCH ${portalState.numFetched}"))
+              var numRows = 0
+              if (maxRows == 0) {
+                rowIter.foreach { row =>
+                  ctx.write(DataRow(row, rowConveter))
+                  numRows += 1
+                }
+              } else {
+                rowIter.take(maxRows).foreach { row =>
+                  ctx.write(DataRow(row, rowConveter))
+                  numRows += 1
+                }
+                // Accumulate fetched #rows in this query
+                portalState.numFetched += numRows
+              }
+
+              if (!portalState.isCursorMode) {
+                ctx.write(CommandComplete(s"SELECT $numRows"))
                 sessionState.activeExecState = None
               } else {
-                ctx.write(PortalSuspended)
+                if (!rowIter.hasNext) {
+                  ctx.write(CommandComplete(s"FETCH ${portalState.numFetched}"))
+                  sessionState.activeExecState = None
+                } else {
+                  ctx.write(PortalSuspended)
+                }
               }
           }
           ctx.flush()
@@ -539,23 +544,42 @@ object PgWireProtocol extends Logging {
             val execState = cli.executeStatement(sessionState._sessionId, plan)
             sessionState.activeExecState = Some(execState)
 
+            val schema = execState.outputSchema()
+            val formats = resultDataFormatsFor(schema, sessionState)
+            val rowWriter = PgRowConverters(conf, schema, formats)
+
             // Runs it...
             val resultRowIter = execState.run()
 
-            // The response to a SELECT query (or other queries that return row sets, such as
-            // EXPLAIN or SHOW) normally consists of RowDescription, zero or more DataRow
-            // messages, and then CommandComplete.
-            val schema = execState.outputSchema()
-            ctx.write(RowDescription(schema))
+            // Sends back a complete message depending on the plan
+            plan._2 match {
+              case BeginCommand(_) =>
+                ctx.write(CommandComplete("BEGIN"))
 
-            val formats = resultDataFormatsFor(schema, sessionState)
-            val rowWriter = PgRowConverters(conf, schema, formats)
-            var numRows = 0
-            resultRowIter.foreach { iter =>
-              ctx.write(DataRow(iter, rowWriter))
-              numRows += 1
+              case SetCommand(_) =>
+                if (SQLServerUtils.isTesting) {
+                  // In the PostgreSQL expected behaviour, `SET` returns no rows. But, it is useful
+                  // to get current values for parameters. So, if testing mode enabled,
+                  // returns a current value for a given parameter.
+                  ctx.write(RowDescription(schema))
+                  resultRowIter.foreach { row => ctx.write(DataRow(row, rowWriter))}
+                }
+                ctx.write(CommandComplete("SET"))
+
+              case _ =>
+                // The response to a SELECT query (or other queries that return row sets, such as
+                // EXPLAIN or SHOW) normally consists of RowDescription, zero or more DataRow
+                // messages, and then CommandComplete.
+                ctx.write(RowDescription(schema))
+
+                var numRows = 0
+                resultRowIter.foreach { iter =>
+                  ctx.write(DataRow(iter, rowWriter))
+                  numRows += 1
+                }
+                ctx.write(CommandComplete(s"SELECT $numRows"))
             }
-            ctx.write(CommandComplete(s"SELECT $numRows"))
+
             sessionState.activeExecState = None
           }
         }
@@ -894,9 +918,6 @@ case class QueryState(
 }
 
 case class PortalState(queryState: QueryState, execState: Operation, isCursorMode: Boolean) {
-
-  // Holds an iterator of operations results
-  var resultRowIter: Iterator[InternalRow] = Iterator.empty
 
   // Number of the rows that this portal state returns
   var numFetched: Int = 0

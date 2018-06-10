@@ -192,6 +192,7 @@ class SparkPgSQLServerTest(
        | --driver-java-options -Dlog4j.debug
        | --conf spark.ui.enabled=false
        | --conf spark.sql.warehouse.dir=$testTempDir/spark-warehouse
+       | --conf spark.sql.server.testing=true
        | --conf ${SQLServerConf.SQLSERVER_PORT.key}=$port
        | --conf ${SQLServerConf.SQLSERVER_VERSION.key}=$pgVersion
        | --conf ${SQLServerConf.SQLSERVER_EXECUTION_MODE.key}=$executionMode
