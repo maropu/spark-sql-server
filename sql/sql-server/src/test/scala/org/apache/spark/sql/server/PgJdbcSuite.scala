@@ -1157,7 +1157,8 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
   }
 
   Seq(true, false).foreach { incrementalCollect =>
-    test(s"cursor mode, small fetch size, incrementalCollect=$incrementalCollect") {
+    testSelectiveQueryModes("extended")(
+        s"cursor mode, small fetch size, incrementalCollect=$incrementalCollect") {
       testJdbcStatementWitConf(
           SQLServerConf.SQLSERVER_INCREMENTAL_COLLECT_ENABLED.key -> incrementalCollect.toString,
           "autoCommitModeEnabled" -> "false",
@@ -1188,7 +1189,8 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
       }
     }
 
-    test(s"cursor mode, large fetch size, incrementalCollect=$incrementalCollect") {
+    testSelectiveQueryModes("extended")(
+        s"cursor mode, large fetch size, incrementalCollect=$incrementalCollect") {
       testJdbcStatementWitConf(
           SQLServerConf.SQLSERVER_INCREMENTAL_COLLECT_ENABLED.key -> incrementalCollect.toString,
           "autoCommitModeEnabled" -> "false",
@@ -1211,6 +1213,25 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
       } {
         bufferSrc.close()
       }
+    }
+  }
+
+  Seq(true, false).foreach { incrementalCollect =>
+    testSelectiveQueryModes("simple")(s"data fetch, incrementalCollect=$incrementalCollect") {
+      testJdbcStatementWitConf(
+          SQLServerConf.SQLSERVER_INCREMENTAL_COLLECT_ENABLED.key -> incrementalCollect.toString) {
+        statement =>
+
+          val rs = statement.executeQuery(
+            "SELECT id, COUNT(1) FROM range(0, 1000, 1, 32) GROUP BY id ORDER BY id ASC")
+          (0 until 1000).foreach { i =>
+            assert(rs.next())
+            assert(rs.getLong(1) === i)
+            assert(rs.getInt(2) === 1)
+          }
+          assert(!rs.next())
+          rs.close()
+        }
     }
   }
 }
