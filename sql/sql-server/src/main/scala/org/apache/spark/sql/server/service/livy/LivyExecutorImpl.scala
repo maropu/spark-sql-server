@@ -75,7 +75,7 @@ private class LivyOperation(
           // To make rows `UnsafeRow`, wraps `ProjectExec` here
           getByteArrayRdd(ProjectExec(outputAttrs, plan).execute()).toLocalIterator
         } else {
-          getByteArrayRdd(plan.execute()).toLocalIterator
+          Iterator.empty
         }
       } else {
         // Needs to use `List` so that `Iterator#take` can proceed an internal cursor, e.g.,
