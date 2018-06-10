@@ -70,8 +70,13 @@ private class LivyOperation(
 
       val resultRowIterator = if (useIncrementalCollect) {
         val plan = df.queryExecution.executedPlan
-        // To make rows `UnsafeRow`, wraps `ProjectExec` here
-        getByteArrayRdd(ProjectExec(plan.output, plan).execute()).toLocalIterator
+        val outputAttrs = plan.output
+        if (outputAttrs.nonEmpty) {
+          // To make rows `UnsafeRow`, wraps `ProjectExec` here
+          getByteArrayRdd(ProjectExec(outputAttrs, plan).execute()).toLocalIterator
+        } else {
+          getByteArrayRdd(plan.execute()).toLocalIterator
+        }
       } else {
         // Needs to use `List` so that `Iterator#take` can proceed an internal cursor, e.g.,
         //
