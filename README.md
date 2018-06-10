@@ -120,8 +120,15 @@ You can directly load SQL result data as Pandas DataFrame by using some librarie
 (e.g., [psycopg2](http://initd.org/psycopg/) and [pg8000](https://github.com/mfenniak/pg8000));
 
     >>> import psycopg2
+    >>> import pandas as pd
     >>> connection = psycopg2.connect("host=localhost port=5432 dbname=default user=maropu sslmode=disable")
-    >>> df = pd.read_sql(sql="SELECT * FROM t;", con=connection)
+    >>> df = pd.read_sql(sql="SELECT * FROM VALUES (1, 1), (1, 2) AS t(a, b);", con=connection)
+    >>> df
+       a  b
+    0  1  1
+    1  1  2
+
+Note that you need to set `false` at `spark.sql.server.binaryTransferMode` for the `psycopg2` library.
 
 ## Available options
 
