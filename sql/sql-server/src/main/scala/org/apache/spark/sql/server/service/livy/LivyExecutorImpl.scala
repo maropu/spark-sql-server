@@ -46,19 +46,23 @@ private class LivyOperation(
    */
   private def getByteArrayRdd(rdd: RDD[InternalRow]): RDD[InternalRow] = {
     rdd.mapPartitionsInternal { iter =>
-      val buffer = new Array[Byte](4 << 10) // 4K
-      val codec = CompressionCodec.createCodec(SparkEnv.get.conf)
-      val bos = new ByteArrayOutputStream()
-      val out = new DataOutputStream(codec.compressedOutputStream(bos))
-      while (iter.hasNext) {
-        val row = iter.next().asInstanceOf[UnsafeRow]
-        out.writeInt(row.getSizeInBytes)
-        row.writeToStream(out, buffer)
+      if (iter.nonEmpty) {
+        val buffer = new Array[Byte](4 << 10) // 4K
+        val codec = CompressionCodec.createCodec(SparkEnv.get.conf)
+        val bos = new ByteArrayOutputStream()
+        val out = new DataOutputStream(codec.compressedOutputStream(bos))
+        while (iter.hasNext) {
+          val row = iter.next().asInstanceOf[UnsafeRow]
+          out.writeInt(row.getSizeInBytes)
+          row.writeToStream(out, buffer)
+        }
+        out.writeInt(-1)
+        out.flush()
+        out.close()
+        Iterator(InternalRow.fromSeq(bos.toByteArray :: Nil))
+      } else {
+        Iterator.empty
       }
-      out.writeInt(-1)
-      out.flush()
-      out.close()
-      Iterator(InternalRow.fromSeq(bos.toByteArray :: Nil))
     }
   }
 
