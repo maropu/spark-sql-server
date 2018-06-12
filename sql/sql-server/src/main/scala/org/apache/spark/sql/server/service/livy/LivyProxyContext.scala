@@ -25,6 +25,7 @@ import scala.util.Random
 import scala.util.control.NonFatal
 
 import org.apache.livy.{LivyClient, LivyClientBuilder}
+import org.apache.livy.client.http.HttpClientProxy
 
 import org.apache.spark.internal.Logging
 import org.apache.spark.rpc.RpcEndpointRef
@@ -42,6 +43,9 @@ class LivyProxyContext(sqlConf: SQLConf, livyService: LivyServerService)
   private var livyClient: LivyClient = _
   private var rpcEndpoint: RpcEndpointRef = _
 
+  private val impersonated = SQLServerUtils.isKerberosEnabled(sqlConf) &&
+    sqlConf.sqlServerImpersonationEnabled
+
   private val sparkConfBlacklist: Seq[String] = Seq(
     SQLServerConf.SQLSERVER_PORT.key,
     SQLServerConf.SQLSERVER_VERSION.key,
@@ -58,7 +62,11 @@ class LivyProxyContext(sqlConf: SQLConf, livyService: LivyServerService)
     "spark.master",
     "spark.jars",
     "spark.submit.deployMode"
-  )
+  ) ++ (if (impersonated) {
+    Seq("spark.yarn.principal", "spark.yarn.keytab")
+  } else {
+    Nil
+  })
 
   def init(serviceName: String, sessionId: Int, userName: String, dbName: String): Unit = {
     logInfo(s"serviceName=$serviceName sessionId=$sessionId dbName=$dbName")
@@ -87,21 +95,34 @@ class LivyProxyContext(sqlConf: SQLConf, livyService: LivyServerService)
       // registers the endpoint in `RpcEnv`.
       val (_livyClient, _rpcEndpoint) =
           LivyProxyContext.retryRandom(numRetriesLeft = 4, maxBackOffMillis = 10000) {
-        // Starts a Livy session
-        val livyUrl = s"http://${sqlConf.sqlServerLivyHost}:${sqlConf.sqlServerLivyPort}"
-        var builder = new LivyClientBuilder().setURI(new URI(livyUrl))
 
-        (livyClientConf ++ sparkConf).foreach { case (key, value) =>
-          builder = builder.setConf(key, value)
+        val client = if (impersonated) {
+          // If Kerberos and impersonation enabled, sets `userName` at `proxyUser`
+          logInfo(s"Kerberos and impersonation enabled: proxyUser=$userName")
+
+          // scalastyle:off line.size.limit
+          // Workaround: Starts a Livy session with `proxyUser`
+          //  https://stackoverflow.com/questions/45230416/how-to-set-proxy-user-in-livy-job-submit-through-its-java-api
+          // scalastyle:on line.size.limit
+          val livyUrl = s"http://${sqlConf.sqlServerLivyHost}:${sqlConf.sqlServerLivyPort}"
+          val params = livyClientConf ++ sparkConf
+          val livySessionId = HttpClientProxy.start(new URI(livyUrl), userName, params.toMap)
+
+          // Attaches the created Livy session
+          val _livyUrl = s"$livyUrl/sessions/$livySessionId"
+          val builder = new LivyClientBuilder().setURI(new URI(_livyUrl))
+          builder.build()
+        } else {
+          // Starts a Livy session in a regular way
+          val livyUrl = s"http://${sqlConf.sqlServerLivyHost}:${sqlConf.sqlServerLivyPort}"
+          var builder = new LivyClientBuilder().setURI(new URI(livyUrl))
+
+          (livyClientConf ++ sparkConf).foreach { case (key, value) =>
+            builder = builder.setConf(key, value)
+          }
+
+          builder.build()
         }
-
-        // If Kerberos and impersonation enabled, sets `userName` at `proxy-user`
-        if (SQLServerUtils.isKerberosEnabled(sqlConf) && sqlConf.sqlServerImpersonationEnabled) {
-          logInfo(s"Kerberos and impersonation enabled: proxy-user=$userName")
-          builder = builder.setConf("proxy-user", userName)
-        }
-
-        val client = builder.build()
 
         val endpoint = try {
           // Submits a job to open a session and initializes a RPC endpoint

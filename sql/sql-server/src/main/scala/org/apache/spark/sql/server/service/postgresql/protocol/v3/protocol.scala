@@ -1208,7 +1208,8 @@ class PgV3MessageHandler(cli: SessionService, conf: SQLConf)
     val hostAddr = ctx.channel().localAddress().asInstanceOf[InetSocketAddress].getHostName()
     val secretKey = new Random(System.currentTimeMillis).nextInt
     val dbName = props.getOrElse("database", "default")
-    val principalOption = props.get("kerberosServerName")
+    // val principalOption = props.get("kerberosServerName")
+    val principalOption = Some(userName)
     val sessionState = openSession(
       ctx, getUniqueChannelId(ctx), secretKey, appName, userName, passwd, hostAddr, dbName,
       principalOption).asInstanceOf[V3SessionState]
