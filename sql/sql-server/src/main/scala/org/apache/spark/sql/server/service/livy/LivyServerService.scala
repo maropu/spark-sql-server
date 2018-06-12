@@ -54,10 +54,11 @@ private[service] class LivyServerService(frontend: FrontendService) extends Comp
 
   private def kerberosParams(conf: SQLConf): String = {
     Seq(
-      "livy.server.auth.type" -> "kerberos",
+      // TODO: These configurations are not needed for enabling SPNEGO auth
+      // "livy.server.auth.type" -> "kerberos",
+      // "livy.server.auth.kerberos.principal" -> "",
+      // "livy.server.auth.kerberos.keytab" -> "",
       "livy.impersonation.enabled" -> conf.sqlServerImpersonationEnabled,
-      "livy.server.auth.kerberos.principal" -> SQLServerUtils.kerberosPrincipal(conf),
-      "livy.server.auth.kerberos.keytab" -> SQLServerUtils.kerberosKeytab(conf),
       "livy.server.launch.kerberos.principal" -> SQLServerUtils.kerberosPrincipal(conf),
       "livy.server.launch.kerberos.keytab" -> SQLServerUtils.kerberosKeytab(conf)
     ).map { case (key, value) =>
