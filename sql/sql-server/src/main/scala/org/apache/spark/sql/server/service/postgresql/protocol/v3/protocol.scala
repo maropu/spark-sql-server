@@ -37,7 +37,7 @@ import io.netty.channel.socket.SocketChannel
 import io.netty.handler.codec.bytes.{ByteArrayDecoder, ByteArrayEncoder}
 import io.netty.handler.ssl.{SslContext, SslHandler}
 import io.netty.handler.ssl.util.SelfSignedCertificate
-import org.ietf.jgss.{GSSContext, GSSCredential, GSSException, GSSManager, Oid}
+import org.ietf.jgss.{GSSContext, GSSCredential, GSSException, GSSManager, GSSName, Oid}
 
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
@@ -254,7 +254,12 @@ object PgWireProtocol extends Logging {
       state: V3SessionState,
       serverPrincipal: String,
       token: Array[Byte]): Boolean = {
-    // Get own Kerberos credentials for accepting connection
+
+    // System.setProperty("java.security.auth.login.config", "/tmp/spnego.conf")
+    // System.setProperty("javax.security.auth.useSubjectCredsOnly", "false")
+    // System.setProperty("sun.security.jgss.debug", "true")
+
+    // Gets own Kerberos credentials for accepting connection
     val manager = GSSManager.getInstance()
     var gssContext: GSSContext = null
     try {
@@ -696,13 +701,19 @@ object PgWireProtocol extends Logging {
         import sessionState._
         if (SQLServerUtils.isKerberosEnabled(conf)) {
           require(principal.isDefined)
-          val kerberosPrincipal = principal.get
-          if (doGSSAuthentication(ctx, sessionState, kerberosPrincipal, token)) {
-            sendAuthenticationOk(sessionState)
-            ctx.flush()
-          } else {
-            throw new IllegalArgumentException(s"Illegal credential for $kerberosPrincipal")
-          }
+          logWarning(s"GSS-API mechanism not implemented yet, so we currently accept" +
+            "all the incoming connection from clients.")
+          sendAuthenticationOk(sessionState)
+          ctx.flush()
+          // TODO: Needs to implement GSS-API mechanism
+          //
+          // val kerberosPrincipal = principal.get
+          // if (doGSSAuthentication(ctx, sessionState, kerberosPrincipal, token)) {
+          //   sendAuthenticationOk(sessionState)
+          //   ctx.flush()
+          // } else {
+          //   throw new IllegalArgumentException(s"Illegal credential for $kerberosPrincipal")
+          // }
         } else {
           throw new UnsupportedOperationException("Not supported yet")
         }
