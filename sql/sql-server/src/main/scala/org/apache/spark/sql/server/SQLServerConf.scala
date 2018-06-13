@@ -178,6 +178,21 @@ object SQLServerConf {
     .stringConf
     .createWithDefault("FIFO")
 
+  val SQLSERVER_SPNEGO_AUTH_TYPE = buildStaticConf("spark.sql.server.spnego.authType")
+    .doc("SPNEGO authentication type.")
+    .stringConf
+    .createOptional
+
+  val SQLSERVER_SPNEGO_PRINCIPAL = buildStaticConf("spark.sql.server.spnego.principal")
+    .doc("Principal for SPNEGO.")
+    .stringConf
+    .createWithDefaultString(null)
+
+  val SQLSERVER_SPNEGO_KEYTAB = buildStaticConf("spark.sql.server.spnego.keytab")
+    .doc("Keytab file location for SPNEGO.")
+    .stringConf
+    .createWithDefaultString(null)
+
   val SQLSERVER_IMPERSONATION_ENABLED = buildStaticConf("spark.yarn.impersonation.enabled")
     .doc("Whether authentication impersonates connected users.")
     .booleanConf
@@ -256,6 +271,12 @@ class SQLServerConf(conf: SQLConf) {
   def sqlServerSslKeyStorePasswd: Option[String] = getStaticConf(SQLSERVER_SSL_KEYSTORE_PASSWD)
 
   def sqlServerPool: String = getStaticConf(SQLSERVER_POOL)
+
+  def sqlServerSpnegoAuthType: Option[String] = getStaticConf(SQLSERVER_SPNEGO_AUTH_TYPE)
+
+  def sqlServerSpnegoPrincipal: String = getStaticConf(SQLSERVER_SPNEGO_PRINCIPAL)
+
+  def sqlServerSpnegoKeytab: String = getStaticConf(SQLSERVER_SPNEGO_KEYTAB)
 
   def sqlServerImpersonationEnabled: Boolean = getStaticConf(SQLSERVER_IMPERSONATION_ENABLED)
 

@@ -53,15 +53,21 @@ private[service] class LivyServerService(frontend: FrontendService) extends Comp
   private[livy] var rpcEnv: RpcEnv = _
 
   private def kerberosParams(conf: SQLConf): String = {
-    Seq(
-      // TODO: These configurations are not needed for enabling SPNEGO auth
-      // "livy.server.auth.type" -> "kerberos",
-      // "livy.server.auth.kerberos.principal" -> "",
-      // "livy.server.auth.kerberos.keytab" -> "",
+    val authParams = Seq(
       "livy.impersonation.enabled" -> conf.sqlServerImpersonationEnabled,
       "livy.server.launch.kerberos.principal" -> SQLServerUtils.kerberosPrincipal(conf),
       "livy.server.launch.kerberos.keytab" -> SQLServerUtils.kerberosKeytab(conf)
-    ).map { case (key, value) =>
+    )
+    val spnegoAuthParams = if (conf.sqlServerSpnegoAuthType.isDefined) {
+      Seq(
+        "livy.server.auth.type" -> conf.sqlServerSpnegoAuthType.get,
+        "livy.server.auth.kerberos.principal" -> conf.sqlServerSpnegoPrincipal,
+        "livy.server.auth.kerberos.keytab" -> conf.sqlServerSpnegoKeytab
+      )
+    } else {
+      Nil
+    }
+    (authParams ++ spnegoAuthParams).map { case (key, value) =>
       s"$key = $value"
     }.mkString("\n")
   }
