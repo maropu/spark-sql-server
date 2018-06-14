@@ -45,7 +45,7 @@
     <maven.version>3.3.9</maven.version>
     <scala.version>2.11.8</scala.version>
     <scala.binary.version>2.11</scala.binary.version>
-    <spark.version>2.3.0</spark.version>
+    <spark.version>2.3.1</spark.version>
     <livy.version>0.5.0-incubating</livy.version>
     <zookeeper.version>3.4.6</zookeeper.version>
     <hadoop.version>2.7.3</hadoop.version>
