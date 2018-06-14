@@ -6,6 +6,8 @@
 
 A Spark SQL server based on the PostgreSQL V3 protocol.
 For more information, see [SPARK-15816](https://issues.apache.org/jira/browse/SPARK-15816).
+Moreover, this Spark SQL server experimentally supports impersonation based on [Apache Livy](https://livy.incubator.apache.org/) that
+[the Spark Thrift server](https://github.com/apache/spark/tree/master/sql/hive-thriftserver) in vanilla Apache Spark currently doesn't do.
 
 ## Run the Spark SQL JDBC/ODBC server
 
@@ -74,7 +76,7 @@ public class JdbcTest {
 }
 ```
 
-This Spark SQL server supports the v42.x of PostgreSQL JDBC drivers [here](https://jdbc.postgresql.org/download.html).
+This Spark SQL server is only tested by using v42.2.2 of [PostgreSQL JDBC drivers](https://jdbc.postgresql.org/download.html).
 
 ## Use the PostgreSQL libpq C library
 
@@ -250,19 +252,19 @@ when creating a JDBC connection. Then, you pass `client.truststore` when running
 
     $ java -Djavax.net.ssl.trustStore=client.truststore -Djavax.net.ssl.trustStorePassword=<password> JdbcTest
 
-<!--
-### Kerberos (GSSAPI) supports
+### Kerberos supports
 
-You can use the SQL server on a Kerberos-enabled cluster only in the YARN mode because Spark supports Kerberos only in that mode.
-To enable GSSAPI, you need to set the following configurations in `start-sql-server.sh`;
+You can use the SQL server on a Kerberos-secure cluster.
+To enable this, you need to set the following configurations in `start-sql-server.sh`;
 
     $ ./sbin/start-sql-server.sh \
-        --conf spark.yarn.keytab=<keytab path for server principal> \
-        --conf spark.yarn.principal=<Kerberos principal server>
+        --conf spark.yarn.principal=<Kerberos principal> \
+        --conf spark.yarn.keytab=<keytab location>
 
-Then, you set a Kerberos service name (`kerberosServerName`) in `Properties` when creating a JDBC connection.
+Then, you set a Kerberos identity (`kerberosServerName`) in `Properties` to connect the SQL server when creating a JDBC connection.
 See [Connection Parameters](https://jdbc.postgresql.org/documentation/head/connect.html#connection-parameters) for more information.
--->
+Moreover, you can enable impersonation for Apache Hadoop by setting true at `spark.yarn.impersonation.enabled`.
+See [a tutorial](./resources/impersonation/how-to-use-impersonation.md) for quick try.
 
 <!--
 ## High availability
