@@ -91,6 +91,40 @@ object SQLServerConf {
     .stringConf
     .createOptional
 
+  val SQLSERVER_LIVY_SPARK_MASTER = buildStaticConf("spark.sql.server.livy.spark.master")
+    .internal()
+    .stringConf
+    .createWithDefault("local[*]")
+
+  val SQLSERVER_LIVY_SPARK_DEPLOY_MODE = buildStaticConf("spark.sql.server.livy.spark.deploy-mode")
+    .internal()
+    .stringConf
+    .createWithDefault("client")
+
+  val SQLSERVER_LIVY_SPARK_DRIVER_CORES =
+    buildStaticConf("spark.sql.server.livy.spark.driver.cores")
+      .internal()
+      .stringConf
+      .createWithDefault("1")
+
+  val SQLSERVER_LIVY_SPARK_DRIVER_MEMORY =
+    buildStaticConf("spark.sql.server.livy.spark.driver.memory")
+      .internal()
+      .stringConf
+      .createWithDefault("1g")
+
+  val SQLSERVER_LIVY_SPARK_EXECUTOR_CORES =
+    buildStaticConf("spark.sql.server.livy.spark.executor.cores")
+      .internal()
+      .stringConf
+      .createWithDefault("1")
+
+  val SQLSERVER_LIVY_SPARK_EXECUTOR_MEMORY =
+    buildStaticConf("spark.sql.server.livy.spark.executor.memory")
+      .internal()
+      .stringConf
+      .createWithDefault("1g")
+
   val SQLSERVER_LIVY_HOME = buildStaticConf("spark.sql.server.livy.home")
     .internal()
     .doc("Relative path to Livy directory")
@@ -241,6 +275,18 @@ class SQLServerConf(conf: SQLConf) {
   def sqlServerWorkerThreads: Int = getStaticConf(SQLSERVER_WORKER_THREADS)
 
   def sqlServerExtraOptimizerRules: Option[String] = getConf(SQLSERVER_EXTRA_OPTIMIZER_RULES)
+
+  def sqlServerLivySparkMaster: String = getStaticConf(SQLSERVER_LIVY_SPARK_MASTER)
+
+  def sqlServerLivySparkDeployMode: String = getStaticConf(SQLSERVER_LIVY_SPARK_DEPLOY_MODE)
+
+  def sqlServerLivySparkDriverCores: String = getStaticConf(SQLSERVER_LIVY_SPARK_DRIVER_CORES)
+
+  def sqlServerLivySparkDriverMemory: String = getStaticConf(SQLSERVER_LIVY_SPARK_DRIVER_MEMORY)
+
+  def sqlServerLivySparkExecutorCores: String = getStaticConf(SQLSERVER_LIVY_SPARK_EXECUTOR_CORES)
+
+  def sqlServerLivySparkExecutorMemory: String = getStaticConf(SQLSERVER_LIVY_SPARK_EXECUTOR_MEMORY)
 
   def sqlServerLivyHome: String = getStaticConf(SQLSERVER_LIVY_HOME)
 

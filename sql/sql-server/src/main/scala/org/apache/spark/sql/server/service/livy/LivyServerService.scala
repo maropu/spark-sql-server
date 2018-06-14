@@ -123,7 +123,8 @@ private[service] class LivyServerService(frontend: FrontendService) extends Comp
       jars.mkString(",")
     }
 
-    val master = conf.settings.get("spark.master")
+    val master = conf.sqlServerLivySparkMaster
+    val deployMode = conf.sqlServerLivySparkDeployMode
     val sparkVersion = org.apache.spark.SPARK_VERSION
     val scalaVersion = sys.env.getOrElse("SPARK_SCALA_VERSION", {
       throw new IllegalArgumentException("SPARK_SCALA_VERSION not defined correctly.")
@@ -148,7 +149,7 @@ private[service] class LivyServerService(frontend: FrontendService) extends Comp
         s"""# Livy settings
            |livy.server.spark-home = $sparkHome
            |livy.spark.master = $master
-           |# livy.spark.deploy-mode = cluster
+           |livy.spark.deploy-mode = $deployMode
            |# livy.spark.scala-version = $scalaVersion
            |livy.spark.version = $sparkVersion
            |livy.server.host = ${conf.sqlServerLivyHost}

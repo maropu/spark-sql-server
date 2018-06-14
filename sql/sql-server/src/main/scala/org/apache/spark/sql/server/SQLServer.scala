@@ -96,6 +96,12 @@ object SQLServer extends Logging {
         }
     }
 
+    logInfo(
+      s"""Spark properties passed to the SQL server:
+         |  ${SQLServerEnv.sparkConf.getAll.map {
+                case (k, v) => s"key=$k value=$v" }.mkString("\n  ") }
+       """.stripMargin)
+
     try {
       // Initializes a Spark SQL server with given configurations
       sqlServer.init(SQLServerEnv.sqlConf)

@@ -60,6 +60,11 @@ class LivyProxyContext(sqlConf: SQLConf, livyService: LivyServerService)
     "spark.sql.server.ssl.",
     "spark.sql.server.ui.",
     "spark.master",
+    "spark.deploy-mode",
+    "spark.driver.cores",
+    "spark.driver.memory",
+    "spark.executor.cores",
+    "spark.executor.memory",
     "spark.jars",
     "spark.submit.deployMode"
   ) ++ (if (impersonated) {
@@ -72,22 +77,29 @@ class LivyProxyContext(sqlConf: SQLConf, livyService: LivyServerService)
     logInfo(s"serviceName=$serviceName sessionId=$sessionId dbName=$dbName")
 
     // Configurations that Livy passes into `SQLContext`
-    val sparkConf = sqlConf.settings.asScala.filterNot {
-      case (key, _) => sparkConfBlacklist.exists(key.contains)
-    } ++ Map(
+    val sparkConf = Map(
+      // General configurations
+      "spark.master" -> sqlConf.sqlServerLivySparkMaster,
+      "spark.deploy-mode" -> sqlConf.sqlServerLivySparkDeployMode,
+      "spark.driver.cores" -> sqlConf.sqlServerLivySparkDriverCores,
+      "spark.driver.memory" -> sqlConf.sqlServerLivySparkDriverMemory,
+      "spark.executor.cores" -> sqlConf.sqlServerLivySparkExecutorCores,
+      "spark.executor.memory" -> sqlConf.sqlServerLivySparkExecutorMemory,
       "spark.rpc.askTimeout" -> "720s"
       // We need to have at least two threads for Spark Netty RPC: task thread + cancel thread
       // "spark.rpc.netty.dispatcher.numThreads" -> "2",
       // "spark.rpc.io.numConnectionsPerPeer" -> "2",
       // "spark.rpc.io.threads" -> "2"
-    )
+    ) ++ sqlConf.settings.asScala.filterNot {
+      case (key, _) => sparkConfBlacklist.exists(key.contains)
+    }
     val livyClientConf = Seq(
       "job-cancel.trigger-interval" -> "100ms",
       "job-cancel.timeout" -> "24h"
     )
     logInfo(
       s"""Spark properties for the SQLContext that Livy launches:
-         |  ${sparkConf.map { case (k, v) => s"key=$k value=$v" }.mkString("\n  ")}
+         |  ${sparkConf.map { case (k, v) => s"key=$k value=$v" }.mkString("\n  ") }
        """.stripMargin)
 
     val _connectMethod = () => {
