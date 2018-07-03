@@ -65,9 +65,9 @@ class PgV10JdbcExtendedMultiSessionModeSuite
 class PgV10JdbcExtendedMultiContextModeSuite
   extends PgJdbcSuite("10", "extended", "multi-context")
 // class PgV10JdbcExtendedForPreparedModeSuite
-//   extends PgJdbcSuite("10", "extendedForPrepared")
+//   extends PgJdbcSuite("10", "extendedForPrepared", "multi-context")
 // class PgV10JdbcExtendedCacheEverythingModeSuite
-//   extends PgJdbcSuite("10", "extendedCacheEverything")
+//   extends PgJdbcSuite("10", "extendedCacheEverything", "multi-context")
 
 // class PgV9_6JdbcSimpleMultiSessionModeSuite
 //   extends PgJdbcSuite("9.6", "simple", "multi-session")
@@ -78,9 +78,9 @@ class PgV10JdbcExtendedMultiContextModeSuite
 // class PgV9_6JdbcExtendedMultiContextModeSuite
 //   extends PgJdbcSuite("9.6", "extended", "multi-context")
 // class PgV9_6JdbcExtendedForPreparedModeSuite
-//   extends PgJdbcSuite("9.6", "extendedForPrepared")
+//   extends PgJdbcSuite("9.6", "extendedForPrepared", "multi-context")
 // class PgV9_6JdbcExtendedCacheEverythingModeSuite
-//   extends PgJdbcSuite("9.6", "extendedCacheEverything")
+//   extends PgJdbcSuite("9.6", "extendedCacheEverything", "multi-context")
 
 // class PgV8_4JdbcSimpleMultiSessionModeSuite
 //   extends PgJdbcSuite("8.4", "simple", "multi-session")
@@ -91,9 +91,9 @@ class PgV10JdbcExtendedMultiContextModeSuite
 // class PgV8_4JdbcExtendedMultiContextModeSuite
 //   extends PgJdbcSuite("8.4", "extended", "multi-context")
 // class PgV8_4JdbcExtendedForPreparedModeSuite
-//   extends PgJdbcSuite("8.4", "extendedForPrepared")
+//   extends PgJdbcSuite("8.4", "extendedForPrepared", "multi-context")
 // class PgV8_4JdbcExtendedCacheEverythingModeSuite
-//   extends PgJdbcSuite("8.4", "extendedCacheEverything")
+//   extends PgJdbcSuite("8.4", "extendedCacheEverything", "multi-context")
 
 abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: String)
   extends PgJdbcTest(
