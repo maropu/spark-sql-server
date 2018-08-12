@@ -28,7 +28,7 @@
   <artifactId>spark-sql-server_2.11</artifactId>
   <version>0.1.5-spark2.3-SNAPSHOT</version>
   <packaging>pom</packaging>
-  <name>SQL server for Apache Spark</name>
+  <name>Spark SQL Server Parent POM</name>
 
   <modules>
     <module>sql/sql-server</module>

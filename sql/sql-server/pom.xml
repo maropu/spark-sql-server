@@ -29,7 +29,7 @@
   <groupId>org.apache.spark</groupId>
   <artifactId>sql-server_2.11</artifactId>
   <packaging>jar</packaging>
-  <name>SQL server based on the PostgreSQL protocol</name>
+  <name>Spark SQL server based on the PostgreSQL protocol</name>
 
   <dependencies>
     <dependency>

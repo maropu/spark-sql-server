@@ -29,7 +29,7 @@
   <groupId>org.apache.spark</groupId>
   <artifactId>catalyst_2.11</artifactId>
   <packaging>jar</packaging>
-  <name>Custom optimizer rule examples</name>
+  <name>Custom Optimizer Rule Examples</name>
 
   <dependencies>
     <dependency>
