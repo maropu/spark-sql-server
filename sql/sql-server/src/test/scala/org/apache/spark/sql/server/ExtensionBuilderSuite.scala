@@ -29,8 +29,25 @@ class ExtensionBuilderSuite extends SparkFunSuite with BeforeAndAfterAll {
 
   var _sqlContext: SQLContext = _
 
+  // TODO: This method works only in Java8
+  private def addJarInClassPath(jarURLString: String): Unit = {
+    // val cl = ClassLoader.getSystemClassLoader
+    val cl = Utils.getSparkClassLoader
+    val clazz = cl.getClass
+    val method = clazz.getSuperclass.getDeclaredMethod("addURL", Seq(classOf[URL]): _*)
+    method.setAccessible(true)
+    method.invoke(cl, Seq[Object](new URL(jarURLString)): _*)
+  }
+
   protected override def beforeAll(): Unit = {
     super.beforeAll()
+
+    // Adds a jar for an extension builder
+    val jarPath = "src/test/resources/extensions_2.11_2.3.1_0.1.7-spark2.3-SNAPSHOT.jar"
+    val jarURL = s"file://${System.getProperty("user.dir")}/$jarPath"
+    // sqlContext.sparkContext.addJar(jarURL)
+    addJarInClassPath(jarURL)
+
     val conf = new SparkConf(loadDefaults = true)
       .setMaster("local[1]")
       .setAppName("spark-sql-server-test")
@@ -54,26 +71,10 @@ class ExtensionBuilderSuite extends SparkFunSuite with BeforeAndAfterAll {
     }
   }
 
-  // TODO: This method works only in Java8
-  private def addJarInClassPath(jarURLString: String): Unit = {
-    // val cl = ClassLoader.getSystemClassLoader
-    val cl = Utils.getSparkClassLoader
-    val clazz = cl.getClass
-    val method = clazz.getSuperclass.getDeclaredMethod("addURL", Seq(classOf[URL]): _*)
-    method.setAccessible(true)
-    method.invoke(cl, Seq[Object](new URL(jarURLString)): _*)
-  }
-
-  test("extensions") {
-    // First, adds a jar for an extension builder
-    val jarPath = "src/test/resources/extensions_2.11_2.3.1_0.1.7-spark2.3-SNAPSHOT.jar"
-    val jarURL = s"file://${System.getProperty("user.dir")}/$jarPath"
-    // sqlContext.sparkContext.addJar(jarURL)
-    addJarInClassPath(jarURL)
-    val rules = Seq("org.apache.spark.examples.EmptyRule1", "org.apache.spark.examples.EmptyRule2")
-
-    val optimizerRuleNames = _sqlContext.sessionState.optimizer.batches
-      .flatMap(_.rules.map(_.ruleName))
+  test("user-defined optimizer rules") {
+    val rules = Seq("org.apache.spark.catalyst.EmptyRule1", "org.apache.spark.catalyst.EmptyRule2")
+    val optimizerRuleNames = _sqlContext.sessionState.optimizer
+      .extendedOperatorOptimizationRules.map(_.ruleName)
     rules.foreach { expectedRuleName =>
       assert(optimizerRuleNames.contains(expectedRuleName))
     }
