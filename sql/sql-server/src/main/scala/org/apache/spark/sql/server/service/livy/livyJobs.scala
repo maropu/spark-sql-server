@@ -27,12 +27,11 @@ import org.apache.spark.sql.{SparkSession, SQLContext}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Literal
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.server.{CustomOptimizerRuleInitializer, SQLServerEnv}
 import org.apache.spark.sql.server.SQLServerConf._
-import org.apache.spark.sql.server.service.{ExecutorImpl, NOP, Operation, SessionContext, SessionState, SQLContextHolder}
+import org.apache.spark.sql.server.SQLServerEnv
+import org.apache.spark.sql.server.service.{NOP, Operation, SessionContext, SessionState, SQLContextHolder}
 import org.apache.spark.sql.server.service.postgresql.{PgCatalogInitializer, PgCatalogUpdater, PgSessionInitializer, PgUtils}
 import org.apache.spark.sql.types.StructType
-
 
 // Messages between a SQL server and a Livy job
 case class SchemaRequest(sql: String)
@@ -187,8 +186,7 @@ class OpenSessionJob(sessionId: Int, dbName: String) extends Job[RpcEndpointRef]
     require(sqlContext != null, "SQLContext cannot be initialized")
     SQLServerEnv.withSQLContext(sqlContext)
 
-    // Initializes custom optimizer rules
-    CustomOptimizerRuleInitializer(sqlContext)
+    // TODO: Injects user-defined extensions defined in `spark.sql.server.extensions.builder`
 
     // Initializes a catalog state for a SQL server
     PgCatalogInitializer(sqlContext)

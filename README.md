@@ -191,6 +191,7 @@ throught `Statement.setFetchSize` (See descriptions in [Chapter 5. Issuing a Que
 Also, you could set `spark.sql.server.incrementalCollect.enabled` for memory efficiency
 when launching the SQL server. If enabled, the SQL server collects result data partition-by-parititon.
 
+<!--
 ## Install custom optimizer rules
 
 Spark has already implmented a lot of efficient optimization rules in the Catalyst and the Spark community continues to
@@ -201,6 +202,7 @@ the jar that includes [the implmentation of the rules](./examples/catalyst/src/m
     $ ./sbin/start-sql-server.sh \
         --conf spark.jars=./target/catalyst_2.11_2.3.1_0.1.6-spark2.3-SNAPSHOT.jar \
         --conf spark.sql.server.extraOptimizerRules=org.apache.spark.catalyst.EmptyRule1,spark.sql.server.extraOptimizerRule2
+-->
 
 <!--
 ## PostgreSQL syntax

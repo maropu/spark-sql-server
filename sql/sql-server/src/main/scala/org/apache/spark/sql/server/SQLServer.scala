@@ -31,7 +31,6 @@ import org.apache.spark.sql.server.service.{CompositeService, SparkSQLServiceMan
 import org.apache.spark.sql.server.util.{ShutdownHookManager, SQLServerUtils}
 import org.apache.spark.util.Utils._
 
-
 /**
  * A SQL gateway server that uses a PostgreSQL message-based protocol for communication between
  * frontends and backends (clients and servers).
@@ -132,9 +131,12 @@ class SQLServer extends CompositeService with LeaderElectable {
   private var kinitFailCount: Int = 0
 
   SQLServerEnv.sqlConf.sqlServerExecutionMode match {
-    case "single-session" | "multi-session" =>
-      addService(new CustomOptimizerRuleService())
-    case _ =>
+    case "multi-context" =>
+      val builderClassName = SQLServerEnv.sparkConf.get("spark.sql.server.extensions.builder", "")
+      if (builderClassName.nonEmpty) {
+        logWarning("`spark.sql.server.extensions.builder` defined though, " +
+          "it is not supported in a multi-context mode")
+      }
   }
   addService(new SparkSQLServiceManager())
 
