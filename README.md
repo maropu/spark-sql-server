@@ -191,18 +191,17 @@ throught `Statement.setFetchSize` (See descriptions in [Chapter 5. Issuing a Que
 Also, you could set `spark.sql.server.incrementalCollect.enabled` for memory efficiency
 when launching the SQL server. If enabled, the SQL server collects result data partition-by-parititon.
 
-<!--
-## Install custom optimizer rules
+## Install user-defined optimizer rules
 
-Spark has already implmented a lot of efficient optimization rules in the Catalyst and the Spark community continues to
+Spark has already implmented a lot of efficient optimization rules in Catalyst and the Spark community continues to
 develop it now. In some usecases, domain-specific knowledge and rules could make Spark more efficient and so
-it is useful to append user-defined optimizer rules. To install them, you need to pass new optimizer rule names and
-the jar that includes [the implmentation of the rules](./examples/catalyst/src/main/scala/org/apache/spark/catalyst/examples/optimizerRules.scala);
+it is useful to append user-defined optimizer rules in Catalyst. Spark has an injection point in
+[SparkSessionExtensions](https://github.com/apache/spark/blob/a791c29bd824adadfb2d85594bc8dad4424df936/sql/core/src/main/scala/org/apache/spark/sql/SparkSessionExtensions.scala#L28) for that purpose.
+To install them, you need to pass [a builder class to inject rules](./examples/extensions/src/main/scala/org/apache/spark/ExtensionBuilderExample.scala) in configurations below;
 
     $ ./sbin/start-sql-server.sh \
-        --conf spark.jars=./target/catalyst_2.11_2.3.1_0.1.6-spark2.3-SNAPSHOT.jar \
-        --conf spark.sql.server.extraOptimizerRules=org.apache.spark.catalyst.EmptyRule1,spark.sql.server.extraOptimizerRule2
--->
+        --conf spark.jars=./assembly/extensions_2.11_2.3.1_0.1.7-spark2.3-SNAPSHOT.jar \
+        --conf spark.sql.server.extensions.builder=org.apache.spark.ExtensionBuilderExample
 
 <!--
 ## PostgreSQL syntax

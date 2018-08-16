@@ -30,7 +30,6 @@ import org.apache.spark.sql.server.service._
 import org.apache.spark.sql.types.{ArrayType, ByteType, StructType}
 import org.apache.spark.util.{CompletionIterator, Utils => SparkUtils}
 
-
 private class LivyProxyOperation(
     sessionState: SessionState,
     query: (String, LogicalPlan))(
