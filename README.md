@@ -7,7 +7,7 @@
 A Spark SQL server based on the PostgreSQL V3 protocol.
 For more information, see [SPARK-15816](https://issues.apache.org/jira/browse/SPARK-15816).
 This Spark SQL server experimentally supports impersonation based on [Apache Livy](https://livy.incubator.apache.org/) that
-[the Spark Thrift server](https://github.com/apache/spark/tree/master/sql/hive-thriftserver) in vanilla Apache Spark currently doesn't do.
+[the Spark Thrift server](https://github.com/apache/spark/tree/master/sql/hive-thriftserver) currently doesn't.
 
 ## Run the Spark SQL JDBC/ODBC server
 
