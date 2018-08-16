@@ -27,9 +27,9 @@
   </parent>
 
   <groupId>org.apache.spark</groupId>
-  <artifactId>catalyst_2.11</artifactId>
+  <artifactId>extensions_2.11</artifactId>
   <packaging>jar</packaging>
-  <name>Custom Optimizer Rule Examples</name>
+  <name>Extension Examples</name>
 
   <dependencies>
     <dependency>

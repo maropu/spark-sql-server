@@ -41,7 +41,7 @@ class CustomOptimizerRuleInitializerSuite extends SparkFunSuite {
 
   test("install extra optimizer rules") {
     // First, adds a jar for extra optimizer rules
-    val jarPath = "src/test/resources/examples_2.11_2.3.0-SNAPSHOT.jar"
+    val jarPath = "src/test/resources/extensions_2.11_2.3.1_0.1.7-spark2.3-SNAPSHOT.jar"
     val jarURL = s"file://${System.getProperty("user.dir")}/$jarPath"
     // sqlContext.sparkContext.addJar(jarURL)
     addJarInClassPath(jarURL)
