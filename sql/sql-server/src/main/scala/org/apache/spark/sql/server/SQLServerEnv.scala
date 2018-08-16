@@ -84,7 +84,7 @@ object SQLServerEnv extends Logging {
         val builder = clazz.getDeclaredField("MODULE$").get(null)
           .asInstanceOf[SparkSessionExtensions => Unit]
         val sqlContext = buildSQLContext(builder)
-        logWarning(s"Successfully installed extensions from $builderClassName")
+        logInfo(s"Successfully installed extensions from $builderClassName")
         sqlContext
       } catch {
         case NonFatal(e) =>

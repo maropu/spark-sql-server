@@ -137,6 +137,7 @@ class SQLServer extends CompositeService with LeaderElectable {
         logWarning("`spark.sql.server.extensions.builder` defined though, " +
           "it is not supported in a multi-context mode")
       }
+    case _ =>
   }
   addService(new SparkSQLServiceManager())
 
