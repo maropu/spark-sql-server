@@ -65,17 +65,17 @@ object SQLServerEnv extends Logging {
     newSqlConf
   }
 
-  lazy val sqlContext: SQLContext = _sqlContext.getOrElse(newSQLContext())
+  lazy val sqlContext: SQLContext = _sqlContext.getOrElse(newSQLContext(sparkConf))
   lazy val sparkContext: SparkContext = sqlContext.sparkContext
   lazy val sqlServListener: Option[SQLServerListener] = Some(newSQLServerListener(sqlContext))
   lazy val uiTab: Option[SQLServerTab] = newUiTab(sqlContext, sqlServListener.get)
 
-  def newSQLContext(): SQLContext = {
+  private[sql] def newSQLContext(conf: SparkConf): SQLContext = {
     def buildSQLContext(f: SparkSessionExtensions => Unit = _ => {}): SQLContext = {
-      SparkSession.builder.config(sparkConf).withExtensions(f).enableHiveSupport()
+      SparkSession.builder.config(conf).withExtensions(f).enableHiveSupport()
         .getOrCreate().sqlContext
     }
-    val builderClassName = sparkConf.get("spark.sql.server.extensions.builder", "")
+    val builderClassName = conf.get("spark.sql.server.extensions.builder", "")
     if (builderClassName.nonEmpty) {
       // Tries to install user-defined extensions
       try {

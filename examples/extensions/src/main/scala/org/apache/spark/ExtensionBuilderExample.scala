@@ -17,6 +17,7 @@
 
 package org.apache.spark
 
+import org.apache.spark.catalyst.{EmptyRule1, EmptyRule2}
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSessionExtensions
 import org.apache.spark.util.Utils
@@ -27,5 +28,7 @@ object ExtensionBuilderExample extends (SparkSessionExtensions => Unit) with Log
     // f.injectPostHocResolutionRule(...)
     // f.injectOptimizerRule(...)
     logWarning(s"${Utils.getFormattedClassName(this)} called to inject user-defined extensions")
+    f.injectOptimizerRule(_ => EmptyRule1)
+    f.injectOptimizerRule(_ => EmptyRule2)
   }
 }

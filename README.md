@@ -200,7 +200,7 @@ the jar that includes [the implmentation of the rules](./examples/catalyst/src/m
 
     $ ./sbin/start-sql-server.sh \
         --conf spark.jars=./target/catalyst_2.11_2.3.1_0.1.6-spark2.3-SNAPSHOT.jar \
-        --conf spark.sql.server.extraOptimizerRules=org.apache.spark.catalyst.examples.EmptyRule1,spark.sql.server.extraOptimizerRule2
+        --conf spark.sql.server.extraOptimizerRules=org.apache.spark.catalyst.EmptyRule1,spark.sql.server.extraOptimizerRule2
 
 <!--
 ## PostgreSQL syntax
