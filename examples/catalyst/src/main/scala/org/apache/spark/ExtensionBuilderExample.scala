@@ -15,15 +15,17 @@
  * limitations under the License.
  */
 
-package org.apache.spark.catalyst.examples
+package org.apache.spark
 
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.catalyst.rules.Rule
+import org.apache.spark.internal.Logging
+import org.apache.spark.sql.SparkSessionExtensions
+import org.apache.spark.util.Utils
 
-object EmptyRule1 extends Rule[LogicalPlan] {
-  def apply(p: LogicalPlan): LogicalPlan = p
-}
+object ExtensionBuilderExample extends (SparkSessionExtensions => Unit) with Logging {
 
-object EmptyRule2 extends Rule[LogicalPlan] {
-  def apply(p: LogicalPlan): LogicalPlan = p
+  override def apply(f: SparkSessionExtensions): Unit = {
+    // f.injectPostHocResolutionRule(...)
+    // f.injectOptimizerRule(...)
+    logWarning(s"${Utils.getFormattedClassName(this)} called to inject user-defined extensions")
+  }
 }

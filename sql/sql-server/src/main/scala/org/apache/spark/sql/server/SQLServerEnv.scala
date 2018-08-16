@@ -17,14 +17,15 @@
 
 package org.apache.spark.sql.server
 
+import scala.util.control.NonFatal
+
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.{SparkSession, SQLContext}
+import org.apache.spark.sql.{SparkSession, SparkSessionExtensions, SQLContext}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.server.ui.SQLServerTab
 import org.apache.spark.util.Utils
-
 
 object SQLServerEnv extends Logging {
 
@@ -70,7 +71,29 @@ object SQLServerEnv extends Logging {
   lazy val uiTab: Option[SQLServerTab] = newUiTab(sqlContext, sqlServListener.get)
 
   def newSQLContext(): SQLContext = {
-    SparkSession.builder.config(sparkConf).enableHiveSupport().getOrCreate().sqlContext
+    def buildSQLContext(f: SparkSessionExtensions => Unit = _ => {}): SQLContext = {
+      SparkSession.builder.config(sparkConf).withExtensions(f).enableHiveSupport()
+        .getOrCreate().sqlContext
+    }
+    val builderClassName = sparkConf.get("spark.sql.server.extensions.builder", "")
+    if (builderClassName.nonEmpty) {
+      // Tries to install user-defined extensions
+      try {
+        val objName = builderClassName + (if (!builderClassName.endsWith("$")) "$" else "")
+        val clazz = Utils.classForName(objName)
+        val builder = clazz.getDeclaredField("MODULE$").get(null)
+          .asInstanceOf[SparkSessionExtensions => Unit]
+        val sqlContext = buildSQLContext(builder)
+        logWarning(s"Successfully installed extensions from $builderClassName")
+        sqlContext
+      } catch {
+        case NonFatal(e) =>
+          logWarning(s"Failed to install extensions from $builderClassName: " + e.getMessage)
+          buildSQLContext()
+      }
+    } else {
+      buildSQLContext()
+    }
   }
   def newSQLServerListener(sqlContext: SQLContext): SQLServerListener = {
     val listener = new SQLServerListener(sqlContext.conf)
