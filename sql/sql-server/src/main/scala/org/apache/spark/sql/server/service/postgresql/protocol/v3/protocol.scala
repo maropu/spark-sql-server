@@ -171,7 +171,7 @@ case class PgWireProtocol(bufferSizeInBytes: Int) {
    * If we receive the `Describe` message from a client and we have no failure,
    * we send this message to the client.
    */
-  def RowDescription(schema: StructType): Array[Byte] = {
+  def RowDescription(schema: StructType, state: V3SessionState): Array[Byte] = {
     withMessageBuffer { buf =>
       if (schema.isEmpty) {
         buf.put('T'.toByte).putInt(6).putShort(0)
@@ -183,13 +183,18 @@ case class PgWireProtocol(bufferSizeInBytes: Int) {
         schema.toSeq.zipWithIndex.map { case (field, index) =>
           val sparkType = field.dataType
           val pgType = getPgType(sparkType)
-          val mode = PgWireProtocol.binaryFormatTypes.find(_ == sparkType).map(_ => 1).getOrElse(0)
+          var mode = PgWireProtocol.binaryFormatTypes.find(_ == sparkType).map(_ => 1).getOrElse(0)
+
+          if (state.conf.sqlServerBinaryTransferMode == false) {
+            mode = 0
+          }
+
           buf.put(field.name.getBytes(StandardCharsets.UTF_8)).put(0.toByte) // field name
             .putInt(0)                        // object ID of the table
             .putShort((index + 1).toShort)    // attribute number of the column
             .putInt(pgType.oid)               // object ID of the field's data type
             .putShort(pgType.len.toShort)     // data type size
-            .putInt(0)                        // type modifier
+            .putInt(-1)                        // type modifier
             .putShort(mode.toShort)           // 1 for binary; otherwise 0
         }
         1 + length
@@ -421,7 +426,7 @@ object PgWireProtocol extends Logging {
         //   case _: RunnableCommand =>
         //   case _ => ctx.write(RowDescription(schema))
         // }
-        ctx.write(RowDescription(schema))
+        ctx.write(RowDescription(schema, sessionState))
         ctx.flush()
       })
     },
@@ -624,7 +629,7 @@ object PgWireProtocol extends Logging {
                   // In the PostgreSQL expected behaviour, `SET` returns no rows. But, it is useful
                   // to get current values for parameters. So, if testing mode enabled,
                   // returns a current value for a given parameter.
-                  ctx.write(RowDescription(schema))
+                  ctx.write(RowDescription(schema, sessionState))
                   resultRowIter.foreach { row => ctx.write(DataRow(row, rowWriter))}
                 }
                 ctx.write(CommandComplete("SET"))
@@ -633,7 +638,7 @@ object PgWireProtocol extends Logging {
                 // The response to a SELECT query (or other queries that return row sets, such as
                 // EXPLAIN or SHOW) normally consists of RowDescription, zero or more DataRow
                 // messages, and then CommandComplete.
-                ctx.write(RowDescription(schema))
+                ctx.write(RowDescription(schema, sessionState))
 
                 var numRows = 0
                 resultRowIter.foreach { iter =>
