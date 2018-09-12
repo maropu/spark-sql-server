@@ -183,10 +183,10 @@ case class PgWireProtocol(bufferSizeInBytes: Int) {
         schema.toSeq.zipWithIndex.map { case (field, index) =>
           val sparkType = field.dataType
           val pgType = getPgType(sparkType)
-          var mode = PgWireProtocol.binaryFormatTypes.find(_ == sparkType).map(_ => 1).getOrElse(0)
-
-          if (state.conf.sqlServerBinaryTransferMode == false) {
-            mode = 0
+          val mode = if (state.conf.sqlServerBinaryTransferMode) {
+            PgWireProtocol.binaryFormatTypes.find(_ == sparkType).map(_ => 1).getOrElse(0)
+          } else {
+            0
           }
 
           buf.put(field.name.getBytes(StandardCharsets.UTF_8)).put(0.toByte) // field name
@@ -194,7 +194,7 @@ case class PgWireProtocol(bufferSizeInBytes: Int) {
             .putShort((index + 1).toShort)    // attribute number of the column
             .putInt(pgType.oid)               // object ID of the field's data type
             .putShort(pgType.len.toShort)     // data type size
-            .putInt(-1)                        // type modifier
+            .putInt(-1)                       // type modifier
             .putShort(mode.toShort)           // 1 for binary; otherwise 0
         }
         1 + length
