@@ -552,6 +552,7 @@
           </execution>
         </executions>
       </plugin>
+      <!-- This plugin needed to build in IntelliJ -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-resources-plugin</artifactId>
