@@ -18,9 +18,9 @@ in the root directory:
 
 This script accepts all `bin/spark-submit` command line options in Spark, plus options for the SQL server.
 You may run `./sbin/start-sql-server.sh --help` for a complete list of all available options.
-If you use `spark-2.3.x`, you can add the option below to install the JDBC/ODBC server:
+If you use `spark-2.4.x`, you can add the option below to install the JDBC/ODBC server:
 
-    $ ./bin/spark-shell --packages maropu:spark-sql-server:0.1.6-spark2.3
+    $ ./bin/spark-shell --packages maropu:spark-sql-server:0.1.7-spark2.4
 
 Then, you run the commands to launch the server:
 
@@ -200,7 +200,7 @@ it is useful to append user-defined optimizer rules in Catalyst. Spark has an in
 To install them, you need to pass [a builder class to inject rules](./examples/extensions/src/main/scala/org/apache/spark/ExtensionBuilderExample.scala) in configurations below;
 
     $ ./sbin/start-sql-server.sh \
-        --conf spark.jars=./assembly/extensions_2.11_2.3.1_0.1.7-spark2.3-SNAPSHOT.jar \
+        --conf spark.jars=./assembly/extensions_2.11_2.4.0_0.1.7-spark2.4-SNAPSHOT.jar \
         --conf spark.sql.server.extensions.builder=org.apache.spark.ExtensionBuilderExample
 
 <!--
