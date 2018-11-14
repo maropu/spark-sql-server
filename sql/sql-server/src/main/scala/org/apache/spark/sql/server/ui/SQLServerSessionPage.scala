@@ -56,9 +56,9 @@ private[ui] case class SQLServerSessionPage(parent: SQLServerTab)
         Session created at {formatDate(sessionStat.startTimestamp)},
         Total run {sessionStat.totalExecution} SQL
         </h4> ++
-        generateSQLStatsTable(sessionStat.sessionId)
+        generateSQLStatsTable(request, sessionStat.sessionId)
       }
-    UIUtils.headerSparkPage("JDBC/ODBC Session", content, parent, Some(5000))
+    UIUtils.headerSparkPage(request, "JDBC/ODBC Session", content, parent, Some(5000))
   }
 
   /** Generate basic stats of the thrift server program */
@@ -75,7 +75,7 @@ private[ui] case class SQLServerSessionPage(parent: SQLServerTab)
   }
 
   /** Generate stats of batch statements of the thrift server program */
-  private def generateSQLStatsTable(sessionId: Int): Seq[Node] = {
+  private def generateSQLStatsTable(request: HttpServletRequest, sessionId: Int): Seq[Node] = {
     val executionList = listener.getExecutionList.filter(_.sessionId == sessionId)
     val numStatement = executionList.size
     val table = if (numStatement > 0) {
@@ -84,8 +84,9 @@ private[ui] case class SQLServerSessionPage(parent: SQLServerTab)
       val dataRows = executionList.sortBy(_.startTimestamp).reverse
 
       def generateDataRow(info: ExecutionInfo): Seq[Node] = {
+        val uri = UIUtils.prependBaseUri(request, parent.basePath)
         val jobLink = info.jobId.map { id: String =>
-          <a href={"%s/jobs/job?id=%s".format(UIUtils.prependBaseUri(parent.basePath), id)}>
+          <a href={"%s/jobs/job?id=%s".format(uri, id)}>
             [{id}]
           </a>
         }

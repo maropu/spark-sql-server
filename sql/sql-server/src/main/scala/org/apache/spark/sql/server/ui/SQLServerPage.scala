@@ -47,10 +47,10 @@ private[ui] case class SQLServerPage(parent: SQLServerTab) extends WebUIPage("")
         {listener.getOnlineSessionNum} session(s) are online,
         running {listener.getTotalRunning} SQL statement(s)
         </h4> ++
-        generateSessionStatsTable() ++
-        generateSQLStatsTable()
+        generateSessionStatsTable(request) ++
+        generateSQLStatsTable(request)
       }
-    UIUtils.headerSparkPage("JDBC/ODBC Server", content, parent, Some(5000))
+    UIUtils.headerSparkPage(request, "JDBC/ODBC Server", content, parent, Some(5000))
   }
 
   /** Generate basic stats of the gateway server program */
@@ -67,7 +67,7 @@ private[ui] case class SQLServerPage(parent: SQLServerTab) extends WebUIPage("")
   }
 
   /** Generate stats of batch statements of the gateway server program */
-  private def generateSQLStatsTable(): Seq[Node] = {
+  private def generateSQLStatsTable(request: HttpServletRequest): Seq[Node] = {
     val numStatement = listener.getExecutionList.size
     val table = if (numStatement > 0) {
       val headerRow = Seq("User", "JobID", "GroupID", "Start Time", "Finish Time", "Duration",
@@ -75,8 +75,9 @@ private[ui] case class SQLServerPage(parent: SQLServerTab) extends WebUIPage("")
       val dataRows = listener.getExecutionList.sortBy(_.startTimestamp).reverse
 
       def generateDataRow(info: ExecutionInfo): Seq[Node] = {
+        val uri = UIUtils.prependBaseUri(request, parent.basePath)
         val jobLink = info.jobId.map { id: String =>
-          <a href={"%s/jobs/job?id=%s".format(UIUtils.prependBaseUri(parent.basePath), id)}>
+          <a href={"%s/jobs/job?id=%s".format(uri, id)}>
             [{id}]
           </a>
         }
@@ -138,7 +139,7 @@ private[ui] case class SQLServerPage(parent: SQLServerTab) extends WebUIPage("")
   }
 
   /** Generate stats of batch sessions of the thrift server program */
-  private def generateSessionStatsTable(): Seq[Node] = {
+  private def generateSessionStatsTable(request: HttpServletRequest): Seq[Node] = {
     val sessionList = listener.getSessionList
     val numBatches = sessionList.size
     val table = if (numBatches > 0) {
@@ -146,8 +147,8 @@ private[ui] case class SQLServerPage(parent: SQLServerTab) extends WebUIPage("")
       val headerRow = Seq("User", "IP", "Session ID", "Start Time", "Finish Time", "Duration",
         "Total Execute")
       def generateDataRow(session: SessionInfo): Seq[Node] = {
-        val sessionLink = "%s/%s/session?id=%s"
-          .format(UIUtils.prependBaseUri(parent.basePath), parent.prefix, session.sessionId)
+        val sessionLink = "%s/%s/session?id=%s".format(
+          UIUtils.prependBaseUri(request, parent.basePath), parent.prefix, session.sessionId)
         <tr>
           <td> {session.userName} </td>
           <td> {session.ipAddr} </td>
