@@ -26,7 +26,6 @@ import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.SQLServerEnv
 import org.apache.spark.sql.types.StructType
 
-
 sealed trait OperationState
 case object INITIALIZED extends OperationState
 case object RUNNING extends OperationState

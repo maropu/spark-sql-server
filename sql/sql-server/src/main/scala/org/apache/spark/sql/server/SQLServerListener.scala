@@ -24,7 +24,6 @@ import org.apache.spark.scheduler.{SparkListener, SparkListenerJobStart}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.server.SQLServerConf._
 
-
 private[server] class SessionInfo(
     val sessionId: Int,
     val startTimestamp: Long,

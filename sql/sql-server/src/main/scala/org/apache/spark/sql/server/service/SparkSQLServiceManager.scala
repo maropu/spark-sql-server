@@ -36,7 +36,6 @@ import org.apache.spark.sql.server.ui.SQLServerTab
 import org.apache.spark.sql.server.util.RecurringTimer
 import org.apache.spark.util.SystemClock
 
-
 // Base trait for `SQLContext` and `LivyProxyContext`
 trait SessionContext
 

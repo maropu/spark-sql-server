@@ -23,7 +23,6 @@ import java.util.Properties
 import org.apache.livy.client.common.HttpMessages.SessionInfo
 import org.apache.livyclient.common.CreateClientRequestWithProxyUser
 
-
 // Workaround: For starting a Livy session with `proxyUser`
 object HttpClientProxy {
 

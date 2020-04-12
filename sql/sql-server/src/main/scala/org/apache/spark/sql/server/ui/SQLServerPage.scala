@@ -29,7 +29,6 @@ import org.apache.spark.sql.server.{ExecutionInfo, ExecutionState, SessionInfo}
 import org.apache.spark.ui._
 import org.apache.spark.ui.UIUtils._
 
-
 /** Page for Spark Web UI that shows statistics of the SQL gateway server */
 private[ui] case class SQLServerPage(parent: SQLServerTab) extends WebUIPage("") with Logging {
 
@@ -50,7 +49,7 @@ private[ui] case class SQLServerPage(parent: SQLServerTab) extends WebUIPage("")
         generateSessionStatsTable(request) ++
         generateSQLStatsTable(request)
       }
-    UIUtils.headerSparkPage(request, "JDBC/ODBC Server", content, parent, Some(5000))
+    UIUtils.headerSparkPage(request, "JDBC/ODBC Server", content, parent)
   }
 
   /** Generate basic stats of the gateway server program */

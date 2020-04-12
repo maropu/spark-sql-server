@@ -23,7 +23,6 @@ import org.apache.spark.sql.catalyst.expressions.Literal
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.server.catalyst.expressions.ParameterPlaceHolder
 
-
 /**
  * A helper class that binds parameters using numbers like `$1`, `$2`, ...
  */

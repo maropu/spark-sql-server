@@ -27,7 +27,6 @@ import org.apache.spark.sql.server.catalyst.expressions.ParameterPlaceHolder
 import org.apache.spark.sql.server.service.ParamBinder
 import org.apache.spark.sql.types._
 
-
 class ParameterBinderSuite extends PlanTest {
 
   test("bind parameters") {

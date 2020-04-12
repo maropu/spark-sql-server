@@ -29,7 +29,6 @@ import org.xerial.snappy.OSInfo
 import org.apache.spark.sql.server.PgJdbcTest
 import org.apache.spark.util.Utils
 
-
 class PgV3ProtocolTest extends PgJdbcTest {
 
   // TODO: Replace `snappy-java` with `commons.lang3.SystemUtils`

@@ -22,7 +22,6 @@ import scala.collection.mutable
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.internal.SQLConf
 
-
 abstract class Service extends Logging {
 
   def init(conf: SQLConf): Unit

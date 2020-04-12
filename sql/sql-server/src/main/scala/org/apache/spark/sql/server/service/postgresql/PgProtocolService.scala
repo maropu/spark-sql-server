@@ -24,7 +24,6 @@ import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.server.service.{FrontendService, SessionService}
 import org.apache.spark.sql.server.service.postgresql.protocol.v3.PgV3MessageInitializer
 
-
 private[service] class PgProtocolService(cli: SessionService) extends FrontendService {
 
   private var _msgHandlerInitializer: ChannelInitializer[SocketChannel] = _

@@ -23,5 +23,5 @@ import org.apache.spark.SparkConf
 private[spark] class ZooKeeperLeaderElectionAgentAccessor(
     override val masterInstance: LeaderElectable,
     conf: SparkConf,
-    override val WORKING_DIR: String)
+    override val workingDir: String)
   extends ZooKeeperLeaderElectionAgent(masterInstance, conf) {}

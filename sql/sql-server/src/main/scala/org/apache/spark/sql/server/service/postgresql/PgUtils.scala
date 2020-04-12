@@ -23,7 +23,6 @@ import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.server.SQLServerEnv
 
-
 private[service] object PgUtils {
 
   private val parser = new PgParser(SQLServerEnv.sqlConf)

@@ -26,7 +26,6 @@ import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.SQLServerEnv
 import org.apache.spark.util.Utils
 
-
 object SQLServerUtils {
 
   /**

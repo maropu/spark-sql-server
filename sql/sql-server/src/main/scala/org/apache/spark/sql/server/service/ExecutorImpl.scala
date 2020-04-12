@@ -33,7 +33,6 @@ import org.apache.spark.sql.server.catalyst.expressions.ParameterPlaceHolder
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.{Utils => SparkUtils}
 
-
 private class OperationImpl(
     sessionState: SessionState,
     // `query._1` is the query string that might have parameterized variables (`$1`, `$2`, ...)

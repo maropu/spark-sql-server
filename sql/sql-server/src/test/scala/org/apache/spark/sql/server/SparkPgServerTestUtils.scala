@@ -35,7 +35,6 @@ import org.apache.spark.SparkFunSuite
 import org.apache.spark.internal.Logging
 import org.apache.spark.util.{ThreadUtils, Utils}
 
-
 /**
  * A base class that manages a pair of JDBC driver connections and a SQL server instance.
  */

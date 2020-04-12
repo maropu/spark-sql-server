@@ -29,7 +29,6 @@ import org.apache.spark.sql.server.{ExecutionInfo, ExecutionState}
 import org.apache.spark.ui._
 import org.apache.spark.ui.UIUtils._
 
-
 /** Page for Spark Web UI that shows statistics of jobs running in the gateway server */
 private[ui] case class SQLServerSessionPage(parent: SQLServerTab)
   extends WebUIPage("session") with Logging {
@@ -58,7 +57,7 @@ private[ui] case class SQLServerSessionPage(parent: SQLServerTab)
         </h4> ++
         generateSQLStatsTable(request, sessionStat.sessionId)
       }
-    UIUtils.headerSparkPage(request, "JDBC/ODBC Session", content, parent, Some(5000))
+    UIUtils.headerSparkPage(request, "JDBC/ODBC Session", content, parent)
   }
 
   /** Generate basic stats of the thrift server program */

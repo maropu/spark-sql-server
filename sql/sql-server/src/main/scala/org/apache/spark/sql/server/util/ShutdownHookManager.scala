@@ -17,7 +17,6 @@
 
 package org.apache.spark.sql.server.util
 
-
 object ShutdownHookManager {
 
   // TODO: Reconsider this

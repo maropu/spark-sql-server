@@ -32,7 +32,6 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.apache.spark.{SparkConf, SparkFunSuite}
 import org.apache.spark.util.Utils
 
-
 /** This suite tests the fault tolerance of the Spark SQL server. */
 class FaultToleranceSuite extends SparkFunSuite with BeforeAndAfterAll with BeforeAndAfterEach {
 

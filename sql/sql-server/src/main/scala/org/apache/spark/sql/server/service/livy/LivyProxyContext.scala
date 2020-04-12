@@ -35,7 +35,6 @@ import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.service.SessionContext
 import org.apache.spark.sql.server.util.SQLServerUtils
 
-
 class LivyProxyContext(sqlConf: SQLConf, livyService: LivyServerService)
     extends SessionContext with Logging {
 

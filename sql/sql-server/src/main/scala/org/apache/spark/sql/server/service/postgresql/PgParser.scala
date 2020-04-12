@@ -36,7 +36,6 @@ import org.apache.spark.sql.server.parser.SqlBaseParser._
 import org.apache.spark.sql.server.service.postgresql.execution.command.BeginCommand
 import org.apache.spark.sql.types._
 
-
 /**
  * Concrete parser for PostgreSQL statements.
  *
@@ -196,19 +195,17 @@ private[postgresql] class PgAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder
   override def visitSubstringInternalFunc(ctx: SubstringInternalFuncContext): Expression = {
     withOrigin(ctx) {
       val expr = expression(ctx.primaryExpression)
-      val pos = Literal(0, IntegerType)
-      val forNum = ctx.INTEGER_VALUE().asScala.toList match {
-        case from :: Nil => from
-        case _ => throw new ParseException("substring has not an enough parameter for `from`", ctx)
+      val (pos, len) = ctx.INTEGER_VALUE().asScala match {
+        case Seq(fromNum, forNum) => (fromNum.getText.toInt, forNum.getText.toInt)
+        case Seq(forNum) => (0, forNum.getText.toInt)
       }
-      val len = Literal(forNum, IntegerType)
-      Substring(expr, pos, len)
+      Substring(expr, Literal(pos), Literal(len))
     }
   }
 
   override def visitTableValuedFunction(ctx: TableValuedFunctionContext): LogicalPlan = {
     withOrigin(ctx) {
-      val funcName = ctx.functionTable.identifier.getText
+      val funcName = ctx.functionTable.funcName.getText
       val args = ctx.functionTable.expression.asScala.map(expression)
       val funcPlan = (funcName, args) match {
         case ("generate_series", Buffer(start, end)) => toSparkRange(start, end, None)

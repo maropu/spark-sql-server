@@ -37,7 +37,6 @@ import org.apache.spark.sql.server.service.{CompositeService, FrontendService}
 import org.apache.spark.sql.server.util.SQLServerUtils
 import org.apache.spark.util.Utils
 
-
 private[service] class LivyServerService(frontend: FrontendService) extends CompositeService {
   import LivyServerService._
 

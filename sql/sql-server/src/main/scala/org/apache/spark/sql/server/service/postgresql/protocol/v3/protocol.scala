@@ -55,7 +55,6 @@ import org.apache.spark.sql.server.util.SQLServerUtils
 import org.apache.spark.sql.types._
 import org.apache.spark.util.Utils._
 
-
 /**
  * This is the implementation of the PostgreSQL V3 client/server protocol.
  * The V3 protocol is used in PostgreSQL 7.4 and later.

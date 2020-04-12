@@ -32,7 +32,6 @@ import org.apache.spark.sql.server.service.postgresql.PgMetadata._
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
 
-
 /**
  * A [[PgParamConverters]] is used to convert binary in the `Bind` message into [[Literal]] to
  * bind them in a prepared statement.

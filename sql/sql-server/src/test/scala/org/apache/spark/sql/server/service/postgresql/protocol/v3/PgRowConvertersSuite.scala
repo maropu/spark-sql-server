@@ -28,7 +28,6 @@ import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
 
-
 // Wrapped in an object to check Scala compatibility. See SPARK-13929
 object UDT {
 

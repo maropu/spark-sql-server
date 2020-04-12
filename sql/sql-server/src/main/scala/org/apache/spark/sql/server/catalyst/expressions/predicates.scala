@@ -22,7 +22,6 @@ import org.apache.spark.sql.catalyst.expressions.LeafExpression
 import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
 import org.apache.spark.sql.types.{DataType, NullType}
 
-
 /** A dummy expression node for prepared statements */
 case class ParameterPlaceHolder(id: Int) extends LeafExpression with CodegenFallback {
   override lazy val resolved: Boolean = true

@@ -39,7 +39,6 @@ import org.apache.spark.sql.server.service.CompositeService
 import org.apache.spark.sql.types._
 import org.apache.spark.util.Utils._
 
-
 private[service] class PgCatalogInitializer extends CompositeService {
 
   override def doStart(): Unit = {
@@ -302,6 +301,7 @@ private[server] object PgMetadata extends Logging {
       f: String => Seq[String]): Unit = {
     assert(catalogTables.exists { case PgSystemTable(oid, table) => table.identifier == name })
     val sqlTexts = s"DROP TABLE IF EXISTS $catalogDbName.$name" +: f(s"$catalogDbName.$name")
+    logWarning(s"Creating a dummy PostgreSQL catalog table: $catalogDbName.$name...")
     sqlTexts.foreach { sqlText =>
       sqlContext.sql(sqlText.stripMargin)
     }
@@ -511,10 +511,12 @@ private[server] object PgMetadata extends Logging {
           }
           throw new SQLException(exceptionString(e))
       }
-      require(_catalogTables1.forall { case PgSystemTable(_, table) =>
-        sqlContext.sessionState.catalog.tableExists(table)
-      })
     }
+
+    // Checks if all the metadata exist in the catalog
+    require(_catalogTables1.forall { case PgSystemTable(_, table) =>
+      sqlContext.sessionState.catalog.tableExists(table)
+    })
   }
 
   def initSessionCatalogTables(sqlContext: SQLContext, dbName: String): Unit = {

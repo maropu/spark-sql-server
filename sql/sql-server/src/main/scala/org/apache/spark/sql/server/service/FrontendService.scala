@@ -27,7 +27,6 @@ import io.netty.handler.logging.{LoggingHandler, LogLevel}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.server.SQLServerConf._
 
-
 private[service] abstract class FrontendService extends CompositeService {
 
   var port: Int = _
