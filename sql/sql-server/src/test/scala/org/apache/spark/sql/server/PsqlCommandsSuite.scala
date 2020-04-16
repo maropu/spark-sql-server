@@ -113,6 +113,8 @@ class PsqlCommandsV10Suite extends PgJdbcTest(pgVersion = "10") with BeforeAndAf
           |    AND n.nspname <> 'information_schema'
           |    AND n.nspname !~ '^pg_toast'
           |    AND pg_catalog.pg_table_is_visible(c.oid)
+          |    /* TODO: See PgMetadata.initSystemCatalogTables */
+          |    AND c.relname != 'pg_namespace'
           |ORDER BY
           |  1,2
          """.stripMargin
@@ -431,6 +433,8 @@ class PsqlCommandsV9_6Suite extends PgJdbcTest(pgVersion = "9.6") with BeforeAnd
           |    AND n.nspname <> 'information_schema'
           |    AND n.nspname !~ '^pg_toast'
           |    AND pg_catalog.pg_table_is_visible(c.oid)
+          |    /* TODO: See PgMetadata.initSystemCatalogTables */
+          |    AND c.relname != 'pg_namespace'
           |ORDER BY
           |  1,2
          """.stripMargin
@@ -712,6 +716,8 @@ class PsqlCommandsV8_4Suite extends PgJdbcTest(pgVersion = "8.4") with BeforeAnd
           |    AND n.nspname <> 'information_schema'
           |    AND n.nspname !~ '^pg_toast'
           |    AND pg_catalog.pg_table_is_visible(c.oid)
+          |    /* TODO: See PgMetadata.initSystemCatalogTables */
+          |    AND c.relname != 'pg_namespace'
           |ORDER BY
           |  1,2
          """.stripMargin
@@ -995,6 +1001,8 @@ class PsqlCommandsV7_4Suite extends PgJdbcTest(pgVersion = "7.4") with BeforeAnd
           |    AND n.nspname <> 'information_schema'
           |    AND n.nspname !~ '^pg_toast'
           |    AND pg_catalog.pg_table_is_visible(c.oid)
+          |    /* TODO: See PgMetadata.initSystemCatalogTables */
+          |    AND c.relname != 'pg_namespace'
           |ORDER BY
           |  1,2
          """.stripMargin

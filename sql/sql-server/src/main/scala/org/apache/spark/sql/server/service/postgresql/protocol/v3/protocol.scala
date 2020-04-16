@@ -37,10 +37,11 @@ import io.netty.channel.socket.SocketChannel
 import io.netty.handler.codec.bytes.{ByteArrayDecoder, ByteArrayEncoder}
 import io.netty.handler.ssl.{SslContext, SslHandler}
 import io.netty.handler.ssl.util.SelfSignedCertificate
-import org.ietf.jgss.{GSSContext, GSSCredential, GSSException, GSSManager, GSSName, Oid}
+import org.ietf.jgss.{GSSContext, GSSCredential, GSSException, GSSManager, Oid}
 
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.catalyst.{InternalRow, QueryPlanningTracker}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.SetCommand
 import org.apache.spark.sql.internal.SQLConf
@@ -562,17 +563,23 @@ object PgWireProtocol extends Logging {
         import sessionState._
 
         val parsed = PgUtils.parse(query)
-        val schema = {
+        val (schema, tracker) = {
           import org.apache.spark.sql.server.service.SQLContextHolder
           _context match {
             case SQLContextHolder(ctx) =>
               val sesseionSpecificAnalyzer = ctx.sessionState.analyzer
-              sesseionSpecificAnalyzer.execute(parsed).schema
+              val planningTracker = new QueryPlanningTracker
+              val analyzed = planningTracker.measurePhase(QueryPlanningTracker.ANALYSIS) {
+                SparkSession.setActiveSession(ctx.sparkSession)
+                sesseionSpecificAnalyzer.executeAndCheck(parsed, planningTracker)
+              }
+              (analyzed.schema, Some(planningTracker))
             case _ =>
-              new StructType()
+              (new StructType(), None)
           }
         }
-        sessionState.queries(queryName) = QueryState(query, parsed, params, schema)
+        sessionState.queries(queryName) =
+          QueryState(query, parsed, params, schema, _planningTracker = tracker)
         ctx.write(ParseComplete)
         ctx.flush()
       })
@@ -995,7 +1002,8 @@ case class QueryState(
   _schema: StructType = new StructType(),
   // This writer is initialized in `Bind` messages because it depends
   // on `outputFormats` provided by the messages.
-  _rowWriter: Option[RowWriter] = None) {
+  _rowWriter: Option[RowWriter] = None,
+  _planningTracker: Option[QueryPlanningTracker] = None) {
 
   def withRowWriter(schema: StructType, rowWriter: RowWriter): QueryState = {
     QueryState(statement, logicalPlan, paramIds, schema, Some(rowWriter))

@@ -32,8 +32,7 @@ object SQLServerConf {
    */
   implicit def SQLConfToSQLServerConf(conf: SQLConf): SQLServerConf = new SQLServerConf(conf)
 
-  private val sqlConfEntries = java.util.Collections.synchronizedMap(
-    new java.util.HashMap[String, ConfigEntry[_]]())
+  private def sqlConfEntries = SQLConf.sqlConfEntries
 
   private def register(entry: ConfigEntry[_]): Unit = sqlConfEntries.synchronized {
     require(!sqlConfEntries.containsKey(entry.key),
@@ -169,10 +168,10 @@ object SQLServerConf {
     .createWithDefault(true)
 
   val SQLSERVER_INCREMENTAL_COLLECT_ENABLED =
-     buildConf("spark.sql.server.incrementalCollect.enabled")
-    .doc("When set to true, Spark collects result rows partition-by-partition.")
-    .booleanConf
-    .createWithDefault(false)
+    buildConf("spark.sql.server.incrementalCollect.enabled")
+      .doc("When set to true, Spark collects result rows partition-by-partition.")
+      .booleanConf
+      .createWithDefault(false)
 
   val SQLSERVER_RECOVERY_MODE = buildStaticConf("spark.sql.server.recoveryMode")
     .doc("Set to ZOOKEEPER to enable recovery mode with Zookeeper.")

@@ -22,8 +22,8 @@ import java.sql.SQLException
 import scala.util.control.NonFatal
 
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.{DataFrame, Dataset, SQLContext}
-import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.{DataFrame, Dataset, SparkSession, SQLContext}
+import org.apache.spark.sql.catalyst.{InternalRow, QueryPlanningTracker}
 import org.apache.spark.sql.catalyst.expressions.Literal
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.SetCommand
@@ -44,6 +44,8 @@ private class OperationImpl(
 
   import sessionState._
 
+  private val planningTracker = new QueryPlanningTracker()
+
   private val sqlContext = sessionState._context match {
     case SQLContextHolder(ctx) => ctx
     case ctx => sys.error(s"${this.getClass.getSimpleName} cannot handle $ctx")
@@ -55,7 +57,10 @@ private class OperationImpl(
   private var _boundPlan: Option[LogicalPlan] = None
 
   private lazy val analyzedPlan: LogicalPlan = _boundPlan.getOrElse {
-    sqlContext.sessionState.analyzer.execute(query._2)
+    planningTracker.measurePhase(QueryPlanningTracker.ANALYSIS) {
+      SparkSession.setActiveSession(sqlContext.sparkSession)
+      sqlContext.sessionState.analyzer.executeAndCheck(query._2, planningTracker)
+    }
   }
 
   override def statementId(): String = _statementId

@@ -26,6 +26,9 @@ import org.apache.spark.sql.types.{DataType, NullType}
 case class ParameterPlaceHolder(id: Int) extends LeafExpression with CodegenFallback {
   override lazy val resolved: Boolean = true
   override def nullable: Boolean = false
+  // The parameter placeholder depends on the Spark analyzer behaviour; null types
+  // can be comparable to the other types and the analyzer always casts it
+  // to the other-side type.
   override def dataType: DataType = NullType
   override def eval(input: InternalRow): Any = input
 }

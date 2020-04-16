@@ -43,7 +43,7 @@ class ExtensionBuilderSuite extends SparkFunSuite with BeforeAndAfterAll {
     super.beforeAll()
 
     // Adds a jar for an extension builder
-    val jarPath = "src/test/resources/extensions_2.11_2.3.1_0.1.7-spark2.3-SNAPSHOT.jar"
+    val jarPath = "src/test/resources/extensions_2.12_3.0.0-preview2_0.1.7-spark3.0-SNAPSHOT.jar"
     val jarURL = s"file://${System.getProperty("user.dir")}/$jarPath"
     // sqlContext.sparkContext.addJar(jarURL)
     addJarInClassPath(jarURL)
