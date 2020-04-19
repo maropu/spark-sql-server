@@ -25,6 +25,7 @@ import java.util.{Locale, MissingFormatArgumentException}
 import scala.util.control.NonFatal
 
 import org.apache.commons.lang3.exception.ExceptionUtils
+import org.postgresql.util.PSQLException
 
 import org.apache.spark.SparkException
 import org.apache.spark.sql.SQLQueryTestSuite
@@ -33,7 +34,6 @@ import org.apache.spark.sql.catalyst.util.fileToString
 import org.apache.spark.sql.execution.HiveResult
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types._
-import org.postgresql.util.PSQLException
 
 /**
  * Run all the tests in SQLQueryTestSuite via the SQL server.
@@ -229,7 +229,7 @@ class SQLServerQueryTestSuite extends SQLQueryTestSuite with SQLServerTest with 
     "typeCoercion/native/promoteStrings.sql",
     "typeCoercion/native/stringCastAndExpressions.sql",
     "typeCoercion/native/widenSetOperationTypes.sql",
-    "typeCoercion/native/windowFrameCoercion.sql",
+    "typeCoercion/native/windowFrameCoercion.sql"
   )
 
   override def runQueries(
@@ -366,8 +366,8 @@ class SQLServerQueryTestSuite extends SQLQueryTestSuite with SQLServerTest with 
       ignore(testCase.name) { /* Do nothing */ }
     } else {
       // Create a test case to run this case.
-      ignore(s"skipped - ${testCase.name}") {
-      // test(testCase.name) {
+      // ignore(s"skipped - ${testCase.name}") {
+      test(testCase.name) {
         runTest(testCase)
       }
     }

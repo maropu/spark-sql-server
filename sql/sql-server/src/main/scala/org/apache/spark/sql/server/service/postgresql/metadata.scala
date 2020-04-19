@@ -119,7 +119,7 @@ private[server] object PgMetadata extends Logging {
   // Since v7.3, all the catalog tables have been moved in a `pg_catalog` database
   private[sql] val catalogDbName = "pg_catalog"
 
-  case class PgSystemTable(oid: Int, table: TableIdentifier)
+  case class PgSystemTable(oid: Int, table: TableIdentifier, schema: String)
   case class PgType(oid: Int, name: String, len: Int, elemOid: Int, input: String)
   case class PgSystemFunction(oid: Int, name: FunctionIdentifier, udf: Unit => UserDefinedFunction)
 
@@ -137,32 +137,34 @@ private[server] object PgMetadata extends Logging {
   // Catalog tables and they are immutable (these table names should be reserved for a parse)
   private val _catalogTables1 = Seq(
     // scalastyle:off
-    PgSystemTable(  1247, TableIdentifier(        "pg_type", Some(catalogDbName))),
-    PgSystemTable(  2604, TableIdentifier(     "pg_attrdef", Some(catalogDbName))),
-    PgSystemTable(  2606, TableIdentifier(  "pg_constraint", Some(catalogDbName))),
-    PgSystemTable(  2608, TableIdentifier(      "pg_depend", Some(catalogDbName))),
-    PgSystemTable(  2609, TableIdentifier( "pg_description", Some(catalogDbName))),
-    PgSystemTable(  2610, TableIdentifier(       "pg_index", Some(catalogDbName))),
-    PgSystemTable(  2611, TableIdentifier(    "pg_inherits", Some(catalogDbName))),
-    PgSystemTable(  2615, TableIdentifier(   "pg_namespace", Some(catalogDbName))),
-    PgSystemTable(  3256, TableIdentifier(      "pg_policy", Some(catalogDbName))),
-    PgSystemTable(  3456, TableIdentifier(   "pg_collation", Some(catalogDbName))),
-    PgSystemTable( 11631, TableIdentifier(       "pg_roles", Some(catalogDbName))),
-    PgSystemTable( 11642, TableIdentifier(        "pg_user", Some(catalogDbName)))
+    PgSystemTable(  1247, TableIdentifier(        "pg_type", Some(catalogDbName)), "oid INT, typname STRING, typtype STRING, typlen INT, typnotnull BOOLEAN, typelem INT, typdelim STRING, typinput STRING, typrelid INT, typbasetype INT, typcollation INT, typnamespace INT"),
+    PgSystemTable(  2604, TableIdentifier(     "pg_attrdef", Some(catalogDbName)), "adrelid INT, adnum SHORT, adbin STRING"),
+    PgSystemTable(  2606, TableIdentifier(  "pg_constraint", Some(catalogDbName)), "oid INT, confupdtype STRING, confdeltype STRING, conname STRING, condeferrable BOOLEAN, condeferred BOOLEAN, conkey ARRAY<INT>, confkey ARRAY<INT>, confrelid INT, conrelid INT, contype STRING"),
+    PgSystemTable(  2608, TableIdentifier(      "pg_depend", Some(catalogDbName)), "objid INT, classid INT, refobjid INT, refclassid INT"),
+    PgSystemTable(  2609, TableIdentifier( "pg_description", Some(catalogDbName)), "objoid INT, classoid INT, objsubid INT, description STRING"),
+    PgSystemTable(  2610, TableIdentifier(       "pg_index", Some(catalogDbName)), "oid INT, indrelid INT, indexrelid INT, indisprimary BOOLEAN"),
+    PgSystemTable(  2611, TableIdentifier(    "pg_inherits", Some(catalogDbName)), "inhrelid INT, inhparent INT, inhseqno INT"),
+    PgSystemTable(  2615, TableIdentifier(   "pg_namespace", Some(catalogDbName)), "oid INT, nspname STRING"),
+    PgSystemTable( -2615, TableIdentifier(   "pg_namespace",                None), "oid INT, nspname STRING"),
+    PgSystemTable(  3256, TableIdentifier(      "pg_policy", Some(catalogDbName)), "polname STRING, polrelid INT, polcmd STRING, polroles STRING, polqual STRING, polwithcheck STRING"),
+    PgSystemTable(  3456, TableIdentifier(   "pg_collation", Some(catalogDbName)), "oid INT, collname STRING"),
+    PgSystemTable( 11631, TableIdentifier(       "pg_roles", Some(catalogDbName)), "oid INT, rolname STRING"),
+    PgSystemTable( 11642, TableIdentifier(        "pg_user", Some(catalogDbName)), "usename STRING, usesysid INT")
     // scalastyle:on
   )
 
   // Catalog tables that are updated every databases/tables created
   private val _catalogTables2 = Seq(
     // scalastyle:off
-    PgSystemTable( 1249, TableIdentifier( "pg_attribute", Some(catalogDbName))),
-    PgSystemTable( 1255, TableIdentifier(      "pg_proc", Some(catalogDbName))),
-    PgSystemTable( 1259, TableIdentifier(     "pg_class", Some(catalogDbName))),
-    PgSystemTable( 1262, TableIdentifier(  "pg_database", Some(catalogDbName)))
+    PgSystemTable( 1249, TableIdentifier( "pg_attribute", Some(catalogDbName)), "oid INT, attrelid INT, attname STRING, atttypid INT, attnotnull BOOLEAN, atthasdef BOOLEAN, atttypmod INT, attlen INT, attnum INT, attidentity STRING, attisdropped BOOLEAN, attcollation INT"),
+    PgSystemTable( 1255, TableIdentifier(      "pg_proc", Some(catalogDbName)), "oid INT, proname STRING, prorettype INT, proargtypes ARRAY<INT>, pronamespace INT, proisagg BOOLEAN, proiswindow BOOLEAN, proretset BOOLEAN"),
+    PgSystemTable( 1259, TableIdentifier(     "pg_class", Some(catalogDbName)), "oid INT, reltablespace INT, relname STRING, reloftype INT, relpersistence STRING, relkind STRING, relnamespace INT, relowner INT, relacl ARRAY<STRING>, relchecks SHORT, reltoastrelid INT, relhasindex BOOLEAN, relhasrules BOOLEAN, relhastriggers BOOLEAN, relrowsecurity BOOLEAN, relforcerowsecurity BOOLEAN, relreplident STRING, reltriggers SHORT, relhasoids BOOLEAN, relispartition BOOLEAN, relpartbound STRING"),
+    PgSystemTable( 1262, TableIdentifier(  "pg_database", Some(catalogDbName)), "datname STRING, datdba INT, encoding INT, datcollate STRING, datctype STRING, datacl Array<STRING>")
     // scalastyle:on
   )
 
-  // TODO: Makes private
+  // TODO: Load the catalog tables that PostgreSQL dumps via
+  // `COPY pg_catalog.* TO '*.csv' WITH CSV HEADER`.
   val catalogTables = _catalogTables1 ++ _catalogTables2
 
   private val pgCatalogOidMap: Map[Int, PgSystemTable] = catalogTables.map(t => t.oid -> t).toMap
@@ -295,13 +297,18 @@ private[server] object PgMetadata extends Logging {
     pgSystemFunctions.map(f => f.name.unquotedString.toLowerCase -> f).toMap
 
   private def safeCreateCatalogTable(
-      name: String,
+      tableIdentifierWithDb: String,
       sqlContext: SQLContext)(
-      f: String => Seq[String]): Unit = {
-    assert(catalogTables.exists { case PgSystemTable(oid, table) => table.identifier == name })
-    val sqlTexts = s"DROP TABLE IF EXISTS $catalogDbName.$name" +: f(s"$catalogDbName.$name")
-    logWarning(s"Creating a dummy PostgreSQL catalog table: $catalogDbName.$name...")
-    sqlTexts.foreach { sqlText =>
+      stmtToInsertRows: String => Seq[String] = _ => Nil): Unit = {
+    val catalogTable = catalogTables.find { case PgSystemTable(_, table, _) =>
+      table.unquotedString == tableIdentifierWithDb
+    }
+    assert(catalogTable.isDefined)
+    logInfo(s"Creating a dummy PostgreSQL catalog table: $tableIdentifierWithDb...")
+    val dropTable = s"DROP TABLE IF EXISTS $tableIdentifierWithDb"
+    val createTable = s"CREATE TABLE $tableIdentifierWithDb(${catalogTable.get.schema})"
+    val insertInto = stmtToInsertRows(catalogTable.get.table.quotedString)
+    (Seq(dropTable, createTable) ++ insertInto).foreach { sqlText =>
       sqlContext.sql(sqlText.stripMargin)
     }
   }
@@ -347,84 +354,46 @@ private[server] object PgMetadata extends Logging {
         //   ON sp.nspoid = typnamespace
         // WHERE typname = $1
         // ORDER BY sp.r, pg_type.oid DESC LIMIT 1;
-        sqlContext.sql(
+        safeCreateCatalogTable(s"pg_namespace", sqlContext) { cTableName =>
           s"""
-             |CREATE TABLE pg_namespace(
-             |  oid INT,
-             |  nspname STRING
-             |)
-           """.stripMargin)
-        sqlContext.sql(
-          s"""
-             |INSERT INTO pg_namespace
+             |INSERT INTO $cTableName
              |  VALUES(${defaultSparkNamespace._1}, '${defaultSparkNamespace._2}')
-           """.stripMargin)
-
-        safeCreateCatalogTable("pg_namespace", sqlContext) { cTableName =>
-          s"""
-            |CREATE TABLE $cTableName(
-            |  oid INT,
-            |  nspname STRING
-            |)
-          """ ::
-          s"""
-            |INSERT INTO $cTableName
-            |  VALUES(${defaultSparkNamespace._1}, '${defaultSparkNamespace._2}')
-          """ ::
+           """.stripMargin ::
           Nil
         }
 
-        safeCreateCatalogTable("pg_roles", sqlContext) { cTableName =>
+        safeCreateCatalogTable(s"$catalogDbName.pg_namespace", sqlContext) { cTableName =>
           s"""
-            |CREATE TABLE $cTableName(
-            |  oid INT,
-            |  rolname STRING
-            |)
-          """ ::
-          s"""
-            |INSERT INTO $cTableName VALUES($userRoleOid, 'spark-user')
-          """ ::
+             |INSERT INTO $cTableName
+             |  VALUES(${defaultSparkNamespace._1}, '${defaultSparkNamespace._2}')
+           """.stripMargin ::
           Nil
         }
 
-        safeCreateCatalogTable("pg_user", sqlContext) { cTableName =>
+        safeCreateCatalogTable(s"$catalogDbName.pg_roles", sqlContext) { cTableName =>
           s"""
-            |CREATE TABLE $cTableName(
-            |  usename STRING,
-            |  usesysid INT
-            |)
-          """ ::
-          s"""
-            |INSERT INTO $cTableName VALUES('spark-user', $userRoleOid)
-          """ ::
+             |INSERT INTO $cTableName VALUES($userRoleOid, 'spark-user')
+           """ ::
           Nil
         }
 
-        safeCreateCatalogTable("pg_type", sqlContext) { cTableName =>
+        safeCreateCatalogTable(s"$catalogDbName.pg_user", sqlContext) { cTableName =>
           s"""
-            |CREATE TABLE $cTableName(
-            |  oid INT,
-            |  typname STRING,
-            |  typtype STRING,
-            |  typlen INT,
-            |  typnotnull BOOLEAN,
-            |  typelem INT,
-            |  typdelim STRING,
-            |  typinput STRING,
-            |  typrelid INT,
-            |  typbasetype INT,
-            |  typcollation INT,
-            |  typnamespace INT
-            |)
-          """ +: pgTypes.map { case PgType(oid, name, len, elemOid, input) =>
+             |INSERT INTO $cTableName VALUES('spark-user', $userRoleOid)
+           """ ::
+          Nil
+        }
+
+        safeCreateCatalogTable(s"$catalogDbName.pg_type", sqlContext) { cTableName =>
+          pgTypes.map { case PgType(oid, name, len, elemOid, input) =>
             // `b` in `typtype` means a primitive type and all the entries in `supportedPgTypes`
             // are primitive types.
             s"""
-              |INSERT INTO $cTableName VALUES(
-              |  $oid, '$name', 'b', $len, false, $elemOid, ',', '$input', 0, 0, 0,
-              |  ${defaultSparkNamespace._1}
-              |)
-            """
+               |INSERT INTO $cTableName VALUES(
+               |  $oid, '$name', 'b', $len, false, $elemOid, ',', '$input', 0, 0, 0,
+               |  ${defaultSparkNamespace._1}
+               |)
+             """
           }
         }
 
@@ -432,110 +401,18 @@ private[server] object PgMetadata extends Logging {
          * Six empty catalog tables are defined below to prevent the PostgreSQL JDBC drivers from
          * throwing meaningless exceptions.
          */
-        safeCreateCatalogTable("pg_index", sqlContext) { cTableName =>
-          s"""
-            |CREATE TABLE $cTableName(
-            |  oid INT,
-            |  indrelid INT,
-            |  indexrelid INT,
-            |  indisprimary BOOLEAN
-            |)
-          """ ::
-          Nil
-        }
-
-        safeCreateCatalogTable("pg_description", sqlContext) { cTableName =>
-          s"""
-            |CREATE TABLE $cTableName(
-            |  objoid INT,
-            |  classoid INT,
-            |  objsubid INT,
-            |  description STRING
-            |)
-          """ ::
-          Nil
-        }
-
-        safeCreateCatalogTable("pg_depend", sqlContext) { cTableName =>
-          s"""
-            |CREATE TABLE $cTableName(
-            |  objid INT,
-            |  classid INT,
-            |  refobjid INT,
-            |  refclassid INT
-            |)
-          """ ::
-          Nil
-        }
-
-        safeCreateCatalogTable("pg_constraint", sqlContext) { cTableName =>
-          s"""
-            |CREATE TABLE $cTableName(
-            |  oid INT,
-            |  confupdtype STRING,
-            |  confdeltype STRING,
-            |  conname STRING,
-            |  condeferrable BOOLEAN,
-            |  condeferred BOOLEAN,
-            |  conkey ARRAY<INT>,
-            |  confkey ARRAY<INT>,
-            |  confrelid INT,
-            |  conrelid INT,
-            |  contype STRING
-            |)
-          """ ::
-          Nil
-        }
-
-        safeCreateCatalogTable("pg_attrdef", sqlContext) { cTableName =>
-          s"""
-            |CREATE TABLE $cTableName(
-            |  adrelid INT,
-            |  adnum SHORT,
-            |  adbin STRING
-            |)
-          """ ::
-          Nil
-        }
-
-        safeCreateCatalogTable("pg_inherits", sqlContext) { cTableName =>
-          s"""
-            |CREATE TABLE $cTableName(
-            |  inhrelid INT,
-            |  inhparent INT,
-            |  inhseqno INT
-            |)
-          """ ::
-          Nil
-        }
-
-        safeCreateCatalogTable("pg_collation", sqlContext) { cTableName =>
-          s"""
-            |CREATE TABLE $cTableName(
-            |  oid INT,
-            |  collname STRING
-            |)
-          """ ::
-          Nil
-        }
-
-        safeCreateCatalogTable("pg_policy", sqlContext) { cTableName =>
-          s"""
-            |CREATE TABLE $cTableName(
-            |  polname STRING,
-            |  polrelid INT,
-            |  polcmd STRING,
-            |  polroles STRING,
-            |  polqual STRING,
-            |  polwithcheck STRING
-            |)
-          """ ::
-          Nil
-        }
+        safeCreateCatalogTable(s"$catalogDbName.pg_index", sqlContext)()
+        safeCreateCatalogTable(s"$catalogDbName.pg_description", sqlContext)()
+        safeCreateCatalogTable(s"$catalogDbName.pg_depend", sqlContext)()
+        safeCreateCatalogTable(s"$catalogDbName.pg_constraint", sqlContext)()
+        safeCreateCatalogTable(s"$catalogDbName.pg_attrdef", sqlContext)()
+        safeCreateCatalogTable(s"$catalogDbName.pg_inherits", sqlContext)()
+        safeCreateCatalogTable(s"$catalogDbName.pg_collation", sqlContext)()
+        safeCreateCatalogTable(s"$catalogDbName.pg_policy", sqlContext)()
       } catch {
         case NonFatal(e) =>
-          val sqlTexts = catalogTables.map { case PgSystemTable(_, TableIdentifier(name, _)) =>
-            s"DROP TABLE IF EXISTS $catalogDbName.$name"
+          val sqlTexts = catalogTables.map { case PgSystemTable(_, table, _) =>
+            s"DROP TABLE IF EXISTS ${table.quotedString}"
           } :+ s"DROP DATABASE IF EXISTS $catalogDbName"
           sqlTexts.foreach { sqlText =>
             sqlContext.sql(sqlText)
@@ -545,7 +422,7 @@ private[server] object PgMetadata extends Logging {
     }
 
     // Checks if all the metadata exist in the catalog
-    require(_catalogTables1.forall { case PgSystemTable(_, table) =>
+    require(_catalogTables1.forall { case PgSystemTable(_, table, _) =>
       sqlContext.sessionState.catalog.tableExists(table)
     })
   }
@@ -557,78 +434,18 @@ private[server] object PgMetadata extends Logging {
   }
 
   def refreshDatabases(dbName: String, sqlContext: SQLContext): Unit = writeLock {
-    safeCreateCatalogTable("pg_database", sqlContext) { cTableName =>
-      s"""
-        |CREATE TABLE $cTableName(
-        |  datname STRING,
-        |  datdba INT,
-        |  encoding INT,
-        |  datcollate STRING,
-        |  datctype STRING,
-        |  datacl Array<STRING>
-        |)
-      """ ::
-      Nil
-    }
-
+    safeCreateCatalogTable(s"$catalogDbName.pg_database", sqlContext)()
     sqlContext.sessionState.catalog.listDatabases.foreach { dbName =>
       doRegisterDatabase(dbName, sqlContext)
     }
   }
 
   def refreshTables(dbName: String, sqlContext: SQLContext): Unit = writeLock {
-    safeCreateCatalogTable("pg_class", sqlContext) { cTableName =>
-      s"""
-        |CREATE TABLE $cTableName(
-        |  oid INT,
-        |  reltablespace INT,
-        |  relname STRING,
-        |  reloftype INT,
-        |  relpersistence STRING,
-        |  relkind STRING,
-        |  relnamespace INT,
-        |  relowner INT,
-        |  relacl ARRAY<STRING>,
-        |  relchecks SHORT,
-        |  reltoastrelid INT,
-        |  relhasindex BOOLEAN,
-        |  relhasrules BOOLEAN,
-        |  relhastriggers BOOLEAN,
-        |  relrowsecurity BOOLEAN,
-        |  relforcerowsecurity BOOLEAN,
-        |  relreplident STRING,
-        |  reltriggers SHORT,
-        |  relhasoids BOOLEAN,
-        |  relispartition BOOLEAN,
-        |  relpartbound STRING
-        |)
-      """ ::
-      Nil
-    }
-
-    safeCreateCatalogTable("pg_attribute", sqlContext) { cTableName =>
-      s"""
-        |CREATE TABLE $cTableName(
-        |  oid INT,
-        |  attrelid INT,
-        |  attname STRING,
-        |  atttypid INT,
-        |  attnotnull BOOLEAN,
-        |  atthasdef BOOLEAN,
-        |  atttypmod INT,
-        |  attlen INT,
-        |  attnum INT,
-        |  attidentity STRING,
-        |  attisdropped BOOLEAN,
-        |  attcollation INT
-        |)
-      """ ::
-      Nil
-    }
+    safeCreateCatalogTable(s"$catalogDbName.pg_class", sqlContext)()
+    safeCreateCatalogTable(s"$catalogDbName.pg_attribute", sqlContext)()
 
     val catalog = sqlContext.sessionState.catalog
     catalog.listTables(dbName).foreach { case table: TableIdentifier =>
-
       doRegisterTable(
         dbName,
         table.identifier,
@@ -640,21 +457,7 @@ private[server] object PgMetadata extends Logging {
   }
 
   def refreshFunctions(dbName: String, sqlContext: SQLContext): Unit = writeLock {
-    safeCreateCatalogTable("pg_proc", sqlContext) { cTableName =>
-      s"""
-        |CREATE TABLE $cTableName(
-        |  oid INT,
-        |  proname STRING,
-        |  prorettype INT,
-        |  proargtypes ARRAY<INT>,
-        |  pronamespace INT,
-        |  proisagg BOOLEAN,
-        |  proiswindow BOOLEAN,
-        |  proretset BOOLEAN
-        |)
-      """ ::
-      Nil
-    }
+    safeCreateCatalogTable(s"$catalogDbName.pg_proc", sqlContext)()
 
     sqlContext.sessionState.catalog.listFunctions(dbName, "*").foreach {
       case (func, "USER") =>
@@ -685,13 +488,8 @@ private[server] object PgMetadata extends Logging {
   }
 
   private def isReservedName(dbName: String, identifier: String): Boolean = {
-    catalogTables.map { case PgSystemTable(_, reserved) =>
-      if (dbName != catalogDbName) {
-        s"$catalogDbName.$reserved"
-      } else {
-        reserved
-      }
-    }.contains(identifier)
+    catalogTables.map { case PgSystemTable(_, reserved, _) => reserved.unquotedString }
+      .contains(identifier)
   }
 
   def registerTable(
