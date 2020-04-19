@@ -561,6 +561,9 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
   // +- Project [value#2 AS v#5]
   // +- LocalRelation [value#2]
   // ...
+  //
+  // This bug has been fixed in
+  // https://github.com/apache/spark/commit/6be5bd88ef134fd1c1d0bff9d9784498542dd796
   ignore("PreparedStatement") {
     withJdbcStatement { statement =>
       Seq(
