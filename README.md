@@ -9,6 +9,8 @@ For more information, see [SPARK-15816](https://issues.apache.org/jira/browse/SP
 This Spark SQL server experimentally supports impersonation based on [Apache Livy](https://livy.incubator.apache.org/) that
 [the Spark Thrift server](https://github.com/apache/spark/tree/master/sql/hive-thriftserver) currently doesn't.
 
+Note that the current `master` branch intends to support [3.0.0-preview2](https://mvnrepository.com/artifact/org.apache.spark/spark-sql_2.12/3.0.0-preview2) on Scala 2.12.x. If you want to use the SQL server in Spark 2.4.x, please use [branch-2.4](https://github.com/maropu/spark-sql-server/tree/branch-2.4).
+
 ## Run the Spark SQL JDBC/ODBC server
 
 To start the JDBC/ODBC server, you need to check out this repository and run the following command
