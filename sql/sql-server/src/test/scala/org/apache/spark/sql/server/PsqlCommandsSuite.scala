@@ -26,10 +26,10 @@ import org.scalatest.BeforeAndAfterAll
  */
 class PsqlCommandsV10Suite extends PgJdbcTest(pgVersion = "10") with BeforeAndAfterAll {
 
-  override protected def beforeAll() : Unit = {
+  override def beforeAll() : Unit = {
     super.beforeAll()
 
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       Seq(
         "CREATE DATABASE d1",
         "CREATE TABLE t1(a INT, b STRING, c DOUBLE)",
@@ -40,9 +40,9 @@ class PsqlCommandsV10Suite extends PgJdbcTest(pgVersion = "10") with BeforeAndAf
     }
   }
 
-  override protected def afterAll() : Unit = {
+  override def afterAll() : Unit = {
     try {
-      testJdbcStatement { statement =>
+      withJdbcStatement { statement =>
         Seq(
           "DROP TABLE IF EXISTS t1",
           "DROP TABLE IF EXISTS t2",
@@ -57,7 +57,7 @@ class PsqlCommandsV10Suite extends PgJdbcTest(pgVersion = "10") with BeforeAndAf
   }
 
   test("""\l""") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       val rs = statement.executeQuery(
         """
           |SELECT
@@ -86,7 +86,7 @@ class PsqlCommandsV10Suite extends PgJdbcTest(pgVersion = "10") with BeforeAndAf
   }
 
   test("""\d""") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       val rs = statement.executeQuery(
         """
           |SELECT
@@ -136,7 +136,7 @@ class PsqlCommandsV10Suite extends PgJdbcTest(pgVersion = "10") with BeforeAndAf
   }
 
   test("""\d <table name>""") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       val rs1 = statement.executeQuery(
         """
           |SELECT
@@ -328,7 +328,7 @@ class PsqlCommandsV10Suite extends PgJdbcTest(pgVersion = "10") with BeforeAndAf
   }
 
   test("""\df""") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       // Define a temporary function
       val jarPath = "src/test/resources/TestUDTF.jar"
       val jarURL = s"file://${System.getProperty("user.dir")}/$jarPath"
@@ -376,10 +376,10 @@ class PsqlCommandsV10Suite extends PgJdbcTest(pgVersion = "10") with BeforeAndAf
 
 class PsqlCommandsV9_6Suite extends PgJdbcTest(pgVersion = "9.6") with BeforeAndAfterAll {
 
-  override protected def beforeAll() : Unit = {
+  override def beforeAll() : Unit = {
     super.beforeAll()
 
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       Seq(
         "CREATE DATABASE d1",
         "CREATE TABLE t1(a INT, b STRING, c DOUBLE)",
@@ -390,9 +390,9 @@ class PsqlCommandsV9_6Suite extends PgJdbcTest(pgVersion = "9.6") with BeforeAnd
     }
   }
 
-  override protected def afterAll() : Unit = {
+  override def afterAll() : Unit = {
     try {
-      testJdbcStatement { statement =>
+      withJdbcStatement { statement =>
         Seq(
           "DROP TABLE IF EXISTS t1",
           "DROP TABLE IF EXISTS t2",
@@ -407,7 +407,7 @@ class PsqlCommandsV9_6Suite extends PgJdbcTest(pgVersion = "9.6") with BeforeAnd
   }
 
   test("""\d""") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       val rs = statement.executeQuery(
         """
           |SELECT
@@ -456,7 +456,7 @@ class PsqlCommandsV9_6Suite extends PgJdbcTest(pgVersion = "9.6") with BeforeAnd
   }
 
   test("""\d <table name>""") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       val rs1 = statement.executeQuery(
         """
           |SELECT
@@ -632,10 +632,10 @@ class PsqlCommandsV9_6Suite extends PgJdbcTest(pgVersion = "9.6") with BeforeAnd
 
 class PsqlCommandsV8_4Suite extends PgJdbcTest(pgVersion = "8.4") with BeforeAndAfterAll {
 
-  override protected def beforeAll() : Unit = {
+  override def beforeAll() : Unit = {
     super.beforeAll()
 
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       Seq(
         "CREATE DATABASE d1",
         "CREATE TABLE t1(a INT, b STRING, c DOUBLE)",
@@ -646,9 +646,9 @@ class PsqlCommandsV8_4Suite extends PgJdbcTest(pgVersion = "8.4") with BeforeAnd
     }
   }
 
-  override protected def afterAll() : Unit = {
+  override def afterAll() : Unit = {
     try {
-      testJdbcStatement { statement =>
+      withJdbcStatement { statement =>
         Seq(
           "DROP TABLE IF EXISTS t1",
           "DROP TABLE IF EXISTS t2",
@@ -663,7 +663,7 @@ class PsqlCommandsV8_4Suite extends PgJdbcTest(pgVersion = "8.4") with BeforeAnd
   }
 
   test("""\l""") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       val rs = statement.executeQuery(
         """
           |SELECT
@@ -690,7 +690,7 @@ class PsqlCommandsV8_4Suite extends PgJdbcTest(pgVersion = "8.4") with BeforeAnd
   }
 
   test("""\d""") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       val rs = statement.executeQuery(
         """
           |SELECT
@@ -739,7 +739,7 @@ class PsqlCommandsV8_4Suite extends PgJdbcTest(pgVersion = "8.4") with BeforeAnd
   }
 
   test("""\d <table name>""") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       val rs1 = statement.executeQuery(
         """
           |SELECT
@@ -872,7 +872,7 @@ class PsqlCommandsV8_4Suite extends PgJdbcTest(pgVersion = "8.4") with BeforeAnd
   }
 
   test("""\df""") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       // Define a temporary function
       val jarPath = "src/test/resources/TestUDTF.jar"
       val jarURL = s"file://${System.getProperty("user.dir")}/$jarPath"
@@ -917,10 +917,10 @@ class PsqlCommandsV8_4Suite extends PgJdbcTest(pgVersion = "8.4") with BeforeAnd
 
 class PsqlCommandsV7_4Suite extends PgJdbcTest(pgVersion = "7.4") with BeforeAndAfterAll {
 
-  override protected def beforeAll() : Unit = {
+  override def beforeAll() : Unit = {
     super.beforeAll()
 
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       Seq(
         "CREATE DATABASE d1",
         "CREATE TABLE t1(a INT, b STRING, c DOUBLE)",
@@ -931,9 +931,9 @@ class PsqlCommandsV7_4Suite extends PgJdbcTest(pgVersion = "7.4") with BeforeAnd
     }
   }
 
-  override protected def afterAll() : Unit = {
+  override def afterAll() : Unit = {
     try {
-      testJdbcStatement { statement =>
+      withJdbcStatement { statement =>
         Seq(
           "DROP TABLE IF EXISTS t1",
           "DROP TABLE IF EXISTS t2",
@@ -948,7 +948,7 @@ class PsqlCommandsV7_4Suite extends PgJdbcTest(pgVersion = "7.4") with BeforeAnd
   }
 
   test("""\l""") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       val rs = statement.executeQuery(
         """
           |SELECT
@@ -975,7 +975,7 @@ class PsqlCommandsV7_4Suite extends PgJdbcTest(pgVersion = "7.4") with BeforeAnd
   }
 
   test("""\d""") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       val rs = statement.executeQuery(
         """
           |SELECT
@@ -1024,7 +1024,7 @@ class PsqlCommandsV7_4Suite extends PgJdbcTest(pgVersion = "7.4") with BeforeAnd
   }
 
   test("""\d <table name>""") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       val rs1 = statement.executeQuery(
         """
           |SELECT
@@ -1141,7 +1141,7 @@ class PsqlCommandsV7_4Suite extends PgJdbcTest(pgVersion = "7.4") with BeforeAnd
   }
 
   test("""\df""") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       // Define a temporary function
       val jarPath = "src/test/resources/TestUDTF.jar"
       val jarURL = s"file://${System.getProperty("user.dir")}/$jarPath"

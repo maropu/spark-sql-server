@@ -68,14 +68,14 @@ class PgJdbcTest(
 /**
  * A base class for a SQL server instance.
  */
-abstract class SQLServerTest extends SparkFunSuite with BeforeAndAfterAll with Logging {
+trait SQLServerTest extends SparkFunSuite with BeforeAndAfterAll with Logging {
 
   // Parameters for the Spark SQL server
-  val pgVersion: String
-  val executionMode: String
-  val ssl: Boolean
-  val incrementalCollect: Boolean
-  val isTesting: Boolean
+  def pgVersion: String
+  def executionMode: String
+  def ssl: Boolean
+  def incrementalCollect: Boolean
+  def isTesting: Boolean
 
   protected val server = new SparkPgSQLServerTest(
     name = this.getClass.getSimpleName,
@@ -85,13 +85,13 @@ abstract class SQLServerTest extends SparkFunSuite with BeforeAndAfterAll with L
     incrementalCollect = incrementalCollect,
     isTesting = isTesting)
 
-  override protected def beforeAll(): Unit = {
+  override def beforeAll(): Unit = {
     super.beforeAll()
     server.start()
     logInfo("SQLServer started successfully")
   }
 
-  override protected def afterAll(): Unit = {
+  override def afterAll(): Unit = {
     try {
       server.stop()
       logInfo("SQLServer stopped")
@@ -254,7 +254,7 @@ class SparkPgSQLServerTest(
       val command = s"/usr/bin/env tail -n +0 -f ${logPath.getCanonicalPath}".split(" ")
       // Using "-n +0" to make sure all lines in the log file are checked
       val builder = new ProcessBuilder(command: _*)
-      val captureOutput: (String) => Unit = (line: String) => diagnosisBuffer.synchronized {
+      val captureOutput: String => Unit = (line: String) => diagnosisBuffer.synchronized {
         diagnosisBuffer += line
         if (successStartLines.exists(line.contains(_))) {
           serverStarted.trySuccess(())
@@ -266,7 +266,7 @@ class SparkPgSQLServerTest(
       process
     }
 
-    ThreadUtils.awaitResult(serverStarted.future, 1.minutes)
+    ThreadUtils.awaitResult(serverStarted.future, 2.minutes)
   }
 
   def stop(): Unit = {
@@ -316,7 +316,7 @@ trait PgJdbcTestBase {
   // https://jdbc.postgresql.org/documentation/head/connect.html#connection-parameters
 
   // `preferQueryMode` has been supported until PostgreSQL JDBC drivers v9.4.1210
-  val queryMode: String
+  def queryMode: String
 
   // Set this threshold at 1 for tests (5 by default)
   val prepareThreshold: Int = 1
@@ -387,7 +387,7 @@ trait PgJdbcTestBase {
 
   private val jdbcQueryTimeout = 180
 
-  def testMultipleConnectionJdbcStatement(fs: (Statement => Unit)*) {
+  def withMultipleConnectionJdbcStatement(fs: (Statement => Unit)*) {
     val connections = fs.map { _ => getJdbcConnect() }
     val statements = connections.map { c =>
       val stmt = c.createStatement()
@@ -402,11 +402,11 @@ trait PgJdbcTestBase {
     }
   }
 
-  def testJdbcStatement(f: Statement => Unit): Unit = {
-    testMultipleConnectionJdbcStatement(f)
+  def withJdbcStatement(f: Statement => Unit): Unit = {
+    withMultipleConnectionJdbcStatement(f)
   }
 
-  def testJdbcPreparedStatement(sql: String)(f: PreparedStatement => Unit): Unit = {
+  def withJdbcPreparedStatement(sql: String)(f: PreparedStatement => Unit): Unit = {
     val connection = getJdbcConnect()
     val statement = connection.prepareStatement(sql)
     statement.setQueryTimeout(jdbcQueryTimeout)
@@ -418,7 +418,7 @@ trait PgJdbcTestBase {
     }
   }
 
-  def testJdbcStatementWitConf(options: (String, String)*)(f: Statement => Unit) {
+  def withJdbcStatementAndConf(options: (String, String)*)(f: Statement => Unit) {
     val jdbcOptions = Seq("autoCommitModeEnabled", "fetchSize")
     val (sparkOptions, otherOptions) = options.partition(ops => !jdbcOptions.contains(ops._1))
     val connection = otherOptions.find(_._1 == "autoCommitModeEnabled").map { case (_, v) =>

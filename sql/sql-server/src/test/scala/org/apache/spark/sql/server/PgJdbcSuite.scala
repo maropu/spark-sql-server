@@ -105,7 +105,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
   val hiveVersion = "2.3.6"
 
   test("server version") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       val protoInfo = statement.getConnection.asInstanceOf[org.postgresql.jdbc.PgConnection]
       assert(pgVersion === protoInfo.getDBVersionNumber)
     }
@@ -126,7 +126,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
   }
 
   test("DatabaseMetaData tests") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       val databaseMetaData = statement.getConnection.getMetaData
       val supportedTypeInfo = new Iterator[(String, String)] {
         val typeInfo = databaseMetaData.getTypeInfo
@@ -226,7 +226,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
   }
 
   test("primitive types") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       Seq(
         "DROP TABLE IF EXISTS test",
         """
@@ -304,7 +304,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
   }
 
   test("array types") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       Seq(
         "DROP TABLE IF EXISTS test",
         """
@@ -394,7 +394,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
   }
 
   test("binary types") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       Seq(
         "DROP TABLE IF EXISTS test",
         "CREATE TABLE test(val STRING)",
@@ -415,7 +415,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
   }
 
   test("custom types (BYTE, STRUCT, MAP)") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       Seq(
         "DROP TABLE IF EXISTS test",
         """
@@ -471,7 +471,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
   }
 
   test("simple query execution") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       Seq(
         "SET spark.sql.shuffle.partitions=3",
         "DROP TABLE IF EXISTS test",
@@ -491,7 +491,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
   }
 
   testSelectiveQueryModes("simple")("multiple query statements") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       val numQuries = 3
 
       (0 until numQuries).flatMap { i =>
@@ -513,7 +513,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
   }
 
   test("result set containing NULL") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       Seq(
         "DROP TABLE IF EXISTS test_null",
         "CREATE TABLE test_null(key INT, val STRING) USING hive",
@@ -536,7 +536,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
   }
 
   test("SPARK-17112 SELECT NULL via JDBC triggers IllegalArgumentException") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       val rs1 = statement.executeQuery("SELECT NULL")
       rs1.next()
       assert(0 === rs1.getInt(1))
@@ -562,7 +562,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
   // +- LocalRelation [value#2]
   // ...
   ignore("PreparedStatement") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       Seq(
         "DROP TABLE IF EXISTS test",
         """
@@ -617,7 +617,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
       assert(BigDecimal.valueOf(29) === row.getBigDecimal(10))
     }
 
-    testJdbcPreparedStatement(
+    withJdbcPreparedStatement(
         """
           | SELECT * FROM test
           |   WHERE col0 = ? AND col1 = ? AND col2 = ? AND col3 = ? AND col4 = ? AND
@@ -666,7 +666,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
       rs3.close()
     }
 
-    testJdbcPreparedStatement("SELECT * FROM test WHERE col3 = ?") { statement =>
+    withJdbcPreparedStatement("SELECT * FROM test WHERE col3 = ?") { statement =>
       statement.setLong(1, 7)
       val rs1 = statement.executeQuery()
       assert(!rs1.next())
@@ -684,7 +684,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
   }
 
   testSelectiveQueryModes("simple")("Date/Timestamp types in PreparedStatement") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       Seq(
         "DROP TABLE IF EXISTS test",
         """
@@ -746,7 +746,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
     //   assert(rs.getDate(1) === Date.valueOf("2016-08-04"))
     // }
     // scalastyle:on
-    testJdbcPreparedStatement("SELECT col2 FROM test WHERE col2 = ?") { statement =>
+    withJdbcPreparedStatement("SELECT col2 FROM test WHERE col2 = ?") { statement =>
       // The prepared statement above is extended to a query below:
       //  - SELECT col2 FROM test WHERE col2 = '2016-08-04 00:17:13+09'
       statement.setTimestamp(1, Timestamp.valueOf("2016-08-04 00:17:13"))
@@ -757,7 +757,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
   }
 
   testSelectiveQueryModes("extended")("Date/Timestamp types in PreparedStatement") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       Seq(
         "DROP TABLE IF EXISTS test",
         """
@@ -775,7 +775,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
     // The PostgreSQL JDBC drivers send `Date` and `Timestamp` data with Oid.UNSPECIFIED, so
     // the SQL server can't handle these data types now (it can't check the types in a server side).
     val e1 = intercept[SQLException] {
-      testJdbcPreparedStatement("SELECT * FROM test WHERE col1 = ?") { statement =>
+      withJdbcPreparedStatement("SELECT * FROM test WHERE col1 = ?") { statement =>
         statement.setDate(1, Date.valueOf("2016-08-04"))
         statement.executeQuery()
       }
@@ -783,7 +783,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
     assert(e1.getMessage.contains("Unspecified type unsupported: format=0"))
 
     val e2 = intercept[SQLException] {
-      testJdbcPreparedStatement("SELECT * FROM test WHERE col2 = ?") { statement =>
+      withJdbcPreparedStatement("SELECT * FROM test WHERE col2 = ?") { statement =>
         statement.setTimestamp(1, Timestamp.valueOf("2016-08-04 00:17:13"))
         statement.executeQuery()
       }
@@ -792,7 +792,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
   }
 
   test("Checks Hive version via SET -v") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       val rs = statement.executeQuery("SET -v")
       val conf = mutable.Map.empty[String, String]
       while (rs.next()) {
@@ -804,7 +804,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
   }
 
   test("Checks Hive version") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       val rs = statement.executeQuery("SET spark.sql.hive.version")
       rs.next()
       assert(rs.getString(1) === "spark.sql.hive.version")
@@ -820,7 +820,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
     var defaultVal: String = null
     var data: mutable.ArrayBuffer[Int] = null
 
-    testMultipleConnectionJdbcStatement(
+    withMultipleConnectionJdbcStatement(
       // Create table, insert data, and fetch them
       { statement =>
 
@@ -944,7 +944,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
   // TODO: This test fails in Spark 3.0.0-preview2, so we need to investigate the cause
   ignore("test ADD JAR") {
   // testSelectiveExecutionModes("single-session", "multi-session")("test ADD JAR") {
-    testMultipleConnectionJdbcStatement(
+    withMultipleConnectionJdbcStatement(
       { statement =>
         val jarPath = "src/test/resources/hive-hcatalog-core-0.13.1.jar"
         val jarURL = s"file://${System.getProperty("user.dir")}/$jarPath"
@@ -987,7 +987,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
 
   testSelectiveExecutionModes("single-session", "multi-session")(
       "independent state across JDBC connections") {
-    testMultipleConnectionJdbcStatement(
+    withMultipleConnectionJdbcStatement(
       { statement =>
         val jarPath = "src/test/resources/TestUDTF.jar"
         val jarURL = s"file://${System.getProperty("user.dir")}/$jarPath"
@@ -1025,7 +1025,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
   // This test often hangs and then times out, leaving the hanging processes.
   // Let's ignore it and improve the test.
   ignore("jdbc cancellation") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       Seq(
         "DROP TABLE IF EXISTS t",
         "CREATE TABLE t(key INT, value STRING) USING hive",
@@ -1063,7 +1063,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
   }
 
   test("ADD JAR with input path having URL scheme") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       try {
         val jarPath = "src/test/resources/TestUDTF.jar"
         val jarURL = s"file://${System.getProperty("user.dir")}/$jarPath"
@@ -1115,7 +1115,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
   }
 
   test("CREATE/DROP tables between connections") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       Seq(
         "DROP TABLE IF EXISTS test1",
         "DROP TABLE IF EXISTS test2",
@@ -1130,7 +1130,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
       assertTable("test2", Set(("key", "varchar"), ("value", "float8")), dbMeta)
     }
 
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       val dbMeta = statement.getConnection.getMetaData
       assertTable("test1", Set(("a", "int4")), dbMeta)
       assertTable("test2", Set(("key", "varchar"), ("value", "float8")), dbMeta)
@@ -1139,7 +1139,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
       assert(!dbMeta.getTables(null, null, "test1", scala.Array("TABLE")).next())
     }
 
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       val dbMeta = statement.getConnection.getMetaData
       assertTable("test2", Set(("key", "varchar"), ("value", "float8")), dbMeta)
       assert(!dbMeta.getTables(null, null, "test1", scala.Array("TABLE")).next())
@@ -1147,7 +1147,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
   }
 
   testSelectiveQueryModes("simple")("setMaxRows") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       assert(statement.execute(
         """
           |CREATE OR REPLACE TEMPORARY VIEW t AS
@@ -1165,7 +1165,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
   }
 
   testSelectiveQueryModes("extended")("setMaxRows") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       assert(statement.execute(
         """
           |CREATE OR REPLACE TEMPORARY VIEW t AS
@@ -1180,7 +1180,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
   }
 
   test("unsupported SQL strings") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       Seq("COMMIT", "ROLLBACK"). foreach { cmd =>
         val e = intercept[SQLException] { statement.execute(cmd) }
         assert(e.getMessage.contains(s"Operation not allowed: $cmd"))
@@ -1191,7 +1191,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
   Seq(true, false).foreach { incrementalCollect =>
     testSelectiveQueryModes("extended")(
         s"cursor mode, small fetch size, incrementalCollect=$incrementalCollect") {
-      testJdbcStatementWitConf(
+      withJdbcStatementAndConf(
           SQLServerConf.SQLSERVER_INCREMENTAL_COLLECT_ENABLED.key -> incrementalCollect.toString,
           "autoCommitModeEnabled" -> "false",
           "fetchSize" -> "2") { statement =>
@@ -1223,7 +1223,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
 
     testSelectiveQueryModes("extended")(
         s"cursor mode, large fetch size, incrementalCollect=$incrementalCollect") {
-      testJdbcStatementWitConf(
+      withJdbcStatementAndConf(
           SQLServerConf.SQLSERVER_INCREMENTAL_COLLECT_ENABLED.key -> incrementalCollect.toString,
           "autoCommitModeEnabled" -> "false",
           "fetchSize" -> "1000") { statement =>
@@ -1250,7 +1250,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
 
   Seq(true, false).foreach { incrementalCollect =>
     testSelectiveQueryModes("simple")(s"data fetch, incrementalCollect=$incrementalCollect") {
-      testJdbcStatementWitConf(
+      withJdbcStatementAndConf(
           SQLServerConf.SQLSERVER_INCREMENTAL_COLLECT_ENABLED.key -> incrementalCollect.toString) {
         statement =>
 
@@ -1276,7 +1276,7 @@ abstract class PgJdbcNoTestingSuite(queryMode: String)
 
   // In the PostgreSQL expected behaviour, `SET` returns no rows
   test("SET returns no row") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       val expectedErrMsg = "No results were returned by the query"
       var errMsg = intercept[PSQLException] {
         statement.executeQuery("SET foo=bar")
@@ -1299,7 +1299,7 @@ abstract class PgJdbcNoTestingSuite(queryMode: String)
 class PgJdbcWithSslSuite extends PgJdbcTest(ssl = true) {
 
   test("query execution via SSL") {
-    testJdbcStatement { statement =>
+    withJdbcStatement { statement =>
       Seq(
         "SET spark.sql.shuffle.partitions=3",
         "DROP TABLE IF EXISTS test",
@@ -1331,7 +1331,7 @@ class PgJdbcSingleSessionSuite extends PgJdbcTest(executionMode = "single-sessio
 
   testSelectiveExecutionModes("single-session", "multi-session")(
       "share the temporary functions across JDBC connections") {
-    testMultipleConnectionJdbcStatement(
+    withMultipleConnectionJdbcStatement(
       { statement =>
         val jarPath = "src/test/resources/TestUDTF.jar"
         val jarURL = s"file://${System.getProperty("user.dir")}/$jarPath"
