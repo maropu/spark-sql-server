@@ -366,9 +366,9 @@ class SQLServerQueryTestSuite extends SQLQueryTestSuite with SQLServerTest with 
       ignore(testCase.name) { /* Do nothing */ }
     } else {
       // Create a test case to run this case.
-      test(testCase.name) {
-        // runTest(testCase)
-        ignore(s"skipped - $testCase")
+      ignore(s"skipped - ${testCase.name}") {
+      // test(testCase.name) {
+        runTest(testCase)
       }
     }
   }

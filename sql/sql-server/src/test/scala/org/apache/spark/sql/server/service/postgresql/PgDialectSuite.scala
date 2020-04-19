@@ -46,6 +46,10 @@ class PgDialectSuite extends SparkFunSuite with BeforeAndAfterAll {
     assert(ds.collect === expected)
   }
 
+  test("BEGIN") {
+    assertQueryExecutionInPgParser("BEGIN", Nil)
+  }
+
   test("~") {
     assertValidSQLString(
       "SELECT * FROM testData WHERE value ~ 'abc'",
@@ -127,6 +131,13 @@ class PgDialectSuite extends SparkFunSuite with BeforeAndAfterAll {
     ).foreach { expectedTypeName =>
       assert(typeNames.contains(expectedTypeName))
     }
+  }
+
+  test("substring") {
+    assertQueryExecutionInPgParser("SELECT substring('abcdef' from 2 for 3)",
+      Row("bcd") :: Nil)
+    assertQueryExecutionInPgParser("SELECT substring('abcdef' for 4)",
+      Row("abcd") :: Nil)
   }
 
   test("other internal system functions") {

@@ -622,9 +622,9 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
 
     withJdbcPreparedStatement(
         """
-          | SELECT * FROM test
-          |   WHERE col0 = ? AND col1 = ? AND col2 = ? AND col3 = ? AND col4 = ? AND
-          |     col5 = ? AND col6 = ? AND col7 = ? AND col8 = ? AND col9 = ?
+          |SELECT * FROM test
+          |  WHERE col0 = ? AND col1 = ? AND col2 = ? AND col3 = ? AND col4 = ? AND
+          |    col5 = ? AND col6 = ? AND col7 = ? AND col8 = ? AND col9 = ?
         """.stripMargin) { statement =>
       statement.setBoolean(1, true)
       statement.setShort(2, 25)
