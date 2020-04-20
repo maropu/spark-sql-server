@@ -195,7 +195,7 @@ class PgRowConvertersSuite extends SparkFunSuite {
     // Check the result with binary mode
     assert(byteBuffer.getInt === 8)
     val actualData2 = byteBuffer.getLong
-    assert(actualData2 === 523585033000000L)
+    assert(actualData2 === 523581433000000L)
   }
 
   test("array") {
