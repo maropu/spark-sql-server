@@ -137,6 +137,9 @@ class SQLServer extends CompositeService with LeaderElectable {
         logWarning("`spark.sql.server.extensions.builder` defined though, " +
           "it is not supported in a multi-context mode")
       }
+      throw new IllegalArgumentException("The `multi-context` mode is not supported now " +
+        "for spark-3.0.0-preview2 because Apache Livy does not support it yet " +
+        "(See: https://github.com/apache/incubator-livy/pull/289).")
     case _ =>
   }
   addService(new SparkSQLServiceManager())
