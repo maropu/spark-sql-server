@@ -22,7 +22,7 @@ import java.io.{ByteArrayOutputStream, DataOutputStream}
 import org.apache.spark.SparkEnv
 import org.apache.spark.io.CompressionCodec
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.UnsafeRow
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
@@ -33,8 +33,8 @@ private class LivyOperation(
     sessionState: SessionState,
     query: (String, LogicalPlan))(
     _statementId: String,
-    catalogUpdater: (SQLContext, LogicalPlan) => Unit)
-  extends OperationImpl(sessionState, query)(_statementId, catalogUpdater) {
+    withCatalogUpdate: (SQLContext, LogicalPlan, => DataFrame) => DataFrame)
+  extends OperationImpl(sessionState, query)(_statementId, withCatalogUpdate) {
 
   /**
    * Packing the UnsafeRows into byte array for faster serialization.
@@ -108,8 +108,9 @@ private class LivyOperation(
   }
 }
 
-private[livy] class LivyExecutorImpl(catalogUpdater: (SQLContext, LogicalPlan) => Unit)
-    extends OperationExecutor {
+private[livy] class LivyExecutorImpl(
+    catalogUpdater: (SQLContext, LogicalPlan, => DataFrame) => DataFrame)
+  extends OperationExecutor {
 
   // Creates a new instance for service-specific operations
   override def newOperation(

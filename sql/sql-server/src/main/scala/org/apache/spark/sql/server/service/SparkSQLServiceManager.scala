@@ -265,10 +265,7 @@ private[server] class SparkSQLServiceManager extends CompositeService with Sessi
 
   private val executorImpl = SQLServerEnv.sqlConf.sqlServerExecutionMode match {
     case "single-session" | "multi-session" =>
-      val catalogUpdater = (sqlContext: SQLContext, analyzedPlan: LogicalPlan) => {
-        PgCatalogUpdater(sqlContext, analyzedPlan)
-      }
-      new ExecutorImpl(catalogUpdater)
+      new ExecutorImpl(PgCatalogUpdater.apply _)
     case "multi-context" =>
       new LivyProxyExecutor()
   }

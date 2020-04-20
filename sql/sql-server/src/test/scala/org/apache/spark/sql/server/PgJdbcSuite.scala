@@ -393,6 +393,16 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
     }
   }
 
+  test("unsupported nested array types") {
+    withJdbcStatement { statement =>
+      statement.execute("DROP TABLE IF EXISTS test")
+      val e = intercept[SQLException] {
+        statement.execute("CREATE TABLE test(col ARRAY<ARRAY<INT>>)")
+      }
+      assert(e.getMessage.contains("Unsupported type found in the given schema"))
+    }
+  }
+
   test("binary types") {
     withJdbcStatement { statement =>
       Seq(

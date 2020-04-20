@@ -40,7 +40,8 @@ private class OperationImpl(
     // (`ParameterPlaceHolder`) for the variables.
     query: (String, LogicalPlan))(
     _statementId: String,
-    catalogUpdater: (SQLContext, LogicalPlan) => Unit) extends Operation with Logging {
+    withCatalogUpdate: (SQLContext, LogicalPlan, => DataFrame) => DataFrame)
+  extends Operation with Logging {
 
   import sessionState._
 
@@ -132,7 +133,12 @@ private class OperationImpl(
     }
 
     val resultDf = try {
-      val df = Dataset.ofRows(sqlContext.sparkSession, analyzedPlan)
+      // TODO: Makes this code block atomic; if the execution below fails,
+      // we should roll back the catalog update.
+      val df = withCatalogUpdate(sqlContext, analyzedPlan, {
+        Dataset.ofRows(sqlContext.sparkSession, analyzedPlan)
+      })
+
       logDebug(df.queryExecution.toString())
       _servListener.foreach(_.onStatementParsed(statementId, df.queryExecution.toString()))
 
@@ -143,10 +149,6 @@ private class OperationImpl(
           _schedulePool = Some(pool)
         case _ =>
       }
-
-      // Updates an internal catalog based on DDL commands
-      catalogUpdater(sqlContext, analyzedPlan)
-
       df
     } catch {
       case NonFatal(e) =>
@@ -219,8 +221,9 @@ private class OperationImpl(
   }
 }
 
-private[service] class ExecutorImpl(catalogUpdater: (SQLContext, LogicalPlan) => Unit)
-    extends OperationExecutor {
+private[service] class ExecutorImpl(
+    catalogUpdater: (SQLContext, LogicalPlan, => DataFrame) => DataFrame)
+  extends OperationExecutor {
 
   // Creates a new instance for service-specific operations
   override def newOperation(

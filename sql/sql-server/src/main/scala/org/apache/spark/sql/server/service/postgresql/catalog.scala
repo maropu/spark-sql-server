@@ -24,7 +24,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock
 import scala.util.control.NonFatal
 
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.{Column, SQLContext}
+import org.apache.spark.sql.{Column, DataFrame, SQLContext}
 import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.CatalogTableType
 import org.apache.spark.sql.catalyst.expressions.Expression
@@ -66,46 +66,66 @@ private [service] object PgCatalogUpdater extends Logging {
 
   // These catalog updates are needed to handle `java.sql.DatabaseMetaData`
   // for PostgreSQL JDBC drivers.
-  def apply(sqlContext: SQLContext, analyzedPlan: LogicalPlan): Unit = analyzedPlan match {
-    case CreateDatabaseCommand(dbName, _, _, _, _) =>
-      PgMetadata.registerDatabase(dbName, sqlContext)
-    case CreateTable(desc, _, _) =>
-      val dbName = desc.identifier.database.getOrElse("default")
-      val tableName = desc.identifier.table
-      PgMetadata.registerTable(dbName, tableName, desc.schema, desc.tableType, sqlContext)
-    case CreateTableCommand(table, _) =>
-      val dbName = table.identifier.database.getOrElse("default")
-      val tableName = table.identifier.table
-      PgMetadata.registerTable(
-        dbName, tableName, table.schema, table.tableType, sqlContext)
-    case CreateDataSourceTableCommand(table, _) =>
-      val dbName = table.identifier.database.getOrElse("default")
-      val tableName = table.identifier.table
-      PgMetadata.registerTable(
-        dbName, tableName, table.schema, table.tableType, sqlContext)
-    case CreateViewCommand(table, _, _, _, _, child, _, _, _) =>
-      val dbName = table.database.getOrElse("default")
-      val tableName = table.identifier
-      val qe = sqlContext.sparkSession.sessionState.executePlan(child)
-      val schema = qe.analyzed.schema
-      PgMetadata.registerTable(
-        dbName, tableName, schema, CatalogTableType.VIEW, sqlContext)
-    case CreateFunctionCommand(dbNameOption, funcName, _, _, _, _, _) =>
-      val dbName = dbNameOption.getOrElse("default")
-      PgMetadata.registerFunction(dbName, funcName, sqlContext)
-    case DropDatabaseCommand(dbName, _, _) =>
-      logInfo(s"Drop a database `$dbName` and refresh database catalog data")
-      PgMetadata.refreshDatabases(dbName, sqlContext)
-    case DropTableCommand(table, _, _, _) =>
-      val dbName = table.database.getOrElse("default")
-      val tableName = table.identifier
-      logInfo(s"Drop a table `$dbName.$tableName` and refresh table catalog data")
-      PgMetadata.refreshTables(dbName, sqlContext)
-    case DropFunctionCommand(dbNameOption, funcName, _, _) =>
-      val dbName = dbNameOption.getOrElse("default")
-      logInfo(s"Drop a function `$dbName.$funcName` and refresh function catalog data")
-      PgMetadata.refreshFunctions(dbName, sqlContext)
-    case _ =>
+  //
+  // TODO: Needs to revisit this
+  def apply(sqlContext: SQLContext, analyzedPlan: LogicalPlan, f: => DataFrame): DataFrame = {
+    analyzedPlan match {
+      case CreateDatabaseCommand(dbName, _, _, _, _) =>
+        PgMetadata.registerDatabase(dbName, sqlContext)
+        f
+      case CreateTable(desc, _, _) =>
+        val dbName = desc.identifier.database.getOrElse("default")
+        val tableName = desc.identifier.table
+        PgMetadata.registerTable(dbName, tableName, desc.schema, desc.tableType, sqlContext)
+        f
+      case CreateTableCommand(table, _) =>
+        val dbName = table.identifier.database.getOrElse("default")
+        val tableName = table.identifier.table
+        PgMetadata.registerTable(dbName, tableName, table.schema, table.tableType, sqlContext)
+        f
+      case CreateDataSourceTableCommand(table, _) =>
+        val dbName = table.identifier.database.getOrElse("default")
+        val tableName = table.identifier.table
+        PgMetadata.registerTable(dbName, tableName, table.schema, table.tableType, sqlContext)
+        f
+      case CreateDataSourceTableAsSelectCommand(table, _, query, _) =>
+        val dbName = table.identifier.database.getOrElse("default")
+        val tableName = table.identifier.table
+        PgMetadata.registerTable(dbName, tableName, query.schema, table.tableType, sqlContext)
+        f
+      case CreateViewCommand(table, _, _, _, _, child, _, _, _) =>
+        val dbName = table.database.getOrElse("default")
+        val tableName = table.identifier
+        val qe = sqlContext.sparkSession.sessionState.executePlan(child)
+        val schema = qe.analyzed.schema
+        PgMetadata.registerTable(dbName, tableName, schema, CatalogTableType.VIEW, sqlContext)
+        f
+      case CreateFunctionCommand(dbNameOption, funcName, _, _, _, _, _) =>
+        val dbName = dbNameOption.getOrElse("default")
+        PgMetadata.registerFunction(dbName, funcName, sqlContext)
+        f
+      case DropDatabaseCommand(dbName, _, _) =>
+        logInfo(s"Drop a database `$dbName` and refresh database catalog data")
+        // For refresh cases, we need to run DDL queries first
+        val df = f
+        PgMetadata.refreshDatabases(dbName, sqlContext)
+        df
+      case DropTableCommand(table, _, _, _) =>
+        val dbName = table.database.getOrElse("default")
+        val tableName = table.identifier
+        logInfo(s"Drop a table `$dbName.$tableName` and refresh table catalog data")
+        val df = f
+        PgMetadata.refreshTables(dbName, sqlContext)
+        df
+      case DropFunctionCommand(dbNameOption, funcName, _, _) =>
+        val dbName = dbNameOption.getOrElse("default")
+        logInfo(s"Drop a function `$dbName.$funcName` and refresh function catalog data")
+        val df = f
+        PgMetadata.refreshFunctions(dbName, sqlContext)
+        df
+      case _ =>
+        f
+    }
   }
 }
 
@@ -251,6 +271,7 @@ private[server] object PgMetadata extends Logging {
     case DateType                => PgDateArrayType
     case TimestampType           => PgTimestampTypeArrayType
     case DecimalType.Fixed(_, _) => PgNumericArrayType
+    // TODO: Needs to support nested array types, e.g., ArrayType(ArrayType(IntegerType))
     case _ => throw new SQLException("Unsupported array type " + elemType)
     // scalastyle:on
   }
@@ -508,8 +529,16 @@ private[server] object PgMetadata extends Logging {
       schema: StructType,
       tableType: CatalogTableType,
       sqlContext: SQLContext): Unit = {
-    logInfo(s"Registering a table `$dbName.$tableName(${schema.sql}})` " +
+    logInfo(s"Registering a table `$dbName.$tableName(${schema.sql})` " +
       "in a system catalog `pg_class`")
+
+    // Checks if the given schema can be supported first
+    try { schema.foreach { f => getPgType(f.dataType) } } catch {
+      case NonFatal(e) =>
+        throw new SQLException("Unsupported type found in the given schema " +
+          s"`$dbName.$tableName(${schema.sql})`: ${e.getMessage}")
+    }
+
     val tableOid = nextUnusedOid
     val tableTypeId = tableType match {
       case CatalogTableType.MANAGED => "r"

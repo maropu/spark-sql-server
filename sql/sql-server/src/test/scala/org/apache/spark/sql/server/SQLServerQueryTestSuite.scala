@@ -80,6 +80,7 @@ class SQLServerQueryTestSuite extends SQLQueryTestSuite with SQLServerTest with 
         |CREATE TABLE testdata AS
         |SELECT id AS key, CAST(id AS string) AS value FROM range(1, 101)
       """.stripMargin)
+    // TODO: Currently, we don't support nested arrays, e.g., ArrayType(ArrayType(IntegerType))
     // statement.execute(
     //   """
     //     |CREATE TABLE arraydata AS

@@ -23,7 +23,7 @@ import org.apache.livy.{Job, JobContext}
 
 import org.apache.spark.SparkEnv
 import org.apache.spark.rpc.{RpcCallContext, RpcEndpoint, RpcEndpointRef, RpcEnv}
-import org.apache.spark.sql.{SparkSession, SQLContext}
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Literal
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
@@ -68,10 +68,7 @@ private class ExecutorEndpoint(override val rpcEnv: RpcEnv, sessionState: LivySe
     extends RpcEndpoint {
 
   private val executorImpl = {
-    val catalogUpdater = (sqlContext: SQLContext, analyzedPlan: LogicalPlan) => {
-      PgCatalogUpdater(sqlContext, analyzedPlan)
-    }
-    new LivyExecutorImpl(catalogUpdater)
+    new LivyExecutorImpl(PgCatalogUpdater.apply _)
   }
 
   private val sqlContext = sessionState._context match {
