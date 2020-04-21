@@ -2,205 +2,205 @@
 -- Number of queries: 25
 
 
--- !query
+-- !query 0
 CREATE TEMPORARY VIEW t AS SELECT 1
--- !query schema
+-- !query 0 schema
 struct<>
--- !query output
+-- !query 0 output
 
 
 
--- !query
+-- !query 1
 SELECT COUNT(*) OVER (PARTITION BY 1 ORDER BY cast(1 as tinyint)) FROM t
--- !query schema
+-- !query 1 schema
 struct<count(1) OVER (PARTITION BY 1 ORDER BY CAST(1 AS TINYINT) ASC NULLS FIRST RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW):bigint>
--- !query output
+-- !query 1 output
 1
 
 
--- !query
+-- !query 2
 SELECT COUNT(*) OVER (PARTITION BY 1 ORDER BY cast(1 as smallint)) FROM t
--- !query schema
+-- !query 2 schema
 struct<count(1) OVER (PARTITION BY 1 ORDER BY CAST(1 AS SMALLINT) ASC NULLS FIRST RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW):bigint>
--- !query output
+-- !query 2 output
 1
 
 
--- !query
+-- !query 3
 SELECT COUNT(*) OVER (PARTITION BY 1 ORDER BY cast(1 as int)) FROM t
--- !query schema
+-- !query 3 schema
 struct<count(1) OVER (PARTITION BY 1 ORDER BY CAST(1 AS INT) ASC NULLS FIRST RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW):bigint>
--- !query output
+-- !query 3 output
 1
 
 
--- !query
+-- !query 4
 SELECT COUNT(*) OVER (PARTITION BY 1 ORDER BY cast(1 as bigint)) FROM t
--- !query schema
+-- !query 4 schema
 struct<count(1) OVER (PARTITION BY 1 ORDER BY CAST(1 AS BIGINT) ASC NULLS FIRST RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW):bigint>
--- !query output
+-- !query 4 output
 1
 
 
--- !query
+-- !query 5
 SELECT COUNT(*) OVER (PARTITION BY 1 ORDER BY cast(1 as float)) FROM t
--- !query schema
+-- !query 5 schema
 struct<count(1) OVER (PARTITION BY 1 ORDER BY CAST(1 AS FLOAT) ASC NULLS FIRST RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW):bigint>
--- !query output
+-- !query 5 output
 1
 
 
--- !query
+-- !query 6
 SELECT COUNT(*) OVER (PARTITION BY 1 ORDER BY cast(1 as double)) FROM t
--- !query schema
+-- !query 6 schema
 struct<count(1) OVER (PARTITION BY 1 ORDER BY CAST(1 AS DOUBLE) ASC NULLS FIRST RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW):bigint>
--- !query output
+-- !query 6 output
 1
 
 
--- !query
+-- !query 7
 SELECT COUNT(*) OVER (PARTITION BY 1 ORDER BY cast(1 as decimal(10, 0))) FROM t
--- !query schema
+-- !query 7 schema
 struct<count(1) OVER (PARTITION BY 1 ORDER BY CAST(1 AS DECIMAL(10,0)) ASC NULLS FIRST RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW):bigint>
--- !query output
+-- !query 7 output
 1
 
 
--- !query
+-- !query 8
 SELECT COUNT(*) OVER (PARTITION BY 1 ORDER BY cast(1 as string)) FROM t
--- !query schema
+-- !query 8 schema
 struct<count(1) OVER (PARTITION BY 1 ORDER BY CAST(1 AS STRING) ASC NULLS FIRST RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW):bigint>
--- !query output
+-- !query 8 output
 1
 
 
--- !query
+-- !query 9
 SELECT COUNT(*) OVER (PARTITION BY 1 ORDER BY cast('1' as binary)) FROM t
--- !query schema
+-- !query 9 schema
 struct<count(1) OVER (PARTITION BY 1 ORDER BY CAST(1 AS BINARY) ASC NULLS FIRST RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW):bigint>
--- !query output
+-- !query 9 output
 1
 
 
--- !query
+-- !query 10
 SELECT COUNT(*) OVER (PARTITION BY 1 ORDER BY cast(1 as boolean)) FROM t
--- !query schema
+-- !query 10 schema
 struct<count(1) OVER (PARTITION BY 1 ORDER BY CAST(1 AS BOOLEAN) ASC NULLS FIRST RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW):bigint>
--- !query output
+-- !query 10 output
 1
 
 
--- !query
+-- !query 11
 SELECT COUNT(*) OVER (PARTITION BY 1 ORDER BY cast('2017-12-11 09:30:00.0' as timestamp)) FROM t
--- !query schema
+-- !query 11 schema
 struct<count(1) OVER (PARTITION BY 1 ORDER BY CAST(2017-12-11 09:30:00.0 AS TIMESTAMP) ASC NULLS FIRST RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW):bigint>
--- !query output
+-- !query 11 output
 1
 
 
--- !query
+-- !query 12
 SELECT COUNT(*) OVER (PARTITION BY 1 ORDER BY cast('2017-12-11 09:30:00' as date)) FROM t
--- !query schema
+-- !query 12 schema
 struct<count(1) OVER (PARTITION BY 1 ORDER BY CAST(2017-12-11 09:30:00 AS DATE) ASC NULLS FIRST RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW):bigint>
--- !query output
+-- !query 12 output
 1
 
 
--- !query
+-- !query 13
 SELECT COUNT(*) OVER (PARTITION BY 1 ORDER BY cast(1 as tinyint) DESC RANGE BETWEEN CURRENT ROW AND 1 FOLLOWING) FROM t
--- !query schema
+-- !query 13 schema
 struct<count(1) OVER (PARTITION BY 1 ORDER BY CAST(1 AS TINYINT) DESC NULLS LAST RANGE BETWEEN CURRENT ROW AND CAST(1 AS TINYINT) FOLLOWING):bigint>
--- !query output
+-- !query 13 output
 1
 
 
--- !query
+-- !query 14
 SELECT COUNT(*) OVER (PARTITION BY 1 ORDER BY cast(1 as smallint) DESC RANGE BETWEEN CURRENT ROW AND 1 FOLLOWING) FROM t
--- !query schema
+-- !query 14 schema
 struct<count(1) OVER (PARTITION BY 1 ORDER BY CAST(1 AS SMALLINT) DESC NULLS LAST RANGE BETWEEN CURRENT ROW AND CAST(1 AS SMALLINT) FOLLOWING):bigint>
--- !query output
+-- !query 14 output
 1
 
 
--- !query
+-- !query 15
 SELECT COUNT(*) OVER (PARTITION BY 1 ORDER BY cast(1 as int) DESC RANGE BETWEEN CURRENT ROW AND 1 FOLLOWING) FROM t
--- !query schema
+-- !query 15 schema
 struct<count(1) OVER (PARTITION BY 1 ORDER BY CAST(1 AS INT) DESC NULLS LAST RANGE BETWEEN CURRENT ROW AND 1 FOLLOWING):bigint>
--- !query output
+-- !query 15 output
 1
 
 
--- !query
+-- !query 16
 SELECT COUNT(*) OVER (PARTITION BY 1 ORDER BY cast(1 as bigint) DESC RANGE BETWEEN CURRENT ROW AND 1 FOLLOWING) FROM t
--- !query schema
+-- !query 16 schema
 struct<count(1) OVER (PARTITION BY 1 ORDER BY CAST(1 AS BIGINT) DESC NULLS LAST RANGE BETWEEN CURRENT ROW AND CAST(1 AS BIGINT) FOLLOWING):bigint>
--- !query output
+-- !query 16 output
 1
 
 
--- !query
+-- !query 17
 SELECT COUNT(*) OVER (PARTITION BY 1 ORDER BY cast(1 as float) DESC RANGE BETWEEN CURRENT ROW AND 1 FOLLOWING) FROM t
--- !query schema
+-- !query 17 schema
 struct<count(1) OVER (PARTITION BY 1 ORDER BY CAST(1 AS FLOAT) DESC NULLS LAST RANGE BETWEEN CURRENT ROW AND CAST(1 AS FLOAT) FOLLOWING):bigint>
--- !query output
+-- !query 17 output
 1
 
 
--- !query
+-- !query 18
 SELECT COUNT(*) OVER (PARTITION BY 1 ORDER BY cast(1 as double) DESC RANGE BETWEEN CURRENT ROW AND 1 FOLLOWING) FROM t
--- !query schema
+-- !query 18 schema
 struct<count(1) OVER (PARTITION BY 1 ORDER BY CAST(1 AS DOUBLE) DESC NULLS LAST RANGE BETWEEN CURRENT ROW AND CAST(1 AS DOUBLE) FOLLOWING):bigint>
--- !query output
+-- !query 18 output
 1
 
 
--- !query
+-- !query 19
 SELECT COUNT(*) OVER (PARTITION BY 1 ORDER BY cast(1 as decimal(10, 0)) DESC RANGE BETWEEN CURRENT ROW AND 1 FOLLOWING) FROM t
--- !query schema
+-- !query 19 schema
 struct<count(1) OVER (PARTITION BY 1 ORDER BY CAST(1 AS DECIMAL(10,0)) DESC NULLS LAST RANGE BETWEEN CURRENT ROW AND CAST(1 AS DECIMAL(10,0)) FOLLOWING):bigint>
--- !query output
+-- !query 19 output
 1
 
 
--- !query
+-- !query 20
 SELECT COUNT(*) OVER (PARTITION BY 1 ORDER BY cast(1 as string) DESC RANGE BETWEEN CURRENT ROW AND 1 FOLLOWING) FROM t
--- !query schema
+-- !query 20 schema
 struct<>
--- !query output
+-- !query 20 output
 org.apache.spark.sql.AnalysisException
 cannot resolve 'RANGE BETWEEN CURRENT ROW AND CAST(1 AS STRING) FOLLOWING' due to data type mismatch: The data type of the upper bound 'string' does not match the expected data type '(numeric or interval)'.; line 1 pos 21
 
 
--- !query
+-- !query 21
 SELECT COUNT(*) OVER (PARTITION BY 1 ORDER BY cast('1' as binary) DESC RANGE BETWEEN CURRENT ROW AND 1 FOLLOWING) FROM t
--- !query schema
+-- !query 21 schema
 struct<>
--- !query output
+-- !query 21 output
 org.apache.spark.sql.AnalysisException
 cannot resolve 'RANGE BETWEEN CURRENT ROW AND CAST(1 AS BINARY) FOLLOWING' due to data type mismatch: The data type of the upper bound 'binary' does not match the expected data type '(numeric or interval)'.; line 1 pos 21
 
 
--- !query
+-- !query 22
 SELECT COUNT(*) OVER (PARTITION BY 1 ORDER BY cast(1 as boolean) DESC RANGE BETWEEN CURRENT ROW AND 1 FOLLOWING) FROM t
--- !query schema
+-- !query 22 schema
 struct<>
--- !query output
+-- !query 22 output
 org.apache.spark.sql.AnalysisException
 cannot resolve 'RANGE BETWEEN CURRENT ROW AND CAST(1 AS BOOLEAN) FOLLOWING' due to data type mismatch: The data type of the upper bound 'boolean' does not match the expected data type '(numeric or interval)'.; line 1 pos 21
 
 
--- !query
+-- !query 23
 SELECT COUNT(*) OVER (PARTITION BY 1 ORDER BY cast('2017-12-11 09:30:00.0' as timestamp) DESC RANGE BETWEEN CURRENT ROW AND 1 FOLLOWING) FROM t
--- !query schema
+-- !query 23 schema
 struct<>
--- !query output
+-- !query 23 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(PARTITION BY 1 ORDER BY CAST('2017-12-11 09:30:00.0' AS TIMESTAMP) DESC NULLS LAST RANGE BETWEEN CURRENT ROW AND 1 FOLLOWING)' due to data type mismatch: The data type 'timestamp' used in the order specification does not match the data type 'int' which is used in the range frame.; line 1 pos 21
 
 
--- !query
+-- !query 24
 SELECT COUNT(*) OVER (PARTITION BY 1 ORDER BY cast('2017-12-11 09:30:00' as date) DESC RANGE BETWEEN CURRENT ROW AND 1 FOLLOWING) FROM t
--- !query schema
+-- !query 24 schema
 struct<count(1) OVER (PARTITION BY 1 ORDER BY CAST(2017-12-11 09:30:00 AS DATE) DESC NULLS LAST RANGE BETWEEN CURRENT ROW AND 1 FOLLOWING):bigint>
--- !query output
+-- !query 24 output
 1

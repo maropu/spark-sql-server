@@ -158,23 +158,12 @@ class SQLServerQueryTestSuite extends SQLQueryTestSuite with SQLServerTest with 
 
     // TODO: Needs to check the failure causes
     "array.sql",
-    "cast.sql",
-    "change-column.sql",
     "columnresolution.sql",
     "csv-functions.sql",
-    "cte-legacy.sql",
-    "cte.sql",
-    "cte.sql",
-    "date_part.sql",
     "datetime.sql",
-    "describe-table-column.sql",
     "describe.sql",
-    "except-all.sql",
-    "except-all.sql",
     "explain.sql",
-    "extract.sql",
     "group-by.sql",
-    "grouping_set.sql",
     "higher-order-functions.sql",
     "inline-table.sql",
     "intersect-all.sql",
@@ -185,8 +174,6 @@ class SQLServerQueryTestSuite extends SQLQueryTestSuite with SQLServerTest with 
     "json-functions.sql",
     "limit.sql",
     "misc-functions.sql",
-    "operator-div.sql",
-    "operators.sql",
     "pivot.sql",
     "query_regex_column.sql",
     "show-create-table.sql",
@@ -446,6 +433,8 @@ class SQLServerQueryTestSuite extends SQLQueryTestSuite with SQLServerTest with 
         HiveResult.toHiveString((d, DateType))
       case t: Timestamp =>
         HiveResult.toHiveString((t, TimestampType))
+      case i: org.postgresql.util.PGInterval =>
+        TestUtils.toSparkIntervalString(i.toString)
       case d: java.math.BigDecimal =>
         HiveResult.toHiveString((d, fromDecimal(Decimal(d))))
       case bin: Array[Byte] =>

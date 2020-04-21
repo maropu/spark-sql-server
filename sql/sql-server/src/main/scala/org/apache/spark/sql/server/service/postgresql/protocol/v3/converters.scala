@@ -326,6 +326,16 @@ class TimestampColumnBinaryWriter(ordinal: Int, conf: SQLConf)
   }
 }
 
+class IntervalColumnBinaryWriter(ordinal: Int) extends ColumnWriter(ordinal) {
+
+  override def nullSafeWriter(row: InternalRow, byteBuffer: ByteBuffer): Unit = {
+    val interval = row.getInterval(ordinal)
+    byteBuffer.putInt(interval.months)
+    byteBuffer.putInt(interval.days)
+    byteBuffer.putLong(interval.microseconds)
+  }
+}
+
 abstract class ComplexTypeColumnTextWriter(field: StructField, ordinal: Int, conf: SQLConf)
     extends ColumnWriter(ordinal) {
 
@@ -430,11 +440,13 @@ object ColumnWriter {
       case (BinaryType, _) => new BinaryColumnWriter(ordinal)
       case (DateType, true) => new DateColumnBinaryWriter(ordinal, conf)
       case (TimestampType, true) => new TimestampColumnBinaryWriter(ordinal, conf)
+      case (CalendarIntervalType, true) => new IntervalColumnBinaryWriter(ordinal)
 
       case (tpe, false) if isPrimitive(tpe) => new ColumnTextWriter(tpe, ordinal)
       case (tpe: DecimalType, false) => new ColumnTextWriter(tpe, ordinal)
       case (DateType, false) => new DateColumnTextWriter(ordinal, conf)
       case (TimestampType, false) => new TimestampColumnTextWriter(ordinal, conf)
+      case (tpe: CalendarIntervalType, false) => new ColumnTextWriter(tpe, ordinal)
       case (_: ArrayType, false) => new ArrayColumnTextWriter(field, ordinal, conf)
       case (_: MapType, false) => new MapColumnTextWriter(field, ordinal, conf)
       case (_: StructType, false) => new StructColumnTextWriter(field, ordinal, conf)

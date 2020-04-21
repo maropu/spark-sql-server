@@ -2,15 +2,15 @@
 -- Number of queries: 37
 
 
--- !query
+-- !query 0
 create or replace temporary view onek2 as select * from onek
--- !query schema
+-- !query 0 schema
 struct<>
--- !query output
+-- !query 0 output
 
 
 
--- !query
+-- !query 1
 create or replace temporary view INT8_TBL as select * from values
   (cast(trim('  123   ') as bigint), cast(trim('  456') as bigint)),
   (cast(trim('123   ') as bigint),cast('4567890123456789' as bigint)),
@@ -18,19 +18,19 @@ create or replace temporary view INT8_TBL as select * from values
   (cast(+4567890123456789 as bigint),cast('4567890123456789' as bigint)),
   (cast('+4567890123456789' as bigint),cast('-4567890123456789' as bigint))
   as INT8_TBL(q1, q2)
--- !query schema
+-- !query 1 schema
 struct<>
--- !query output
+-- !query 1 output
 
 
 
--- !query
+-- !query 2
 SELECT * FROM onek
    WHERE onek.unique1 < 10
    ORDER BY onek.unique1
--- !query schema
+-- !query 2 schema
 struct<unique1:int,unique2:int,two:int,four:int,ten:int,twenty:int,hundred:int,thousand:int,twothousand:int,fivethous:int,tenthous:int,odd:int,even:int,stringu1:string,stringu2:string,string4:string>
--- !query output
+-- !query 2 output
 0	998	0	0	0	0	0	0	0	0	0	0	1	AAAAAA	KMBAAA	OOOOxx
 1	214	1	1	1	1	1	1	1	1	1	2	3	BAAAAA	GIAAAA	OOOOxx
 2	326	0	2	2	2	2	2	2	2	2	4	5	CAAAAA	OMAAAA	OOOOxx
@@ -43,13 +43,13 @@ struct<unique1:int,unique2:int,two:int,four:int,ten:int,twenty:int,hundred:int,t
 9	49	1	1	9	9	9	9	9	9	9	18	19	JAAAAA	XBAAAA	HHHHxx
 
 
--- !query
+-- !query 3
 SELECT onek.unique1, onek.stringu1 FROM onek
    WHERE onek.unique1 < 20
    ORDER BY unique1 DESC
--- !query schema
+-- !query 3 schema
 struct<unique1:int,stringu1:string>
--- !query output
+-- !query 3 output
 19	TAAAAA
 18	SAAAAA
 17	RAAAAA
@@ -72,13 +72,13 @@ struct<unique1:int,stringu1:string>
 0	AAAAAA
 
 
--- !query
+-- !query 4
 SELECT onek.unique1, onek.stringu1 FROM onek
    WHERE onek.unique1 > 980
    ORDER BY stringu1 ASC
--- !query schema
+-- !query 4 schema
 struct<unique1:int,stringu1:string>
--- !query output
+-- !query 4 output
 988	AMAAAA
 989	BMAAAA
 990	CMAAAA
@@ -100,13 +100,13 @@ struct<unique1:int,stringu1:string>
 987	ZLAAAA
 
 
--- !query
+-- !query 5
 SELECT onek.unique1, onek.string4 FROM onek
    WHERE onek.unique1 > 980
    ORDER BY string4 ASC, unique1 DESC
--- !query schema
+-- !query 5 schema
 struct<unique1:int,string4:string>
--- !query output
+-- !query 5 output
 999	AAAAxx
 995	AAAAxx
 983	AAAAxx
@@ -128,13 +128,13 @@ struct<unique1:int,string4:string>
 984	VVVVxx
 
 
--- !query
+-- !query 6
 SELECT onek.unique1, onek.string4 FROM onek
    WHERE onek.unique1 > 980
    ORDER BY string4 DESC, unique1 ASC
--- !query schema
+-- !query 6 schema
 struct<unique1:int,string4:string>
--- !query output
+-- !query 6 output
 984	VVVVxx
 989	VVVVxx
 992	VVVVxx
@@ -156,13 +156,13 @@ struct<unique1:int,string4:string>
 999	AAAAxx
 
 
--- !query
+-- !query 7
 SELECT onek.unique1, onek.string4 FROM onek
    WHERE onek.unique1 < 20
    ORDER BY unique1 DESC, string4 ASC
--- !query schema
+-- !query 7 schema
 struct<unique1:int,string4:string>
--- !query output
+-- !query 7 output
 19	OOOOxx
 18	VVVVxx
 17	HHHHxx
@@ -185,13 +185,13 @@ struct<unique1:int,string4:string>
 0	OOOOxx
 
 
--- !query
+-- !query 8
 SELECT onek.unique1, onek.string4 FROM onek
    WHERE onek.unique1 < 20
    ORDER BY unique1 ASC, string4 DESC
--- !query schema
+-- !query 8 schema
 struct<unique1:int,string4:string>
--- !query output
+-- !query 8 output
 0	OOOOxx
 1	OOOOxx
 2	OOOOxx
@@ -214,11 +214,11 @@ struct<unique1:int,string4:string>
 19	OOOOxx
 
 
--- !query
+-- !query 9
 SELECT onek2.* FROM onek2 WHERE onek2.unique1 < 10
--- !query schema
+-- !query 9 schema
 struct<unique1:int,unique2:int,two:int,four:int,ten:int,twenty:int,hundred:int,thousand:int,twothousand:int,fivethous:int,tenthous:int,odd:int,even:int,stringu1:string,stringu2:string,string4:string>
--- !query output
+-- !query 9 output
 0	998	0	0	0	0	0	0	0	0	0	0	1	AAAAAA	KMBAAA	OOOOxx
 1	214	1	1	1	1	1	1	1	1	1	2	3	BAAAAA	GIAAAA	OOOOxx
 2	326	0	2	2	2	2	2	2	2	2	4	5	CAAAAA	OMAAAA	OOOOxx
@@ -231,13 +231,13 @@ struct<unique1:int,unique2:int,two:int,four:int,ten:int,twenty:int,hundred:int,t
 9	49	1	1	9	9	9	9	9	9	9	18	19	JAAAAA	XBAAAA	HHHHxx
 
 
--- !query
+-- !query 10
 SELECT onek2.unique1, onek2.stringu1 FROM onek2
     WHERE onek2.unique1 < 20
     ORDER BY unique1 DESC
--- !query schema
+-- !query 10 schema
 struct<unique1:int,stringu1:string>
--- !query output
+-- !query 10 output
 19	TAAAAA
 18	SAAAAA
 17	RAAAAA
@@ -260,12 +260,12 @@ struct<unique1:int,stringu1:string>
 0	AAAAAA
 
 
--- !query
+-- !query 11
 SELECT onek2.unique1, onek2.stringu1 FROM onek2
    WHERE onek2.unique1 > 980
--- !query schema
+-- !query 11 schema
 struct<unique1:int,stringu1:string>
--- !query output
+-- !query 11 output
 981	TLAAAA
 982	ULAAAA
 983	VLAAAA
@@ -287,69 +287,69 @@ struct<unique1:int,stringu1:string>
 999	LMAAAA
 
 
--- !query
+-- !query 12
 CREATE TABLE tmp USING parquet AS
 SELECT two, stringu1, ten, string4
 FROM onek
--- !query schema
+-- !query 12 schema
 struct<>
--- !query output
+-- !query 12 output
 
 
 
--- !query
+-- !query 13
 select foo.* from (select 1) as foo
--- !query schema
+-- !query 13 schema
 struct<1:int>
--- !query output
+-- !query 13 output
 1
 
 
--- !query
+-- !query 14
 select foo.* from (select null) as foo
--- !query schema
+-- !query 14 schema
 struct<NULL:null>
--- !query output
+-- !query 14 output
 NULL
 
 
--- !query
+-- !query 15
 select foo.* from (select 'xyzzy',1,null) as foo
--- !query schema
+-- !query 15 schema
 struct<xyzzy:string,1:int,NULL:null>
--- !query output
+-- !query 15 output
 xyzzy	1	NULL
 
 
--- !query
+-- !query 16
 select * from onek, values(147, 'RFAAAA'), (931, 'VJAAAA') as v (i, j)
     WHERE onek.unique1 = v.i and onek.stringu1 = v.j
--- !query schema
+-- !query 16 schema
 struct<unique1:int,unique2:int,two:int,four:int,ten:int,twenty:int,hundred:int,thousand:int,twothousand:int,fivethous:int,tenthous:int,odd:int,even:int,stringu1:string,stringu2:string,string4:string,i:int,j:string>
--- !query output
+-- !query 16 output
 147	0	1	3	7	7	7	47	147	147	147	14	15	RFAAAA	AAAAAA	AAAAxx	147	RFAAAA
 931	1	1	3	1	11	1	31	131	431	931	2	3	VJAAAA	BAAAAA	HHHHxx	931	VJAAAA
 
 
--- !query
+-- !query 17
 VALUES (1,2), (3,4+4), (7,77.7)
--- !query schema
+-- !query 17 schema
 struct<col1:int,col2:decimal(11,1)>
--- !query output
+-- !query 17 output
 1	2.0
 3	8.0
 7	77.7
 
 
--- !query
+-- !query 18
 VALUES (1,2), (3,4+4), (7,77.7)
 UNION ALL
 SELECT 2+2, 57
 UNION ALL
 TABLE int8_tbl
--- !query schema
+-- !query 18 schema
 struct<col1:bigint,col2:decimal(21,1)>
--- !query output
+-- !query 18 output
 1	2.0
 123	456.0
 123	4567890123456789.0
@@ -361,20 +361,20 @@ struct<col1:bigint,col2:decimal(21,1)>
 7	77.7
 
 
--- !query
+-- !query 19
 CREATE OR REPLACE TEMPORARY VIEW foo AS
 SELECT * FROM (values(42),(3),(10),(7),(null),(null),(1)) as foo (f1)
--- !query schema
+-- !query 19 schema
 struct<>
--- !query output
+-- !query 19 output
 
 
 
--- !query
+-- !query 20
 SELECT * FROM foo ORDER BY f1
--- !query schema
+-- !query 20 schema
 struct<f1:int>
--- !query output
+-- !query 20 output
 NULL
 NULL
 1
@@ -384,11 +384,11 @@ NULL
 42
 
 
--- !query
+-- !query 21
 SELECT * FROM foo ORDER BY f1 ASC
--- !query schema
+-- !query 21 schema
 struct<f1:int>
--- !query output
+-- !query 21 output
 NULL
 NULL
 1
@@ -398,11 +398,11 @@ NULL
 42
 
 
--- !query
+-- !query 22
 SELECT * FROM foo ORDER BY f1 NULLS FIRST
--- !query schema
+-- !query 22 schema
 struct<f1:int>
--- !query output
+-- !query 22 output
 NULL
 NULL
 1
@@ -412,11 +412,11 @@ NULL
 42
 
 
--- !query
+-- !query 23
 SELECT * FROM foo ORDER BY f1 DESC
--- !query schema
+-- !query 23 schema
 struct<f1:int>
--- !query output
+-- !query 23 output
 42
 10
 7
@@ -426,11 +426,11 @@ NULL
 NULL
 
 
--- !query
+-- !query 24
 SELECT * FROM foo ORDER BY f1 DESC NULLS LAST
--- !query schema
+-- !query 24 schema
 struct<f1:int>
--- !query output
+-- !query 24 output
 42
 10
 7
@@ -440,103 +440,103 @@ NULL
 NULL
 
 
--- !query
+-- !query 25
 select * from onek2 where unique2 = 11 and stringu1 = 'ATAAAA'
--- !query schema
+-- !query 25 schema
 struct<unique1:int,unique2:int,two:int,four:int,ten:int,twenty:int,hundred:int,thousand:int,twothousand:int,fivethous:int,tenthous:int,odd:int,even:int,stringu1:string,stringu2:string,string4:string>
--- !query output
+-- !query 25 output
 494	11	0	2	4	14	4	94	94	494	494	8	9	ATAAAA	LAAAAA	VVVVxx
 
 
--- !query
+-- !query 26
 select unique2 from onek2 where unique2 = 11 and stringu1 = 'ATAAAA'
--- !query schema
+-- !query 26 schema
 struct<unique2:int>
--- !query output
+-- !query 26 output
 11
 
 
--- !query
+-- !query 27
 select * from onek2 where unique2 = 11 and stringu1 < 'B'
--- !query schema
+-- !query 27 schema
 struct<unique1:int,unique2:int,two:int,four:int,ten:int,twenty:int,hundred:int,thousand:int,twothousand:int,fivethous:int,tenthous:int,odd:int,even:int,stringu1:string,stringu2:string,string4:string>
--- !query output
+-- !query 27 output
 494	11	0	2	4	14	4	94	94	494	494	8	9	ATAAAA	LAAAAA	VVVVxx
 
 
--- !query
+-- !query 28
 select unique2 from onek2 where unique2 = 11 and stringu1 < 'B'
--- !query schema
+-- !query 28 schema
 struct<unique2:int>
--- !query output
+-- !query 28 output
 11
 
 
--- !query
+-- !query 29
 select unique2 from onek2 where unique2 = 11 and stringu1 < 'C'
--- !query schema
+-- !query 29 schema
 struct<unique2:int>
--- !query output
+-- !query 29 output
 11
 
 
--- !query
+-- !query 30
 select unique2 from onek2 where unique2 = 11 and stringu1 < 'B'
--- !query schema
+-- !query 30 schema
 struct<unique2:int>
--- !query output
+-- !query 30 output
 11
 
 
--- !query
+-- !query 31
 select unique1, unique2 from onek2
   where (unique2 = 11 or unique1 = 0) and stringu1 < 'B'
--- !query schema
+-- !query 31 schema
 struct<unique1:int,unique2:int>
--- !query output
+-- !query 31 output
 0	998
 494	11
 
 
--- !query
+-- !query 32
 select unique1, unique2 from onek2
   where (unique2 = 11 and stringu1 < 'B') or unique1 = 0
--- !query schema
+-- !query 32 schema
 struct<unique1:int,unique2:int>
--- !query output
+-- !query 32 output
 0	998
 494	11
 
 
--- !query
+-- !query 33
 SELECT 1 AS x ORDER BY x
--- !query schema
+-- !query 33 schema
 struct<x:int>
--- !query output
+-- !query 33 output
 1
 
 
--- !query
+-- !query 34
 select * from (values (2),(null),(1)) v(k) where k = k order by k
--- !query schema
+-- !query 34 schema
 struct<k:int>
--- !query output
+-- !query 34 output
 1
 2
 
 
--- !query
+-- !query 35
 select * from (values (2),(null),(1)) v(k) where k = k
--- !query schema
+-- !query 35 schema
 struct<k:int>
--- !query output
+-- !query 35 output
 1
 2
 
 
--- !query
+-- !query 36
 drop table tmp
--- !query schema
+-- !query 36 schema
 struct<>
--- !query output
+-- !query 36 output
 

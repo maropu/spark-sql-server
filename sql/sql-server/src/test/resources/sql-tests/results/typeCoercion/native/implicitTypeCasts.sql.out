@@ -2,353 +2,353 @@
 -- Number of queries: 44
 
 
--- !query
+-- !query 0
 CREATE TEMPORARY VIEW t AS SELECT 1
--- !query schema
+-- !query 0 schema
 struct<>
--- !query output
+-- !query 0 output
 
 
 
--- !query
+-- !query 1
 SELECT 1 + '2' FROM t
--- !query schema
+-- !query 1 schema
 struct<(CAST(1 AS DOUBLE) + CAST(2 AS DOUBLE)):double>
--- !query output
+-- !query 1 output
 3.0
 
 
--- !query
+-- !query 2
 SELECT 1 - '2' FROM t
--- !query schema
+-- !query 2 schema
 struct<(CAST(1 AS DOUBLE) - CAST(2 AS DOUBLE)):double>
--- !query output
+-- !query 2 output
 -1.0
 
 
--- !query
+-- !query 3
 SELECT 1 * '2' FROM t
--- !query schema
+-- !query 3 schema
 struct<(CAST(1 AS DOUBLE) * CAST(2 AS DOUBLE)):double>
--- !query output
+-- !query 3 output
 2.0
 
 
--- !query
+-- !query 4
 SELECT 4 / '2' FROM t
--- !query schema
+-- !query 4 schema
 struct<(CAST(4 AS DOUBLE) / CAST(CAST(2 AS DOUBLE) AS DOUBLE)):double>
--- !query output
+-- !query 4 output
 2.0
 
 
--- !query
+-- !query 5
 SELECT 1.1 + '2' FROM t
--- !query schema
+-- !query 5 schema
 struct<(CAST(1.1 AS DOUBLE) + CAST(2 AS DOUBLE)):double>
--- !query output
+-- !query 5 output
 3.1
 
 
--- !query
+-- !query 6
 SELECT 1.1 - '2' FROM t
--- !query schema
+-- !query 6 schema
 struct<(CAST(1.1 AS DOUBLE) - CAST(2 AS DOUBLE)):double>
--- !query output
+-- !query 6 output
 -0.8999999999999999
 
 
--- !query
+-- !query 7
 SELECT 1.1 * '2' FROM t
--- !query schema
+-- !query 7 schema
 struct<(CAST(1.1 AS DOUBLE) * CAST(2 AS DOUBLE)):double>
--- !query output
+-- !query 7 output
 2.2
 
 
--- !query
+-- !query 8
 SELECT 4.4 / '2' FROM t
--- !query schema
+-- !query 8 schema
 struct<(CAST(4.4 AS DOUBLE) / CAST(2 AS DOUBLE)):double>
--- !query output
+-- !query 8 output
 2.2
 
 
--- !query
+-- !query 9
 SELECT 1.1 + '2.2' FROM t
--- !query schema
+-- !query 9 schema
 struct<(CAST(1.1 AS DOUBLE) + CAST(2.2 AS DOUBLE)):double>
--- !query output
+-- !query 9 output
 3.3000000000000003
 
 
--- !query
+-- !query 10
 SELECT 1.1 - '2.2' FROM t
--- !query schema
+-- !query 10 schema
 struct<(CAST(1.1 AS DOUBLE) - CAST(2.2 AS DOUBLE)):double>
--- !query output
+-- !query 10 output
 -1.1
 
 
--- !query
+-- !query 11
 SELECT 1.1 * '2.2' FROM t
--- !query schema
+-- !query 11 schema
 struct<(CAST(1.1 AS DOUBLE) * CAST(2.2 AS DOUBLE)):double>
--- !query output
+-- !query 11 output
 2.4200000000000004
 
 
--- !query
+-- !query 12
 SELECT 4.4 / '2.2' FROM t
--- !query schema
+-- !query 12 schema
 struct<(CAST(4.4 AS DOUBLE) / CAST(2.2 AS DOUBLE)):double>
--- !query output
+-- !query 12 output
 2.0
 
 
--- !query
+-- !query 13
 SELECT '$' || cast(1 as smallint) || '$' FROM t
--- !query schema
+-- !query 13 schema
 struct<concat(concat($, CAST(CAST(1 AS SMALLINT) AS STRING)), $):string>
--- !query output
+-- !query 13 output
 $1$
 
 
--- !query
+-- !query 14
 SELECT '$' || 1 || '$' FROM t
--- !query schema
+-- !query 14 schema
 struct<concat(concat($, CAST(1 AS STRING)), $):string>
--- !query output
+-- !query 14 output
 $1$
 
 
--- !query
+-- !query 15
 SELECT '$' || cast(1 as bigint) || '$' FROM t
--- !query schema
+-- !query 15 schema
 struct<concat(concat($, CAST(CAST(1 AS BIGINT) AS STRING)), $):string>
--- !query output
+-- !query 15 output
 $1$
 
 
--- !query
+-- !query 16
 SELECT '$' || cast(1.1 as float) || '$' FROM t
--- !query schema
+-- !query 16 schema
 struct<concat(concat($, CAST(CAST(1.1 AS FLOAT) AS STRING)), $):string>
--- !query output
+-- !query 16 output
 $1.1$
 
 
--- !query
+-- !query 17
 SELECT '$' || cast(1.1 as double) || '$' FROM t
--- !query schema
+-- !query 17 schema
 struct<concat(concat($, CAST(CAST(1.1 AS DOUBLE) AS STRING)), $):string>
--- !query output
+-- !query 17 output
 $1.1$
 
 
--- !query
+-- !query 18
 SELECT '$' || 1.1 || '$' FROM t
--- !query schema
+-- !query 18 schema
 struct<concat(concat($, CAST(1.1 AS STRING)), $):string>
--- !query output
+-- !query 18 output
 $1.1$
 
 
--- !query
+-- !query 19
 SELECT '$' || cast(1.1 as decimal(8,3)) || '$' FROM t
--- !query schema
+-- !query 19 schema
 struct<concat(concat($, CAST(CAST(1.1 AS DECIMAL(8,3)) AS STRING)), $):string>
--- !query output
+-- !query 19 output
 $1.100$
 
 
--- !query
+-- !query 20
 SELECT '$' || 'abcd' || '$' FROM t
--- !query schema
+-- !query 20 schema
 struct<concat(concat($, abcd), $):string>
--- !query output
+-- !query 20 output
 $abcd$
 
 
--- !query
+-- !query 21
 SELECT '$' || date('1996-09-09') || '$' FROM t
--- !query schema
+-- !query 21 schema
 struct<concat(concat($, CAST(CAST(1996-09-09 AS DATE) AS STRING)), $):string>
--- !query output
+-- !query 21 output
 $1996-09-09$
 
 
--- !query
+-- !query 22
 SELECT '$' || timestamp('1996-09-09 10:11:12.4' )|| '$' FROM t
--- !query schema
+-- !query 22 schema
 struct<concat(concat($, CAST(CAST(1996-09-09 10:11:12.4 AS TIMESTAMP) AS STRING)), $):string>
--- !query output
+-- !query 22 output
 $1996-09-09 10:11:12.4$
 
 
--- !query
+-- !query 23
 SELECT length(cast(1 as smallint)) FROM t
--- !query schema
+-- !query 23 schema
 struct<length(CAST(CAST(1 AS SMALLINT) AS STRING)):int>
--- !query output
+-- !query 23 output
 1
 
 
--- !query
+-- !query 24
 SELECT length(cast(1 as int)) FROM t
--- !query schema
+-- !query 24 schema
 struct<length(CAST(CAST(1 AS INT) AS STRING)):int>
--- !query output
+-- !query 24 output
 1
 
 
--- !query
+-- !query 25
 SELECT length(cast(1 as bigint)) FROM t
--- !query schema
+-- !query 25 schema
 struct<length(CAST(CAST(1 AS BIGINT) AS STRING)):int>
--- !query output
+-- !query 25 output
 1
 
 
--- !query
+-- !query 26
 SELECT length(cast(1.1 as float)) FROM t
--- !query schema
+-- !query 26 schema
 struct<length(CAST(CAST(1.1 AS FLOAT) AS STRING)):int>
--- !query output
+-- !query 26 output
 3
 
 
--- !query
+-- !query 27
 SELECT length(cast(1.1 as double)) FROM t
--- !query schema
+-- !query 27 schema
 struct<length(CAST(CAST(1.1 AS DOUBLE) AS STRING)):int>
--- !query output
+-- !query 27 output
 3
 
 
--- !query
+-- !query 28
 SELECT length(1.1) FROM t
--- !query schema
+-- !query 28 schema
 struct<length(CAST(1.1 AS STRING)):int>
--- !query output
+-- !query 28 output
 3
 
 
--- !query
+-- !query 29
 SELECT length(cast(1.1 as decimal(8,3))) FROM t
--- !query schema
+-- !query 29 schema
 struct<length(CAST(CAST(1.1 AS DECIMAL(8,3)) AS STRING)):int>
--- !query output
+-- !query 29 output
 5
 
 
--- !query
+-- !query 30
 SELECT length('four') FROM t
--- !query schema
+-- !query 30 schema
 struct<length(four):int>
--- !query output
+-- !query 30 output
 4
 
 
--- !query
+-- !query 31
 SELECT length(date('1996-09-10')) FROM t
--- !query schema
+-- !query 31 schema
 struct<length(CAST(CAST(1996-09-10 AS DATE) AS STRING)):int>
--- !query output
+-- !query 31 output
 10
 
 
--- !query
+-- !query 32
 SELECT length(timestamp('1996-09-10 10:11:12.4')) FROM t
--- !query schema
+-- !query 32 schema
 struct<length(CAST(CAST(1996-09-10 10:11:12.4 AS TIMESTAMP) AS STRING)):int>
--- !query output
+-- !query 32 output
 21
 
 
--- !query
+-- !query 33
 SELECT year( '1996-01-10') FROM t
--- !query schema
+-- !query 33 schema
 struct<year(CAST(1996-01-10 AS DATE)):int>
--- !query output
+-- !query 33 output
 1996
 
 
--- !query
+-- !query 34
 SELECT month( '1996-01-10') FROM t
--- !query schema
+-- !query 34 schema
 struct<month(CAST(1996-01-10 AS DATE)):int>
--- !query output
+-- !query 34 output
 1
 
 
--- !query
+-- !query 35
 SELECT day( '1996-01-10') FROM t
--- !query schema
-struct<day(CAST(1996-01-10 AS DATE)):int>
--- !query output
+-- !query 35 schema
+struct<dayofmonth(CAST(1996-01-10 AS DATE)):int>
+-- !query 35 output
 10
 
 
--- !query
+-- !query 36
 SELECT hour( '10:11:12') FROM t
--- !query schema
+-- !query 36 schema
 struct<hour(CAST(10:11:12 AS TIMESTAMP)):int>
--- !query output
+-- !query 36 output
 10
 
 
--- !query
+-- !query 37
 SELECT minute( '10:11:12') FROM t
--- !query schema
+-- !query 37 schema
 struct<minute(CAST(10:11:12 AS TIMESTAMP)):int>
--- !query output
+-- !query 37 output
 11
 
 
--- !query
+-- !query 38
 SELECT second( '10:11:12') FROM t
--- !query schema
+-- !query 38 schema
 struct<second(CAST(10:11:12 AS TIMESTAMP)):int>
--- !query output
+-- !query 38 output
 12
 
 
--- !query
+-- !query 39
 select 1 like '%' FROM t
--- !query schema
+-- !query 39 schema
 struct<CAST(1 AS STRING) LIKE %:boolean>
--- !query output
+-- !query 39 output
 true
 
 
--- !query
+-- !query 40
 select date('1996-09-10') like '19%' FROM t
--- !query schema
+-- !query 40 schema
 struct<CAST(CAST(1996-09-10 AS DATE) AS STRING) LIKE 19%:boolean>
--- !query output
+-- !query 40 output
 true
 
 
--- !query
+-- !query 41
 select '1' like 1 FROM t
--- !query schema
+-- !query 41 schema
 struct<1 LIKE CAST(1 AS STRING):boolean>
--- !query output
+-- !query 41 output
 true
 
 
--- !query
+-- !query 42
 select '1 ' like 1 FROM t
--- !query schema
+-- !query 42 schema
 struct<1  LIKE CAST(1 AS STRING):boolean>
--- !query output
+-- !query 42 output
 false
 
 
--- !query
+-- !query 43
 select '1996-09-10' like date('1996-09-10') FROM t
--- !query schema
+-- !query 43 schema
 struct<1996-09-10 LIKE CAST(CAST(1996-09-10 AS DATE) AS STRING):boolean>
--- !query output
+-- !query 43 output
 true

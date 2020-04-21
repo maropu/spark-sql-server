@@ -2,269 +2,269 @@
 -- Number of queries: 46
 
 
--- !query
+-- !query 0
 SELECT CAST('1.23' AS int)
--- !query schema
+-- !query 0 schema
 struct<CAST(1.23 AS INT):int>
--- !query output
+-- !query 0 output
 1
 
 
--- !query
+-- !query 1
 SELECT CAST('1.23' AS long)
--- !query schema
+-- !query 1 schema
 struct<CAST(1.23 AS BIGINT):bigint>
--- !query output
+-- !query 1 output
 1
 
 
--- !query
+-- !query 2
 SELECT CAST('-4.56' AS int)
--- !query schema
+-- !query 2 schema
 struct<CAST(-4.56 AS INT):int>
--- !query output
+-- !query 2 output
 -4
 
 
--- !query
+-- !query 3
 SELECT CAST('-4.56' AS long)
--- !query schema
+-- !query 3 schema
 struct<CAST(-4.56 AS BIGINT):bigint>
--- !query output
+-- !query 3 output
 -4
 
 
--- !query
+-- !query 4
 SELECT CAST('abc' AS int)
--- !query schema
+-- !query 4 schema
 struct<CAST(abc AS INT):int>
--- !query output
+-- !query 4 output
 NULL
 
 
--- !query
+-- !query 5
 SELECT CAST('abc' AS long)
--- !query schema
+-- !query 5 schema
 struct<CAST(abc AS BIGINT):bigint>
--- !query output
+-- !query 5 output
 NULL
 
 
--- !query
+-- !query 6
 SELECT CAST('1234567890123' AS int)
--- !query schema
+-- !query 6 schema
 struct<CAST(1234567890123 AS INT):int>
--- !query output
+-- !query 6 output
 NULL
 
 
--- !query
+-- !query 7
 SELECT CAST('12345678901234567890123' AS long)
--- !query schema
+-- !query 7 schema
 struct<CAST(12345678901234567890123 AS BIGINT):bigint>
--- !query output
+-- !query 7 output
 NULL
 
 
--- !query
+-- !query 8
 SELECT CAST('' AS int)
--- !query schema
+-- !query 8 schema
 struct<CAST( AS INT):int>
--- !query output
+-- !query 8 output
 NULL
 
 
--- !query
+-- !query 9
 SELECT CAST('' AS long)
--- !query schema
+-- !query 9 schema
 struct<CAST( AS BIGINT):bigint>
--- !query output
+-- !query 9 output
 NULL
 
 
--- !query
+-- !query 10
 SELECT CAST(NULL AS int)
--- !query schema
+-- !query 10 schema
 struct<CAST(NULL AS INT):int>
--- !query output
+-- !query 10 output
 NULL
 
 
--- !query
+-- !query 11
 SELECT CAST(NULL AS long)
--- !query schema
+-- !query 11 schema
 struct<CAST(NULL AS BIGINT):bigint>
--- !query output
+-- !query 11 output
 NULL
 
 
--- !query
+-- !query 12
 SELECT CAST('123.a' AS int)
--- !query schema
+-- !query 12 schema
 struct<CAST(123.a AS INT):int>
--- !query output
+-- !query 12 output
 NULL
 
 
--- !query
+-- !query 13
 SELECT CAST('123.a' AS long)
--- !query schema
+-- !query 13 schema
 struct<CAST(123.a AS BIGINT):bigint>
--- !query output
+-- !query 13 output
 NULL
 
 
--- !query
+-- !query 14
 SELECT CAST('-2147483648' AS int)
--- !query schema
+-- !query 14 schema
 struct<CAST(-2147483648 AS INT):int>
--- !query output
+-- !query 14 output
 -2147483648
 
 
--- !query
+-- !query 15
 SELECT CAST('-2147483649' AS int)
--- !query schema
+-- !query 15 schema
 struct<CAST(-2147483649 AS INT):int>
--- !query output
+-- !query 15 output
 NULL
 
 
--- !query
+-- !query 16
 SELECT CAST('2147483647' AS int)
--- !query schema
+-- !query 16 schema
 struct<CAST(2147483647 AS INT):int>
--- !query output
+-- !query 16 output
 2147483647
 
 
--- !query
+-- !query 17
 SELECT CAST('2147483648' AS int)
--- !query schema
+-- !query 17 schema
 struct<CAST(2147483648 AS INT):int>
--- !query output
+-- !query 17 output
 NULL
 
 
--- !query
+-- !query 18
 SELECT CAST('-9223372036854775808' AS long)
--- !query schema
+-- !query 18 schema
 struct<CAST(-9223372036854775808 AS BIGINT):bigint>
--- !query output
+-- !query 18 output
 -9223372036854775808
 
 
--- !query
+-- !query 19
 SELECT CAST('-9223372036854775809' AS long)
--- !query schema
+-- !query 19 schema
 struct<CAST(-9223372036854775809 AS BIGINT):bigint>
--- !query output
+-- !query 19 output
 NULL
 
 
--- !query
+-- !query 20
 SELECT CAST('9223372036854775807' AS long)
--- !query schema
+-- !query 20 schema
 struct<CAST(9223372036854775807 AS BIGINT):bigint>
--- !query output
+-- !query 20 output
 9223372036854775807
 
 
--- !query
+-- !query 21
 SELECT CAST('9223372036854775808' AS long)
--- !query schema
+-- !query 21 schema
 struct<CAST(9223372036854775808 AS BIGINT):bigint>
--- !query output
+-- !query 21 output
 NULL
 
 
--- !query
+-- !query 22
 SELECT HEX(CAST('abc' AS binary))
--- !query schema
+-- !query 22 schema
 struct<hex(CAST(abc AS BINARY)):string>
--- !query output
+-- !query 22 output
 616263
 
 
--- !query
+-- !query 23
 SELECT HEX(CAST(CAST(123 AS byte) AS binary))
--- !query schema
+-- !query 23 schema
 struct<hex(CAST(CAST(123 AS TINYINT) AS BINARY)):string>
--- !query output
+-- !query 23 output
 7B
 
 
--- !query
+-- !query 24
 SELECT HEX(CAST(CAST(-123 AS byte) AS binary))
--- !query schema
+-- !query 24 schema
 struct<hex(CAST(CAST(-123 AS TINYINT) AS BINARY)):string>
--- !query output
+-- !query 24 output
 85
 
 
--- !query
+-- !query 25
 SELECT HEX(CAST(123S AS binary))
--- !query schema
+-- !query 25 schema
 struct<hex(CAST(123 AS BINARY)):string>
--- !query output
+-- !query 25 output
 007B
 
 
--- !query
+-- !query 26
 SELECT HEX(CAST(-123S AS binary))
--- !query schema
+-- !query 26 schema
 struct<hex(CAST(-123 AS BINARY)):string>
--- !query output
+-- !query 26 output
 FF85
 
 
--- !query
+-- !query 27
 SELECT HEX(CAST(123 AS binary))
--- !query schema
+-- !query 27 schema
 struct<hex(CAST(123 AS BINARY)):string>
--- !query output
+-- !query 27 output
 0000007B
 
 
--- !query
+-- !query 28
 SELECT HEX(CAST(-123 AS binary))
--- !query schema
+-- !query 28 schema
 struct<hex(CAST(-123 AS BINARY)):string>
--- !query output
+-- !query 28 output
 FFFFFF85
 
 
--- !query
+-- !query 29
 SELECT HEX(CAST(123L AS binary))
--- !query schema
+-- !query 29 schema
 struct<hex(CAST(123 AS BINARY)):string>
--- !query output
+-- !query 29 output
 000000000000007B
 
 
--- !query
+-- !query 30
 SELECT HEX(CAST(-123L AS binary))
--- !query schema
+-- !query 30 schema
 struct<hex(CAST(-123 AS BINARY)):string>
--- !query output
+-- !query 30 output
 FFFFFFFFFFFFFF85
 
 
--- !query
+-- !query 31
 DESC FUNCTION boolean
--- !query schema
+-- !query 31 schema
 struct<function_desc:string>
--- !query output
+-- !query 31 output
 Class: org.apache.spark.sql.catalyst.expressions.Cast
 Function: boolean
 Usage: boolean(expr) - Casts the value `expr` to the target data type `boolean`.
 
 
--- !query
+-- !query 32
 DESC FUNCTION EXTENDED boolean
--- !query schema
+-- !query 32 schema
 struct<function_desc:string>
--- !query output
+-- !query 32 output
 Class: org.apache.spark.sql.catalyst.expressions.Cast
 Extended Usage:
     No example/argument for boolean.
@@ -273,108 +273,108 @@ Function: boolean
 Usage: boolean(expr) - Casts the value `expr` to the target data type `boolean`.
 
 
--- !query
+-- !query 33
 SELECT CAST('interval 3 month 1 hour' AS interval)
--- !query schema
+-- !query 33 schema
 struct<CAST(interval 3 month 1 hour AS INTERVAL):interval>
--- !query output
+-- !query 33 output
 3 months 1 hours
 
 
--- !query
+-- !query 34
 SELECT CAST(interval 3 month 1 hour AS string)
--- !query schema
+-- !query 34 schema
 struct<CAST(INTERVAL '3 months 1 hours' AS STRING):string>
--- !query output
+-- !query 34 output
 3 months 1 hours
 
 
--- !query
+-- !query 35
 select cast(' 1' as tinyint)
--- !query schema
+-- !query 35 schema
 struct<CAST( 1 AS TINYINT):tinyint>
--- !query output
+-- !query 35 output
 1
 
 
--- !query
+-- !query 36
 select cast(' 1\t' as tinyint)
--- !query schema
+-- !query 36 schema
 struct<CAST( 1	 AS TINYINT):tinyint>
--- !query output
+-- !query 36 output
 1
 
 
--- !query
+-- !query 37
 select cast(' 1' as smallint)
--- !query schema
+-- !query 37 schema
 struct<CAST( 1 AS SMALLINT):smallint>
--- !query output
+-- !query 37 output
 1
 
 
--- !query
+-- !query 38
 select cast(' 1' as INT)
--- !query schema
+-- !query 38 schema
 struct<CAST( 1 AS INT):int>
--- !query output
+-- !query 38 output
 1
 
 
--- !query
+-- !query 39
 select cast(' 1' as bigint)
--- !query schema
+-- !query 39 schema
 struct<CAST( 1 AS BIGINT):bigint>
--- !query output
+-- !query 39 output
 1
 
 
--- !query
+-- !query 40
 select cast(' 1' as float)
--- !query schema
+-- !query 40 schema
 struct<CAST( 1 AS FLOAT):float>
--- !query output
+-- !query 40 output
 1.0
 
 
--- !query
+-- !query 41
 select cast(' 1 ' as DOUBLE)
--- !query schema
+-- !query 41 schema
 struct<CAST( 1  AS DOUBLE):double>
--- !query output
+-- !query 41 output
 1.0
 
 
--- !query
+-- !query 42
 select cast('1.0 ' as DEC)
--- !query schema
+-- !query 42 schema
 struct<CAST(1.0  AS DECIMAL(10,0)):decimal(10,0)>
--- !query output
+-- !query 42 output
 1
 
 
--- !query
+-- !query 43
 select cast('\t\t true \n\r ' as boolean)
--- !query schema
+-- !query 43 schema
 struct<CAST(		 true 
   AS BOOLEAN):boolean>
--- !query output
+-- !query 43 output
 true
 
 
--- !query
+-- !query 44
 select cast('\t\n false \t\r' as boolean)
--- !query schema
+-- !query 44 schema
 struct<CAST(	
  false 	 AS BOOLEAN):boolean>
--- !query output
+-- !query 44 output
 false
 
 
--- !query
+-- !query 45
 select cast('\t\n xyz \t\r' as boolean)
--- !query schema
+-- !query 45 schema
 struct<CAST(	
  xyz 	 AS BOOLEAN):boolean>
--- !query output
+-- !query 45 output
 NULL

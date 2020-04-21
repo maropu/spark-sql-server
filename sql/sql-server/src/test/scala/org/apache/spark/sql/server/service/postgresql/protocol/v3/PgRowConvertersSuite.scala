@@ -23,7 +23,7 @@ import java.sql.{Date, SQLException, Timestamp}
 
 import org.apache.spark.SparkFunSuite
 import org.apache.spark.sql.catalyst.expressions.{GenericInternalRow, Literal}
-import org.apache.spark.sql.catalyst.util.{ArrayBasedMapData, ArrayData, DateTimeUtils, GenericArrayData}
+import org.apache.spark.sql.catalyst.util._
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
@@ -136,7 +136,7 @@ class PgRowConvertersSuite extends SparkFunSuite {
 
     // Check data itself
     val actualData = buf.slice(4, 7)
-    assert(actualData === "3.0".getBytes(StandardCharsets.UTF_8))
+    assert(UTF8String.fromBytes(actualData).toString === "3.0")
 
     val errMsg = intercept[SQLException] {
       ColumnWriter(fieldType, 0, isBinary = true, conf)
@@ -158,7 +158,7 @@ class PgRowConvertersSuite extends SparkFunSuite {
     // Check the result with text mode
     assert(byteBuffer.getInt === 10)
     val actualData1 = buf.slice(4, 14)
-    assert(actualData1 === "2017-08-04".getBytes(StandardCharsets.UTF_8))
+    assert(UTF8String.fromBytes(actualData1).toString === "2017-08-04")
     byteBuffer.rewind()
 
     val binaryWriter = ColumnWriter(fieldType, 0, isBinary = true, conf)
@@ -167,8 +167,7 @@ class PgRowConvertersSuite extends SparkFunSuite {
 
     // Check the result with binary mode
     assert(byteBuffer.getInt === 4)
-    val actualData2 = byteBuffer.getInt
-    assert(actualData2 === 6425)
+    assert(byteBuffer.getInt === 6425)
   }
 
   test("timestamp") {
@@ -185,7 +184,7 @@ class PgRowConvertersSuite extends SparkFunSuite {
     // Check the result with text mode
     assert(byteBuffer.getInt === 21)
     val actualData1 = buf.slice(4, 25)
-    assert(actualData1 === "2016-08-04 00:17:13.0".getBytes(StandardCharsets.UTF_8))
+    assert(UTF8String.fromBytes(actualData1).toString === "2016-08-04 00:17:13.0")
     byteBuffer.rewind()
 
     val binaryWriter = ColumnWriter(fieldType, 0, isBinary = true, conf)
@@ -194,8 +193,34 @@ class PgRowConvertersSuite extends SparkFunSuite {
 
     // Check the result with binary mode
     assert(byteBuffer.getInt === 8)
-    val actualData2 = byteBuffer.getLong
-    assert(actualData2 === 523581433000000L)
+    assert(byteBuffer.getLong === 523585033000000L)
+  }
+
+  test("interval") {
+    val fieldType = StructField("a", CalendarIntervalType)
+    val inputRow = new GenericInternalRow(1)
+    inputRow.update(0, IntervalUtils.stringToInterval(UTF8String.fromString("1 month 3 days")))
+    val buf = new Array[Byte](128)
+    val byteBuffer = ByteBuffer.wrap(buf)
+
+    val textWriter = ColumnWriter(fieldType, 0, isBinary = false, conf)
+    textWriter.write(inputRow, byteBuffer)
+    byteBuffer.rewind()
+
+    // Check the result with text mode
+    assert(byteBuffer.getInt === 15)
+    val actualData1 = buf.slice(4, 19)
+    assert(UTF8String.fromBytes(actualData1).toString === "1 months 3 days")
+    byteBuffer.rewind()
+
+    val binaryWriter = ColumnWriter(fieldType, 0, isBinary = true, conf)
+    binaryWriter.write(inputRow, byteBuffer)
+    byteBuffer.rewind()
+
+    // Check the result with binary mode
+    assert(byteBuffer.getInt === 1)
+    assert(byteBuffer.getInt === 3)
+    assert(byteBuffer.getLong === 0)
   }
 
   test("array") {
@@ -213,7 +238,7 @@ class PgRowConvertersSuite extends SparkFunSuite {
 
     // Check data itself
     val actualData = buf.slice(4, 15)
-    assert(actualData === "{0,1,2,3,4}".getBytes(StandardCharsets.UTF_8))
+    assert(UTF8String.fromBytes(actualData).toString === "{0,1,2,3,4}")
 
     val errMsg = intercept[SQLException] {
       ColumnWriter(fieldType, 0, isBinary = true, conf)
@@ -238,7 +263,7 @@ class PgRowConvertersSuite extends SparkFunSuite {
 
     // Check data itself
     val actualData = buf.slice(4, 26)
-    assert(actualData ===  """{"k1":1,"k2":2,"k3":3}""".getBytes(StandardCharsets.UTF_8))
+    assert(UTF8String.fromBytes(actualData).toString ===  """{"k1":1,"k2":2,"k3":3}""")
 
     val errMsg = intercept[SQLException] {
       ColumnWriter(fieldType, 0, isBinary = true, conf)
@@ -265,7 +290,7 @@ class PgRowConvertersSuite extends SparkFunSuite {
 
     // Check data itself
     val actualData = buf.slice(4, 23)
-    assert(actualData ===  """{"c0":7,"c1":"abc"}""".getBytes(StandardCharsets.UTF_8))
+    assert(UTF8String.fromBytes(actualData).toString ===  """{"c0":7,"c1":"abc"}""")
 
     val errMsg = intercept[SQLException] {
       ColumnWriter(fieldType, 0, isBinary = true, conf)
@@ -293,7 +318,7 @@ class PgRowConvertersSuite extends SparkFunSuite {
 
     // Check data itself
     val actualData = buf.slice(4, 25)
-    assert(actualData === "[1.0,3.0,5.0,7.0,9.0]".getBytes(StandardCharsets.UTF_8))
+    assert(UTF8String.fromBytes(actualData).toString === "[1.0,3.0,5.0,7.0,9.0]")
 
     val errMsg = intercept[SQLException] {
       ColumnWriter(fieldType, 0, isBinary = true, conf)

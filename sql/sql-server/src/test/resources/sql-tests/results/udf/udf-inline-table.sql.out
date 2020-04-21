@@ -2,152 +2,152 @@
 -- Number of queries: 17
 
 
--- !query
+-- !query 0
 select udf(col1), udf(col2) from values ("one", 1)
--- !query schema
+-- !query 0 schema
 struct<CAST(udf(cast(col1 as string)) AS STRING):string,CAST(udf(cast(col2 as string)) AS INT):int>
--- !query output
+-- !query 0 output
 one	1
 
 
--- !query
+-- !query 1
 select udf(col1), udf(udf(col2)) from values ("one", 1) as data
--- !query schema
+-- !query 1 schema
 struct<CAST(udf(cast(col1 as string)) AS STRING):string,CAST(udf(cast(cast(udf(cast(col2 as string)) as int) as string)) AS INT):int>
--- !query output
+-- !query 1 output
 one	1
 
 
--- !query
+-- !query 2
 select udf(a), b from values ("one", 1) as data(a, b)
--- !query schema
+-- !query 2 schema
 struct<CAST(udf(cast(a as string)) AS STRING):string,b:int>
--- !query output
+-- !query 2 output
 one	1
 
 
--- !query
+-- !query 3
 select udf(a) from values 1, 2, 3 as data(a)
--- !query schema
+-- !query 3 schema
 struct<CAST(udf(cast(a as string)) AS INT):int>
--- !query output
+-- !query 3 output
 1
 2
 3
 
 
--- !query
+-- !query 4
 select udf(a), b from values ("one", 1), ("two", 2), ("three", null) as data(a, b)
--- !query schema
+-- !query 4 schema
 struct<CAST(udf(cast(a as string)) AS STRING):string,b:int>
--- !query output
+-- !query 4 output
 one	1
 three	NULL
 two	2
 
 
--- !query
+-- !query 5
 select udf(a), b from values ("one", null), ("two", null) as data(a, b)
--- !query schema
+-- !query 5 schema
 struct<CAST(udf(cast(a as string)) AS STRING):string,b:null>
--- !query output
+-- !query 5 output
 one	NULL
 two	NULL
 
 
--- !query
+-- !query 6
 select udf(a), b from values ("one", 1), ("two", 2L) as data(a, b)
--- !query schema
+-- !query 6 schema
 struct<CAST(udf(cast(a as string)) AS STRING):string,b:bigint>
--- !query output
+-- !query 6 output
 one	1
 two	2
 
 
--- !query
+-- !query 7
 select udf(udf(a)), udf(b) from values ("one", 1 + 0), ("two", 1 + 3L) as data(a, b)
--- !query schema
+-- !query 7 schema
 struct<CAST(udf(cast(cast(udf(cast(a as string)) as string) as string)) AS STRING):string,CAST(udf(cast(b as string)) AS BIGINT):bigint>
--- !query output
+-- !query 7 output
 one	1
 two	4
 
 
--- !query
+-- !query 8
 select udf(a), b from values ("one", array(0, 1)), ("two", array(2, 3)) as data(a, b)
--- !query schema
+-- !query 8 schema
 struct<CAST(udf(cast(a as string)) AS STRING):string,b:array<int>>
--- !query output
+-- !query 8 output
 one	[0,1]
 two	[2,3]
 
 
--- !query
+-- !query 9
 select udf(a), b from values ("one", 2.0), ("two", 3.0D) as data(a, b)
--- !query schema
+-- !query 9 schema
 struct<CAST(udf(cast(a as string)) AS STRING):string,b:double>
--- !query output
+-- !query 9 output
 one	2.0
 two	3.0
 
 
--- !query
+-- !query 10
 select udf(a), b from values ("one", rand(5)), ("two", 3.0D) as data(a, b)
--- !query schema
+-- !query 10 schema
 struct<>
--- !query output
+-- !query 10 output
 org.apache.spark.sql.AnalysisException
 cannot evaluate expression rand(5) in inline table definition; line 1 pos 37
 
 
--- !query
+-- !query 11
 select udf(a), udf(b) from values ("one", 2.0), ("two") as data(a, b)
--- !query schema
+-- !query 11 schema
 struct<>
--- !query output
+-- !query 11 output
 org.apache.spark.sql.AnalysisException
 expected 2 columns but found 1 columns in row 1; line 1 pos 27
 
 
--- !query
+-- !query 12
 select udf(a), udf(b) from values ("one", array(0, 1)), ("two", struct(1, 2)) as data(a, b)
--- !query schema
+-- !query 12 schema
 struct<>
--- !query output
+-- !query 12 output
 org.apache.spark.sql.AnalysisException
 incompatible types found in column b for inline table; line 1 pos 27
 
 
--- !query
+-- !query 13
 select udf(a), udf(b) from values ("one"), ("two") as data(a, b)
--- !query schema
+-- !query 13 schema
 struct<>
--- !query output
+-- !query 13 output
 org.apache.spark.sql.AnalysisException
 expected 2 columns but found 1 columns in row 0; line 1 pos 27
 
 
--- !query
+-- !query 14
 select udf(a), udf(b) from values ("one", random_not_exist_func(1)), ("two", 2) as data(a, b)
--- !query schema
+-- !query 14 schema
 struct<>
--- !query output
+-- !query 14 output
 org.apache.spark.sql.AnalysisException
 Undefined function: 'random_not_exist_func'. This function is neither a registered temporary function nor a permanent function registered in the database 'default'.; line 1 pos 42
 
 
--- !query
+-- !query 15
 select udf(a), udf(b) from values ("one", count(1)), ("two", 2) as data(a, b)
--- !query schema
+-- !query 15 schema
 struct<>
--- !query output
+-- !query 15 output
 org.apache.spark.sql.AnalysisException
 cannot evaluate expression count(1) in inline table definition; line 1 pos 42
 
 
--- !query
+-- !query 16
 select udf(a), b from values (timestamp('1991-12-06 00:00:00.0'), array(timestamp('1991-12-06 01:00:00.0'), timestamp('1991-12-06 12:00:00.0'))) as data(a, b)
--- !query schema
+-- !query 16 schema
 struct<CAST(udf(cast(a as string)) AS TIMESTAMP):timestamp,b:array<timestamp>>
--- !query output
-1991-12-06 00:00:00	[1991-12-06 01:00:00,1991-12-06 12:00:00]
+-- !query 16 output
+1991-12-06 00:00:00	[1991-12-06 01:00:00.0,1991-12-06 12:00:00.0]

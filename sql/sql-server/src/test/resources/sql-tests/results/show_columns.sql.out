@@ -2,216 +2,216 @@
 -- Number of queries: 25
 
 
--- !query
+-- !query 0
 CREATE DATABASE showdb
--- !query schema
+-- !query 0 schema
 struct<>
--- !query output
+-- !query 0 output
 
 
 
--- !query
+-- !query 1
 USE showdb
--- !query schema
+-- !query 1 schema
 struct<>
--- !query output
+-- !query 1 output
 
 
 
--- !query
+-- !query 2
 CREATE TABLE showcolumn1 (col1 int, `col 2` int) USING json
--- !query schema
+-- !query 2 schema
 struct<>
--- !query output
+-- !query 2 output
 
 
 
--- !query
+-- !query 3
 CREATE TABLE showcolumn2 (price int, qty int, year int, month int) USING parquet partitioned by (year, month)
--- !query schema
+-- !query 3 schema
 struct<>
--- !query output
+-- !query 3 output
 
 
 
--- !query
+-- !query 4
 CREATE TEMPORARY VIEW showColumn3 (col3 int, `col 4` int) USING json
--- !query schema
+-- !query 4 schema
 struct<>
--- !query output
+-- !query 4 output
 
 
 
--- !query
+-- !query 5
 CREATE GLOBAL TEMP VIEW showColumn4 AS SELECT 1 as col1, 'abc' as `col 5`
--- !query schema
+-- !query 5 schema
 struct<>
--- !query output
+-- !query 5 output
 
 
 
--- !query
+-- !query 6
 SHOW COLUMNS IN showcolumn1
--- !query schema
+-- !query 6 schema
 struct<col_name:string>
--- !query output
+-- !query 6 output
 col 2
 col1
 
 
--- !query
+-- !query 7
 SHOW COLUMNS IN showdb.showcolumn1
--- !query schema
+-- !query 7 schema
 struct<col_name:string>
--- !query output
+-- !query 7 output
 col 2
 col1
 
 
--- !query
+-- !query 8
 SHOW COLUMNS IN showcolumn1 FROM showdb
--- !query schema
+-- !query 8 schema
 struct<col_name:string>
--- !query output
+-- !query 8 output
 col 2
 col1
 
 
--- !query
+-- !query 9
 SHOW COLUMNS IN showcolumn2 IN showdb
--- !query schema
+-- !query 9 schema
 struct<col_name:string>
--- !query output
+-- !query 9 output
 month
 price
 qty
 year
 
 
--- !query
+-- !query 10
 SHOW COLUMNS IN badtable FROM showdb
--- !query schema
+-- !query 10 schema
 struct<>
--- !query output
+-- !query 10 output
 org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 Table or view 'badtable' not found in database 'showdb';
 
 
--- !query
+-- !query 11
 SHOW COLUMNS IN showdb.showcolumn1 from SHOWDB
--- !query schema
+-- !query 11 schema
 struct<col_name:string>
--- !query output
+-- !query 11 output
 col 2
 col1
 
 
--- !query
+-- !query 12
 SHOW COLUMNS IN showdb.showcolumn1 FROM baddb
--- !query schema
+-- !query 12 schema
 struct<>
--- !query output
+-- !query 12 output
 org.apache.spark.sql.AnalysisException
 SHOW COLUMNS with conflicting databases: 'baddb' != 'showdb';
 
 
--- !query
+-- !query 13
 SHOW COLUMNS IN showcolumn3
--- !query schema
+-- !query 13 schema
 struct<col_name:string>
--- !query output
+-- !query 13 output
 col 4
 col3
 
 
--- !query
+-- !query 14
 SHOW COLUMNS IN showdb.showcolumn3
--- !query schema
+-- !query 14 schema
 struct<>
--- !query output
+-- !query 14 output
 org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 Table or view 'showcolumn3' not found in database 'showdb';
 
 
--- !query
+-- !query 15
 SHOW COLUMNS IN showcolumn3 FROM showdb
--- !query schema
+-- !query 15 schema
 struct<>
--- !query output
+-- !query 15 output
 org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 Table or view 'showcolumn3' not found in database 'showdb';
 
 
--- !query
+-- !query 16
 SHOW COLUMNS IN showcolumn4
--- !query schema
+-- !query 16 schema
 struct<>
--- !query output
+-- !query 16 output
 org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 Table or view 'showcolumn4' not found in database 'showdb';
 
 
--- !query
+-- !query 17
 SHOW COLUMNS IN global_temp.showcolumn4
--- !query schema
+-- !query 17 schema
 struct<col_name:string>
--- !query output
+-- !query 17 output
 col 5
 col1
 
 
--- !query
+-- !query 18
 SHOW COLUMNS IN showcolumn4 FROM global_temp
--- !query schema
+-- !query 18 schema
 struct<col_name:string>
--- !query output
+-- !query 18 output
 col 5
 col1
 
 
--- !query
+-- !query 19
 DROP TABLE showcolumn1
--- !query schema
+-- !query 19 schema
 struct<>
--- !query output
+-- !query 19 output
 
 
 
--- !query
+-- !query 20
 DROP TABLE showColumn2
--- !query schema
+-- !query 20 schema
 struct<>
--- !query output
+-- !query 20 output
 
 
 
--- !query
+-- !query 21
 DROP VIEW  showcolumn3
--- !query schema
+-- !query 21 schema
 struct<>
--- !query output
+-- !query 21 output
 
 
 
--- !query
+-- !query 22
 DROP VIEW  global_temp.showcolumn4
--- !query schema
+-- !query 22 schema
 struct<>
--- !query output
+-- !query 22 output
 
 
 
--- !query
+-- !query 23
 use default
--- !query schema
+-- !query 23 schema
 struct<>
--- !query output
+-- !query 23 output
 
 
 
--- !query
+-- !query 24
 DROP DATABASE showdb
--- !query schema
+-- !query 24 schema
 struct<>
--- !query output
+-- !query 24 output
 

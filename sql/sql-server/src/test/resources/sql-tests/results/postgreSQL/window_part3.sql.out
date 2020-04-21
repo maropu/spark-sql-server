@@ -2,28 +2,28 @@
 -- Number of queries: 29
 
 
--- !query
+-- !query 0
 CREATE TEMPORARY VIEW tenk2 AS SELECT * FROM tenk1
--- !query schema
+-- !query 0 schema
 struct<>
--- !query output
+-- !query 0 output
 
 
 
--- !query
+-- !query 1
 CREATE TABLE empsalary (
     depname string,
     empno integer,
     salary int,
     enroll_date date
 ) USING parquet
--- !query schema
+-- !query 1 schema
 struct<>
--- !query output
+-- !query 1 output
 
 
 
--- !query
+-- !query 2
 INSERT INTO empsalary VALUES
   ('develop', 10, 5200, date '2007-08-01'),
   ('sales', 1, 5000, date '2006-10-01'),
@@ -35,13 +35,13 @@ INSERT INTO empsalary VALUES
   ('sales', 3, 4800, date '2007-08-01'),
   ('develop', 8, 6000, date '2006-10-01'),
   ('develop', 11, 5200, date '2007-08-15')
--- !query schema
+-- !query 2 schema
 struct<>
--- !query output
+-- !query 2 output
 
 
 
--- !query
+-- !query 3
 create table datetimes (
     id int,
     f_time timestamp,
@@ -50,13 +50,13 @@ create table datetimes (
     f_timestamptz timestamp,
     f_timestamp timestamp
 ) using parquet
--- !query schema
+-- !query 3 schema
 struct<>
--- !query output
+-- !query 3 output
 
 
 
--- !query
+-- !query 4
 insert into datetimes values
 (1, timestamp '11:00', cast ('11:00 BST' as timestamp), cast ('1 year' as timestamp), cast ('2000-10-19 10:23:54+01' as timestamp), timestamp '2000-10-19 10:23:54'),
 (2, timestamp '12:00', cast ('12:00 BST' as timestamp), cast ('2 years' as timestamp), cast ('2001-10-19 10:23:54+01' as timestamp), timestamp '2001-10-19 10:23:54'),
@@ -68,22 +68,22 @@ insert into datetimes values
 (8, timestamp '18:00', cast ('18:00 BST' as timestamp), cast ('8 years' as timestamp), cast ('2006-10-19 10:23:54+01' as timestamp), timestamp '2006-10-19 10:23:54'),
 (9, timestamp '19:00', cast ('19:00 BST' as timestamp), cast ('9 years' as timestamp), cast ('2007-10-19 10:23:54+01' as timestamp), timestamp '2007-10-19 10:23:54'),
 (10, timestamp '20:00', cast ('20:00 BST' as timestamp), cast ('10 years' as timestamp), cast ('2008-10-19 10:23:54+01' as timestamp), timestamp '2008-10-19 10:23:54')
--- !query schema
+-- !query 4 schema
 struct<>
--- !query output
+-- !query 4 output
 
 
 
--- !query
+-- !query 5
 WITH cte (x) AS (
         SELECT * FROM range(1, 36, 2)
 )
 SELECT x, (sum(x) over w)
 FROM cte
 WINDOW w AS (ORDER BY x rows between 1 preceding and 1 following)
--- !query schema
+-- !query 5 schema
 struct<x:bigint,sum(x) OVER (ORDER BY x ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING):bigint>
--- !query output
+-- !query 5 output
 1	4
 11	33
 13	39
@@ -104,16 +104,16 @@ struct<x:bigint,sum(x) OVER (ORDER BY x ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING
 9	27
 
 
--- !query
+-- !query 6
 WITH cte (x) AS (
         SELECT * FROM range(1, 36, 2)
 )
 SELECT x, (sum(x) over w)
 FROM cte
 WINDOW w AS (ORDER BY x range between 1 preceding and 1 following)
--- !query schema
+-- !query 6 schema
 struct<x:bigint,sum(x) OVER (ORDER BY x ASC NULLS FIRST RANGE BETWEEN CAST((- 1) AS BIGINT) FOLLOWING AND CAST(1 AS BIGINT) FOLLOWING):bigint>
--- !query output
+-- !query 6 output
 1	1
 11	11
 13	13
@@ -134,7 +134,7 @@ struct<x:bigint,sum(x) OVER (ORDER BY x ASC NULLS FIRST RANGE BETWEEN CAST((- 1)
 9	9
 
 
--- !query
+-- !query 7
 WITH cte (x) AS (
         select 1 union all select 1 union all select 1 union all
         SELECT * FROM range(5, 50, 2)
@@ -142,9 +142,9 @@ WITH cte (x) AS (
 SELECT x, (sum(x) over w)
 FROM cte
 WINDOW w AS (ORDER BY x rows between 1 preceding and 1 following)
--- !query schema
+-- !query 7 schema
 struct<x:bigint,sum(x) OVER (ORDER BY x ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING):bigint>
--- !query output
+-- !query 7 output
 1	2
 1	3
 1	7
@@ -173,7 +173,7 @@ struct<x:bigint,sum(x) OVER (ORDER BY x ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING
 9	27
 
 
--- !query
+-- !query 8
 WITH cte (x) AS (
         select 1 union all select 1 union all select 1 union all
         SELECT * FROM range(5, 50, 2)
@@ -181,9 +181,9 @@ WITH cte (x) AS (
 SELECT x, (sum(x) over w)
 FROM cte
 WINDOW w AS (ORDER BY x range between 1 preceding and 1 following)
--- !query schema
+-- !query 8 schema
 struct<x:bigint,sum(x) OVER (ORDER BY x ASC NULLS FIRST RANGE BETWEEN CAST((- 1) AS BIGINT) FOLLOWING AND CAST(1 AS BIGINT) FOLLOWING):bigint>
--- !query output
+-- !query 8 output
 1	3
 1	3
 1	3
@@ -212,108 +212,108 @@ struct<x:bigint,sum(x) OVER (ORDER BY x ASC NULLS FIRST RANGE BETWEEN CAST((- 1)
 9	9
 
 
--- !query
+-- !query 9
 SELECT count(*) OVER (PARTITION BY four) FROM (SELECT * FROM tenk1 UNION ALL SELECT * FROM tenk2)s LIMIT 0
--- !query schema
+-- !query 9 schema
 struct<count(1) OVER (PARTITION BY four ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING):bigint>
--- !query output
+-- !query 9 output
 
 
 
--- !query
+-- !query 10
 create table t1 (f1 int, f2 int) using parquet
--- !query schema
+-- !query 10 schema
 struct<>
--- !query output
+-- !query 10 output
 
 
 
--- !query
+-- !query 11
 insert into t1 values (1,1),(1,2),(2,2)
--- !query schema
+-- !query 11 schema
 struct<>
--- !query output
+-- !query 11 output
 
 
 
--- !query
+-- !query 12
 select f1, sum(f1) over (partition by f1
                          range between 1 preceding and 1 following)
 from t1 where f1 = f2
--- !query schema
+-- !query 12 schema
 struct<>
--- !query output
+-- !query 12 output
 org.apache.spark.sql.AnalysisException
-cannot resolve '(PARTITION BY spark_catalog.default.t1.`f1` RANGE BETWEEN 1 PRECEDING AND 1 FOLLOWING)' due to data type mismatch: A range window frame cannot be used in an unordered window specification.; line 1 pos 24
+cannot resolve '(PARTITION BY default.t1.`f1` RANGE BETWEEN 1 PRECEDING AND 1 FOLLOWING)' due to data type mismatch: A range window frame cannot be used in an unordered window specification.; line 1 pos 24
 
 
--- !query
+-- !query 13
 select f1, sum(f1) over (partition by f1 order by f2
 range between 1 preceding and 1 following)
 from t1 where f1 = f2
--- !query schema
+-- !query 13 schema
 struct<f1:int,sum(f1) OVER (PARTITION BY f1 ORDER BY f2 ASC NULLS FIRST RANGE BETWEEN 1 PRECEDING AND 1 FOLLOWING):bigint>
--- !query output
+-- !query 13 output
 1	1
 2	2
 
 
--- !query
+-- !query 14
 select f1, sum(f1) over (partition by f1, f1 order by f2
 range between 2 preceding and 1 preceding)
 from t1 where f1 = f2
--- !query schema
+-- !query 14 schema
 struct<f1:int,sum(f1) OVER (PARTITION BY f1, f1 ORDER BY f2 ASC NULLS FIRST RANGE BETWEEN 2 PRECEDING AND 1 PRECEDING):bigint>
--- !query output
+-- !query 14 output
 1	NULL
 2	NULL
 
 
--- !query
+-- !query 15
 select f1, sum(f1) over (partition by f1, f2 order by f2
 range between 1 following and 2 following)
 from t1 where f1 = f2
--- !query schema
+-- !query 15 schema
 struct<f1:int,sum(f1) OVER (PARTITION BY f1, f2 ORDER BY f2 ASC NULLS FIRST RANGE BETWEEN 1 FOLLOWING AND 2 FOLLOWING):bigint>
--- !query output
+-- !query 15 output
 1	NULL
 2	NULL
 
 
--- !query
+-- !query 16
 SELECT rank() OVER (ORDER BY length('abc'))
--- !query schema
+-- !query 16 schema
 struct<RANK() OVER (ORDER BY length(abc) ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW):int>
--- !query output
+-- !query 16 output
 1
 
 
--- !query
+-- !query 17
 SELECT * FROM empsalary WHERE row_number() OVER (ORDER BY salary) < 10
--- !query schema
+-- !query 17 schema
 struct<>
--- !query output
+-- !query 17 output
 org.apache.spark.sql.AnalysisException
 It is not allowed to use window functions inside WHERE and HAVING clauses;
 
 
--- !query
+-- !query 18
 SELECT * FROM empsalary INNER JOIN tenk1 ON row_number() OVER (ORDER BY salary) < 10
--- !query schema
+-- !query 18 schema
 struct<>
--- !query output
+-- !query 18 output
 org.apache.spark.sql.AnalysisException
 
 The query operator `Join` contains one or more unsupported
 expression types Aggregate, Window or Generate.
-Invalid expressions: [row_number() OVER (ORDER BY spark_catalog.default.empsalary.`salary` ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)];
+Invalid expressions: [row_number() OVER (ORDER BY default.empsalary.`salary` ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)];
 
 
--- !query
+-- !query 19
 SELECT rank() OVER (ORDER BY 1), count(*) FROM empsalary GROUP BY 1
--- !query schema
+-- !query 19 schema
 struct<>
--- !query output
+-- !query 19 output
 org.apache.spark.sql.AnalysisException
 
 The query operator `Aggregate` contains one or more unsupported
@@ -321,11 +321,11 @@ expression types Aggregate, Window or Generate.
 Invalid expressions: [RANK() OVER (ORDER BY 1 ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)];
 
 
--- !query
+-- !query 20
 SELECT * FROM rank() OVER (ORDER BY random())
--- !query schema
+-- !query 20 schema
 struct<>
--- !query output
+-- !query 20 output
 org.apache.spark.sql.catalyst.parser.ParseException
 
 no viable alternative at input 'ORDER'(line 1, pos 27)
@@ -335,29 +335,29 @@ SELECT * FROM rank() OVER (ORDER BY random())
 ---------------------------^^^
 
 
--- !query
+-- !query 21
 SELECT * FROM empsalary WHERE (rank() OVER (ORDER BY random())) > 10
--- !query schema
+-- !query 21 schema
 struct<>
--- !query output
+-- !query 21 output
 org.apache.spark.sql.AnalysisException
 It is not allowed to use window functions inside WHERE and HAVING clauses;
 
 
--- !query
+-- !query 22
 SELECT * FROM empsalary WHERE rank() OVER (ORDER BY random())
--- !query schema
+-- !query 22 schema
 struct<>
--- !query output
+-- !query 22 output
 org.apache.spark.sql.AnalysisException
 It is not allowed to use window functions inside WHERE and HAVING clauses;
 
 
--- !query
+-- !query 23
 select rank() OVER (PARTITION BY four, ORDER BY ten) FROM tenk1
--- !query schema
+-- !query 23 schema
 struct<>
--- !query output
+-- !query 23 output
 org.apache.spark.sql.catalyst.parser.ParseException
 
 no viable alternative at input 'ORDER'(line 1, pos 39)
@@ -367,43 +367,43 @@ select rank() OVER (PARTITION BY four, ORDER BY ten) FROM tenk1
 ---------------------------------------^^^
 
 
--- !query
+-- !query 24
 SELECT range(1, 100) OVER () FROM empsalary
--- !query schema
+-- !query 24 schema
 struct<>
--- !query output
+-- !query 24 output
 org.apache.spark.sql.AnalysisException
 Undefined function: 'range'. This function is neither a registered temporary function nor a permanent function registered in the database 'default'.; line 1 pos 7
 
 
--- !query
+-- !query 25
 SELECT ntile(0) OVER (ORDER BY ten), ten, four FROM tenk1
--- !query schema
+-- !query 25 schema
 struct<>
--- !query output
+-- !query 25 output
 org.apache.spark.sql.AnalysisException
 cannot resolve 'ntile(0)' due to data type mismatch: Buckets expression must be positive, but got: 0; line 1 pos 7
 
 
--- !query
+-- !query 26
 DROP TABLE empsalary
--- !query schema
+-- !query 26 schema
 struct<>
--- !query output
+-- !query 26 output
 
 
 
--- !query
+-- !query 27
 DROP TABLE datetimes
--- !query schema
+-- !query 27 schema
 struct<>
--- !query output
+-- !query 27 output
 
 
 
--- !query
+-- !query 28
 DROP TABLE t1
--- !query schema
+-- !query 28 schema
 struct<>
--- !query output
+-- !query 28 output
 

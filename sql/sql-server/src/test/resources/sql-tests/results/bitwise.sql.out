@@ -2,196 +2,196 @@
 -- Number of queries: 27
 
 
--- !query
+-- !query 0
 select bit_count(null)
--- !query schema
+-- !query 0 schema
 struct<bit_count(CAST(NULL AS INT)):int>
--- !query output
+-- !query 0 output
 NULL
 
 
--- !query
+-- !query 1
 select bit_count(true)
--- !query schema
+-- !query 1 schema
 struct<bit_count(true):int>
--- !query output
+-- !query 1 output
 1
 
 
--- !query
+-- !query 2
 select bit_count(false)
--- !query schema
+-- !query 2 schema
 struct<bit_count(false):int>
--- !query output
+-- !query 2 output
 0
 
 
--- !query
+-- !query 3
 select bit_count(cast(1 as tinyint))
--- !query schema
+-- !query 3 schema
 struct<bit_count(CAST(1 AS TINYINT)):int>
--- !query output
+-- !query 3 output
 1
 
 
--- !query
+-- !query 4
 select bit_count(cast(2 as tinyint))
--- !query schema
+-- !query 4 schema
 struct<bit_count(CAST(2 AS TINYINT)):int>
--- !query output
+-- !query 4 output
 1
 
 
--- !query
+-- !query 5
 select bit_count(cast(3 as tinyint))
--- !query schema
+-- !query 5 schema
 struct<bit_count(CAST(3 AS TINYINT)):int>
--- !query output
+-- !query 5 output
 2
 
 
--- !query
+-- !query 6
 select bit_count(1S)
--- !query schema
+-- !query 6 schema
 struct<bit_count(1):int>
--- !query output
+-- !query 6 output
 1
 
 
--- !query
+-- !query 7
 select bit_count(2S)
--- !query schema
+-- !query 7 schema
 struct<bit_count(2):int>
--- !query output
+-- !query 7 output
 1
 
 
--- !query
+-- !query 8
 select bit_count(3S)
--- !query schema
+-- !query 8 schema
 struct<bit_count(3):int>
--- !query output
+-- !query 8 output
 2
 
 
--- !query
+-- !query 9
 select bit_count(1)
--- !query schema
+-- !query 9 schema
 struct<bit_count(1):int>
--- !query output
+-- !query 9 output
 1
 
 
--- !query
+-- !query 10
 select bit_count(2)
--- !query schema
+-- !query 10 schema
 struct<bit_count(2):int>
--- !query output
+-- !query 10 output
 1
 
 
--- !query
+-- !query 11
 select bit_count(3)
--- !query schema
+-- !query 11 schema
 struct<bit_count(3):int>
--- !query output
+-- !query 11 output
 2
 
 
--- !query
+-- !query 12
 select bit_count(1L)
--- !query schema
+-- !query 12 schema
 struct<bit_count(1):int>
--- !query output
+-- !query 12 output
 1
 
 
--- !query
+-- !query 13
 select bit_count(2L)
--- !query schema
+-- !query 13 schema
 struct<bit_count(2):int>
--- !query output
+-- !query 13 output
 1
 
 
--- !query
+-- !query 14
 select bit_count(3L)
--- !query schema
+-- !query 14 schema
 struct<bit_count(3):int>
--- !query output
+-- !query 14 output
 2
 
 
--- !query
+-- !query 15
 select bit_count(-1L)
--- !query schema
+-- !query 15 schema
 struct<bit_count(-1):int>
--- !query output
+-- !query 15 output
 64
 
 
--- !query
+-- !query 16
 select bit_count(9223372036854775807L)
--- !query schema
+-- !query 16 schema
 struct<bit_count(9223372036854775807):int>
--- !query output
+-- !query 16 output
 63
 
 
--- !query
+-- !query 17
 select bit_count(-9223372036854775808L)
--- !query schema
+-- !query 17 schema
 struct<bit_count(-9223372036854775808):int>
--- !query output
+-- !query 17 output
 1
 
 
--- !query
+-- !query 18
 select bit_count("bit count")
--- !query schema
+-- !query 18 schema
 struct<>
--- !query output
+-- !query 18 output
 org.apache.spark.sql.AnalysisException
 cannot resolve 'bit_count('bit count')' due to data type mismatch: argument 1 requires (integral or boolean) type, however, ''bit count'' is of string type.; line 1 pos 7
 
 
--- !query
+-- !query 19
 select bit_count('a')
--- !query schema
+-- !query 19 schema
 struct<>
--- !query output
+-- !query 19 output
 org.apache.spark.sql.AnalysisException
 cannot resolve 'bit_count('a')' due to data type mismatch: argument 1 requires (integral or boolean) type, however, ''a'' is of string type.; line 1 pos 7
 
 
--- !query
+-- !query 20
 CREATE OR REPLACE TEMPORARY VIEW bitwise_test AS SELECT * FROM VALUES
   (1, 1, 1, 1L),
   (2, 3, 4, null),
   (7, 7, 7, 3L) AS bitwise_test(b1, b2, b3, b4)
--- !query schema
+-- !query 20 schema
 struct<>
--- !query output
+-- !query 20 output
 
 
 
--- !query
+-- !query 21
 SELECT BIT_XOR(b3) AS n1 FROM bitwise_test where 1 = 0
--- !query schema
+-- !query 21 schema
 struct<n1:int>
--- !query output
+-- !query 21 output
 NULL
 
 
--- !query
+-- !query 22
 SELECT BIT_XOR(b4) AS n1 FROM bitwise_test where b4 is null
--- !query schema
+-- !query 22 schema
 struct<n1:bigint>
--- !query output
+-- !query 22 output
 NULL
 
 
--- !query
+-- !query 23
 SELECT
  BIT_XOR(cast(b1 as tinyint))  AS a4,
  BIT_XOR(cast(b2 as smallint))  AS b5,
@@ -199,35 +199,35 @@ SELECT
  BIT_XOR(b4)  AS d2,
  BIT_XOR(distinct b4) AS e2
 FROM bitwise_test
--- !query schema
+-- !query 23 schema
 struct<a4:tinyint,b5:smallint,c2:int,d2:bigint,e2:bigint>
--- !query output
+-- !query 23 output
 4	5	2	2	2
 
 
--- !query
+-- !query 24
 SELECT bit_xor(b3) FROM bitwise_test GROUP BY b1 & 1
--- !query schema
+-- !query 24 schema
 struct<bit_xor(b3):int>
--- !query output
+-- !query 24 output
 4
 6
 
 
--- !query
+-- !query 25
 SELECT b1, bit_xor(b2) FROM bitwise_test GROUP BY b1 HAVING bit_and(b2) < 7
--- !query schema
+-- !query 25 schema
 struct<b1:int,bit_xor(b2):int>
--- !query output
+-- !query 25 output
 1	1
 2	3
 
 
--- !query
+-- !query 26
 SELECT b1, b2, bit_xor(b2) OVER (PARTITION BY b1 ORDER BY b2) FROM bitwise_test
--- !query schema
+-- !query 26 schema
 struct<b1:int,b2:int,bit_xor(b2) OVER (PARTITION BY b1 ORDER BY b2 ASC NULLS FIRST RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW):int>
--- !query output
+-- !query 26 output
 1	1	1
 2	3	3
 7	7	7

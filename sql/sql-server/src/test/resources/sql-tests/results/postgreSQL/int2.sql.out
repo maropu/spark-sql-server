@@ -2,59 +2,59 @@
 -- Number of queries: 35
 
 
--- !query
+-- !query 0
 CREATE TABLE INT2_TBL(f1 smallint) USING parquet
--- !query schema
+-- !query 0 schema
 struct<>
--- !query output
+-- !query 0 output
 
 
 
--- !query
+-- !query 1
 INSERT INTO INT2_TBL VALUES (smallint(trim('0   ')))
--- !query schema
+-- !query 1 schema
 struct<>
--- !query output
+-- !query 1 output
 
 
 
--- !query
+-- !query 2
 INSERT INTO INT2_TBL VALUES (smallint(trim('  1234 ')))
--- !query schema
+-- !query 2 schema
 struct<>
--- !query output
+-- !query 2 output
 
 
 
--- !query
+-- !query 3
 INSERT INTO INT2_TBL VALUES (smallint(trim('    -1234')))
--- !query schema
+-- !query 3 schema
 struct<>
--- !query output
+-- !query 3 output
 
 
 
--- !query
+-- !query 4
 INSERT INTO INT2_TBL VALUES (smallint('32767'))
--- !query schema
+-- !query 4 schema
 struct<>
--- !query output
+-- !query 4 output
 
 
 
--- !query
+-- !query 5
 INSERT INTO INT2_TBL VALUES (smallint('-32767'))
--- !query schema
+-- !query 5 schema
 struct<>
--- !query output
+-- !query 5 output
 
 
 
--- !query
+-- !query 6
 SELECT '' AS five, * FROM INT2_TBL
--- !query schema
+-- !query 6 schema
 struct<five:string,f1:smallint>
--- !query output
+-- !query 6 output
 	-1234
 	-32767
 	0
@@ -62,154 +62,154 @@ struct<five:string,f1:smallint>
 	32767
 
 
--- !query
+-- !query 7
 SELECT '' AS four, i.* FROM INT2_TBL i WHERE i.f1 <> smallint('0')
--- !query schema
+-- !query 7 schema
 struct<four:string,f1:smallint>
--- !query output
+-- !query 7 output
 	-1234
 	-32767
 	1234
 	32767
 
 
--- !query
+-- !query 8
 SELECT '' AS four, i.* FROM INT2_TBL i WHERE i.f1 <> int('0')
--- !query schema
+-- !query 8 schema
 struct<four:string,f1:smallint>
--- !query output
+-- !query 8 output
 	-1234
 	-32767
 	1234
 	32767
 
 
--- !query
+-- !query 9
 SELECT '' AS one, i.* FROM INT2_TBL i WHERE i.f1 = smallint('0')
--- !query schema
+-- !query 9 schema
 struct<one:string,f1:smallint>
--- !query output
+-- !query 9 output
 	0
 
 
--- !query
+-- !query 10
 SELECT '' AS one, i.* FROM INT2_TBL i WHERE i.f1 = int('0')
--- !query schema
+-- !query 10 schema
 struct<one:string,f1:smallint>
--- !query output
+-- !query 10 output
 	0
 
 
--- !query
+-- !query 11
 SELECT '' AS two, i.* FROM INT2_TBL i WHERE i.f1 < smallint('0')
--- !query schema
+-- !query 11 schema
 struct<two:string,f1:smallint>
--- !query output
+-- !query 11 output
 	-1234
 	-32767
 
 
--- !query
+-- !query 12
 SELECT '' AS two, i.* FROM INT2_TBL i WHERE i.f1 < int('0')
--- !query schema
+-- !query 12 schema
 struct<two:string,f1:smallint>
--- !query output
+-- !query 12 output
 	-1234
 	-32767
 
 
--- !query
+-- !query 13
 SELECT '' AS three, i.* FROM INT2_TBL i WHERE i.f1 <= smallint('0')
--- !query schema
+-- !query 13 schema
 struct<three:string,f1:smallint>
--- !query output
+-- !query 13 output
 	-1234
 	-32767
 	0
 
 
--- !query
+-- !query 14
 SELECT '' AS three, i.* FROM INT2_TBL i WHERE i.f1 <= int('0')
--- !query schema
+-- !query 14 schema
 struct<three:string,f1:smallint>
--- !query output
+-- !query 14 output
 	-1234
 	-32767
 	0
 
 
--- !query
+-- !query 15
 SELECT '' AS two, i.* FROM INT2_TBL i WHERE i.f1 > smallint('0')
--- !query schema
+-- !query 15 schema
 struct<two:string,f1:smallint>
--- !query output
+-- !query 15 output
 	1234
 	32767
 
 
--- !query
+-- !query 16
 SELECT '' AS two, i.* FROM INT2_TBL i WHERE i.f1 > int('0')
--- !query schema
+-- !query 16 schema
 struct<two:string,f1:smallint>
--- !query output
+-- !query 16 output
 	1234
 	32767
 
 
--- !query
+-- !query 17
 SELECT '' AS three, i.* FROM INT2_TBL i WHERE i.f1 >= smallint('0')
--- !query schema
+-- !query 17 schema
 struct<three:string,f1:smallint>
--- !query output
+-- !query 17 output
 	0
 	1234
 	32767
 
 
--- !query
+-- !query 18
 SELECT '' AS three, i.* FROM INT2_TBL i WHERE i.f1 >= int('0')
--- !query schema
+-- !query 18 schema
 struct<three:string,f1:smallint>
--- !query output
+-- !query 18 output
 	0
 	1234
 	32767
 
 
--- !query
+-- !query 19
 SELECT '' AS one, i.* FROM INT2_TBL i WHERE (i.f1 % smallint('2')) = smallint('1')
--- !query schema
+-- !query 19 schema
 struct<one:string,f1:smallint>
--- !query output
+-- !query 19 output
 	32767
 
 
--- !query
+-- !query 20
 SELECT '' AS three, i.* FROM INT2_TBL i WHERE (i.f1 % int('2')) = smallint('0')
--- !query schema
+-- !query 20 schema
 struct<three:string,f1:smallint>
--- !query output
+-- !query 20 output
 	-1234
 	0
 	1234
 
 
--- !query
+-- !query 21
 SELECT '' AS five, i.f1, i.f1 * smallint('2') AS x FROM INT2_TBL i
 WHERE abs(f1) < 16384
--- !query schema
+-- !query 21 schema
 struct<five:string,f1:smallint,x:smallint>
--- !query output
+-- !query 21 output
 	-1234	-2468
 	0	0
 	1234	2468
 
 
--- !query
+-- !query 22
 SELECT '' AS five, i.f1, i.f1 * int('2') AS x FROM INT2_TBL i
--- !query schema
+-- !query 22 schema
 struct<five:string,f1:smallint,x:int>
--- !query output
+-- !query 22 output
 	-1234	-2468
 	-32767	-65534
 	0	0
@@ -217,23 +217,23 @@ struct<five:string,f1:smallint,x:int>
 	32767	65534
 
 
--- !query
+-- !query 23
 SELECT '' AS five, i.f1, i.f1 + smallint('2') AS x FROM INT2_TBL i
 WHERE f1 < 32766
--- !query schema
+-- !query 23 schema
 struct<five:string,f1:smallint,x:smallint>
--- !query output
+-- !query 23 output
 	-1234	-1232
 	-32767	-32765
 	0	2
 	1234	1236
 
 
--- !query
+-- !query 24
 SELECT '' AS five, i.f1, i.f1 + int('2') AS x FROM INT2_TBL i
--- !query schema
+-- !query 24 schema
 struct<five:string,f1:smallint,x:int>
--- !query output
+-- !query 24 output
 	-1234	-1232
 	-32767	-32765
 	0	2
@@ -241,23 +241,23 @@ struct<five:string,f1:smallint,x:int>
 	32767	32769
 
 
--- !query
+-- !query 25
 SELECT '' AS five, i.f1, i.f1 - smallint('2') AS x FROM INT2_TBL i
 WHERE f1 > -32767
--- !query schema
+-- !query 25 schema
 struct<five:string,f1:smallint,x:smallint>
--- !query output
+-- !query 25 output
 	-1234	-1236
 	0	-2
 	1234	1232
 	32767	32765
 
 
--- !query
+-- !query 26
 SELECT '' AS five, i.f1, i.f1 - int('2') AS x FROM INT2_TBL i
--- !query schema
+-- !query 26 schema
 struct<five:string,f1:smallint,x:int>
--- !query output
+-- !query 26 output
 	-1234	-1236
 	-32767	-32769
 	0	-2
@@ -265,11 +265,11 @@ struct<five:string,f1:smallint,x:int>
 	32767	32765
 
 
--- !query
+-- !query 27
 SELECT '' AS five, i.f1, i.f1 / smallint('2') AS x FROM INT2_TBL i
--- !query schema
+-- !query 27 schema
 struct<five:string,f1:smallint,x:double>
--- !query output
+-- !query 27 output
 	-1234	-617.0
 	-32767	-16383.5
 	0	0.0
@@ -277,11 +277,11 @@ struct<five:string,f1:smallint,x:double>
 	32767	16383.5
 
 
--- !query
+-- !query 28
 SELECT '' AS five, i.f1, i.f1 / int('2') AS x FROM INT2_TBL i
--- !query schema
+-- !query 28 schema
 struct<five:string,f1:smallint,x:double>
--- !query output
+-- !query 28 output
 	-1234	-617.0
 	-32767	-16383.5
 	0	0.0
@@ -289,31 +289,31 @@ struct<five:string,f1:smallint,x:double>
 	32767	16383.5
 
 
--- !query
+-- !query 29
 SELECT string(shiftleft(smallint(-1), 15))
--- !query schema
+-- !query 29 schema
 struct<CAST(shiftleft(CAST(CAST(-1 AS SMALLINT) AS INT), 15) AS STRING):string>
--- !query output
+-- !query 29 output
 -32768
 
 
--- !query
+-- !query 30
 SELECT string(smallint(shiftleft(smallint(-1), 15))+1)
--- !query schema
+-- !query 30 schema
 struct<CAST((CAST(CAST(shiftleft(CAST(CAST(-1 AS SMALLINT) AS INT), 15) AS SMALLINT) AS INT) + 1) AS STRING):string>
--- !query output
+-- !query 30 output
 -32767
 
 
--- !query
+-- !query 31
 SELECT smallint(-32768) % smallint(-1)
--- !query schema
+-- !query 31 schema
 struct<(CAST(-32768 AS SMALLINT) % CAST(-1 AS SMALLINT)):smallint>
--- !query output
+-- !query 31 output
 0
 
 
--- !query
+-- !query 32
 SELECT x, smallint(x) AS int2_value
 FROM (VALUES float(-2.5),
              float(-1.5),
@@ -322,9 +322,9 @@ FROM (VALUES float(-2.5),
              float(0.5),
              float(1.5),
              float(2.5)) t(x)
--- !query schema
+-- !query 32 schema
 struct<x:float,int2_value:smallint>
--- !query output
+-- !query 32 output
 -0.5	0
 -1.5	-1
 -2.5	-2
@@ -334,7 +334,7 @@ struct<x:float,int2_value:smallint>
 2.5	2
 
 
--- !query
+-- !query 33
 SELECT x, smallint(x) AS int2_value
 FROM (VALUES cast(-2.5 as decimal(38, 18)),
              cast(-1.5 as decimal(38, 18)),
@@ -343,9 +343,9 @@ FROM (VALUES cast(-2.5 as decimal(38, 18)),
              cast(0.5 as decimal(38, 18)),
              cast(1.5 as decimal(38, 18)),
              cast(2.5 as decimal(38, 18))) t(x)
--- !query schema
+-- !query 33 schema
 struct<x:decimal(38,18),int2_value:smallint>
--- !query output
+-- !query 33 output
 -0.500000000000000000	0
 -1.500000000000000000	-1
 -2.500000000000000000	-2
@@ -355,9 +355,9 @@ struct<x:decimal(38,18),int2_value:smallint>
 2.500000000000000000	2
 
 
--- !query
+-- !query 34
 DROP TABLE INT2_TBL
--- !query schema
+-- !query 34 schema
 struct<>
--- !query output
+-- !query 34 output
 

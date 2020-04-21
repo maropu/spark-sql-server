@@ -2,130 +2,130 @@
 -- Number of queries: 10
 
 
--- !query
+-- !query 0
 CREATE TEMPORARY VIEW m AS SELECT * FROM VALUES
   (null, 1.0),
   (2, 3.0),
   (4, 5.0)
   AS m(a, b)
--- !query schema
+-- !query 0 schema
 struct<>
--- !query output
+-- !query 0 output
 
 
 
--- !query
+-- !query 1
 CREATE TEMPORARY VIEW s AS SELECT * FROM VALUES
   (null, 1.0),
   (2, 3.0),
   (6, 7.0)
   AS s(c, d)
--- !query schema
+-- !query 1 schema
 struct<>
--- !query output
+-- !query 1 output
 
 
 
--- !query
+-- !query 2
 SELECT *
 FROM   m
 WHERE  a NOT IN (SELECT c
                  FROM   s
                  WHERE  d > 10.0) -- (empty subquery)
--- !query schema
+-- !query 2 schema
 struct<a:int,b:decimal(2,1)>
--- !query output
+-- !query 2 output
 2	3.0
 4	5.0
 NULL	1.0
 
 
--- !query
+-- !query 3
 SELECT *
 FROM   m
 WHERE  a NOT IN (SELECT c
                  FROM   s
                  WHERE  d = 1.0) -- Only matches (null, 1.0)
--- !query schema
+-- !query 3 schema
 struct<a:int,b:decimal(2,1)>
--- !query output
+-- !query 3 output
 
 
 
--- !query
+-- !query 4
 SELECT *
 FROM   m
 WHERE  b = 1.0 -- Only matches (null, 1.0)
        AND a NOT IN (SELECT c
                      FROM   s
                      WHERE  d = 3.0) -- Matches (2, 3.0)
--- !query schema
+-- !query 4 schema
 struct<a:int,b:decimal(2,1)>
--- !query output
+-- !query 4 output
 
 
 
--- !query
+-- !query 5
 SELECT *
 FROM   m
 WHERE  b = 3.0 -- Only matches (2, 3.0)
        AND a NOT IN (SELECT c
                      FROM   s
                      WHERE  d = 3.0) -- Matches (2, 3.0)
--- !query schema
+-- !query 5 schema
 struct<a:int,b:decimal(2,1)>
--- !query output
+-- !query 5 output
 
 
 
--- !query
+-- !query 6
 SELECT *
 FROM   m
 WHERE  b = 3.0 -- Only matches (2, 3.0)
        AND a NOT IN (SELECT c
                      FROM   s
                      WHERE  d = 7.0) -- Matches (6, 7.0)
--- !query schema
+-- !query 6 schema
 struct<a:int,b:decimal(2,1)>
--- !query output
+-- !query 6 output
 2	3.0
 
 
--- !query
+-- !query 7
 SELECT *
 FROM   m
 WHERE a NOT IN (SELECT c
                 FROM   s
                 WHERE  d = b + 10) -- Matches no row
--- !query schema
+-- !query 7 schema
 struct<a:int,b:decimal(2,1)>
--- !query output
+-- !query 7 output
 2	3.0
 4	5.0
 NULL	1.0
 
 
--- !query
+-- !query 8
 SELECT *
 FROM   m
 WHERE  b = 1.0 -- Only matches (null, 1.0)
        AND a NOT IN (SELECT c
                      FROM   s
                      WHERE  d = b + 10) -- Matches no row
--- !query schema
+-- !query 8 schema
 struct<a:int,b:decimal(2,1)>
--- !query output
+-- !query 8 output
 NULL	1.0
 
 
--- !query
+-- !query 9
 SELECT *
 FROM   m
 WHERE  b = 3.0 -- Only matches (2, 3.0)
        AND a NOT IN (SELECT c
                      FROM   s
                      WHERE  d = b + 10) -- Matches no row
--- !query schema
+-- !query 9 schema
 struct<a:int,b:decimal(2,1)>
--- !query output
+-- !query 9 output
 2	3.0

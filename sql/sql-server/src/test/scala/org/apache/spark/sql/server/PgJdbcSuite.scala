@@ -32,6 +32,7 @@ import org.postgresql.util.PSQLException
 
 import org.apache.spark.SparkException
 import org.apache.spark.util.{ThreadUtils, Utils}
+// import org.apache.spark.sql.server.TestU
 
 object TestData {
   val smallKv = getTestDataFilePath("small_kv.txt")
@@ -159,6 +160,7 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
         ("varchar", "VARCHAR"),
         ("date", "DATE"),
         ("timestamp", "TIMESTAMP"),
+        ("interval", "OTHER"),
         ("numeric", "NUMERIC"),
         ("bytea", "BINARY"),
         ("map", "OTHER"),
@@ -172,31 +174,11 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
         ("_varchar", "ARRAY"),
         ("_date", "ARRAY"),
         ("_timestamp", "ARRAY"),
+        ("_interval", "ARRAY"),
         ("_numeric", "ARRAY")
       )
 
       assert(expectedTypeInfo === supportedTypeInfo.toSet)
-
-      Seq(
-        "DROP TABLE IF EXISTS test1",
-        "DROP TABLE IF EXISTS test2",
-        """
-          |CREATE TABLE test1(
-          |  key STRING,
-          |  value DOUBLE
-          |)
-          """,
-        """
-          |CREATE TABLE test2(
-          |  id INT,
-          |  name STRING,
-          |  address STRING,
-          |  salary FLOAT
-          |)
-          """
-      ).foreach { sqlText =>
-        assert(statement.execute(sqlText.stripMargin))
-      }
 
       // Checks if `getTables` return an empty result set
       val mdTable = databaseMetaData.getTables(null, null, "t", scala.Array("TABLE"))
@@ -370,6 +352,15 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
 
       assert(!rs.next())
       rs.close()
+    }
+  }
+
+  test("interval types") {
+    withJdbcStatement { statement =>
+      val rs = statement.executeQuery("SELECT CAST('interval 3 month 1 hour' AS interval)")
+      assert(rs.next())
+      assert(rs.getObject(1).isInstanceOf[org.postgresql.util.PGInterval])
+      assert(TestUtils.toSparkIntervalString(rs.getObject(1).toString) === "3 months 1 hours")
     }
   }
 

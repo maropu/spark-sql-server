@@ -2,17 +2,17 @@
 -- Number of queries: 72
 
 
--- !query
+-- !query 0
 CREATE OR REPLACE TEMPORARY VIEW INT4_TBL AS SELECT * FROM
   (VALUES (0), (123456), (-123456), (2147483647), (-2147483647))
   AS v(f1)
--- !query schema
+-- !query 0 schema
 struct<>
--- !query output
+-- !query 0 output
 
 
 
--- !query
+-- !query 1
 CREATE OR REPLACE TEMPORARY VIEW INT8_TBL AS SELECT * FROM
   (VALUES
     (123, 456),
@@ -21,186 +21,186 @@ CREATE OR REPLACE TEMPORARY VIEW INT8_TBL AS SELECT * FROM
     (4567890123456789, 4567890123456789),
     (4567890123456789, -4567890123456789))
   AS v(q1, q2)
--- !query schema
+-- !query 1 schema
 struct<>
--- !query output
+-- !query 1 output
 
 
 
--- !query
+-- !query 2
 CREATE OR REPLACE TEMPORARY VIEW FLOAT8_TBL AS SELECT * FROM
   (VALUES (0.0), (-34.84), (-1004.30),
     (CAST('-1.2345678901234e+200' AS DOUBLE)), (CAST('-1.2345678901234e-200' AS DOUBLE)))
   AS v(f1)
--- !query schema
+-- !query 2 schema
 struct<>
--- !query output
+-- !query 2 output
 
 
 
--- !query
+-- !query 3
 SELECT 1 AS two UNION SELECT 2 ORDER BY 1
--- !query schema
+-- !query 3 schema
 struct<two:int>
--- !query output
+-- !query 3 output
 1
 2
 
 
--- !query
+-- !query 4
 SELECT 1 AS one UNION SELECT 1 ORDER BY 1
--- !query schema
+-- !query 4 schema
 struct<one:int>
--- !query output
+-- !query 4 output
 1
 
 
--- !query
+-- !query 5
 SELECT 1 AS two UNION ALL SELECT 2
--- !query schema
+-- !query 5 schema
 struct<two:int>
--- !query output
+-- !query 5 output
 1
 2
 
 
--- !query
+-- !query 6
 SELECT 1 AS two UNION ALL SELECT 1
--- !query schema
+-- !query 6 schema
 struct<two:int>
--- !query output
+-- !query 6 output
 1
 1
 
 
--- !query
+-- !query 7
 SELECT 1 AS three UNION SELECT 2 UNION SELECT 3 ORDER BY 1
--- !query schema
+-- !query 7 schema
 struct<three:int>
--- !query output
+-- !query 7 output
 1
 2
 3
 
 
--- !query
+-- !query 8
 SELECT 1 AS two UNION SELECT 2 UNION SELECT 2 ORDER BY 1
--- !query schema
+-- !query 8 schema
 struct<two:int>
--- !query output
+-- !query 8 output
 1
 2
 
 
--- !query
+-- !query 9
 SELECT 1 AS three UNION SELECT 2 UNION ALL SELECT 2 ORDER BY 1
--- !query schema
+-- !query 9 schema
 struct<three:int>
--- !query output
+-- !query 9 output
 1
 2
 2
 
 
--- !query
+-- !query 10
 SELECT 1.1 AS two UNION SELECT 2.2 ORDER BY 1
--- !query schema
+-- !query 10 schema
 struct<two:decimal(2,1)>
--- !query output
+-- !query 10 output
 1.1
 2.2
 
 
--- !query
+-- !query 11
 SELECT 1.1 AS two UNION SELECT 2 ORDER BY 1
--- !query schema
+-- !query 11 schema
 struct<two:decimal(11,1)>
--- !query output
+-- !query 11 output
 1.1
 2.0
 
 
--- !query
+-- !query 12
 SELECT 1 AS two UNION SELECT 2.2 ORDER BY 1
--- !query schema
+-- !query 12 schema
 struct<two:decimal(11,1)>
--- !query output
+-- !query 12 output
 1.0
 2.2
 
 
--- !query
+-- !query 13
 SELECT 1 AS one UNION SELECT double(1.0) ORDER BY 1
--- !query schema
+-- !query 13 schema
 struct<one:double>
--- !query output
+-- !query 13 output
 1.0
 
 
--- !query
+-- !query 14
 SELECT 1.1 AS two UNION ALL SELECT 2 ORDER BY 1
--- !query schema
+-- !query 14 schema
 struct<two:decimal(11,1)>
--- !query output
+-- !query 14 output
 1.1
 2.0
 
 
--- !query
+-- !query 15
 SELECT double(1.0) AS two UNION ALL SELECT 1 ORDER BY 1
--- !query schema
+-- !query 15 schema
 struct<two:double>
--- !query output
+-- !query 15 output
 1.0
 1.0
 
 
--- !query
+-- !query 16
 SELECT 1.1 AS three UNION SELECT 2 UNION SELECT 3 ORDER BY 1
--- !query schema
+-- !query 16 schema
 struct<three:decimal(11,1)>
--- !query output
+-- !query 16 output
 1.1
 2.0
 3.0
 
 
--- !query
+-- !query 17
 SELECT double(1.1) AS two UNION SELECT 2 UNION SELECT double(2.0) ORDER BY 1
--- !query schema
+-- !query 17 schema
 struct<two:double>
--- !query output
+-- !query 17 output
 1.1
 2.0
 
 
--- !query
+-- !query 18
 SELECT 1.1 AS three UNION SELECT 2 UNION ALL SELECT 2 ORDER BY 1
--- !query schema
+-- !query 18 schema
 struct<three:decimal(11,1)>
--- !query output
+-- !query 18 output
 1.1
 2.0
 2.0
 
 
--- !query
+-- !query 19
 SELECT 1.1 AS two UNION (SELECT 2 UNION ALL SELECT 2) ORDER BY 1
--- !query schema
+-- !query 19 schema
 struct<two:decimal(11,1)>
--- !query output
+-- !query 19 output
 1.1
 2.0
 
 
--- !query
+-- !query 20
 SELECT f1 AS five FROM FLOAT8_TBL
 UNION
 SELECT f1 FROM FLOAT8_TBL
 ORDER BY 1
--- !query schema
+-- !query 20 schema
 struct<five:double>
--- !query output
+-- !query 20 output
 -1.2345678901234E200
 -1004.3
 -34.84
@@ -208,13 +208,13 @@ struct<five:double>
 0.0
 
 
--- !query
+-- !query 21
 SELECT f1 AS ten FROM FLOAT8_TBL
 UNION ALL
 SELECT f1 FROM FLOAT8_TBL
--- !query schema
+-- !query 21 schema
 struct<ten:double>
--- !query output
+-- !query 21 output
 -1.2345678901234E-200
 -1.2345678901234E-200
 -1.2345678901234E200
@@ -227,14 +227,14 @@ struct<ten:double>
 0.0
 
 
--- !query
+-- !query 22
 SELECT f1 AS nine FROM FLOAT8_TBL
 UNION
 SELECT f1 FROM INT4_TBL
 ORDER BY 1
--- !query schema
+-- !query 22 schema
 struct<nine:double>
--- !query output
+-- !query 22 output
 -1.2345678901234E200
 -2.147483647E9
 -123456.0
@@ -246,13 +246,13 @@ struct<nine:double>
 2.147483647E9
 
 
--- !query
+-- !query 23
 SELECT f1 AS ten FROM FLOAT8_TBL
 UNION ALL
 SELECT f1 FROM INT4_TBL
--- !query schema
+-- !query 23 schema
 struct<ten:double>
--- !query output
+-- !query 23 output
 -1.2345678901234E-200
 -1.2345678901234E200
 -1004.3
@@ -265,16 +265,16 @@ struct<ten:double>
 2.147483647E9
 
 
--- !query
+-- !query 24
 SELECT f1 AS five FROM FLOAT8_TBL
   WHERE f1 BETWEEN -1e6 AND 1e6
 UNION
 SELECT f1 FROM INT4_TBL
   WHERE f1 BETWEEN 0 AND 1000000
 ORDER BY 1
--- !query schema
+-- !query 24 schema
 struct<five:double>
--- !query output
+-- !query 24 output
 -1004.3
 -34.84
 -1.2345678901234E-200
@@ -282,170 +282,170 @@ struct<five:double>
 123456.0
 
 
--- !query
+-- !query 25
 SELECT q2 FROM int8_tbl INTERSECT SELECT q1 FROM int8_tbl ORDER BY 1
--- !query schema
+-- !query 25 schema
 struct<q2:bigint>
--- !query output
+-- !query 25 output
 123
 4567890123456789
 
 
--- !query
+-- !query 26
 SELECT q2 FROM int8_tbl INTERSECT ALL SELECT q1 FROM int8_tbl ORDER BY 1
--- !query schema
+-- !query 26 schema
 struct<q2:bigint>
--- !query output
+-- !query 26 output
 123
 4567890123456789
 4567890123456789
 
 
--- !query
+-- !query 27
 SELECT q2 FROM int8_tbl EXCEPT SELECT q1 FROM int8_tbl ORDER BY 1
--- !query schema
+-- !query 27 schema
 struct<q2:bigint>
--- !query output
+-- !query 27 output
 -4567890123456789
 456
 
 
--- !query
+-- !query 28
 SELECT q2 FROM int8_tbl EXCEPT ALL SELECT q1 FROM int8_tbl ORDER BY 1
--- !query schema
+-- !query 28 schema
 struct<q2:bigint>
--- !query output
+-- !query 28 output
 -4567890123456789
 456
 
 
--- !query
+-- !query 29
 SELECT q2 FROM int8_tbl EXCEPT ALL SELECT DISTINCT q1 FROM int8_tbl ORDER BY 1
--- !query schema
+-- !query 29 schema
 struct<q2:bigint>
--- !query output
+-- !query 29 output
 -4567890123456789
 456
 4567890123456789
 
 
--- !query
+-- !query 30
 SELECT q1 FROM int8_tbl EXCEPT SELECT q2 FROM int8_tbl ORDER BY 1
--- !query schema
+-- !query 30 schema
 struct<q1:bigint>
--- !query output
+-- !query 30 output
 
 
 
--- !query
+-- !query 31
 SELECT q1 FROM int8_tbl EXCEPT ALL SELECT q2 FROM int8_tbl ORDER BY 1
--- !query schema
+-- !query 31 schema
 struct<q1:bigint>
--- !query output
+-- !query 31 output
 123
 4567890123456789
 
 
--- !query
+-- !query 32
 SELECT q1 FROM int8_tbl EXCEPT ALL SELECT DISTINCT q2 FROM int8_tbl ORDER BY 1
--- !query schema
+-- !query 32 schema
 struct<q1:bigint>
--- !query output
+-- !query 32 output
 123
 4567890123456789
 4567890123456789
 
 
--- !query
+-- !query 33
 (SELECT 1,2,3 UNION SELECT 4,5,6) INTERSECT SELECT 4,5,6
--- !query schema
+-- !query 33 schema
 struct<1:int,2:int,3:int>
--- !query output
+-- !query 33 output
 4	5	6
 
 
--- !query
+-- !query 34
 (SELECT 1,2,3 UNION SELECT 4,5,6 ORDER BY 1,2) INTERSECT SELECT 4,5,6
--- !query schema
+-- !query 34 schema
 struct<1:int,2:int,3:int>
--- !query output
+-- !query 34 output
 4	5	6
 
 
--- !query
+-- !query 35
 (SELECT 1,2,3 UNION SELECT 4,5,6) EXCEPT SELECT 4,5,6
--- !query schema
+-- !query 35 schema
 struct<1:int,2:int,3:int>
--- !query output
+-- !query 35 output
 1	2	3
 
 
--- !query
+-- !query 36
 (SELECT 1,2,3 UNION SELECT 4,5,6 ORDER BY 1,2) EXCEPT SELECT 4,5,6
--- !query schema
+-- !query 36 schema
 struct<1:int,2:int,3:int>
--- !query output
+-- !query 36 output
 1	2	3
 
 
--- !query
+-- !query 37
 select count(*) from
   ( select unique1 from tenk1 intersect select fivethous from tenk1 ) ss
--- !query schema
+-- !query 37 schema
 struct<count(1):bigint>
--- !query output
+-- !query 37 output
 5000
 
 
--- !query
+-- !query 38
 select unique1 from tenk1 except select unique2 from tenk1 where unique2 != 10
--- !query schema
+-- !query 38 schema
 struct<unique1:int>
--- !query output
+-- !query 38 output
 10
 
 
--- !query
+-- !query 39
 select count(*) from
   ( select unique1 from tenk1 intersect select fivethous from tenk1 ) ss
--- !query schema
+-- !query 39 schema
 struct<count(1):bigint>
--- !query output
+-- !query 39 output
 5000
 
 
--- !query
+-- !query 40
 select unique1 from tenk1 except select unique2 from tenk1 where unique2 != 10
--- !query schema
+-- !query 40 schema
 struct<unique1:int>
--- !query output
+-- !query 40 output
 10
 
 
--- !query
+-- !query 41
 SELECT f1 FROM float8_tbl INTERSECT SELECT f1 FROM int4_tbl ORDER BY 1
--- !query schema
+-- !query 41 schema
 struct<f1:double>
--- !query output
+-- !query 41 output
 0.0
 
 
--- !query
+-- !query 42
 SELECT f1 FROM float8_tbl EXCEPT SELECT f1 FROM int4_tbl ORDER BY 1
--- !query schema
+-- !query 42 schema
 struct<f1:double>
--- !query output
+-- !query 42 output
 -1.2345678901234E200
 -1004.3
 -34.84
 -1.2345678901234E-200
 
 
--- !query
+-- !query 43
 SELECT q1 FROM int8_tbl INTERSECT SELECT q2 FROM int8_tbl UNION ALL SELECT q2 FROM int8_tbl  ORDER BY 1
--- !query schema
+-- !query 43 schema
 struct<q1:bigint>
--- !query output
+-- !query 43 output
 -4567890123456789
 123
 123
@@ -455,20 +455,20 @@ struct<q1:bigint>
 4567890123456789
 
 
--- !query
+-- !query 44
 SELECT q1 FROM int8_tbl INTERSECT (((SELECT q2 FROM int8_tbl UNION ALL SELECT q2 FROM int8_tbl))) ORDER BY 1
--- !query schema
+-- !query 44 schema
 struct<q1:bigint>
--- !query output
+-- !query 44 output
 123
 4567890123456789
 
 
--- !query
+-- !query 45
 (((SELECT q1 FROM int8_tbl INTERSECT SELECT q2 FROM int8_tbl ORDER BY 1))) UNION ALL SELECT q2 FROM int8_tbl
--- !query schema
+-- !query 45 schema
 struct<q1:bigint>
--- !query output
+-- !query 45 output
 123
 4567890123456789
 456
@@ -478,20 +478,20 @@ struct<q1:bigint>
 -4567890123456789
 
 
--- !query
+-- !query 46
 SELECT q1 FROM int8_tbl UNION ALL SELECT q2 FROM int8_tbl EXCEPT SELECT q1 FROM int8_tbl ORDER BY 1
--- !query schema
+-- !query 46 schema
 struct<q1:bigint>
--- !query output
+-- !query 46 output
 -4567890123456789
 456
 
 
--- !query
+-- !query 47
 SELECT q1 FROM int8_tbl UNION ALL (((SELECT q2 FROM int8_tbl EXCEPT SELECT q1 FROM int8_tbl ORDER BY 1)))
--- !query schema
+-- !query 47 schema
 struct<q1:bigint>
--- !query output
+-- !query 47 output
 123
 123
 4567890123456789
@@ -501,48 +501,48 @@ struct<q1:bigint>
 456
 
 
--- !query
+-- !query 48
 (((SELECT q1 FROM int8_tbl UNION ALL SELECT q2 FROM int8_tbl))) EXCEPT SELECT q1 FROM int8_tbl ORDER BY 1
--- !query schema
+-- !query 48 schema
 struct<q1:bigint>
--- !query output
+-- !query 48 output
 -4567890123456789
 456
 
 
--- !query
+-- !query 49
 SELECT q1,q2 FROM int8_tbl EXCEPT SELECT q2,q1 FROM int8_tbl
 ORDER BY q2,q1
--- !query schema
+-- !query 49 schema
 struct<q1:bigint,q2:bigint>
--- !query output
+-- !query 49 output
 4567890123456789	-4567890123456789
 123	456
 
 
--- !query
+-- !query 50
 SELECT q1 FROM int8_tbl EXCEPT SELECT q2 FROM int8_tbl ORDER BY q2 LIMIT 1
--- !query schema
+-- !query 50 schema
 struct<>
--- !query output
+-- !query 50 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '`q2`' given input columns: [int8_tbl.q1]; line 1 pos 64
 
 
--- !query
+-- !query 51
 SELECT q1 FROM int8_tbl EXCEPT (((SELECT q2 FROM int8_tbl ORDER BY q2 LIMIT 1))) ORDER BY 1
--- !query schema
+-- !query 51 schema
 struct<q1:bigint>
--- !query output
+-- !query 51 output
 123
 4567890123456789
 
 
--- !query
+-- !query 52
 (((((select * from int8_tbl)))))
--- !query schema
+-- !query 52 schema
 struct<q1:bigint,q2:bigint>
--- !query output
+-- !query 52 output
 123	456
 123	4567890123456789
 4567890123456789	-4567890123456789
@@ -550,22 +550,22 @@ struct<q1:bigint,q2:bigint>
 4567890123456789	4567890123456789
 
 
--- !query
+-- !query 53
 select * from range(1,5) union select * from range(1,3)
--- !query schema
+-- !query 53 schema
 struct<id:bigint>
--- !query output
+-- !query 53 output
 1
 2
 3
 4
 
 
--- !query
+-- !query 54
 select * from range(1,6) union all select * from range(1,4)
--- !query schema
+-- !query 54 schema
 struct<id:bigint>
--- !query output
+-- !query 54 output
 1
 1
 2
@@ -576,49 +576,49 @@ struct<id:bigint>
 5
 
 
--- !query
+-- !query 55
 select * from range(1,6) intersect select * from range(1,4)
--- !query schema
+-- !query 55 schema
 struct<id:bigint>
--- !query output
+-- !query 55 output
 1
 2
 3
 
 
--- !query
+-- !query 56
 select * from range(1,6) intersect all select * from range(1,4)
--- !query schema
+-- !query 56 schema
 struct<id:bigint>
--- !query output
+-- !query 56 output
 1
 2
 3
 
 
--- !query
+-- !query 57
 select * from range(1,6) except select * from range(1,4)
--- !query schema
+-- !query 57 schema
 struct<id:bigint>
--- !query output
+-- !query 57 output
 4
 5
 
 
--- !query
+-- !query 58
 select * from range(1,6) except all select * from range(1,4)
--- !query schema
+-- !query 58 schema
 struct<id:bigint>
--- !query output
+-- !query 58 output
 4
 5
 
 
--- !query
+-- !query 59
 select * from range(1,6) union select * from range(1,4)
--- !query schema
+-- !query 59 schema
 struct<id:bigint>
--- !query output
+-- !query 59 output
 1
 2
 3
@@ -626,11 +626,11 @@ struct<id:bigint>
 5
 
 
--- !query
+-- !query 60
 select * from range(1,6) union all select * from range(1,4)
--- !query schema
+-- !query 60 schema
 struct<id:bigint>
--- !query output
+-- !query 60 output
 1
 1
 2
@@ -641,128 +641,128 @@ struct<id:bigint>
 5
 
 
--- !query
+-- !query 61
 select * from range(1,6) intersect select * from range(1,4)
--- !query schema
+-- !query 61 schema
 struct<id:bigint>
--- !query output
+-- !query 61 output
 1
 2
 3
 
 
--- !query
+-- !query 62
 select * from range(1,6) intersect all select * from range(1,4)
--- !query schema
+-- !query 62 schema
 struct<id:bigint>
--- !query output
+-- !query 62 output
 1
 2
 3
 
 
--- !query
+-- !query 63
 select * from range(1,6) except select * from range(1,4)
--- !query schema
+-- !query 63 schema
 struct<id:bigint>
--- !query output
+-- !query 63 output
 4
 5
 
 
--- !query
+-- !query 64
 select * from range(1,6) except all select * from range(1,4)
--- !query schema
+-- !query 64 schema
 struct<id:bigint>
--- !query output
+-- !query 64 output
 4
 5
 
 
--- !query
+-- !query 65
 SELECT cast('3.4' as decimal(38, 18)) UNION SELECT 'foo'
--- !query schema
+-- !query 65 schema
 struct<CAST(3.4 AS DECIMAL(38,18)):string>
--- !query output
+-- !query 65 output
 3.400000000000000000
 foo
 
 
--- !query
+-- !query 66
 SELECT * FROM
   (SELECT 1 AS t, 2 AS x
    UNION
    SELECT 2 AS t, 4 AS x) ss
 WHERE x < 4
 ORDER BY x
--- !query schema
+-- !query 66 schema
 struct<t:int,x:int>
--- !query output
+-- !query 66 output
 1	2
 
 
--- !query
+-- !query 67
 SELECT * FROM
   (SELECT 1 AS t, id as x from range(1,11)
    UNION
    SELECT 2 AS t, 4 AS x) ss
 WHERE x < 4
 ORDER BY x
--- !query schema
+-- !query 67 schema
 struct<t:int,x:bigint>
--- !query output
+-- !query 67 output
 1	1
 1	2
 1	3
 
 
--- !query
+-- !query 68
 SELECT * FROM
   (SELECT 1 AS t, int((random()*3)) AS x
    UNION
    SELECT 2 AS t, 4 AS x) ss
 WHERE x > 3
 ORDER BY x
--- !query schema
+-- !query 68 schema
 struct<t:int,x:int>
--- !query output
+-- !query 68 output
 2	4
 
 
--- !query
+-- !query 69
 select distinct q1 from
   (select distinct * from int8_tbl i81
    union all
    select distinct * from int8_tbl i82) ss
 where q2 = q2
--- !query schema
+-- !query 69 schema
 struct<q1:bigint>
--- !query output
+-- !query 69 output
 123
 4567890123456789
 
 
--- !query
+-- !query 70
 select distinct q1 from
   (select distinct * from int8_tbl i81
    union all
    select distinct * from int8_tbl i82) ss
 where -q1 = q2
--- !query schema
+-- !query 70 schema
 struct<q1:bigint>
--- !query output
+-- !query 70 output
 4567890123456789
 
 
--- !query
+-- !query 71
 select * from
   (select *, 0 as x from int8_tbl a
    union all
    select *, 1 as x from int8_tbl b) ss
 where (x = 0) or (q1 >= q2 and q1 <= q2)
--- !query schema
+-- !query 71 schema
 struct<q1:bigint,q2:bigint,x:int>
--- !query output
+-- !query 71 output
 123	456	0
 123	4567890123456789	0
 4567890123456789	-4567890123456789	0

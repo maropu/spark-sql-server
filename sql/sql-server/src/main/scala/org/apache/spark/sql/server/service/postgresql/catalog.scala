@@ -142,6 +142,8 @@ private[server] object PgMetadata extends Logging {
   val PgTimestampType          = PgType(          1114,   "timestamp",  8,                   0, "timestampin")
   val PgTimestampTypeArrayType = PgType(          1115,  "_timestamp", -1, PgTimestampType.oid,    "array_in")
   val PgDateArrayType          = PgType(          1182,       "_date", -1,      PgDateType.oid,    "array_in")
+  val PgIntervalType           = PgType(          1186,    "interval", -1,                   0, "interval_in")
+  val PgIntervalArrayType      = PgType(          1187,   "_interval", -1,  PgIntervalType.oid,    "array_in")
   val PgNumericType            = PgType(          1700,     "numeric", -1,                   0,   "numericin")
   val PgNumericArrayType       = PgType(          1231,    "_numeric", -1,   PgNumericType.oid,    "array_in")
   // A `pg_type` catalog table has new three entries below for ByteType, MapType, and StructType
@@ -154,8 +156,8 @@ private[server] object PgMetadata extends Logging {
     PgBoolType, PgByteaType, PgCharType, PgNameType, PgInt8Type, PgInt2Type, PgInt4Type, PgTidType,
     PgFloat4Type, PgFloat8Type, PgBoolArrayType, PgInt2ArrayType, PgInt4ArrayType,
     PgVarCharArrayType, PgInt8ArrayType, PgFloat4ArrayType, PgFloat8ArrayType, PgVarCharType,
-    PgDateType, PgTimestampType, PgTimestampTypeArrayType, PgDateArrayType, PgNumericArrayType,
-    PgNumericType, PgByteType, PgMapType, PgStructType
+    PgDateType, PgTimestampType, PgIntervalType, PgTimestampTypeArrayType, PgDateArrayType,
+    PgIntervalArrayType, PgNumericArrayType, PgNumericType, PgByteType, PgMapType, PgStructType
   )
 
   private val pgTypeOidMap: Map[Int, PgType] = pgTypes.map(tpe => tpe.oid -> tpe).toMap
@@ -177,6 +179,7 @@ private[server] object PgMetadata extends Logging {
     case StringType              => PgVarCharType
     case DateType                => PgDateType
     case TimestampType           => PgTimestampType
+    case CalendarIntervalType    => PgIntervalType
     case DecimalType.Fixed(_, _) => PgNumericType
     case ArrayType(elemType, _)  => getPgArrayType(elemType)
     case MapType(_, _, _)        => PgMapType
@@ -198,6 +201,7 @@ private[server] object PgMetadata extends Logging {
     case StringType              => PgVarCharArrayType
     case DateType                => PgDateArrayType
     case TimestampType           => PgTimestampTypeArrayType
+    case CalendarIntervalType    => PgIntervalArrayType
     case DecimalType.Fixed(_, _) => PgNumericArrayType
     // TODO: Needs to support nested array types, e.g., ArrayType(ArrayType(IntegerType))
     case _ => throw new SQLException("Unsupported array type " + elemType)

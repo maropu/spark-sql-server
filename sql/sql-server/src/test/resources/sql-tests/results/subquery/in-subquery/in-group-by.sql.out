@@ -2,7 +2,7 @@
 -- Number of queries: 19
 
 
--- !query
+-- !query 0
 create temporary view t1 as select * from values
   ("t1a", 6S, 8, 10L, float(15.0), 20D, 20E2BD, timestamp '2014-04-04 01:00:00.000', date '2014-04-04'),
   ("t1b", 8S, 16, 19L, float(17.0), 25D, 26E2BD, timestamp '2014-05-04 01:01:00.000', date '2014-05-04'),
@@ -17,13 +17,13 @@ create temporary view t1 as select * from values
   ("t1a", 6S, 8, 10L, float(15.0), 20D, 20E2BD, timestamp '2014-04-04 01:02:00.001', date '2014-04-04'),
   ("t1e", 10S, null, 19L, float(17.0), 25D, 26E2BD, timestamp '2014-05-04 01:01:00.000', date '2014-05-04')
   as t1(t1a, t1b, t1c, t1d, t1e, t1f, t1g, t1h, t1i)
--- !query schema
+-- !query 0 schema
 struct<>
--- !query output
+-- !query 0 output
 
 
 
--- !query
+-- !query 1
 create temporary view t2 as select * from values
   ("t2a", 6S, 12, 14L, float(15), 20D, 20E2BD, timestamp '2014-04-04 01:01:00.000', date '2014-04-04'),
   ("t1b", 10S, 12, 19L, float(17), 25D, 26E2BD, timestamp '2014-05-04 01:01:00.000', date '2014-05-04'),
@@ -39,13 +39,13 @@ create temporary view t2 as select * from values
   ("t1f", 19S, null, 19L, float(17), 25D, 26E2BD, timestamp '2014-10-04 01:01:00.000', date '2014-10-04'),
   ("t1b", null, 16, 19L, float(17), 25D, 26E2BD, timestamp '2014-05-04 01:01:00.000', null)
   as t2(t2a, t2b, t2c, t2d, t2e, t2f, t2g, t2h, t2i)
--- !query schema
+-- !query 1 schema
 struct<>
--- !query output
+-- !query 1 output
 
 
 
--- !query
+-- !query 2
 create temporary view t3 as select * from values
   ("t3a", 6S, 12, 110L, float(15), 20D, 20E2BD, timestamp '2014-04-04 01:02:00.000', date '2014-04-04'),
   ("t3a", 6S, 12, 10L, float(15), 20D, 20E2BD, timestamp '2014-05-04 01:02:00.000', date '2014-05-04'),
@@ -60,28 +60,28 @@ create temporary view t3 as select * from values
   ("t3b", 8S, null, 719L, float(17), 25D, 26E2BD, timestamp '2014-05-04 01:02:00.000', date '2014-05-04'),
   ("t3b", 8S, null, 19L, float(17), 25D, 26E2BD, timestamp '2015-05-04 01:02:00.000', date '2015-05-04')
   as t3(t3a, t3b, t3c, t3d, t3e, t3f, t3g, t3h, t3i)
--- !query schema
+-- !query 2 schema
 struct<>
--- !query output
+-- !query 2 output
 
 
 
--- !query
+-- !query 3
 SELECT t1a,
        Avg(t1b)
 FROM   t1
 WHERE  t1a IN (SELECT t2a
                FROM   t2)
 GROUP  BY t1a
--- !query schema
+-- !query 3 schema
 struct<t1a:string,avg(t1b):double>
--- !query output
+-- !query 3 output
 t1b	8.0
 t1c	8.0
 t1e	10.0
 
 
--- !query
+-- !query 4
 SELECT t1a,
        Max(t1b)
 FROM   t1
@@ -90,13 +90,13 @@ WHERE  t1b IN (SELECT t2b
                WHERE  t1a = t2a)
 GROUP  BY t1a,
           t1d
--- !query schema
+-- !query 4 schema
 struct<t1a:string,max(t1b):smallint>
--- !query output
+-- !query 4 output
 t1b	8
 
 
--- !query
+-- !query 5
 SELECT t1a,
        t1b
 FROM   t1
@@ -105,14 +105,14 @@ WHERE  t1c IN (SELECT t2c
                WHERE  t1a = t2a)
 GROUP  BY t1a,
           t1b
--- !query schema
+-- !query 5 schema
 struct<t1a:string,t1b:smallint>
--- !query output
+-- !query 5 output
 t1b	8
 t1c	8
 
 
--- !query
+-- !query 6
 SELECT t1a,
        Sum(DISTINCT( t1b ))
 FROM   t1
@@ -124,14 +124,14 @@ WHERE  t1c IN (SELECT t2c
                    WHERE  t1a = t3a)
 GROUP  BY t1a,
           t1c
--- !query schema
+-- !query 6 schema
 struct<t1a:string,sum(DISTINCT t1b):bigint>
--- !query output
+-- !query 6 output
 t1b	8
 t1c	8
 
 
--- !query
+-- !query 7
 SELECT t1a,
        Sum(DISTINCT( t1b ))
 FROM   t1
@@ -143,13 +143,13 @@ WHERE  t1c IN (SELECT t2c
                    WHERE  t1a = t3a)
 GROUP  BY t1a,
           t1c
--- !query schema
+-- !query 7 schema
 struct<t1a:string,sum(DISTINCT t1b):bigint>
--- !query output
+-- !query 7 output
 t1b	8
 
 
--- !query
+-- !query 8
 SELECT t1a,
        Count(DISTINCT( t1b ))
 FROM   t1
@@ -159,21 +159,21 @@ WHERE  t1c IN (SELECT t2c
 GROUP  BY t1a,
           t1c
 HAVING t1a = "t1b"
--- !query schema
+-- !query 8 schema
 struct<t1a:string,count(DISTINCT t1b):bigint>
--- !query output
+-- !query 8 output
 t1b	1
 
 
--- !query
+-- !query 9
 SELECT *
 FROM   t1
 WHERE  t1b IN (SELECT Max(t2b)
                FROM   t2
                GROUP  BY t2a)
--- !query schema
-struct<t1a:string,t1b:smallint,t1c:int,t1d:bigint,t1e:float,t1f:double,t1g:decimal(4,0),t1h:timestamp,t1i:date>
--- !query output
+-- !query 9 schema
+struct<t1a:string,t1b:smallint,t1c:int,t1d:bigint,t1e:float,t1f:double,t1g:decimal(2,-2),t1h:timestamp,t1i:date>
+-- !query 9 output
 t1a	6	8	10	15.0	20.0	2000	2014-04-04 01:00:00	2014-04-04
 t1a	6	8	10	15.0	20.0	2000	2014-04-04 01:02:00.001	2014-04-04
 t1b	8	16	19	17.0	25.0	2600	2014-05-04 01:01:00	2014-05-04
@@ -184,7 +184,7 @@ t1e	10	NULL	19	17.0	25.0	2600	2014-09-04 01:02:00.001	2014-09-04
 t1e	10	NULL	25	17.0	25.0	2600	2014-08-04 01:01:00	2014-08-04
 
 
--- !query
+-- !query 10
 SELECT *
 FROM   (SELECT t2a,
                t2b
@@ -194,13 +194,13 @@ FROM   (SELECT t2a,
                        WHERE  t1b = t2b)
         GROUP  BY t2a,
                   t2b) t2
--- !query schema
+-- !query 10 schema
 struct<t2a:string,t2b:smallint>
--- !query output
+-- !query 10 output
 t1b	8
 
 
--- !query
+-- !query 11
 SELECT Count(DISTINCT( * ))
 FROM   t1
 WHERE  t1b IN (SELECT Min(t2b)
@@ -208,13 +208,13 @@ WHERE  t1b IN (SELECT Min(t2b)
                WHERE  t1a = t2a
                       AND t1c = t2c
                GROUP  BY t2a)
--- !query schema
+-- !query 11 schema
 struct<count(DISTINCT t1a, t1b, t1c, t1d, t1e, t1f, t1g, t1h, t1i):bigint>
--- !query output
+-- !query 11 output
 1
 
 
--- !query
+-- !query 12
 SELECT t1a,
        t1b
 FROM   t1
@@ -224,14 +224,14 @@ WHERE  t1c IN (SELECT Max(t2c)
                GROUP  BY t2a,
                          t2c
                HAVING t2c > 8)
--- !query schema
+-- !query 12 schema
 struct<t1a:string,t1b:smallint>
--- !query output
+-- !query 12 output
 t1b	8
 t1c	8
 
 
--- !query
+-- !query 13
 SELECT t1a,
        t1b
 FROM   t1
@@ -242,9 +242,9 @@ WHERE  t1c IN (SELECT t2c
                               WHERE  t3a = t2a
                               GROUP  BY t3b)
                GROUP  BY t2c)
--- !query schema
+-- !query 13 schema
 struct<t1a:string,t1b:smallint>
--- !query output
+-- !query 13 output
 t1a	16
 t1a	16
 t1b	8
@@ -253,7 +253,7 @@ t1d	NULL
 t1d	NULL
 
 
--- !query
+-- !query 14
 SELECT t1a,
        Min(t1b)
 FROM   t1
@@ -262,14 +262,14 @@ WHERE  t1c IN (SELECT Min(t2c)
                WHERE  t2b = t1b
                GROUP  BY t2a)
 GROUP  BY t1a
--- !query schema
+-- !query 14 schema
 struct<t1a:string,min(t1b):smallint>
--- !query output
+-- !query 14 output
 t1b	8
 t1c	8
 
 
--- !query
+-- !query 15
 SELECT t1a,
        Min(t1b)
 FROM   t1
@@ -282,16 +282,16 @@ WHERE  t1c IN (SELECT Min(t2c)
                GROUP  BY t2c)
 GROUP  BY t1a,
           t1d
--- !query schema
+-- !query 15 schema
 struct<t1a:string,min(t1b):smallint>
--- !query output
+-- !query 15 output
 t1b	8
 t1c	8
 t1d	NULL
 t1d	NULL
 
 
--- !query
+-- !query 16
 SELECT t1a,
        Min(t1b)
 FROM   t1
@@ -304,14 +304,14 @@ WHERE  t1c IN (SELECT Min(t2c)
                    WHERE  t1c = t3c
                    GROUP  BY t3d)
 GROUP  BY t1a
--- !query schema
+-- !query 16 schema
 struct<t1a:string,min(t1b):smallint>
--- !query output
+-- !query 16 output
 t1b	8
 t1c	8
 
 
--- !query
+-- !query 17
 SELECT t1a,
        Min(t1b)
 FROM   t1
@@ -324,16 +324,16 @@ WHERE  t1c IN (SELECT Min(t2c)
                    WHERE  t1c = t3c
                    GROUP  BY t3d)
 GROUP  BY t1a
--- !query schema
+-- !query 17 schema
 struct<t1a:string,min(t1b):smallint>
--- !query output
+-- !query 17 output
 t1a	16
 t1b	8
 t1c	8
 t1d	NULL
 
 
--- !query
+-- !query 18
 SELECT t1a,
        Min(t1b)
 FROM   t1
@@ -349,9 +349,9 @@ WHERE  t1c IN (SELECT Min(t2c)
                    HAVING t3d = t1d)
 GROUP  BY t1a
 HAVING Min(t1b) IS NOT NULL
--- !query schema
+-- !query 18 schema
 struct<t1a:string,min(t1b):smallint>
--- !query output
+-- !query 18 output
 t1a	16
 t1b	8
 t1c	8

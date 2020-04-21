@@ -69,11 +69,8 @@ case class PgWireProtocol(bufferSizeInBytes: Int) {
   private val messageWriter = ByteBuffer.wrap(messageBuffer)
 
   private def withMessageBuffer(f: ByteBuffer => Int): Array[Byte] = {
-    try {
-      val messageLen = f(messageWriter)
-      messageBuffer.slice(0, messageLen)
-    } catch {
-      case _: ArrayIndexOutOfBoundsException =>
+    try { messageBuffer.slice(0, f(messageWriter)) } catch {
+      case _: ArrayIndexOutOfBoundsException | _: IllegalArgumentException =>
         throw new SQLException(
           s"Cannot generate a V3 protocol message because buffer is not enough for the message. " +
             s"To avoid this exception, you might set higher value at " +

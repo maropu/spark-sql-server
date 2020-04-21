@@ -2,442 +2,442 @@
 -- Number of queries: 55
 
 
--- !query
+-- !query 0
 CREATE DATABASE mydb1
--- !query schema
+-- !query 0 schema
 struct<>
--- !query output
+-- !query 0 output
 
 
 
--- !query
+-- !query 1
 USE mydb1
--- !query schema
+-- !query 1 schema
 struct<>
--- !query output
+-- !query 1 output
 
 
 
--- !query
+-- !query 2
 CREATE TABLE t1 USING parquet AS SELECT 1 AS i1
--- !query schema
+-- !query 2 schema
 struct<>
--- !query output
+-- !query 2 output
 
 
 
--- !query
+-- !query 3
 CREATE DATABASE mydb2
--- !query schema
+-- !query 3 schema
 struct<>
--- !query output
+-- !query 3 output
 
 
 
--- !query
+-- !query 4
 USE mydb2
--- !query schema
+-- !query 4 schema
 struct<>
--- !query output
+-- !query 4 output
 
 
 
--- !query
+-- !query 5
 CREATE TABLE t1 USING parquet AS SELECT 20 AS i1
--- !query schema
+-- !query 5 schema
 struct<>
--- !query output
+-- !query 5 output
 
 
 
--- !query
+-- !query 6
 USE mydb1
--- !query schema
+-- !query 6 schema
 struct<>
--- !query output
+-- !query 6 output
 
 
 
--- !query
+-- !query 7
 SELECT i1 FROM t1
--- !query schema
+-- !query 7 schema
 struct<i1:int>
--- !query output
+-- !query 7 output
 1
 
 
--- !query
+-- !query 8
 SELECT i1 FROM mydb1.t1
--- !query schema
+-- !query 8 schema
 struct<i1:int>
--- !query output
+-- !query 8 output
 1
 
 
--- !query
+-- !query 9
 SELECT t1.i1 FROM t1
--- !query schema
+-- !query 9 schema
 struct<i1:int>
--- !query output
+-- !query 9 output
 1
 
 
--- !query
+-- !query 10
 SELECT t1.i1 FROM mydb1.t1
--- !query schema
+-- !query 10 schema
 struct<i1:int>
--- !query output
+-- !query 10 output
 1
 
 
--- !query
+-- !query 11
 SELECT mydb1.t1.i1 FROM t1
--- !query schema
+-- !query 11 schema
 struct<i1:int>
--- !query output
+-- !query 11 output
 1
 
 
--- !query
+-- !query 12
 SELECT mydb1.t1.i1 FROM mydb1.t1
--- !query schema
+-- !query 12 schema
 struct<i1:int>
--- !query output
+-- !query 12 output
 1
 
 
--- !query
+-- !query 13
 USE mydb2
--- !query schema
+-- !query 13 schema
 struct<>
--- !query output
+-- !query 13 output
 
 
 
--- !query
+-- !query 14
 SELECT i1 FROM t1
--- !query schema
+-- !query 14 schema
 struct<i1:int>
--- !query output
+-- !query 14 output
 20
 
 
--- !query
+-- !query 15
 SELECT i1 FROM mydb1.t1
--- !query schema
+-- !query 15 schema
 struct<i1:int>
--- !query output
+-- !query 15 output
 1
 
 
--- !query
+-- !query 16
 SELECT t1.i1 FROM t1
--- !query schema
+-- !query 16 schema
 struct<i1:int>
--- !query output
+-- !query 16 output
 20
 
 
--- !query
+-- !query 17
 SELECT t1.i1 FROM mydb1.t1
--- !query schema
+-- !query 17 schema
 struct<i1:int>
--- !query output
+-- !query 17 output
 1
 
 
--- !query
+-- !query 18
 SELECT mydb1.t1.i1 FROM mydb1.t1
--- !query schema
+-- !query 18 schema
 struct<i1:int>
--- !query output
+-- !query 18 output
 1
 
 
--- !query
+-- !query 19
 USE mydb1
--- !query schema
+-- !query 19 schema
 struct<>
--- !query output
+-- !query 19 output
 
 
 
--- !query
+-- !query 20
 SELECT t1.* FROM t1
--- !query schema
+-- !query 20 schema
 struct<i1:int>
--- !query output
+-- !query 20 output
 1
 
 
--- !query
+-- !query 21
 SELECT mydb1.t1.* FROM mydb1.t1
--- !query schema
+-- !query 21 schema
 struct<i1:int>
--- !query output
+-- !query 21 output
 1
 
 
--- !query
+-- !query 22
 SELECT t1.* FROM mydb1.t1
--- !query schema
+-- !query 22 schema
 struct<i1:int>
--- !query output
+-- !query 22 output
 1
 
 
--- !query
+-- !query 23
 USE mydb2
--- !query schema
+-- !query 23 schema
 struct<>
--- !query output
+-- !query 23 output
 
 
 
--- !query
+-- !query 24
 SELECT t1.* FROM t1
--- !query schema
+-- !query 24 schema
 struct<i1:int>
--- !query output
+-- !query 24 output
 20
 
 
--- !query
+-- !query 25
 SELECT mydb1.t1.* FROM mydb1.t1
--- !query schema
+-- !query 25 schema
 struct<i1:int>
--- !query output
+-- !query 25 output
 1
 
 
--- !query
+-- !query 26
 SELECT t1.* FROM mydb1.t1
--- !query schema
+-- !query 26 schema
 struct<i1:int>
--- !query output
+-- !query 26 output
 1
 
 
--- !query
+-- !query 27
 SELECT a.* FROM mydb1.t1 AS a
--- !query schema
+-- !query 27 schema
 struct<i1:int>
--- !query output
+-- !query 27 output
 1
 
 
--- !query
+-- !query 28
 USE mydb1
--- !query schema
+-- !query 28 schema
 struct<>
--- !query output
+-- !query 28 output
 
 
 
--- !query
+-- !query 29
 CREATE TABLE t3 USING parquet AS SELECT * FROM VALUES (4,1), (3,1) AS t3(c1, c2)
--- !query schema
+-- !query 29 schema
 struct<>
--- !query output
+-- !query 29 output
 
 
 
--- !query
+-- !query 30
 CREATE TABLE t4 USING parquet AS SELECT * FROM VALUES (4,1), (2,1) AS t4(c2, c3)
--- !query schema
+-- !query 30 schema
 struct<>
--- !query output
+-- !query 30 output
 
 
 
--- !query
+-- !query 31
 SELECT * FROM t3 WHERE c1 IN (SELECT c2 FROM t4 WHERE t4.c3 = t3.c2)
--- !query schema
+-- !query 31 schema
 struct<c1:int,c2:int>
--- !query output
+-- !query 31 output
 4	1
 
 
--- !query
+-- !query 32
 SELECT * FROM mydb1.t3 WHERE c1 IN
   (SELECT mydb1.t4.c2 FROM mydb1.t4 WHERE mydb1.t4.c3 = mydb1.t3.c2)
--- !query schema
+-- !query 32 schema
 struct<c1:int,c2:int>
--- !query output
+-- !query 32 output
 4	1
 
 
--- !query
+-- !query 33
 SET spark.sql.crossJoin.enabled = true
--- !query schema
+-- !query 33 schema
 struct<key:string,value:string>
--- !query output
+-- !query 33 output
 spark.sql.crossJoin.enabled	true
 
 
--- !query
+-- !query 34
 SELECT mydb1.t1.i1 FROM t1, mydb2.t1
--- !query schema
+-- !query 34 schema
 struct<i1:int>
--- !query output
+-- !query 34 output
 1
 
 
--- !query
+-- !query 35
 SELECT mydb1.t1.i1 FROM mydb1.t1, mydb2.t1
--- !query schema
+-- !query 35 schema
 struct<i1:int>
--- !query output
+-- !query 35 output
 1
 
 
--- !query
+-- !query 36
 USE mydb2
--- !query schema
+-- !query 36 schema
 struct<>
--- !query output
+-- !query 36 output
 
 
 
--- !query
+-- !query 37
 SELECT mydb1.t1.i1 FROM t1, mydb1.t1
--- !query schema
+-- !query 37 schema
 struct<i1:int>
--- !query output
+-- !query 37 output
 1
 
 
--- !query
+-- !query 38
 SET spark.sql.crossJoin.enabled = false
--- !query schema
+-- !query 38 schema
 struct<key:string,value:string>
--- !query output
+-- !query 38 output
 spark.sql.crossJoin.enabled	false
 
 
--- !query
+-- !query 39
 USE mydb1
--- !query schema
+-- !query 39 schema
 struct<>
--- !query output
+-- !query 39 output
 
 
 
--- !query
+-- !query 40
 CREATE TABLE t5(i1 INT, t5 STRUCT<i1:INT, i2:INT>) USING parquet
--- !query schema
+-- !query 40 schema
 struct<>
--- !query output
+-- !query 40 output
 
 
 
--- !query
+-- !query 41
 INSERT INTO t5 VALUES(1, (2, 3))
--- !query schema
+-- !query 41 schema
 struct<>
--- !query output
+-- !query 41 output
 
 
 
--- !query
+-- !query 42
 SELECT t5.i1 FROM t5
--- !query schema
+-- !query 42 schema
 struct<i1:int>
--- !query output
+-- !query 42 output
 1
 
 
--- !query
+-- !query 43
 SELECT t5.t5.i1 FROM t5
--- !query schema
+-- !query 43 schema
 struct<i1:int>
--- !query output
+-- !query 43 output
 2
 
 
--- !query
+-- !query 44
 SELECT t5.t5.i1 FROM mydb1.t5
--- !query schema
+-- !query 44 schema
 struct<i1:int>
--- !query output
+-- !query 44 output
 2
 
 
--- !query
+-- !query 45
 SELECT t5.i1 FROM mydb1.t5
--- !query schema
+-- !query 45 schema
 struct<i1:int>
--- !query output
+-- !query 45 output
 1
 
 
--- !query
+-- !query 46
 SELECT t5.* FROM mydb1.t5
--- !query schema
+-- !query 46 schema
 struct<i1:int,t5:struct<i1:int,i2:int>>
--- !query output
+-- !query 46 output
 1	{"i1":2,"i2":3}
 
 
--- !query
+-- !query 47
 SELECT t5.t5.* FROM mydb1.t5
--- !query schema
+-- !query 47 schema
 struct<i1:int,i2:int>
--- !query output
+-- !query 47 output
 2	3
 
 
--- !query
+-- !query 48
 SELECT mydb1.t5.t5.i1 FROM mydb1.t5
--- !query schema
+-- !query 48 schema
 struct<i1:int>
--- !query output
+-- !query 48 output
 2
 
 
--- !query
+-- !query 49
 SELECT mydb1.t5.t5.i2 FROM mydb1.t5
--- !query schema
+-- !query 49 schema
 struct<i2:int>
--- !query output
+-- !query 49 output
 3
 
 
--- !query
+-- !query 50
 SELECT mydb1.t5.* FROM mydb1.t5
--- !query schema
+-- !query 50 schema
 struct<i1:int,t5:struct<i1:int,i2:int>>
--- !query output
+-- !query 50 output
 1	{"i1":2,"i2":3}
 
 
--- !query
+-- !query 51
 SELECT mydb1.t5.* FROM t5
--- !query schema
+-- !query 51 schema
 struct<i1:int,t5:struct<i1:int,i2:int>>
--- !query output
+-- !query 51 output
 1	{"i1":2,"i2":3}
 
 
--- !query
+-- !query 52
 USE default
--- !query schema
+-- !query 52 schema
 struct<>
--- !query output
+-- !query 52 output
 
 
 
--- !query
+-- !query 53
 DROP DATABASE mydb1 CASCADE
--- !query schema
+-- !query 53 schema
 struct<>
--- !query output
+-- !query 53 output
 
 
 
--- !query
+-- !query 54
 DROP DATABASE mydb2 CASCADE
--- !query schema
+-- !query 54 schema
 struct<>
--- !query output
+-- !query 54 output
 

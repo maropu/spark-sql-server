@@ -2,147 +2,147 @@
 -- Number of queries: 32
 
 
--- !query
+-- !query 0
 CREATE TABLE TIMESTAMP_TBL (d1 timestamp) USING parquet
--- !query schema
+-- !query 0 schema
 struct<>
--- !query output
+-- !query 0 output
 
 
 
--- !query
+-- !query 1
 INSERT INTO TIMESTAMP_TBL VALUES (timestamp('now'))
--- !query schema
+-- !query 1 schema
 struct<>
--- !query output
+-- !query 1 output
 
 
 
--- !query
+-- !query 2
 INSERT INTO TIMESTAMP_TBL VALUES (timestamp('now'))
--- !query schema
+-- !query 2 schema
 struct<>
--- !query output
+-- !query 2 output
 
 
 
--- !query
+-- !query 3
 INSERT INTO TIMESTAMP_TBL VALUES (timestamp('today'))
--- !query schema
+-- !query 3 schema
 struct<>
--- !query output
+-- !query 3 output
 
 
 
--- !query
+-- !query 4
 INSERT INTO TIMESTAMP_TBL VALUES (timestamp('yesterday'))
--- !query schema
+-- !query 4 schema
 struct<>
--- !query output
+-- !query 4 output
 
 
 
--- !query
+-- !query 5
 INSERT INTO TIMESTAMP_TBL VALUES (timestamp('tomorrow'))
--- !query schema
+-- !query 5 schema
 struct<>
--- !query output
+-- !query 5 output
 
 
 
--- !query
+-- !query 6
 INSERT INTO TIMESTAMP_TBL VALUES (timestamp('tomorrow EST'))
--- !query schema
+-- !query 6 schema
 struct<>
--- !query output
+-- !query 6 output
 
 
 
--- !query
+-- !query 7
 INSERT INTO TIMESTAMP_TBL VALUES (timestamp('tomorrow Zulu'))
--- !query schema
+-- !query 7 schema
 struct<>
--- !query output
+-- !query 7 output
 
 
 
--- !query
+-- !query 8
 SELECT count(*) AS One FROM TIMESTAMP_TBL WHERE d1 = timestamp 'today'
--- !query schema
+-- !query 8 schema
 struct<One:bigint>
--- !query output
+-- !query 8 output
 1
 
 
--- !query
+-- !query 9
 SELECT count(*) AS Three FROM TIMESTAMP_TBL WHERE d1 = timestamp 'tomorrow'
--- !query schema
+-- !query 9 schema
 struct<Three:bigint>
--- !query output
+-- !query 9 output
 3
 
 
--- !query
+-- !query 10
 SELECT count(*) AS One FROM TIMESTAMP_TBL WHERE d1 = timestamp 'yesterday'
--- !query schema
+-- !query 10 schema
 struct<One:bigint>
--- !query output
+-- !query 10 output
 1
 
 
--- !query
+-- !query 11
 TRUNCATE TABLE TIMESTAMP_TBL
--- !query schema
+-- !query 11 schema
 struct<>
--- !query output
+-- !query 11 output
 
 
 
--- !query
+-- !query 12
 INSERT INTO TIMESTAMP_TBL VALUES (timestamp('epoch'))
--- !query schema
+-- !query 12 schema
 struct<>
--- !query output
+-- !query 12 output
 
 
 
--- !query
+-- !query 13
 INSERT INTO TIMESTAMP_TBL VALUES (timestamp('1997-01-02'))
--- !query schema
+-- !query 13 schema
 struct<>
--- !query output
+-- !query 13 output
 
 
 
--- !query
+-- !query 14
 INSERT INTO TIMESTAMP_TBL VALUES (timestamp('1997-01-02 03:04:05'))
--- !query schema
+-- !query 14 schema
 struct<>
--- !query output
+-- !query 14 output
 
 
 
--- !query
+-- !query 15
 INSERT INTO TIMESTAMP_TBL VALUES (timestamp('1997-02-10 17:32:01-08'))
--- !query schema
+-- !query 15 schema
 struct<>
--- !query output
+-- !query 15 output
 
 
 
--- !query
+-- !query 16
 INSERT INTO TIMESTAMP_TBL VALUES (timestamp('2001-09-22T18:19:20'))
--- !query schema
+-- !query 16 schema
 struct<>
--- !query output
+-- !query 16 output
 
 
 
--- !query
+-- !query 17
 SELECT '' AS `64`, d1 FROM TIMESTAMP_TBL
--- !query schema
+-- !query 17 schema
 struct<64:string,d1:timestamp>
--- !query output
+-- !query 17 output
 	1969-12-31 16:00:00
 	1997-01-02 00:00:00
 	1997-01-02 03:04:05
@@ -150,75 +150,75 @@ struct<64:string,d1:timestamp>
 	2001-09-22 18:19:20
 
 
--- !query
+-- !query 18
 SELECT '' AS `48`, d1 FROM TIMESTAMP_TBL
    WHERE d1 > timestamp '1997-01-02'
--- !query schema
+-- !query 18 schema
 struct<48:string,d1:timestamp>
--- !query output
+-- !query 18 output
 	1997-01-02 03:04:05
 	1997-02-10 17:32:01
 	2001-09-22 18:19:20
 
 
--- !query
+-- !query 19
 SELECT '' AS `15`, d1 FROM TIMESTAMP_TBL
    WHERE d1 < timestamp '1997-01-02'
--- !query schema
+-- !query 19 schema
 struct<15:string,d1:timestamp>
--- !query output
+-- !query 19 output
 	1969-12-31 16:00:00
 
 
--- !query
+-- !query 20
 SELECT '' AS one, d1 FROM TIMESTAMP_TBL
    WHERE d1 = timestamp '1997-01-02'
--- !query schema
+-- !query 20 schema
 struct<one:string,d1:timestamp>
--- !query output
+-- !query 20 output
 	1997-01-02 00:00:00
 
 
--- !query
+-- !query 21
 SELECT '' AS `63`, d1 FROM TIMESTAMP_TBL
    WHERE d1 != timestamp '1997-01-02'
--- !query schema
+-- !query 21 schema
 struct<63:string,d1:timestamp>
--- !query output
+-- !query 21 output
 	1969-12-31 16:00:00
 	1997-01-02 03:04:05
 	1997-02-10 17:32:01
 	2001-09-22 18:19:20
 
 
--- !query
+-- !query 22
 SELECT '' AS `16`, d1 FROM TIMESTAMP_TBL
    WHERE d1 <= timestamp '1997-01-02'
--- !query schema
+-- !query 22 schema
 struct<16:string,d1:timestamp>
--- !query output
+-- !query 22 output
 	1969-12-31 16:00:00
 	1997-01-02 00:00:00
 
 
--- !query
+-- !query 23
 SELECT '' AS `49`, d1 FROM TIMESTAMP_TBL
    WHERE d1 >= timestamp '1997-01-02'
--- !query schema
+-- !query 23 schema
 struct<49:string,d1:timestamp>
--- !query output
+-- !query 23 output
 	1997-01-02 00:00:00
 	1997-01-02 03:04:05
 	1997-02-10 17:32:01
 	2001-09-22 18:19:20
 
 
--- !query
+-- !query 24
 SELECT '' AS `54`, d1 - timestamp '1997-01-02' AS diff
    FROM TIMESTAMP_TBL WHERE d1 BETWEEN '1902-01-01' AND '2038-01-01'
--- !query schema
+-- !query 24 schema
 struct<54:string,diff:interval>
--- !query output
+-- !query 24 output
 	-236720 hours
 	0 seconds
 	3 hours 4 minutes 5 seconds
@@ -226,22 +226,22 @@ struct<54:string,diff:interval>
 	953 hours 32 minutes 1 seconds
 
 
--- !query
+-- !query 25
 SELECT '' AS date_trunc_week, date_trunc( 'week', timestamp '2004-02-29 15:44:17.71393' ) AS week_trunc
--- !query schema
+-- !query 25 schema
 struct<date_trunc_week:string,week_trunc:timestamp>
--- !query output
+-- !query 25 output
 	2004-02-23 00:00:00
 
 
--- !query
+-- !query 26
 SELECT '' AS `54`, d1 - timestamp '1997-01-02' AS diff
   FROM TIMESTAMP_TBL
   WHERE d1 BETWEEN timestamp '1902-01-01'
    AND timestamp '2038-01-01'
--- !query schema
+-- !query 26 schema
 struct<54:string,diff:interval>
--- !query output
+-- !query 26 output
 	-236720 hours
 	0 seconds
 	3 hours 4 minutes 5 seconds
@@ -249,15 +249,15 @@ struct<54:string,diff:interval>
 	953 hours 32 minutes 1 seconds
 
 
--- !query
+-- !query 27
 SELECT '' AS `54`, d1 as `timestamp`,
     date_part( 'year', d1) AS `year`, date_part( 'month', d1) AS `month`,
     date_part( 'day', d1) AS `day`, date_part( 'hour', d1) AS `hour`,
     date_part( 'minute', d1) AS `minute`, date_part( 'second', d1) AS `second`
     FROM TIMESTAMP_TBL WHERE d1 BETWEEN '1902-01-01' AND '2038-01-01'
--- !query schema
+-- !query 27 schema
 struct<54:string,timestamp:timestamp,year:int,month:int,day:int,hour:int,minute:int,second:decimal(8,6)>
--- !query output
+-- !query 27 output
 	1969-12-31 16:00:00	1969	12	31	16	0	0.000000
 	1997-01-02 00:00:00	1997	1	2	0	0	0.000000
 	1997-01-02 03:04:05	1997	1	2	3	4	5.000000
@@ -265,14 +265,14 @@ struct<54:string,timestamp:timestamp,year:int,month:int,day:int,hour:int,minute:
 	2001-09-22 18:19:20	2001	9	22	18	19	20.000000
 
 
--- !query
+-- !query 28
 SELECT '' AS `54`, d1 as `timestamp`,
     date_part( 'quarter', d1) AS quarter, date_part( 'msec', d1) AS msec,
     date_part( 'usec', d1) AS usec
     FROM TIMESTAMP_TBL WHERE d1 BETWEEN '1902-01-01' AND '2038-01-01'
--- !query schema
+-- !query 28 schema
 struct<54:string,timestamp:timestamp,quarter:int,msec:decimal(8,3),usec:int>
--- !query output
+-- !query 28 output
 	1969-12-31 16:00:00	4	0.000	0
 	1997-01-02 00:00:00	1	0.000	0
 	1997-01-02 03:04:05	1	5000.000	5000000
@@ -280,14 +280,14 @@ struct<54:string,timestamp:timestamp,quarter:int,msec:decimal(8,3),usec:int>
 	2001-09-22 18:19:20	3	20000.000	20000000
 
 
--- !query
+-- !query 29
 SELECT '' AS `54`, d1 as `timestamp`,
     date_part( 'isoyear', d1) AS isoyear, date_part( 'week', d1) AS week,
     date_part( 'dow', d1) AS dow
     FROM TIMESTAMP_TBL WHERE d1 BETWEEN '1902-01-01' AND '2038-01-01'
--- !query schema
+-- !query 29 schema
 struct<54:string,timestamp:timestamp,isoyear:int,week:int,dow:int>
--- !query output
+-- !query 29 output
 	1969-12-31 16:00:00	1970	1	3
 	1997-01-02 00:00:00	1997	1	4
 	1997-01-02 03:04:05	1997	1	4
@@ -295,17 +295,17 @@ struct<54:string,timestamp:timestamp,isoyear:int,week:int,dow:int>
 	2001-09-22 18:19:20	2001	38	6
 
 
--- !query
+-- !query 30
 SELECT make_timestamp(2014,12,28,6,30,45.887)
--- !query schema
+-- !query 30 schema
 struct<make_timestamp(2014, 12, 28, 6, 30, CAST(45.887 AS DECIMAL(8,6))):timestamp>
--- !query output
+-- !query 30 output
 2014-12-28 06:30:45.887
 
 
--- !query
+-- !query 31
 DROP TABLE TIMESTAMP_TBL
--- !query schema
+-- !query 31 schema
 struct<>
--- !query output
+-- !query 31 output
 

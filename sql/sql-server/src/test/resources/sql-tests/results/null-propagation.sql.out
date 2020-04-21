@@ -2,37 +2,37 @@
 -- Number of queries: 4
 
 
--- !query
+-- !query 0
 SELECT COUNT(NULL) FROM VALUES 1, 2, 3
--- !query schema
+-- !query 0 schema
 struct<count(NULL):bigint>
--- !query output
+-- !query 0 output
 0
 
 
--- !query
+-- !query 1
 SELECT COUNT(1 + NULL) FROM VALUES 1, 2, 3
--- !query schema
+-- !query 1 schema
 struct<count((1 + CAST(NULL AS INT))):bigint>
--- !query output
+-- !query 1 output
 0
 
 
--- !query
+-- !query 2
 SELECT COUNT(NULL) OVER () FROM VALUES 1, 2, 3
--- !query schema
+-- !query 2 schema
 struct<count(NULL) OVER (ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING):bigint>
--- !query output
+-- !query 2 output
 0
 0
 0
 
 
--- !query
+-- !query 3
 SELECT COUNT(1 + NULL) OVER () FROM VALUES 1, 2, 3
--- !query schema
+-- !query 3 schema
 struct<count((1 + CAST(NULL AS INT))) OVER (ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING):bigint>
--- !query output
+-- !query 3 output
 0
 0
 0

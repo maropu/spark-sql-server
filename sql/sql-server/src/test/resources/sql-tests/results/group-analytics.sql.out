@@ -2,21 +2,21 @@
 -- Number of queries: 29
 
 
--- !query
+-- !query 0
 CREATE OR REPLACE TEMPORARY VIEW testData AS SELECT * FROM VALUES
 (1, 1), (1, 2), (2, 1), (2, 2), (3, 1), (3, 2)
 AS testData(a, b)
--- !query schema
+-- !query 0 schema
 struct<>
--- !query output
+-- !query 0 output
 
 
 
--- !query
+-- !query 1
 SELECT a + b, b, SUM(a - b) FROM testData GROUP BY a + b, b WITH CUBE
--- !query schema
+-- !query 1 schema
 struct<(a + b):int,b:int,sum((a - b)):bigint>
--- !query output
+-- !query 1 output
 2	1	0
 2	NULL	0
 3	1	1
@@ -32,11 +32,11 @@ NULL	2	0
 NULL	NULL	3
 
 
--- !query
+-- !query 2
 SELECT a, b, SUM(b) FROM testData GROUP BY a, b WITH CUBE
--- !query schema
+-- !query 2 schema
 struct<a:int,b:int,sum(b):bigint>
--- !query output
+-- !query 2 output
 1	1	1
 1	2	2
 1	NULL	3
@@ -51,11 +51,11 @@ NULL	2	6
 NULL	NULL	9
 
 
--- !query
+-- !query 3
 SELECT a + b, b, SUM(a - b) FROM testData GROUP BY a + b, b WITH ROLLUP
--- !query schema
+-- !query 3 schema
 struct<(a + b):int,b:int,sum((a - b)):bigint>
--- !query output
+-- !query 3 output
 2	1	0
 2	NULL	0
 3	1	1
@@ -69,11 +69,11 @@ struct<(a + b):int,b:int,sum((a - b)):bigint>
 NULL	NULL	3
 
 
--- !query
+-- !query 4
 SELECT a, b, SUM(b) FROM testData GROUP BY a, b WITH ROLLUP
--- !query schema
+-- !query 4 schema
 struct<a:int,b:int,sum(b):bigint>
--- !query output
+-- !query 4 output
 1	1	1
 1	2	2
 1	NULL	3
@@ -86,21 +86,21 @@ struct<a:int,b:int,sum(b):bigint>
 NULL	NULL	9
 
 
--- !query
+-- !query 5
 CREATE OR REPLACE TEMPORARY VIEW courseSales AS SELECT * FROM VALUES
 ("dotNET", 2012, 10000), ("Java", 2012, 20000), ("dotNET", 2012, 5000), ("dotNET", 2013, 48000), ("Java", 2013, 30000)
 AS courseSales(course, year, earnings)
--- !query schema
+-- !query 5 schema
 struct<>
--- !query output
+-- !query 5 output
 
 
 
--- !query
+-- !query 6
 SELECT course, year, SUM(earnings) FROM courseSales GROUP BY ROLLUP(course, year) ORDER BY course, year
--- !query schema
+-- !query 6 schema
 struct<course:string,year:int,sum(earnings):bigint>
--- !query output
+-- !query 6 output
 NULL	NULL	113000
 Java	NULL	50000
 Java	2012	20000
@@ -110,11 +110,11 @@ dotNET	2012	15000
 dotNET	2013	48000
 
 
--- !query
+-- !query 7
 SELECT course, year, SUM(earnings) FROM courseSales GROUP BY CUBE(course, year) ORDER BY course, year
--- !query schema
+-- !query 7 schema
 struct<course:string,year:int,sum(earnings):bigint>
--- !query output
+-- !query 7 output
 NULL	NULL	113000
 NULL	2012	35000
 NULL	2013	78000
@@ -126,41 +126,41 @@ dotNET	2012	15000
 dotNET	2013	48000
 
 
--- !query
+-- !query 8
 SELECT course, year, SUM(earnings) FROM courseSales GROUP BY course, year GROUPING SETS(course, year)
--- !query schema
+-- !query 8 schema
 struct<course:string,year:int,sum(earnings):bigint>
--- !query output
+-- !query 8 output
 Java	NULL	50000
 NULL	2012	35000
 NULL	2013	78000
 dotNET	NULL	63000
 
 
--- !query
+-- !query 9
 SELECT course, year, SUM(earnings) FROM courseSales GROUP BY course, year GROUPING SETS(course)
--- !query schema
+-- !query 9 schema
 struct<course:string,year:int,sum(earnings):bigint>
--- !query output
+-- !query 9 output
 Java	NULL	50000
 dotNET	NULL	63000
 
 
--- !query
+-- !query 10
 SELECT course, year, SUM(earnings) FROM courseSales GROUP BY course, year GROUPING SETS(year)
--- !query schema
+-- !query 10 schema
 struct<course:string,year:int,sum(earnings):bigint>
--- !query output
+-- !query 10 output
 NULL	2012	35000
 NULL	2013	78000
 
 
--- !query
+-- !query 11
 SELECT course, SUM(earnings) AS sum FROM courseSales
 GROUP BY course, earnings GROUPING SETS((), (course), (course, earnings)) ORDER BY course, sum
--- !query schema
+-- !query 11 schema
 struct<course:string,sum:bigint>
--- !query output
+-- !query 11 output
 NULL	113000
 Java	20000
 Java	30000
@@ -171,12 +171,12 @@ dotNET	48000
 dotNET	63000
 
 
--- !query
+-- !query 12
 SELECT course, SUM(earnings) AS sum, GROUPING_ID(course, earnings) FROM courseSales
 GROUP BY course, earnings GROUPING SETS((), (course), (course, earnings)) ORDER BY course, sum
--- !query schema
-struct<course:string,sum:bigint,grouping_id(course, earnings):bigint>
--- !query output
+-- !query 12 schema
+struct<course:string,sum:bigint,grouping_id(course, earnings):int>
+-- !query 12 output
 NULL	113000	3
 Java	20000	0
 Java	30000	0
@@ -187,12 +187,12 @@ dotNET	48000	0
 dotNET	63000	1
 
 
--- !query
+-- !query 13
 SELECT course, year, GROUPING(course), GROUPING(year), GROUPING_ID(course, year) FROM courseSales
 GROUP BY CUBE(course, year)
--- !query schema
-struct<course:string,year:int,grouping(course):tinyint,grouping(year):tinyint,grouping_id(course, year):bigint>
--- !query output
+-- !query 13 schema
+struct<course:string,year:int,grouping(course):tinyint,grouping(year):tinyint,grouping_id(course, year):int>
+-- !query 13 output
 Java	2012	0	0	0
 Java	2013	0	0	0
 Java	NULL	0	1	1
@@ -204,29 +204,29 @@ dotNET	2013	0	0	0
 dotNET	NULL	0	1	1
 
 
--- !query
+-- !query 14
 SELECT course, year, GROUPING(course) FROM courseSales GROUP BY course, year
--- !query schema
+-- !query 14 schema
 struct<>
--- !query output
+-- !query 14 output
 org.apache.spark.sql.AnalysisException
 grouping() can only be used with GroupingSets/Cube/Rollup;
 
 
--- !query
+-- !query 15
 SELECT course, year, GROUPING_ID(course, year) FROM courseSales GROUP BY course, year
--- !query schema
+-- !query 15 schema
 struct<>
--- !query output
+-- !query 15 output
 org.apache.spark.sql.AnalysisException
 grouping_id() can only be used with GroupingSets/Cube/Rollup;
 
 
--- !query
+-- !query 16
 SELECT course, year, grouping__id FROM courseSales GROUP BY CUBE(course, year) ORDER BY grouping__id, course, year
--- !query schema
-struct<course:string,year:int,grouping__id:bigint>
--- !query output
+-- !query 16 schema
+struct<course:string,year:int,grouping__id:int>
+-- !query 16 output
 Java	2012	0
 Java	2013	0
 dotNET	2012	0
@@ -238,40 +238,40 @@ NULL	2013	2
 NULL	NULL	3
 
 
--- !query
+-- !query 17
 SELECT course, year FROM courseSales GROUP BY CUBE(course, year)
 HAVING GROUPING(year) = 1 AND GROUPING_ID(course, year) > 0 ORDER BY course, year
--- !query schema
+-- !query 17 schema
 struct<course:string,year:int>
--- !query output
+-- !query 17 output
 NULL	NULL
 Java	NULL
 dotNET	NULL
 
 
--- !query
+-- !query 18
 SELECT course, year FROM courseSales GROUP BY course, year HAVING GROUPING(course) > 0
--- !query schema
+-- !query 18 schema
 struct<>
--- !query output
+-- !query 18 output
 org.apache.spark.sql.AnalysisException
 grouping()/grouping_id() can only be used with GroupingSets/Cube/Rollup;
 
 
--- !query
+-- !query 19
 SELECT course, year FROM courseSales GROUP BY course, year HAVING GROUPING_ID(course) > 0
--- !query schema
+-- !query 19 schema
 struct<>
--- !query output
+-- !query 19 output
 org.apache.spark.sql.AnalysisException
 grouping()/grouping_id() can only be used with GroupingSets/Cube/Rollup;
 
 
--- !query
+-- !query 20
 SELECT course, year FROM courseSales GROUP BY CUBE(course, year) HAVING grouping__id > 0
--- !query schema
+-- !query 20 schema
 struct<course:string,year:int>
--- !query output
+-- !query 20 output
 Java	NULL
 NULL	2012
 NULL	2013
@@ -279,12 +279,12 @@ NULL	NULL
 dotNET	NULL
 
 
--- !query
+-- !query 21
 SELECT course, year, GROUPING(course), GROUPING(year) FROM courseSales GROUP BY CUBE(course, year)
 ORDER BY GROUPING(course), GROUPING(year), course, year
--- !query schema
+-- !query 21 schema
 struct<course:string,year:int,grouping(course):tinyint,grouping(year):tinyint>
--- !query output
+-- !query 21 output
 Java	2012	0	0
 Java	2013	0	0
 dotNET	2012	0	0
@@ -296,12 +296,12 @@ NULL	2013	1	0
 NULL	NULL	1	1
 
 
--- !query
+-- !query 22
 SELECT course, year, GROUPING_ID(course, year) FROM courseSales GROUP BY CUBE(course, year)
 ORDER BY GROUPING(course), GROUPING(year), course, year
--- !query schema
-struct<course:string,year:int,grouping_id(course, year):bigint>
--- !query output
+-- !query 22 schema
+struct<course:string,year:int,grouping_id(course, year):int>
+-- !query 22 output
 Java	2012	0
 Java	2013	0
 dotNET	2012	0
@@ -313,29 +313,29 @@ NULL	2013	2
 NULL	NULL	3
 
 
--- !query
+-- !query 23
 SELECT course, year FROM courseSales GROUP BY course, year ORDER BY GROUPING(course)
--- !query schema
+-- !query 23 schema
 struct<>
--- !query output
+-- !query 23 output
 org.apache.spark.sql.AnalysisException
 grouping()/grouping_id() can only be used with GroupingSets/Cube/Rollup;
 
 
--- !query
+-- !query 24
 SELECT course, year FROM courseSales GROUP BY course, year ORDER BY GROUPING_ID(course)
--- !query schema
+-- !query 24 schema
 struct<>
--- !query output
+-- !query 24 output
 org.apache.spark.sql.AnalysisException
 grouping()/grouping_id() can only be used with GroupingSets/Cube/Rollup;
 
 
--- !query
+-- !query 25
 SELECT course, year FROM courseSales GROUP BY CUBE(course, year) ORDER BY grouping__id, course, year
--- !query schema
+-- !query 25 schema
 struct<course:string,year:int>
--- !query output
+-- !query 25 output
 Java	2012
 Java	2013
 dotNET	2012
@@ -347,11 +347,11 @@ NULL	2013
 NULL	NULL
 
 
--- !query
+-- !query 26
 SELECT a + b AS k1, b AS k2, SUM(a - b) FROM testData GROUP BY CUBE(k1, k2)
--- !query schema
+-- !query 26 schema
 struct<k1:int,k2:int,sum((a - b)):bigint>
--- !query output
+-- !query 26 output
 2	1	0
 2	NULL	0
 3	1	1
@@ -367,11 +367,11 @@ NULL	2	0
 NULL	NULL	3
 
 
--- !query
+-- !query 27
 SELECT a + b AS k, b, SUM(a - b) FROM testData GROUP BY ROLLUP(k, b)
--- !query schema
+-- !query 27 schema
 struct<k:int,b:int,sum((a - b)):bigint>
--- !query output
+-- !query 27 output
 2	1	0
 2	NULL	0
 3	1	1
@@ -385,10 +385,10 @@ struct<k:int,b:int,sum((a - b)):bigint>
 NULL	NULL	3
 
 
--- !query
+-- !query 28
 SELECT a + b, b AS k, SUM(a - b) FROM testData GROUP BY a + b, k GROUPING SETS(k)
--- !query schema
+-- !query 28 schema
 struct<(a + b):int,k:int,sum((a - b)):bigint>
--- !query output
+-- !query 28 output
 NULL	1	3
 NULL	2	0

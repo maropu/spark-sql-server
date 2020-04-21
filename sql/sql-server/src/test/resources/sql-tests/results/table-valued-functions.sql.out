@@ -2,20 +2,20 @@
 -- Number of queries: 8
 
 
--- !query
+-- !query 0
 select * from dummy(3)
--- !query schema
+-- !query 0 schema
 struct<>
--- !query output
+-- !query 0 output
 org.apache.spark.sql.AnalysisException
 could not resolve `dummy` to a table-valued function; line 1 pos 14
 
 
--- !query
+-- !query 1
 select * from range(6 + cos(3))
--- !query schema
+-- !query 1 schema
 struct<id:bigint>
--- !query output
+-- !query 1 output
 0
 1
 2
@@ -23,11 +23,11 @@ struct<id:bigint>
 4
 
 
--- !query
+-- !query 2
 select * from range(5, 10)
--- !query schema
+-- !query 2 schema
 struct<id:bigint>
--- !query output
+-- !query 2 output
 5
 6
 7
@@ -35,11 +35,11 @@ struct<id:bigint>
 9
 
 
--- !query
+-- !query 3
 select * from range(0, 10, 2)
--- !query schema
+-- !query 3 schema
 struct<id:bigint>
--- !query output
+-- !query 3 output
 0
 2
 4
@@ -47,11 +47,11 @@ struct<id:bigint>
 8
 
 
--- !query
+-- !query 4
 select * from range(0, 10, 1, 200)
--- !query schema
+-- !query 4 schema
 struct<id:bigint>
--- !query output
+-- !query 4 output
 0
 1
 2
@@ -64,11 +64,11 @@ struct<id:bigint>
 9
 
 
--- !query
+-- !query 5
 select * from range(1, 1, 1, 1, 1)
--- !query schema
+-- !query 5 schema
 struct<>
--- !query output
+-- !query 5 output
 org.apache.spark.sql.AnalysisException
 error: table-valued function range with alternatives:
  (end: long)
@@ -78,11 +78,11 @@ error: table-valued function range with alternatives:
 cannot be applied to: (integer, integer, integer, integer, integer); line 1 pos 14
 
 
--- !query
+-- !query 6
 select * from range(1, null)
--- !query schema
+-- !query 6 schema
 struct<>
--- !query output
+-- !query 6 output
 org.apache.spark.sql.AnalysisException
 error: table-valued function range with alternatives:
  (end: long)
@@ -92,10 +92,10 @@ error: table-valued function range with alternatives:
 cannot be applied to: (integer, null); line 1 pos 14
 
 
--- !query
+-- !query 7
 select * from RaNgE(2)
--- !query schema
+-- !query 7 schema
 struct<id:bigint>
--- !query output
+-- !query 7 output
 0
 1

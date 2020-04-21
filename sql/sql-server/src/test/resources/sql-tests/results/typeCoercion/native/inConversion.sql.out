@@ -2,2453 +2,2453 @@
 -- Number of queries: 289
 
 
--- !query
+-- !query 0
 CREATE TEMPORARY VIEW t AS SELECT 1
--- !query schema
+-- !query 0 schema
 struct<>
--- !query output
+-- !query 0 output
 
 
 
--- !query
+-- !query 1
 SELECT cast(1 as tinyint) in (cast(1 as tinyint)) FROM t
--- !query schema
+-- !query 1 schema
 struct<(CAST(1 AS TINYINT) IN (CAST(1 AS TINYINT))):boolean>
--- !query output
+-- !query 1 output
 true
 
 
--- !query
+-- !query 2
 SELECT cast(1 as tinyint) in (cast(1 as smallint)) FROM t
--- !query schema
+-- !query 2 schema
 struct<(CAST(CAST(1 AS TINYINT) AS SMALLINT) IN (CAST(CAST(1 AS SMALLINT) AS SMALLINT))):boolean>
--- !query output
+-- !query 2 output
 true
 
 
--- !query
+-- !query 3
 SELECT cast(1 as tinyint) in (cast(1 as int)) FROM t
--- !query schema
+-- !query 3 schema
 struct<(CAST(CAST(1 AS TINYINT) AS INT) IN (CAST(CAST(1 AS INT) AS INT))):boolean>
--- !query output
+-- !query 3 output
 true
 
 
--- !query
+-- !query 4
 SELECT cast(1 as tinyint) in (cast(1 as bigint)) FROM t
--- !query schema
+-- !query 4 schema
 struct<(CAST(CAST(1 AS TINYINT) AS BIGINT) IN (CAST(CAST(1 AS BIGINT) AS BIGINT))):boolean>
--- !query output
+-- !query 4 output
 true
 
 
--- !query
+-- !query 5
 SELECT cast(1 as tinyint) in (cast(1 as float)) FROM t
--- !query schema
+-- !query 5 schema
 struct<(CAST(CAST(1 AS TINYINT) AS FLOAT) IN (CAST(CAST(1 AS FLOAT) AS FLOAT))):boolean>
--- !query output
+-- !query 5 output
 true
 
 
--- !query
+-- !query 6
 SELECT cast(1 as tinyint) in (cast(1 as double)) FROM t
--- !query schema
+-- !query 6 schema
 struct<(CAST(CAST(1 AS TINYINT) AS DOUBLE) IN (CAST(CAST(1 AS DOUBLE) AS DOUBLE))):boolean>
--- !query output
+-- !query 6 output
 true
 
 
--- !query
+-- !query 7
 SELECT cast(1 as tinyint) in (cast(1 as decimal(10, 0))) FROM t
--- !query schema
+-- !query 7 schema
 struct<(CAST(CAST(1 AS TINYINT) AS DECIMAL(10,0)) IN (CAST(CAST(1 AS DECIMAL(10,0)) AS DECIMAL(10,0)))):boolean>
--- !query output
+-- !query 7 output
 true
 
 
--- !query
+-- !query 8
 SELECT cast(1 as tinyint) in (cast(1 as string)) FROM t
--- !query schema
+-- !query 8 schema
 struct<(CAST(CAST(1 AS TINYINT) AS STRING) IN (CAST(CAST(1 AS STRING) AS STRING))):boolean>
--- !query output
+-- !query 8 output
 true
 
 
--- !query
+-- !query 9
 SELECT cast(1 as tinyint) in (cast('1' as binary)) FROM t
--- !query schema
+-- !query 9 schema
 struct<>
--- !query output
+-- !query 9 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS TINYINT) IN (CAST('1' AS BINARY)))' due to data type mismatch: Arguments must be same type but were: tinyint != binary; line 1 pos 26
 
 
--- !query
+-- !query 10
 SELECT cast(1 as tinyint) in (cast(1 as boolean)) FROM t
--- !query schema
+-- !query 10 schema
 struct<>
--- !query output
+-- !query 10 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS TINYINT) IN (CAST(1 AS BOOLEAN)))' due to data type mismatch: Arguments must be same type but were: tinyint != boolean; line 1 pos 26
 
 
--- !query
+-- !query 11
 SELECT cast(1 as tinyint) in (cast('2017-12-11 09:30:00.0' as timestamp)) FROM t
--- !query schema
+-- !query 11 schema
 struct<>
--- !query output
+-- !query 11 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS TINYINT) IN (CAST('2017-12-11 09:30:00.0' AS TIMESTAMP)))' due to data type mismatch: Arguments must be same type but were: tinyint != timestamp; line 1 pos 26
 
 
--- !query
+-- !query 12
 SELECT cast(1 as tinyint) in (cast('2017-12-11 09:30:00' as date)) FROM t
--- !query schema
+-- !query 12 schema
 struct<>
--- !query output
+-- !query 12 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS TINYINT) IN (CAST('2017-12-11 09:30:00' AS DATE)))' due to data type mismatch: Arguments must be same type but were: tinyint != date; line 1 pos 26
 
 
--- !query
+-- !query 13
 SELECT cast(1 as smallint) in (cast(1 as tinyint)) FROM t
--- !query schema
+-- !query 13 schema
 struct<(CAST(CAST(1 AS SMALLINT) AS SMALLINT) IN (CAST(CAST(1 AS TINYINT) AS SMALLINT))):boolean>
--- !query output
+-- !query 13 output
 true
 
 
--- !query
+-- !query 14
 SELECT cast(1 as smallint) in (cast(1 as smallint)) FROM t
--- !query schema
+-- !query 14 schema
 struct<(CAST(1 AS SMALLINT) IN (CAST(1 AS SMALLINT))):boolean>
--- !query output
+-- !query 14 output
 true
 
 
--- !query
+-- !query 15
 SELECT cast(1 as smallint) in (cast(1 as int)) FROM t
--- !query schema
+-- !query 15 schema
 struct<(CAST(CAST(1 AS SMALLINT) AS INT) IN (CAST(CAST(1 AS INT) AS INT))):boolean>
--- !query output
+-- !query 15 output
 true
 
 
--- !query
+-- !query 16
 SELECT cast(1 as smallint) in (cast(1 as bigint)) FROM t
--- !query schema
+-- !query 16 schema
 struct<(CAST(CAST(1 AS SMALLINT) AS BIGINT) IN (CAST(CAST(1 AS BIGINT) AS BIGINT))):boolean>
--- !query output
+-- !query 16 output
 true
 
 
--- !query
+-- !query 17
 SELECT cast(1 as smallint) in (cast(1 as float)) FROM t
--- !query schema
+-- !query 17 schema
 struct<(CAST(CAST(1 AS SMALLINT) AS FLOAT) IN (CAST(CAST(1 AS FLOAT) AS FLOAT))):boolean>
--- !query output
+-- !query 17 output
 true
 
 
--- !query
+-- !query 18
 SELECT cast(1 as smallint) in (cast(1 as double)) FROM t
--- !query schema
+-- !query 18 schema
 struct<(CAST(CAST(1 AS SMALLINT) AS DOUBLE) IN (CAST(CAST(1 AS DOUBLE) AS DOUBLE))):boolean>
--- !query output
+-- !query 18 output
 true
 
 
--- !query
+-- !query 19
 SELECT cast(1 as smallint) in (cast(1 as decimal(10, 0))) FROM t
--- !query schema
+-- !query 19 schema
 struct<(CAST(CAST(1 AS SMALLINT) AS DECIMAL(10,0)) IN (CAST(CAST(1 AS DECIMAL(10,0)) AS DECIMAL(10,0)))):boolean>
--- !query output
+-- !query 19 output
 true
 
 
--- !query
+-- !query 20
 SELECT cast(1 as smallint) in (cast(1 as string)) FROM t
--- !query schema
+-- !query 20 schema
 struct<(CAST(CAST(1 AS SMALLINT) AS STRING) IN (CAST(CAST(1 AS STRING) AS STRING))):boolean>
--- !query output
+-- !query 20 output
 true
 
 
--- !query
+-- !query 21
 SELECT cast(1 as smallint) in (cast('1' as binary)) FROM t
--- !query schema
+-- !query 21 schema
 struct<>
--- !query output
+-- !query 21 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS SMALLINT) IN (CAST('1' AS BINARY)))' due to data type mismatch: Arguments must be same type but were: smallint != binary; line 1 pos 27
 
 
--- !query
+-- !query 22
 SELECT cast(1 as smallint) in (cast(1 as boolean)) FROM t
--- !query schema
+-- !query 22 schema
 struct<>
--- !query output
+-- !query 22 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS SMALLINT) IN (CAST(1 AS BOOLEAN)))' due to data type mismatch: Arguments must be same type but were: smallint != boolean; line 1 pos 27
 
 
--- !query
+-- !query 23
 SELECT cast(1 as smallint) in (cast('2017-12-11 09:30:00.0' as timestamp)) FROM t
--- !query schema
+-- !query 23 schema
 struct<>
--- !query output
+-- !query 23 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS SMALLINT) IN (CAST('2017-12-11 09:30:00.0' AS TIMESTAMP)))' due to data type mismatch: Arguments must be same type but were: smallint != timestamp; line 1 pos 27
 
 
--- !query
+-- !query 24
 SELECT cast(1 as smallint) in (cast('2017-12-11 09:30:00' as date)) FROM t
--- !query schema
+-- !query 24 schema
 struct<>
--- !query output
+-- !query 24 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS SMALLINT) IN (CAST('2017-12-11 09:30:00' AS DATE)))' due to data type mismatch: Arguments must be same type but were: smallint != date; line 1 pos 27
 
 
--- !query
+-- !query 25
 SELECT cast(1 as int) in (cast(1 as tinyint)) FROM t
--- !query schema
+-- !query 25 schema
 struct<(CAST(CAST(1 AS INT) AS INT) IN (CAST(CAST(1 AS TINYINT) AS INT))):boolean>
--- !query output
+-- !query 25 output
 true
 
 
--- !query
+-- !query 26
 SELECT cast(1 as int) in (cast(1 as smallint)) FROM t
--- !query schema
+-- !query 26 schema
 struct<(CAST(CAST(1 AS INT) AS INT) IN (CAST(CAST(1 AS SMALLINT) AS INT))):boolean>
--- !query output
+-- !query 26 output
 true
 
 
--- !query
+-- !query 27
 SELECT cast(1 as int) in (cast(1 as int)) FROM t
--- !query schema
+-- !query 27 schema
 struct<(CAST(1 AS INT) IN (CAST(1 AS INT))):boolean>
--- !query output
+-- !query 27 output
 true
 
 
--- !query
+-- !query 28
 SELECT cast(1 as int) in (cast(1 as bigint)) FROM t
--- !query schema
+-- !query 28 schema
 struct<(CAST(CAST(1 AS INT) AS BIGINT) IN (CAST(CAST(1 AS BIGINT) AS BIGINT))):boolean>
--- !query output
+-- !query 28 output
 true
 
 
--- !query
+-- !query 29
 SELECT cast(1 as int) in (cast(1 as float)) FROM t
--- !query schema
+-- !query 29 schema
 struct<(CAST(CAST(1 AS INT) AS FLOAT) IN (CAST(CAST(1 AS FLOAT) AS FLOAT))):boolean>
--- !query output
+-- !query 29 output
 true
 
 
--- !query
+-- !query 30
 SELECT cast(1 as int) in (cast(1 as double)) FROM t
--- !query schema
+-- !query 30 schema
 struct<(CAST(CAST(1 AS INT) AS DOUBLE) IN (CAST(CAST(1 AS DOUBLE) AS DOUBLE))):boolean>
--- !query output
+-- !query 30 output
 true
 
 
--- !query
+-- !query 31
 SELECT cast(1 as int) in (cast(1 as decimal(10, 0))) FROM t
--- !query schema
+-- !query 31 schema
 struct<(CAST(CAST(1 AS INT) AS DECIMAL(10,0)) IN (CAST(CAST(1 AS DECIMAL(10,0)) AS DECIMAL(10,0)))):boolean>
--- !query output
+-- !query 31 output
 true
 
 
--- !query
+-- !query 32
 SELECT cast(1 as int) in (cast(1 as string)) FROM t
--- !query schema
+-- !query 32 schema
 struct<(CAST(CAST(1 AS INT) AS STRING) IN (CAST(CAST(1 AS STRING) AS STRING))):boolean>
--- !query output
+-- !query 32 output
 true
 
 
--- !query
+-- !query 33
 SELECT cast(1 as int) in (cast('1' as binary)) FROM t
--- !query schema
+-- !query 33 schema
 struct<>
--- !query output
+-- !query 33 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS INT) IN (CAST('1' AS BINARY)))' due to data type mismatch: Arguments must be same type but were: int != binary; line 1 pos 22
 
 
--- !query
+-- !query 34
 SELECT cast(1 as int) in (cast(1 as boolean)) FROM t
--- !query schema
+-- !query 34 schema
 struct<>
--- !query output
+-- !query 34 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS INT) IN (CAST(1 AS BOOLEAN)))' due to data type mismatch: Arguments must be same type but were: int != boolean; line 1 pos 22
 
 
--- !query
+-- !query 35
 SELECT cast(1 as int) in (cast('2017-12-11 09:30:00.0' as timestamp)) FROM t
--- !query schema
+-- !query 35 schema
 struct<>
--- !query output
+-- !query 35 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS INT) IN (CAST('2017-12-11 09:30:00.0' AS TIMESTAMP)))' due to data type mismatch: Arguments must be same type but were: int != timestamp; line 1 pos 22
 
 
--- !query
+-- !query 36
 SELECT cast(1 as int) in (cast('2017-12-11 09:30:00' as date)) FROM t
--- !query schema
+-- !query 36 schema
 struct<>
--- !query output
+-- !query 36 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS INT) IN (CAST('2017-12-11 09:30:00' AS DATE)))' due to data type mismatch: Arguments must be same type but were: int != date; line 1 pos 22
 
 
--- !query
+-- !query 37
 SELECT cast(1 as bigint) in (cast(1 as tinyint)) FROM t
--- !query schema
+-- !query 37 schema
 struct<(CAST(CAST(1 AS BIGINT) AS BIGINT) IN (CAST(CAST(1 AS TINYINT) AS BIGINT))):boolean>
--- !query output
+-- !query 37 output
 true
 
 
--- !query
+-- !query 38
 SELECT cast(1 as bigint) in (cast(1 as smallint)) FROM t
--- !query schema
+-- !query 38 schema
 struct<(CAST(CAST(1 AS BIGINT) AS BIGINT) IN (CAST(CAST(1 AS SMALLINT) AS BIGINT))):boolean>
--- !query output
+-- !query 38 output
 true
 
 
--- !query
+-- !query 39
 SELECT cast(1 as bigint) in (cast(1 as int)) FROM t
--- !query schema
+-- !query 39 schema
 struct<(CAST(CAST(1 AS BIGINT) AS BIGINT) IN (CAST(CAST(1 AS INT) AS BIGINT))):boolean>
--- !query output
+-- !query 39 output
 true
 
 
--- !query
+-- !query 40
 SELECT cast(1 as bigint) in (cast(1 as bigint)) FROM t
--- !query schema
+-- !query 40 schema
 struct<(CAST(1 AS BIGINT) IN (CAST(1 AS BIGINT))):boolean>
--- !query output
+-- !query 40 output
 true
 
 
--- !query
+-- !query 41
 SELECT cast(1 as bigint) in (cast(1 as float)) FROM t
--- !query schema
+-- !query 41 schema
 struct<(CAST(CAST(1 AS BIGINT) AS FLOAT) IN (CAST(CAST(1 AS FLOAT) AS FLOAT))):boolean>
--- !query output
+-- !query 41 output
 true
 
 
--- !query
+-- !query 42
 SELECT cast(1 as bigint) in (cast(1 as double)) FROM t
--- !query schema
+-- !query 42 schema
 struct<(CAST(CAST(1 AS BIGINT) AS DOUBLE) IN (CAST(CAST(1 AS DOUBLE) AS DOUBLE))):boolean>
--- !query output
+-- !query 42 output
 true
 
 
--- !query
+-- !query 43
 SELECT cast(1 as bigint) in (cast(1 as decimal(10, 0))) FROM t
--- !query schema
+-- !query 43 schema
 struct<(CAST(CAST(1 AS BIGINT) AS DECIMAL(20,0)) IN (CAST(CAST(1 AS DECIMAL(10,0)) AS DECIMAL(20,0)))):boolean>
--- !query output
+-- !query 43 output
 true
 
 
--- !query
+-- !query 44
 SELECT cast(1 as bigint) in (cast(1 as string)) FROM t
--- !query schema
+-- !query 44 schema
 struct<(CAST(CAST(1 AS BIGINT) AS STRING) IN (CAST(CAST(1 AS STRING) AS STRING))):boolean>
--- !query output
+-- !query 44 output
 true
 
 
--- !query
+-- !query 45
 SELECT cast(1 as bigint) in (cast('1' as binary)) FROM t
--- !query schema
+-- !query 45 schema
 struct<>
--- !query output
+-- !query 45 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS BIGINT) IN (CAST('1' AS BINARY)))' due to data type mismatch: Arguments must be same type but were: bigint != binary; line 1 pos 25
 
 
--- !query
+-- !query 46
 SELECT cast(1 as bigint) in (cast(1 as boolean)) FROM t
--- !query schema
+-- !query 46 schema
 struct<>
--- !query output
+-- !query 46 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS BIGINT) IN (CAST(1 AS BOOLEAN)))' due to data type mismatch: Arguments must be same type but were: bigint != boolean; line 1 pos 25
 
 
--- !query
+-- !query 47
 SELECT cast(1 as bigint) in (cast('2017-12-11 09:30:00.0' as timestamp)) FROM t
--- !query schema
+-- !query 47 schema
 struct<>
--- !query output
+-- !query 47 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS BIGINT) IN (CAST('2017-12-11 09:30:00.0' AS TIMESTAMP)))' due to data type mismatch: Arguments must be same type but were: bigint != timestamp; line 1 pos 25
 
 
--- !query
+-- !query 48
 SELECT cast(1 as bigint) in (cast('2017-12-11 09:30:00' as date)) FROM t
--- !query schema
+-- !query 48 schema
 struct<>
--- !query output
+-- !query 48 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS BIGINT) IN (CAST('2017-12-11 09:30:00' AS DATE)))' due to data type mismatch: Arguments must be same type but were: bigint != date; line 1 pos 25
 
 
--- !query
+-- !query 49
 SELECT cast(1 as float) in (cast(1 as tinyint)) FROM t
--- !query schema
+-- !query 49 schema
 struct<(CAST(CAST(1 AS FLOAT) AS FLOAT) IN (CAST(CAST(1 AS TINYINT) AS FLOAT))):boolean>
--- !query output
+-- !query 49 output
 true
 
 
--- !query
+-- !query 50
 SELECT cast(1 as float) in (cast(1 as smallint)) FROM t
--- !query schema
+-- !query 50 schema
 struct<(CAST(CAST(1 AS FLOAT) AS FLOAT) IN (CAST(CAST(1 AS SMALLINT) AS FLOAT))):boolean>
--- !query output
+-- !query 50 output
 true
 
 
--- !query
+-- !query 51
 SELECT cast(1 as float) in (cast(1 as int)) FROM t
--- !query schema
+-- !query 51 schema
 struct<(CAST(CAST(1 AS FLOAT) AS FLOAT) IN (CAST(CAST(1 AS INT) AS FLOAT))):boolean>
--- !query output
+-- !query 51 output
 true
 
 
--- !query
+-- !query 52
 SELECT cast(1 as float) in (cast(1 as bigint)) FROM t
--- !query schema
+-- !query 52 schema
 struct<(CAST(CAST(1 AS FLOAT) AS FLOAT) IN (CAST(CAST(1 AS BIGINT) AS FLOAT))):boolean>
--- !query output
+-- !query 52 output
 true
 
 
--- !query
+-- !query 53
 SELECT cast(1 as float) in (cast(1 as float)) FROM t
--- !query schema
+-- !query 53 schema
 struct<(CAST(1 AS FLOAT) IN (CAST(1 AS FLOAT))):boolean>
--- !query output
+-- !query 53 output
 true
 
 
--- !query
+-- !query 54
 SELECT cast(1 as float) in (cast(1 as double)) FROM t
--- !query schema
+-- !query 54 schema
 struct<(CAST(CAST(1 AS FLOAT) AS DOUBLE) IN (CAST(CAST(1 AS DOUBLE) AS DOUBLE))):boolean>
--- !query output
+-- !query 54 output
 true
 
 
--- !query
+-- !query 55
 SELECT cast(1 as float) in (cast(1 as decimal(10, 0))) FROM t
--- !query schema
+-- !query 55 schema
 struct<(CAST(CAST(1 AS FLOAT) AS DOUBLE) IN (CAST(CAST(1 AS DECIMAL(10,0)) AS DOUBLE))):boolean>
--- !query output
+-- !query 55 output
 true
 
 
--- !query
+-- !query 56
 SELECT cast(1 as float) in (cast(1 as string)) FROM t
--- !query schema
+-- !query 56 schema
 struct<(CAST(CAST(1 AS FLOAT) AS STRING) IN (CAST(CAST(1 AS STRING) AS STRING))):boolean>
--- !query output
+-- !query 56 output
 false
 
 
--- !query
+-- !query 57
 SELECT cast(1 as float) in (cast('1' as binary)) FROM t
--- !query schema
+-- !query 57 schema
 struct<>
--- !query output
+-- !query 57 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS FLOAT) IN (CAST('1' AS BINARY)))' due to data type mismatch: Arguments must be same type but were: float != binary; line 1 pos 24
 
 
--- !query
+-- !query 58
 SELECT cast(1 as float) in (cast(1 as boolean)) FROM t
--- !query schema
+-- !query 58 schema
 struct<>
--- !query output
+-- !query 58 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS FLOAT) IN (CAST(1 AS BOOLEAN)))' due to data type mismatch: Arguments must be same type but were: float != boolean; line 1 pos 24
 
 
--- !query
+-- !query 59
 SELECT cast(1 as float) in (cast('2017-12-11 09:30:00.0' as timestamp)) FROM t
--- !query schema
+-- !query 59 schema
 struct<>
--- !query output
+-- !query 59 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS FLOAT) IN (CAST('2017-12-11 09:30:00.0' AS TIMESTAMP)))' due to data type mismatch: Arguments must be same type but were: float != timestamp; line 1 pos 24
 
 
--- !query
+-- !query 60
 SELECT cast(1 as float) in (cast('2017-12-11 09:30:00' as date)) FROM t
--- !query schema
+-- !query 60 schema
 struct<>
--- !query output
+-- !query 60 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS FLOAT) IN (CAST('2017-12-11 09:30:00' AS DATE)))' due to data type mismatch: Arguments must be same type but were: float != date; line 1 pos 24
 
 
--- !query
+-- !query 61
 SELECT cast(1 as double) in (cast(1 as tinyint)) FROM t
--- !query schema
+-- !query 61 schema
 struct<(CAST(CAST(1 AS DOUBLE) AS DOUBLE) IN (CAST(CAST(1 AS TINYINT) AS DOUBLE))):boolean>
--- !query output
+-- !query 61 output
 true
 
 
--- !query
+-- !query 62
 SELECT cast(1 as double) in (cast(1 as smallint)) FROM t
--- !query schema
+-- !query 62 schema
 struct<(CAST(CAST(1 AS DOUBLE) AS DOUBLE) IN (CAST(CAST(1 AS SMALLINT) AS DOUBLE))):boolean>
--- !query output
+-- !query 62 output
 true
 
 
--- !query
+-- !query 63
 SELECT cast(1 as double) in (cast(1 as int)) FROM t
--- !query schema
+-- !query 63 schema
 struct<(CAST(CAST(1 AS DOUBLE) AS DOUBLE) IN (CAST(CAST(1 AS INT) AS DOUBLE))):boolean>
--- !query output
+-- !query 63 output
 true
 
 
--- !query
+-- !query 64
 SELECT cast(1 as double) in (cast(1 as bigint)) FROM t
--- !query schema
+-- !query 64 schema
 struct<(CAST(CAST(1 AS DOUBLE) AS DOUBLE) IN (CAST(CAST(1 AS BIGINT) AS DOUBLE))):boolean>
--- !query output
+-- !query 64 output
 true
 
 
--- !query
+-- !query 65
 SELECT cast(1 as double) in (cast(1 as float)) FROM t
--- !query schema
+-- !query 65 schema
 struct<(CAST(CAST(1 AS DOUBLE) AS DOUBLE) IN (CAST(CAST(1 AS FLOAT) AS DOUBLE))):boolean>
--- !query output
+-- !query 65 output
 true
 
 
--- !query
+-- !query 66
 SELECT cast(1 as double) in (cast(1 as double)) FROM t
--- !query schema
+-- !query 66 schema
 struct<(CAST(1 AS DOUBLE) IN (CAST(1 AS DOUBLE))):boolean>
--- !query output
+-- !query 66 output
 true
 
 
--- !query
+-- !query 67
 SELECT cast(1 as double) in (cast(1 as decimal(10, 0))) FROM t
--- !query schema
+-- !query 67 schema
 struct<(CAST(CAST(1 AS DOUBLE) AS DOUBLE) IN (CAST(CAST(1 AS DECIMAL(10,0)) AS DOUBLE))):boolean>
--- !query output
+-- !query 67 output
 true
 
 
--- !query
+-- !query 68
 SELECT cast(1 as double) in (cast(1 as string)) FROM t
--- !query schema
+-- !query 68 schema
 struct<(CAST(CAST(1 AS DOUBLE) AS STRING) IN (CAST(CAST(1 AS STRING) AS STRING))):boolean>
--- !query output
+-- !query 68 output
 false
 
 
--- !query
+-- !query 69
 SELECT cast(1 as double) in (cast('1' as binary)) FROM t
--- !query schema
+-- !query 69 schema
 struct<>
--- !query output
+-- !query 69 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS DOUBLE) IN (CAST('1' AS BINARY)))' due to data type mismatch: Arguments must be same type but were: double != binary; line 1 pos 25
 
 
--- !query
+-- !query 70
 SELECT cast(1 as double) in (cast(1 as boolean)) FROM t
--- !query schema
+-- !query 70 schema
 struct<>
--- !query output
+-- !query 70 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS DOUBLE) IN (CAST(1 AS BOOLEAN)))' due to data type mismatch: Arguments must be same type but were: double != boolean; line 1 pos 25
 
 
--- !query
+-- !query 71
 SELECT cast(1 as double) in (cast('2017-12-11 09:30:00.0' as timestamp)) FROM t
--- !query schema
+-- !query 71 schema
 struct<>
--- !query output
+-- !query 71 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS DOUBLE) IN (CAST('2017-12-11 09:30:00.0' AS TIMESTAMP)))' due to data type mismatch: Arguments must be same type but were: double != timestamp; line 1 pos 25
 
 
--- !query
+-- !query 72
 SELECT cast(1 as double) in (cast('2017-12-11 09:30:00' as date)) FROM t
--- !query schema
+-- !query 72 schema
 struct<>
--- !query output
+-- !query 72 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS DOUBLE) IN (CAST('2017-12-11 09:30:00' AS DATE)))' due to data type mismatch: Arguments must be same type but were: double != date; line 1 pos 25
 
 
--- !query
+-- !query 73
 SELECT cast(1 as decimal(10, 0)) in (cast(1 as tinyint)) FROM t
--- !query schema
+-- !query 73 schema
 struct<(CAST(CAST(1 AS DECIMAL(10,0)) AS DECIMAL(10,0)) IN (CAST(CAST(1 AS TINYINT) AS DECIMAL(10,0)))):boolean>
--- !query output
+-- !query 73 output
 true
 
 
--- !query
+-- !query 74
 SELECT cast(1 as decimal(10, 0)) in (cast(1 as smallint)) FROM t
--- !query schema
+-- !query 74 schema
 struct<(CAST(CAST(1 AS DECIMAL(10,0)) AS DECIMAL(10,0)) IN (CAST(CAST(1 AS SMALLINT) AS DECIMAL(10,0)))):boolean>
--- !query output
+-- !query 74 output
 true
 
 
--- !query
+-- !query 75
 SELECT cast(1 as decimal(10, 0)) in (cast(1 as int)) FROM t
--- !query schema
+-- !query 75 schema
 struct<(CAST(CAST(1 AS DECIMAL(10,0)) AS DECIMAL(10,0)) IN (CAST(CAST(1 AS INT) AS DECIMAL(10,0)))):boolean>
--- !query output
+-- !query 75 output
 true
 
 
--- !query
+-- !query 76
 SELECT cast(1 as decimal(10, 0)) in (cast(1 as bigint)) FROM t
--- !query schema
+-- !query 76 schema
 struct<(CAST(CAST(1 AS DECIMAL(10,0)) AS DECIMAL(20,0)) IN (CAST(CAST(1 AS BIGINT) AS DECIMAL(20,0)))):boolean>
--- !query output
+-- !query 76 output
 true
 
 
--- !query
+-- !query 77
 SELECT cast(1 as decimal(10, 0)) in (cast(1 as float)) FROM t
--- !query schema
+-- !query 77 schema
 struct<(CAST(CAST(1 AS DECIMAL(10,0)) AS DOUBLE) IN (CAST(CAST(1 AS FLOAT) AS DOUBLE))):boolean>
--- !query output
+-- !query 77 output
 true
 
 
--- !query
+-- !query 78
 SELECT cast(1 as decimal(10, 0)) in (cast(1 as double)) FROM t
--- !query schema
+-- !query 78 schema
 struct<(CAST(CAST(1 AS DECIMAL(10,0)) AS DOUBLE) IN (CAST(CAST(1 AS DOUBLE) AS DOUBLE))):boolean>
--- !query output
+-- !query 78 output
 true
 
 
--- !query
+-- !query 79
 SELECT cast(1 as decimal(10, 0)) in (cast(1 as decimal(10, 0))) FROM t
--- !query schema
+-- !query 79 schema
 struct<(CAST(1 AS DECIMAL(10,0)) IN (CAST(1 AS DECIMAL(10,0)))):boolean>
--- !query output
+-- !query 79 output
 true
 
 
--- !query
+-- !query 80
 SELECT cast(1 as decimal(10, 0)) in (cast(1 as string)) FROM t
--- !query schema
+-- !query 80 schema
 struct<(CAST(CAST(1 AS DECIMAL(10,0)) AS STRING) IN (CAST(CAST(1 AS STRING) AS STRING))):boolean>
--- !query output
+-- !query 80 output
 true
 
 
--- !query
+-- !query 81
 SELECT cast(1 as decimal(10, 0)) in (cast('1' as binary)) FROM t
--- !query schema
+-- !query 81 schema
 struct<>
--- !query output
+-- !query 81 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS DECIMAL(10,0)) IN (CAST('1' AS BINARY)))' due to data type mismatch: Arguments must be same type but were: decimal(10,0) != binary; line 1 pos 33
 
 
--- !query
+-- !query 82
 SELECT cast(1 as decimal(10, 0)) in (cast(1 as boolean)) FROM t
--- !query schema
+-- !query 82 schema
 struct<>
--- !query output
+-- !query 82 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS DECIMAL(10,0)) IN (CAST(1 AS BOOLEAN)))' due to data type mismatch: Arguments must be same type but were: decimal(10,0) != boolean; line 1 pos 33
 
 
--- !query
+-- !query 83
 SELECT cast(1 as decimal(10, 0)) in (cast('2017-12-11 09:30:00.0' as timestamp)) FROM t
--- !query schema
+-- !query 83 schema
 struct<>
--- !query output
+-- !query 83 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS DECIMAL(10,0)) IN (CAST('2017-12-11 09:30:00.0' AS TIMESTAMP)))' due to data type mismatch: Arguments must be same type but were: decimal(10,0) != timestamp; line 1 pos 33
 
 
--- !query
+-- !query 84
 SELECT cast(1 as decimal(10, 0)) in (cast('2017-12-11 09:30:00' as date)) FROM t
--- !query schema
+-- !query 84 schema
 struct<>
--- !query output
+-- !query 84 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS DECIMAL(10,0)) IN (CAST('2017-12-11 09:30:00' AS DATE)))' due to data type mismatch: Arguments must be same type but were: decimal(10,0) != date; line 1 pos 33
 
 
--- !query
+-- !query 85
 SELECT cast(1 as string) in (cast(1 as tinyint)) FROM t
--- !query schema
+-- !query 85 schema
 struct<(CAST(CAST(1 AS STRING) AS STRING) IN (CAST(CAST(1 AS TINYINT) AS STRING))):boolean>
--- !query output
+-- !query 85 output
 true
 
 
--- !query
+-- !query 86
 SELECT cast(1 as string) in (cast(1 as smallint)) FROM t
--- !query schema
+-- !query 86 schema
 struct<(CAST(CAST(1 AS STRING) AS STRING) IN (CAST(CAST(1 AS SMALLINT) AS STRING))):boolean>
--- !query output
+-- !query 86 output
 true
 
 
--- !query
+-- !query 87
 SELECT cast(1 as string) in (cast(1 as int)) FROM t
--- !query schema
+-- !query 87 schema
 struct<(CAST(CAST(1 AS STRING) AS STRING) IN (CAST(CAST(1 AS INT) AS STRING))):boolean>
--- !query output
+-- !query 87 output
 true
 
 
--- !query
+-- !query 88
 SELECT cast(1 as string) in (cast(1 as bigint)) FROM t
--- !query schema
+-- !query 88 schema
 struct<(CAST(CAST(1 AS STRING) AS STRING) IN (CAST(CAST(1 AS BIGINT) AS STRING))):boolean>
--- !query output
+-- !query 88 output
 true
 
 
--- !query
+-- !query 89
 SELECT cast(1 as string) in (cast(1 as float)) FROM t
--- !query schema
+-- !query 89 schema
 struct<(CAST(CAST(1 AS STRING) AS STRING) IN (CAST(CAST(1 AS FLOAT) AS STRING))):boolean>
--- !query output
+-- !query 89 output
 false
 
 
--- !query
+-- !query 90
 SELECT cast(1 as string) in (cast(1 as double)) FROM t
--- !query schema
+-- !query 90 schema
 struct<(CAST(CAST(1 AS STRING) AS STRING) IN (CAST(CAST(1 AS DOUBLE) AS STRING))):boolean>
--- !query output
+-- !query 90 output
 false
 
 
--- !query
+-- !query 91
 SELECT cast(1 as string) in (cast(1 as decimal(10, 0))) FROM t
--- !query schema
+-- !query 91 schema
 struct<(CAST(CAST(1 AS STRING) AS STRING) IN (CAST(CAST(1 AS DECIMAL(10,0)) AS STRING))):boolean>
--- !query output
+-- !query 91 output
 true
 
 
--- !query
+-- !query 92
 SELECT cast(1 as string) in (cast(1 as string)) FROM t
--- !query schema
+-- !query 92 schema
 struct<(CAST(1 AS STRING) IN (CAST(1 AS STRING))):boolean>
--- !query output
+-- !query 92 output
 true
 
 
--- !query
+-- !query 93
 SELECT cast(1 as string) in (cast('1' as binary)) FROM t
--- !query schema
+-- !query 93 schema
 struct<>
--- !query output
+-- !query 93 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS STRING) IN (CAST('1' AS BINARY)))' due to data type mismatch: Arguments must be same type but were: string != binary; line 1 pos 25
 
 
--- !query
+-- !query 94
 SELECT cast(1 as string) in (cast(1 as boolean)) FROM t
--- !query schema
+-- !query 94 schema
 struct<>
--- !query output
+-- !query 94 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS STRING) IN (CAST(1 AS BOOLEAN)))' due to data type mismatch: Arguments must be same type but were: string != boolean; line 1 pos 25
 
 
--- !query
+-- !query 95
 SELECT cast(1 as string) in (cast('2017-12-11 09:30:00.0' as timestamp)) FROM t
--- !query schema
+-- !query 95 schema
 struct<(CAST(CAST(1 AS STRING) AS STRING) IN (CAST(CAST(2017-12-11 09:30:00.0 AS TIMESTAMP) AS STRING))):boolean>
--- !query output
+-- !query 95 output
 false
 
 
--- !query
+-- !query 96
 SELECT cast(1 as string) in (cast('2017-12-11 09:30:00' as date)) FROM t
--- !query schema
+-- !query 96 schema
 struct<(CAST(CAST(1 AS STRING) AS STRING) IN (CAST(CAST(2017-12-11 09:30:00 AS DATE) AS STRING))):boolean>
--- !query output
+-- !query 96 output
 false
 
 
--- !query
+-- !query 97
 SELECT cast('1' as binary) in (cast(1 as tinyint)) FROM t
--- !query schema
+-- !query 97 schema
 struct<>
--- !query output
+-- !query 97 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('1' AS BINARY) IN (CAST(1 AS TINYINT)))' due to data type mismatch: Arguments must be same type but were: binary != tinyint; line 1 pos 27
 
 
--- !query
+-- !query 98
 SELECT cast('1' as binary) in (cast(1 as smallint)) FROM t
--- !query schema
+-- !query 98 schema
 struct<>
--- !query output
+-- !query 98 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('1' AS BINARY) IN (CAST(1 AS SMALLINT)))' due to data type mismatch: Arguments must be same type but were: binary != smallint; line 1 pos 27
 
 
--- !query
+-- !query 99
 SELECT cast('1' as binary) in (cast(1 as int)) FROM t
--- !query schema
+-- !query 99 schema
 struct<>
--- !query output
+-- !query 99 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('1' AS BINARY) IN (CAST(1 AS INT)))' due to data type mismatch: Arguments must be same type but were: binary != int; line 1 pos 27
 
 
--- !query
+-- !query 100
 SELECT cast('1' as binary) in (cast(1 as bigint)) FROM t
--- !query schema
+-- !query 100 schema
 struct<>
--- !query output
+-- !query 100 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('1' AS BINARY) IN (CAST(1 AS BIGINT)))' due to data type mismatch: Arguments must be same type but were: binary != bigint; line 1 pos 27
 
 
--- !query
+-- !query 101
 SELECT cast('1' as binary) in (cast(1 as float)) FROM t
--- !query schema
+-- !query 101 schema
 struct<>
--- !query output
+-- !query 101 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('1' AS BINARY) IN (CAST(1 AS FLOAT)))' due to data type mismatch: Arguments must be same type but were: binary != float; line 1 pos 27
 
 
--- !query
+-- !query 102
 SELECT cast('1' as binary) in (cast(1 as double)) FROM t
--- !query schema
+-- !query 102 schema
 struct<>
--- !query output
+-- !query 102 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('1' AS BINARY) IN (CAST(1 AS DOUBLE)))' due to data type mismatch: Arguments must be same type but were: binary != double; line 1 pos 27
 
 
--- !query
+-- !query 103
 SELECT cast('1' as binary) in (cast(1 as decimal(10, 0))) FROM t
--- !query schema
+-- !query 103 schema
 struct<>
--- !query output
+-- !query 103 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('1' AS BINARY) IN (CAST(1 AS DECIMAL(10,0))))' due to data type mismatch: Arguments must be same type but were: binary != decimal(10,0); line 1 pos 27
 
 
--- !query
+-- !query 104
 SELECT cast('1' as binary) in (cast(1 as string)) FROM t
--- !query schema
+-- !query 104 schema
 struct<>
--- !query output
+-- !query 104 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('1' AS BINARY) IN (CAST(1 AS STRING)))' due to data type mismatch: Arguments must be same type but were: binary != string; line 1 pos 27
 
 
--- !query
+-- !query 105
 SELECT cast('1' as binary) in (cast('1' as binary)) FROM t
--- !query schema
+-- !query 105 schema
 struct<(CAST(1 AS BINARY) IN (CAST(1 AS BINARY))):boolean>
--- !query output
+-- !query 105 output
 true
 
 
--- !query
+-- !query 106
 SELECT cast('1' as binary) in (cast(1 as boolean)) FROM t
--- !query schema
+-- !query 106 schema
 struct<>
--- !query output
+-- !query 106 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('1' AS BINARY) IN (CAST(1 AS BOOLEAN)))' due to data type mismatch: Arguments must be same type but were: binary != boolean; line 1 pos 27
 
 
--- !query
+-- !query 107
 SELECT cast('1' as binary) in (cast('2017-12-11 09:30:00.0' as timestamp)) FROM t
--- !query schema
+-- !query 107 schema
 struct<>
--- !query output
+-- !query 107 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('1' AS BINARY) IN (CAST('2017-12-11 09:30:00.0' AS TIMESTAMP)))' due to data type mismatch: Arguments must be same type but were: binary != timestamp; line 1 pos 27
 
 
--- !query
+-- !query 108
 SELECT cast('1' as binary) in (cast('2017-12-11 09:30:00' as date)) FROM t
--- !query schema
+-- !query 108 schema
 struct<>
--- !query output
+-- !query 108 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('1' AS BINARY) IN (CAST('2017-12-11 09:30:00' AS DATE)))' due to data type mismatch: Arguments must be same type but were: binary != date; line 1 pos 27
 
 
--- !query
+-- !query 109
 SELECT true in (cast(1 as tinyint)) FROM t
--- !query schema
+-- !query 109 schema
 struct<>
--- !query output
+-- !query 109 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(true IN (CAST(1 AS TINYINT)))' due to data type mismatch: Arguments must be same type but were: boolean != tinyint; line 1 pos 12
 
 
--- !query
+-- !query 110
 SELECT true in (cast(1 as smallint)) FROM t
--- !query schema
+-- !query 110 schema
 struct<>
--- !query output
+-- !query 110 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(true IN (CAST(1 AS SMALLINT)))' due to data type mismatch: Arguments must be same type but were: boolean != smallint; line 1 pos 12
 
 
--- !query
+-- !query 111
 SELECT true in (cast(1 as int)) FROM t
--- !query schema
+-- !query 111 schema
 struct<>
--- !query output
+-- !query 111 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(true IN (CAST(1 AS INT)))' due to data type mismatch: Arguments must be same type but were: boolean != int; line 1 pos 12
 
 
--- !query
+-- !query 112
 SELECT true in (cast(1 as bigint)) FROM t
--- !query schema
+-- !query 112 schema
 struct<>
--- !query output
+-- !query 112 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(true IN (CAST(1 AS BIGINT)))' due to data type mismatch: Arguments must be same type but were: boolean != bigint; line 1 pos 12
 
 
--- !query
+-- !query 113
 SELECT true in (cast(1 as float)) FROM t
--- !query schema
+-- !query 113 schema
 struct<>
--- !query output
+-- !query 113 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(true IN (CAST(1 AS FLOAT)))' due to data type mismatch: Arguments must be same type but were: boolean != float; line 1 pos 12
 
 
--- !query
+-- !query 114
 SELECT true in (cast(1 as double)) FROM t
--- !query schema
+-- !query 114 schema
 struct<>
--- !query output
+-- !query 114 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(true IN (CAST(1 AS DOUBLE)))' due to data type mismatch: Arguments must be same type but were: boolean != double; line 1 pos 12
 
 
--- !query
+-- !query 115
 SELECT true in (cast(1 as decimal(10, 0))) FROM t
--- !query schema
+-- !query 115 schema
 struct<>
--- !query output
+-- !query 115 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(true IN (CAST(1 AS DECIMAL(10,0))))' due to data type mismatch: Arguments must be same type but were: boolean != decimal(10,0); line 1 pos 12
 
 
--- !query
+-- !query 116
 SELECT true in (cast(1 as string)) FROM t
--- !query schema
+-- !query 116 schema
 struct<>
--- !query output
+-- !query 116 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(true IN (CAST(1 AS STRING)))' due to data type mismatch: Arguments must be same type but were: boolean != string; line 1 pos 12
 
 
--- !query
+-- !query 117
 SELECT true in (cast('1' as binary)) FROM t
--- !query schema
+-- !query 117 schema
 struct<>
--- !query output
+-- !query 117 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(true IN (CAST('1' AS BINARY)))' due to data type mismatch: Arguments must be same type but were: boolean != binary; line 1 pos 12
 
 
--- !query
+-- !query 118
 SELECT true in (cast(1 as boolean)) FROM t
--- !query schema
+-- !query 118 schema
 struct<(true IN (CAST(1 AS BOOLEAN))):boolean>
--- !query output
+-- !query 118 output
 true
 
 
--- !query
+-- !query 119
 SELECT true in (cast('2017-12-11 09:30:00.0' as timestamp)) FROM t
--- !query schema
+-- !query 119 schema
 struct<>
--- !query output
+-- !query 119 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(true IN (CAST('2017-12-11 09:30:00.0' AS TIMESTAMP)))' due to data type mismatch: Arguments must be same type but were: boolean != timestamp; line 1 pos 12
 
 
--- !query
+-- !query 120
 SELECT true in (cast('2017-12-11 09:30:00' as date)) FROM t
--- !query schema
+-- !query 120 schema
 struct<>
--- !query output
+-- !query 120 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(true IN (CAST('2017-12-11 09:30:00' AS DATE)))' due to data type mismatch: Arguments must be same type but were: boolean != date; line 1 pos 12
 
 
--- !query
+-- !query 121
 SELECT cast('2017-12-12 09:30:00.0' as timestamp) in (cast(2 as tinyint)) FROM t
--- !query schema
+-- !query 121 schema
 struct<>
--- !query output
+-- !query 121 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('2017-12-12 09:30:00.0' AS TIMESTAMP) IN (CAST(2 AS TINYINT)))' due to data type mismatch: Arguments must be same type but were: timestamp != tinyint; line 1 pos 50
 
 
--- !query
+-- !query 122
 SELECT cast('2017-12-12 09:30:00.0' as timestamp) in (cast(2 as smallint)) FROM t
--- !query schema
+-- !query 122 schema
 struct<>
--- !query output
+-- !query 122 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('2017-12-12 09:30:00.0' AS TIMESTAMP) IN (CAST(2 AS SMALLINT)))' due to data type mismatch: Arguments must be same type but were: timestamp != smallint; line 1 pos 50
 
 
--- !query
+-- !query 123
 SELECT cast('2017-12-12 09:30:00.0' as timestamp) in (cast(2 as int)) FROM t
--- !query schema
+-- !query 123 schema
 struct<>
--- !query output
+-- !query 123 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('2017-12-12 09:30:00.0' AS TIMESTAMP) IN (CAST(2 AS INT)))' due to data type mismatch: Arguments must be same type but were: timestamp != int; line 1 pos 50
 
 
--- !query
+-- !query 124
 SELECT cast('2017-12-12 09:30:00.0' as timestamp) in (cast(2 as bigint)) FROM t
--- !query schema
+-- !query 124 schema
 struct<>
--- !query output
+-- !query 124 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('2017-12-12 09:30:00.0' AS TIMESTAMP) IN (CAST(2 AS BIGINT)))' due to data type mismatch: Arguments must be same type but were: timestamp != bigint; line 1 pos 50
 
 
--- !query
+-- !query 125
 SELECT cast('2017-12-12 09:30:00.0' as timestamp) in (cast(2 as float)) FROM t
--- !query schema
+-- !query 125 schema
 struct<>
--- !query output
+-- !query 125 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('2017-12-12 09:30:00.0' AS TIMESTAMP) IN (CAST(2 AS FLOAT)))' due to data type mismatch: Arguments must be same type but were: timestamp != float; line 1 pos 50
 
 
--- !query
+-- !query 126
 SELECT cast('2017-12-12 09:30:00.0' as timestamp) in (cast(2 as double)) FROM t
--- !query schema
+-- !query 126 schema
 struct<>
--- !query output
+-- !query 126 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('2017-12-12 09:30:00.0' AS TIMESTAMP) IN (CAST(2 AS DOUBLE)))' due to data type mismatch: Arguments must be same type but were: timestamp != double; line 1 pos 50
 
 
--- !query
+-- !query 127
 SELECT cast('2017-12-12 09:30:00.0' as timestamp) in (cast(2 as decimal(10, 0))) FROM t
--- !query schema
+-- !query 127 schema
 struct<>
--- !query output
+-- !query 127 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('2017-12-12 09:30:00.0' AS TIMESTAMP) IN (CAST(2 AS DECIMAL(10,0))))' due to data type mismatch: Arguments must be same type but were: timestamp != decimal(10,0); line 1 pos 50
 
 
--- !query
+-- !query 128
 SELECT cast('2017-12-12 09:30:00.0' as timestamp) in (cast(2 as string)) FROM t
--- !query schema
+-- !query 128 schema
 struct<(CAST(CAST(2017-12-12 09:30:00.0 AS TIMESTAMP) AS STRING) IN (CAST(CAST(2 AS STRING) AS STRING))):boolean>
--- !query output
+-- !query 128 output
 false
 
 
--- !query
+-- !query 129
 SELECT cast('2017-12-12 09:30:00.0' as timestamp) in (cast('2' as binary)) FROM t
--- !query schema
+-- !query 129 schema
 struct<>
--- !query output
+-- !query 129 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('2017-12-12 09:30:00.0' AS TIMESTAMP) IN (CAST('2' AS BINARY)))' due to data type mismatch: Arguments must be same type but were: timestamp != binary; line 1 pos 50
 
 
--- !query
+-- !query 130
 SELECT cast('2017-12-12 09:30:00.0' as timestamp) in (cast(2 as boolean)) FROM t
--- !query schema
+-- !query 130 schema
 struct<>
--- !query output
+-- !query 130 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('2017-12-12 09:30:00.0' AS TIMESTAMP) IN (CAST(2 AS BOOLEAN)))' due to data type mismatch: Arguments must be same type but were: timestamp != boolean; line 1 pos 50
 
 
--- !query
+-- !query 131
 SELECT cast('2017-12-12 09:30:00.0' as timestamp) in (cast('2017-12-11 09:30:00.0' as timestamp)) FROM t
--- !query schema
+-- !query 131 schema
 struct<(CAST(2017-12-12 09:30:00.0 AS TIMESTAMP) IN (CAST(2017-12-11 09:30:00.0 AS TIMESTAMP))):boolean>
--- !query output
+-- !query 131 output
 false
 
 
--- !query
+-- !query 132
 SELECT cast('2017-12-12 09:30:00.0' as timestamp) in (cast('2017-12-11 09:30:00' as date)) FROM t
--- !query schema
+-- !query 132 schema
 struct<(CAST(CAST(2017-12-12 09:30:00.0 AS TIMESTAMP) AS TIMESTAMP) IN (CAST(CAST(2017-12-11 09:30:00 AS DATE) AS TIMESTAMP))):boolean>
--- !query output
+-- !query 132 output
 false
 
 
--- !query
+-- !query 133
 SELECT cast('2017-12-12 09:30:00' as date) in (cast(2 as tinyint)) FROM t
--- !query schema
+-- !query 133 schema
 struct<>
--- !query output
+-- !query 133 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('2017-12-12 09:30:00' AS DATE) IN (CAST(2 AS TINYINT)))' due to data type mismatch: Arguments must be same type but were: date != tinyint; line 1 pos 43
 
 
--- !query
+-- !query 134
 SELECT cast('2017-12-12 09:30:00' as date) in (cast(2 as smallint)) FROM t
--- !query schema
+-- !query 134 schema
 struct<>
--- !query output
+-- !query 134 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('2017-12-12 09:30:00' AS DATE) IN (CAST(2 AS SMALLINT)))' due to data type mismatch: Arguments must be same type but were: date != smallint; line 1 pos 43
 
 
--- !query
+-- !query 135
 SELECT cast('2017-12-12 09:30:00' as date) in (cast(2 as int)) FROM t
--- !query schema
+-- !query 135 schema
 struct<>
--- !query output
+-- !query 135 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('2017-12-12 09:30:00' AS DATE) IN (CAST(2 AS INT)))' due to data type mismatch: Arguments must be same type but were: date != int; line 1 pos 43
 
 
--- !query
+-- !query 136
 SELECT cast('2017-12-12 09:30:00' as date) in (cast(2 as bigint)) FROM t
--- !query schema
+-- !query 136 schema
 struct<>
--- !query output
+-- !query 136 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('2017-12-12 09:30:00' AS DATE) IN (CAST(2 AS BIGINT)))' due to data type mismatch: Arguments must be same type but were: date != bigint; line 1 pos 43
 
 
--- !query
+-- !query 137
 SELECT cast('2017-12-12 09:30:00' as date) in (cast(2 as float)) FROM t
--- !query schema
+-- !query 137 schema
 struct<>
--- !query output
+-- !query 137 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('2017-12-12 09:30:00' AS DATE) IN (CAST(2 AS FLOAT)))' due to data type mismatch: Arguments must be same type but were: date != float; line 1 pos 43
 
 
--- !query
+-- !query 138
 SELECT cast('2017-12-12 09:30:00' as date) in (cast(2 as double)) FROM t
--- !query schema
+-- !query 138 schema
 struct<>
--- !query output
+-- !query 138 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('2017-12-12 09:30:00' AS DATE) IN (CAST(2 AS DOUBLE)))' due to data type mismatch: Arguments must be same type but were: date != double; line 1 pos 43
 
 
--- !query
+-- !query 139
 SELECT cast('2017-12-12 09:30:00' as date) in (cast(2 as decimal(10, 0))) FROM t
--- !query schema
+-- !query 139 schema
 struct<>
--- !query output
+-- !query 139 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('2017-12-12 09:30:00' AS DATE) IN (CAST(2 AS DECIMAL(10,0))))' due to data type mismatch: Arguments must be same type but were: date != decimal(10,0); line 1 pos 43
 
 
--- !query
+-- !query 140
 SELECT cast('2017-12-12 09:30:00' as date) in (cast(2 as string)) FROM t
--- !query schema
+-- !query 140 schema
 struct<(CAST(CAST(2017-12-12 09:30:00 AS DATE) AS STRING) IN (CAST(CAST(2 AS STRING) AS STRING))):boolean>
--- !query output
+-- !query 140 output
 false
 
 
--- !query
+-- !query 141
 SELECT cast('2017-12-12 09:30:00' as date) in (cast('2' as binary)) FROM t
--- !query schema
+-- !query 141 schema
 struct<>
--- !query output
+-- !query 141 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('2017-12-12 09:30:00' AS DATE) IN (CAST('2' AS BINARY)))' due to data type mismatch: Arguments must be same type but were: date != binary; line 1 pos 43
 
 
--- !query
+-- !query 142
 SELECT cast('2017-12-12 09:30:00' as date) in (cast(2 as boolean)) FROM t
--- !query schema
+-- !query 142 schema
 struct<>
--- !query output
+-- !query 142 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('2017-12-12 09:30:00' AS DATE) IN (CAST(2 AS BOOLEAN)))' due to data type mismatch: Arguments must be same type but were: date != boolean; line 1 pos 43
 
 
--- !query
+-- !query 143
 SELECT cast('2017-12-12 09:30:00' as date) in (cast('2017-12-11 09:30:00.0' as timestamp)) FROM t
--- !query schema
+-- !query 143 schema
 struct<(CAST(CAST(2017-12-12 09:30:00 AS DATE) AS TIMESTAMP) IN (CAST(CAST(2017-12-11 09:30:00.0 AS TIMESTAMP) AS TIMESTAMP))):boolean>
--- !query output
+-- !query 143 output
 false
 
 
--- !query
+-- !query 144
 SELECT cast('2017-12-12 09:30:00' as date) in (cast('2017-12-11 09:30:00' as date)) FROM t
--- !query schema
+-- !query 144 schema
 struct<(CAST(2017-12-12 09:30:00 AS DATE) IN (CAST(2017-12-11 09:30:00 AS DATE))):boolean>
--- !query output
+-- !query 144 output
 false
 
 
--- !query
+-- !query 145
 SELECT cast(1 as tinyint) in (cast(1 as tinyint), cast(1 as tinyint)) FROM t
--- !query schema
+-- !query 145 schema
 struct<(CAST(1 AS TINYINT) IN (CAST(1 AS TINYINT), CAST(1 AS TINYINT))):boolean>
--- !query output
+-- !query 145 output
 true
 
 
--- !query
+-- !query 146
 SELECT cast(1 as tinyint) in (cast(1 as tinyint), cast(1 as smallint)) FROM t
--- !query schema
+-- !query 146 schema
 struct<(CAST(CAST(1 AS TINYINT) AS SMALLINT) IN (CAST(CAST(1 AS TINYINT) AS SMALLINT), CAST(CAST(1 AS SMALLINT) AS SMALLINT))):boolean>
--- !query output
+-- !query 146 output
 true
 
 
--- !query
+-- !query 147
 SELECT cast(1 as tinyint) in (cast(1 as tinyint), cast(1 as int)) FROM t
--- !query schema
+-- !query 147 schema
 struct<(CAST(CAST(1 AS TINYINT) AS INT) IN (CAST(CAST(1 AS TINYINT) AS INT), CAST(CAST(1 AS INT) AS INT))):boolean>
--- !query output
+-- !query 147 output
 true
 
 
--- !query
+-- !query 148
 SELECT cast(1 as tinyint) in (cast(1 as tinyint), cast(1 as bigint)) FROM t
--- !query schema
+-- !query 148 schema
 struct<(CAST(CAST(1 AS TINYINT) AS BIGINT) IN (CAST(CAST(1 AS TINYINT) AS BIGINT), CAST(CAST(1 AS BIGINT) AS BIGINT))):boolean>
--- !query output
+-- !query 148 output
 true
 
 
--- !query
+-- !query 149
 SELECT cast(1 as tinyint) in (cast(1 as tinyint), cast(1 as float)) FROM t
--- !query schema
+-- !query 149 schema
 struct<(CAST(CAST(1 AS TINYINT) AS FLOAT) IN (CAST(CAST(1 AS TINYINT) AS FLOAT), CAST(CAST(1 AS FLOAT) AS FLOAT))):boolean>
--- !query output
+-- !query 149 output
 true
 
 
--- !query
+-- !query 150
 SELECT cast(1 as tinyint) in (cast(1 as tinyint), cast(1 as double)) FROM t
--- !query schema
+-- !query 150 schema
 struct<(CAST(CAST(1 AS TINYINT) AS DOUBLE) IN (CAST(CAST(1 AS TINYINT) AS DOUBLE), CAST(CAST(1 AS DOUBLE) AS DOUBLE))):boolean>
--- !query output
+-- !query 150 output
 true
 
 
--- !query
+-- !query 151
 SELECT cast(1 as tinyint) in (cast(1 as tinyint), cast(1 as decimal(10, 0))) FROM t
--- !query schema
+-- !query 151 schema
 struct<(CAST(CAST(1 AS TINYINT) AS DECIMAL(10,0)) IN (CAST(CAST(1 AS TINYINT) AS DECIMAL(10,0)), CAST(CAST(1 AS DECIMAL(10,0)) AS DECIMAL(10,0)))):boolean>
--- !query output
+-- !query 151 output
 true
 
 
--- !query
+-- !query 152
 SELECT cast(1 as tinyint) in (cast(1 as tinyint), cast(1 as string)) FROM t
--- !query schema
+-- !query 152 schema
 struct<(CAST(CAST(1 AS TINYINT) AS STRING) IN (CAST(CAST(1 AS TINYINT) AS STRING), CAST(CAST(1 AS STRING) AS STRING))):boolean>
--- !query output
+-- !query 152 output
 true
 
 
--- !query
+-- !query 153
 SELECT cast(1 as tinyint) in (cast(1 as tinyint), cast('1' as binary)) FROM t
--- !query schema
+-- !query 153 schema
 struct<>
--- !query output
+-- !query 153 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS TINYINT) IN (CAST(1 AS TINYINT), CAST('1' AS BINARY)))' due to data type mismatch: Arguments must be same type but were: tinyint != binary; line 1 pos 26
 
 
--- !query
+-- !query 154
 SELECT cast(1 as tinyint) in (cast(1 as tinyint), cast(1 as boolean)) FROM t
--- !query schema
+-- !query 154 schema
 struct<>
--- !query output
+-- !query 154 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS TINYINT) IN (CAST(1 AS TINYINT), CAST(1 AS BOOLEAN)))' due to data type mismatch: Arguments must be same type but were: tinyint != boolean; line 1 pos 26
 
 
--- !query
+-- !query 155
 SELECT cast(1 as tinyint) in (cast(1 as tinyint), cast('2017-12-11 09:30:00.0' as timestamp)) FROM t
--- !query schema
+-- !query 155 schema
 struct<>
--- !query output
+-- !query 155 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS TINYINT) IN (CAST(1 AS TINYINT), CAST('2017-12-11 09:30:00.0' AS TIMESTAMP)))' due to data type mismatch: Arguments must be same type but were: tinyint != timestamp; line 1 pos 26
 
 
--- !query
+-- !query 156
 SELECT cast(1 as tinyint) in (cast(1 as tinyint), cast('2017-12-11 09:30:00' as date)) FROM t
--- !query schema
+-- !query 156 schema
 struct<>
--- !query output
+-- !query 156 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS TINYINT) IN (CAST(1 AS TINYINT), CAST('2017-12-11 09:30:00' AS DATE)))' due to data type mismatch: Arguments must be same type but were: tinyint != date; line 1 pos 26
 
 
--- !query
+-- !query 157
 SELECT cast(1 as smallint) in (cast(1 as smallint), cast(1 as tinyint)) FROM t
--- !query schema
+-- !query 157 schema
 struct<(CAST(CAST(1 AS SMALLINT) AS SMALLINT) IN (CAST(CAST(1 AS SMALLINT) AS SMALLINT), CAST(CAST(1 AS TINYINT) AS SMALLINT))):boolean>
--- !query output
+-- !query 157 output
 true
 
 
--- !query
+-- !query 158
 SELECT cast(1 as smallint) in (cast(1 as smallint), cast(1 as smallint)) FROM t
--- !query schema
+-- !query 158 schema
 struct<(CAST(1 AS SMALLINT) IN (CAST(1 AS SMALLINT), CAST(1 AS SMALLINT))):boolean>
--- !query output
+-- !query 158 output
 true
 
 
--- !query
+-- !query 159
 SELECT cast(1 as smallint) in (cast(1 as smallint), cast(1 as int)) FROM t
--- !query schema
+-- !query 159 schema
 struct<(CAST(CAST(1 AS SMALLINT) AS INT) IN (CAST(CAST(1 AS SMALLINT) AS INT), CAST(CAST(1 AS INT) AS INT))):boolean>
--- !query output
+-- !query 159 output
 true
 
 
--- !query
+-- !query 160
 SELECT cast(1 as smallint) in (cast(1 as smallint), cast(1 as bigint)) FROM t
--- !query schema
+-- !query 160 schema
 struct<(CAST(CAST(1 AS SMALLINT) AS BIGINT) IN (CAST(CAST(1 AS SMALLINT) AS BIGINT), CAST(CAST(1 AS BIGINT) AS BIGINT))):boolean>
--- !query output
+-- !query 160 output
 true
 
 
--- !query
+-- !query 161
 SELECT cast(1 as smallint) in (cast(1 as smallint), cast(1 as float)) FROM t
--- !query schema
+-- !query 161 schema
 struct<(CAST(CAST(1 AS SMALLINT) AS FLOAT) IN (CAST(CAST(1 AS SMALLINT) AS FLOAT), CAST(CAST(1 AS FLOAT) AS FLOAT))):boolean>
--- !query output
+-- !query 161 output
 true
 
 
--- !query
+-- !query 162
 SELECT cast(1 as smallint) in (cast(1 as smallint), cast(1 as double)) FROM t
--- !query schema
+-- !query 162 schema
 struct<(CAST(CAST(1 AS SMALLINT) AS DOUBLE) IN (CAST(CAST(1 AS SMALLINT) AS DOUBLE), CAST(CAST(1 AS DOUBLE) AS DOUBLE))):boolean>
--- !query output
+-- !query 162 output
 true
 
 
--- !query
+-- !query 163
 SELECT cast(1 as smallint) in (cast(1 as smallint), cast(1 as decimal(10, 0))) FROM t
--- !query schema
+-- !query 163 schema
 struct<(CAST(CAST(1 AS SMALLINT) AS DECIMAL(10,0)) IN (CAST(CAST(1 AS SMALLINT) AS DECIMAL(10,0)), CAST(CAST(1 AS DECIMAL(10,0)) AS DECIMAL(10,0)))):boolean>
--- !query output
+-- !query 163 output
 true
 
 
--- !query
+-- !query 164
 SELECT cast(1 as smallint) in (cast(1 as smallint), cast(1 as string)) FROM t
--- !query schema
+-- !query 164 schema
 struct<(CAST(CAST(1 AS SMALLINT) AS STRING) IN (CAST(CAST(1 AS SMALLINT) AS STRING), CAST(CAST(1 AS STRING) AS STRING))):boolean>
--- !query output
+-- !query 164 output
 true
 
 
--- !query
+-- !query 165
 SELECT cast(1 as smallint) in (cast(1 as smallint), cast('1' as binary)) FROM t
--- !query schema
+-- !query 165 schema
 struct<>
--- !query output
+-- !query 165 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS SMALLINT) IN (CAST(1 AS SMALLINT), CAST('1' AS BINARY)))' due to data type mismatch: Arguments must be same type but were: smallint != binary; line 1 pos 27
 
 
--- !query
+-- !query 166
 SELECT cast(1 as smallint) in (cast(1 as smallint), cast(1 as boolean)) FROM t
--- !query schema
+-- !query 166 schema
 struct<>
--- !query output
+-- !query 166 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS SMALLINT) IN (CAST(1 AS SMALLINT), CAST(1 AS BOOLEAN)))' due to data type mismatch: Arguments must be same type but were: smallint != boolean; line 1 pos 27
 
 
--- !query
+-- !query 167
 SELECT cast(1 as smallint) in (cast(1 as smallint), cast('2017-12-11 09:30:00.0' as timestamp)) FROM t
--- !query schema
+-- !query 167 schema
 struct<>
--- !query output
+-- !query 167 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS SMALLINT) IN (CAST(1 AS SMALLINT), CAST('2017-12-11 09:30:00.0' AS TIMESTAMP)))' due to data type mismatch: Arguments must be same type but were: smallint != timestamp; line 1 pos 27
 
 
--- !query
+-- !query 168
 SELECT cast(1 as smallint) in (cast(1 as smallint), cast('2017-12-11 09:30:00' as date)) FROM t
--- !query schema
+-- !query 168 schema
 struct<>
--- !query output
+-- !query 168 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS SMALLINT) IN (CAST(1 AS SMALLINT), CAST('2017-12-11 09:30:00' AS DATE)))' due to data type mismatch: Arguments must be same type but were: smallint != date; line 1 pos 27
 
 
--- !query
+-- !query 169
 SELECT cast(1 as int) in (cast(1 as int), cast(1 as tinyint)) FROM t
--- !query schema
+-- !query 169 schema
 struct<(CAST(CAST(1 AS INT) AS INT) IN (CAST(CAST(1 AS INT) AS INT), CAST(CAST(1 AS TINYINT) AS INT))):boolean>
--- !query output
+-- !query 169 output
 true
 
 
--- !query
+-- !query 170
 SELECT cast(1 as int) in (cast(1 as int), cast(1 as smallint)) FROM t
--- !query schema
+-- !query 170 schema
 struct<(CAST(CAST(1 AS INT) AS INT) IN (CAST(CAST(1 AS INT) AS INT), CAST(CAST(1 AS SMALLINT) AS INT))):boolean>
--- !query output
+-- !query 170 output
 true
 
 
--- !query
+-- !query 171
 SELECT cast(1 as int) in (cast(1 as int), cast(1 as int)) FROM t
--- !query schema
+-- !query 171 schema
 struct<(CAST(1 AS INT) IN (CAST(1 AS INT), CAST(1 AS INT))):boolean>
--- !query output
+-- !query 171 output
 true
 
 
--- !query
+-- !query 172
 SELECT cast(1 as int) in (cast(1 as int), cast(1 as bigint)) FROM t
--- !query schema
+-- !query 172 schema
 struct<(CAST(CAST(1 AS INT) AS BIGINT) IN (CAST(CAST(1 AS INT) AS BIGINT), CAST(CAST(1 AS BIGINT) AS BIGINT))):boolean>
--- !query output
+-- !query 172 output
 true
 
 
--- !query
+-- !query 173
 SELECT cast(1 as int) in (cast(1 as int), cast(1 as float)) FROM t
--- !query schema
+-- !query 173 schema
 struct<(CAST(CAST(1 AS INT) AS FLOAT) IN (CAST(CAST(1 AS INT) AS FLOAT), CAST(CAST(1 AS FLOAT) AS FLOAT))):boolean>
--- !query output
+-- !query 173 output
 true
 
 
--- !query
+-- !query 174
 SELECT cast(1 as int) in (cast(1 as int), cast(1 as double)) FROM t
--- !query schema
+-- !query 174 schema
 struct<(CAST(CAST(1 AS INT) AS DOUBLE) IN (CAST(CAST(1 AS INT) AS DOUBLE), CAST(CAST(1 AS DOUBLE) AS DOUBLE))):boolean>
--- !query output
+-- !query 174 output
 true
 
 
--- !query
+-- !query 175
 SELECT cast(1 as int) in (cast(1 as int), cast(1 as decimal(10, 0))) FROM t
--- !query schema
+-- !query 175 schema
 struct<(CAST(CAST(1 AS INT) AS DECIMAL(10,0)) IN (CAST(CAST(1 AS INT) AS DECIMAL(10,0)), CAST(CAST(1 AS DECIMAL(10,0)) AS DECIMAL(10,0)))):boolean>
--- !query output
+-- !query 175 output
 true
 
 
--- !query
+-- !query 176
 SELECT cast(1 as int) in (cast(1 as int), cast(1 as string)) FROM t
--- !query schema
+-- !query 176 schema
 struct<(CAST(CAST(1 AS INT) AS STRING) IN (CAST(CAST(1 AS INT) AS STRING), CAST(CAST(1 AS STRING) AS STRING))):boolean>
--- !query output
+-- !query 176 output
 true
 
 
--- !query
+-- !query 177
 SELECT cast(1 as int) in (cast(1 as int), cast('1' as binary)) FROM t
--- !query schema
+-- !query 177 schema
 struct<>
--- !query output
+-- !query 177 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS INT) IN (CAST(1 AS INT), CAST('1' AS BINARY)))' due to data type mismatch: Arguments must be same type but were: int != binary; line 1 pos 22
 
 
--- !query
+-- !query 178
 SELECT cast(1 as int) in (cast(1 as int), cast(1 as boolean)) FROM t
--- !query schema
+-- !query 178 schema
 struct<>
--- !query output
+-- !query 178 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS INT) IN (CAST(1 AS INT), CAST(1 AS BOOLEAN)))' due to data type mismatch: Arguments must be same type but were: int != boolean; line 1 pos 22
 
 
--- !query
+-- !query 179
 SELECT cast(1 as int) in (cast(1 as int), cast('2017-12-11 09:30:00.0' as timestamp)) FROM t
--- !query schema
+-- !query 179 schema
 struct<>
--- !query output
+-- !query 179 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS INT) IN (CAST(1 AS INT), CAST('2017-12-11 09:30:00.0' AS TIMESTAMP)))' due to data type mismatch: Arguments must be same type but were: int != timestamp; line 1 pos 22
 
 
--- !query
+-- !query 180
 SELECT cast(1 as int) in (cast(1 as int), cast('2017-12-11 09:30:00' as date)) FROM t
--- !query schema
+-- !query 180 schema
 struct<>
--- !query output
+-- !query 180 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS INT) IN (CAST(1 AS INT), CAST('2017-12-11 09:30:00' AS DATE)))' due to data type mismatch: Arguments must be same type but were: int != date; line 1 pos 22
 
 
--- !query
+-- !query 181
 SELECT cast(1 as bigint) in (cast(1 as bigint), cast(1 as tinyint)) FROM t
--- !query schema
+-- !query 181 schema
 struct<(CAST(CAST(1 AS BIGINT) AS BIGINT) IN (CAST(CAST(1 AS BIGINT) AS BIGINT), CAST(CAST(1 AS TINYINT) AS BIGINT))):boolean>
--- !query output
+-- !query 181 output
 true
 
 
--- !query
+-- !query 182
 SELECT cast(1 as bigint) in (cast(1 as bigint), cast(1 as smallint)) FROM t
--- !query schema
+-- !query 182 schema
 struct<(CAST(CAST(1 AS BIGINT) AS BIGINT) IN (CAST(CAST(1 AS BIGINT) AS BIGINT), CAST(CAST(1 AS SMALLINT) AS BIGINT))):boolean>
--- !query output
+-- !query 182 output
 true
 
 
--- !query
+-- !query 183
 SELECT cast(1 as bigint) in (cast(1 as bigint), cast(1 as int)) FROM t
--- !query schema
+-- !query 183 schema
 struct<(CAST(CAST(1 AS BIGINT) AS BIGINT) IN (CAST(CAST(1 AS BIGINT) AS BIGINT), CAST(CAST(1 AS INT) AS BIGINT))):boolean>
--- !query output
+-- !query 183 output
 true
 
 
--- !query
+-- !query 184
 SELECT cast(1 as bigint) in (cast(1 as bigint), cast(1 as bigint)) FROM t
--- !query schema
+-- !query 184 schema
 struct<(CAST(1 AS BIGINT) IN (CAST(1 AS BIGINT), CAST(1 AS BIGINT))):boolean>
--- !query output
+-- !query 184 output
 true
 
 
--- !query
+-- !query 185
 SELECT cast(1 as bigint) in (cast(1 as bigint), cast(1 as float)) FROM t
--- !query schema
+-- !query 185 schema
 struct<(CAST(CAST(1 AS BIGINT) AS FLOAT) IN (CAST(CAST(1 AS BIGINT) AS FLOAT), CAST(CAST(1 AS FLOAT) AS FLOAT))):boolean>
--- !query output
+-- !query 185 output
 true
 
 
--- !query
+-- !query 186
 SELECT cast(1 as bigint) in (cast(1 as bigint), cast(1 as double)) FROM t
--- !query schema
+-- !query 186 schema
 struct<(CAST(CAST(1 AS BIGINT) AS DOUBLE) IN (CAST(CAST(1 AS BIGINT) AS DOUBLE), CAST(CAST(1 AS DOUBLE) AS DOUBLE))):boolean>
--- !query output
+-- !query 186 output
 true
 
 
--- !query
+-- !query 187
 SELECT cast(1 as bigint) in (cast(1 as bigint), cast(1 as decimal(10, 0))) FROM t
--- !query schema
+-- !query 187 schema
 struct<(CAST(CAST(1 AS BIGINT) AS DECIMAL(20,0)) IN (CAST(CAST(1 AS BIGINT) AS DECIMAL(20,0)), CAST(CAST(1 AS DECIMAL(10,0)) AS DECIMAL(20,0)))):boolean>
--- !query output
+-- !query 187 output
 true
 
 
--- !query
+-- !query 188
 SELECT cast(1 as bigint) in (cast(1 as bigint), cast(1 as string)) FROM t
--- !query schema
+-- !query 188 schema
 struct<(CAST(CAST(1 AS BIGINT) AS STRING) IN (CAST(CAST(1 AS BIGINT) AS STRING), CAST(CAST(1 AS STRING) AS STRING))):boolean>
--- !query output
+-- !query 188 output
 true
 
 
--- !query
+-- !query 189
 SELECT cast(1 as bigint) in (cast(1 as bigint), cast('1' as binary)) FROM t
--- !query schema
+-- !query 189 schema
 struct<>
--- !query output
+-- !query 189 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS BIGINT) IN (CAST(1 AS BIGINT), CAST('1' AS BINARY)))' due to data type mismatch: Arguments must be same type but were: bigint != binary; line 1 pos 25
 
 
--- !query
+-- !query 190
 SELECT cast(1 as bigint) in (cast(1 as bigint), cast(1 as boolean)) FROM t
--- !query schema
+-- !query 190 schema
 struct<>
--- !query output
+-- !query 190 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS BIGINT) IN (CAST(1 AS BIGINT), CAST(1 AS BOOLEAN)))' due to data type mismatch: Arguments must be same type but were: bigint != boolean; line 1 pos 25
 
 
--- !query
+-- !query 191
 SELECT cast(1 as bigint) in (cast(1 as bigint), cast('2017-12-11 09:30:00.0' as timestamp)) FROM t
--- !query schema
+-- !query 191 schema
 struct<>
--- !query output
+-- !query 191 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS BIGINT) IN (CAST(1 AS BIGINT), CAST('2017-12-11 09:30:00.0' AS TIMESTAMP)))' due to data type mismatch: Arguments must be same type but were: bigint != timestamp; line 1 pos 25
 
 
--- !query
+-- !query 192
 SELECT cast(1 as bigint) in (cast(1 as bigint), cast('2017-12-11 09:30:00' as date)) FROM t
--- !query schema
+-- !query 192 schema
 struct<>
--- !query output
+-- !query 192 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS BIGINT) IN (CAST(1 AS BIGINT), CAST('2017-12-11 09:30:00' AS DATE)))' due to data type mismatch: Arguments must be same type but were: bigint != date; line 1 pos 25
 
 
--- !query
+-- !query 193
 SELECT cast(1 as float) in (cast(1 as float), cast(1 as tinyint)) FROM t
--- !query schema
+-- !query 193 schema
 struct<(CAST(CAST(1 AS FLOAT) AS FLOAT) IN (CAST(CAST(1 AS FLOAT) AS FLOAT), CAST(CAST(1 AS TINYINT) AS FLOAT))):boolean>
--- !query output
+-- !query 193 output
 true
 
 
--- !query
+-- !query 194
 SELECT cast(1 as float) in (cast(1 as float), cast(1 as smallint)) FROM t
--- !query schema
+-- !query 194 schema
 struct<(CAST(CAST(1 AS FLOAT) AS FLOAT) IN (CAST(CAST(1 AS FLOAT) AS FLOAT), CAST(CAST(1 AS SMALLINT) AS FLOAT))):boolean>
--- !query output
+-- !query 194 output
 true
 
 
--- !query
+-- !query 195
 SELECT cast(1 as float) in (cast(1 as float), cast(1 as int)) FROM t
--- !query schema
+-- !query 195 schema
 struct<(CAST(CAST(1 AS FLOAT) AS FLOAT) IN (CAST(CAST(1 AS FLOAT) AS FLOAT), CAST(CAST(1 AS INT) AS FLOAT))):boolean>
--- !query output
+-- !query 195 output
 true
 
 
--- !query
+-- !query 196
 SELECT cast(1 as float) in (cast(1 as float), cast(1 as bigint)) FROM t
--- !query schema
+-- !query 196 schema
 struct<(CAST(CAST(1 AS FLOAT) AS FLOAT) IN (CAST(CAST(1 AS FLOAT) AS FLOAT), CAST(CAST(1 AS BIGINT) AS FLOAT))):boolean>
--- !query output
+-- !query 196 output
 true
 
 
--- !query
+-- !query 197
 SELECT cast(1 as float) in (cast(1 as float), cast(1 as float)) FROM t
--- !query schema
+-- !query 197 schema
 struct<(CAST(1 AS FLOAT) IN (CAST(1 AS FLOAT), CAST(1 AS FLOAT))):boolean>
--- !query output
+-- !query 197 output
 true
 
 
--- !query
+-- !query 198
 SELECT cast(1 as float) in (cast(1 as float), cast(1 as double)) FROM t
--- !query schema
+-- !query 198 schema
 struct<(CAST(CAST(1 AS FLOAT) AS DOUBLE) IN (CAST(CAST(1 AS FLOAT) AS DOUBLE), CAST(CAST(1 AS DOUBLE) AS DOUBLE))):boolean>
--- !query output
+-- !query 198 output
 true
 
 
--- !query
+-- !query 199
 SELECT cast(1 as float) in (cast(1 as float), cast(1 as decimal(10, 0))) FROM t
--- !query schema
+-- !query 199 schema
 struct<(CAST(CAST(1 AS FLOAT) AS DOUBLE) IN (CAST(CAST(1 AS FLOAT) AS DOUBLE), CAST(CAST(1 AS DECIMAL(10,0)) AS DOUBLE))):boolean>
--- !query output
+-- !query 199 output
 true
 
 
--- !query
+-- !query 200
 SELECT cast(1 as float) in (cast(1 as float), cast(1 as string)) FROM t
--- !query schema
+-- !query 200 schema
 struct<(CAST(CAST(1 AS FLOAT) AS STRING) IN (CAST(CAST(1 AS FLOAT) AS STRING), CAST(CAST(1 AS STRING) AS STRING))):boolean>
--- !query output
+-- !query 200 output
 true
 
 
--- !query
+-- !query 201
 SELECT cast(1 as float) in (cast(1 as float), cast('1' as binary)) FROM t
--- !query schema
+-- !query 201 schema
 struct<>
--- !query output
+-- !query 201 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS FLOAT) IN (CAST(1 AS FLOAT), CAST('1' AS BINARY)))' due to data type mismatch: Arguments must be same type but were: float != binary; line 1 pos 24
 
 
--- !query
+-- !query 202
 SELECT cast(1 as float) in (cast(1 as float), cast(1 as boolean)) FROM t
--- !query schema
+-- !query 202 schema
 struct<>
--- !query output
+-- !query 202 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS FLOAT) IN (CAST(1 AS FLOAT), CAST(1 AS BOOLEAN)))' due to data type mismatch: Arguments must be same type but were: float != boolean; line 1 pos 24
 
 
--- !query
+-- !query 203
 SELECT cast(1 as float) in (cast(1 as float), cast('2017-12-11 09:30:00.0' as timestamp)) FROM t
--- !query schema
+-- !query 203 schema
 struct<>
--- !query output
+-- !query 203 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS FLOAT) IN (CAST(1 AS FLOAT), CAST('2017-12-11 09:30:00.0' AS TIMESTAMP)))' due to data type mismatch: Arguments must be same type but were: float != timestamp; line 1 pos 24
 
 
--- !query
+-- !query 204
 SELECT cast(1 as float) in (cast(1 as float), cast('2017-12-11 09:30:00' as date)) FROM t
--- !query schema
+-- !query 204 schema
 struct<>
--- !query output
+-- !query 204 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS FLOAT) IN (CAST(1 AS FLOAT), CAST('2017-12-11 09:30:00' AS DATE)))' due to data type mismatch: Arguments must be same type but were: float != date; line 1 pos 24
 
 
--- !query
+-- !query 205
 SELECT cast(1 as double) in (cast(1 as double), cast(1 as tinyint)) FROM t
--- !query schema
+-- !query 205 schema
 struct<(CAST(CAST(1 AS DOUBLE) AS DOUBLE) IN (CAST(CAST(1 AS DOUBLE) AS DOUBLE), CAST(CAST(1 AS TINYINT) AS DOUBLE))):boolean>
--- !query output
+-- !query 205 output
 true
 
 
--- !query
+-- !query 206
 SELECT cast(1 as double) in (cast(1 as double), cast(1 as smallint)) FROM t
--- !query schema
+-- !query 206 schema
 struct<(CAST(CAST(1 AS DOUBLE) AS DOUBLE) IN (CAST(CAST(1 AS DOUBLE) AS DOUBLE), CAST(CAST(1 AS SMALLINT) AS DOUBLE))):boolean>
--- !query output
+-- !query 206 output
 true
 
 
--- !query
+-- !query 207
 SELECT cast(1 as double) in (cast(1 as double), cast(1 as int)) FROM t
--- !query schema
+-- !query 207 schema
 struct<(CAST(CAST(1 AS DOUBLE) AS DOUBLE) IN (CAST(CAST(1 AS DOUBLE) AS DOUBLE), CAST(CAST(1 AS INT) AS DOUBLE))):boolean>
--- !query output
+-- !query 207 output
 true
 
 
--- !query
+-- !query 208
 SELECT cast(1 as double) in (cast(1 as double), cast(1 as bigint)) FROM t
--- !query schema
+-- !query 208 schema
 struct<(CAST(CAST(1 AS DOUBLE) AS DOUBLE) IN (CAST(CAST(1 AS DOUBLE) AS DOUBLE), CAST(CAST(1 AS BIGINT) AS DOUBLE))):boolean>
--- !query output
+-- !query 208 output
 true
 
 
--- !query
+-- !query 209
 SELECT cast(1 as double) in (cast(1 as double), cast(1 as float)) FROM t
--- !query schema
+-- !query 209 schema
 struct<(CAST(CAST(1 AS DOUBLE) AS DOUBLE) IN (CAST(CAST(1 AS DOUBLE) AS DOUBLE), CAST(CAST(1 AS FLOAT) AS DOUBLE))):boolean>
--- !query output
+-- !query 209 output
 true
 
 
--- !query
+-- !query 210
 SELECT cast(1 as double) in (cast(1 as double), cast(1 as double)) FROM t
--- !query schema
+-- !query 210 schema
 struct<(CAST(1 AS DOUBLE) IN (CAST(1 AS DOUBLE), CAST(1 AS DOUBLE))):boolean>
--- !query output
+-- !query 210 output
 true
 
 
--- !query
+-- !query 211
 SELECT cast(1 as double) in (cast(1 as double), cast(1 as decimal(10, 0))) FROM t
--- !query schema
+-- !query 211 schema
 struct<(CAST(CAST(1 AS DOUBLE) AS DOUBLE) IN (CAST(CAST(1 AS DOUBLE) AS DOUBLE), CAST(CAST(1 AS DECIMAL(10,0)) AS DOUBLE))):boolean>
--- !query output
+-- !query 211 output
 true
 
 
--- !query
+-- !query 212
 SELECT cast(1 as double) in (cast(1 as double), cast(1 as string)) FROM t
--- !query schema
+-- !query 212 schema
 struct<(CAST(CAST(1 AS DOUBLE) AS STRING) IN (CAST(CAST(1 AS DOUBLE) AS STRING), CAST(CAST(1 AS STRING) AS STRING))):boolean>
--- !query output
+-- !query 212 output
 true
 
 
--- !query
+-- !query 213
 SELECT cast(1 as double) in (cast(1 as double), cast('1' as binary)) FROM t
--- !query schema
+-- !query 213 schema
 struct<>
--- !query output
+-- !query 213 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS DOUBLE) IN (CAST(1 AS DOUBLE), CAST('1' AS BINARY)))' due to data type mismatch: Arguments must be same type but were: double != binary; line 1 pos 25
 
 
--- !query
+-- !query 214
 SELECT cast(1 as double) in (cast(1 as double), cast(1 as boolean)) FROM t
--- !query schema
+-- !query 214 schema
 struct<>
--- !query output
+-- !query 214 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS DOUBLE) IN (CAST(1 AS DOUBLE), CAST(1 AS BOOLEAN)))' due to data type mismatch: Arguments must be same type but were: double != boolean; line 1 pos 25
 
 
--- !query
+-- !query 215
 SELECT cast(1 as double) in (cast(1 as double), cast('2017-12-11 09:30:00.0' as timestamp)) FROM t
--- !query schema
+-- !query 215 schema
 struct<>
--- !query output
+-- !query 215 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS DOUBLE) IN (CAST(1 AS DOUBLE), CAST('2017-12-11 09:30:00.0' AS TIMESTAMP)))' due to data type mismatch: Arguments must be same type but were: double != timestamp; line 1 pos 25
 
 
--- !query
+-- !query 216
 SELECT cast(1 as double) in (cast(1 as double), cast('2017-12-11 09:30:00' as date)) FROM t
--- !query schema
+-- !query 216 schema
 struct<>
--- !query output
+-- !query 216 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS DOUBLE) IN (CAST(1 AS DOUBLE), CAST('2017-12-11 09:30:00' AS DATE)))' due to data type mismatch: Arguments must be same type but were: double != date; line 1 pos 25
 
 
--- !query
+-- !query 217
 SELECT cast(1 as decimal(10, 0)) in (cast(1 as decimal(10, 0)), cast(1 as tinyint)) FROM t
--- !query schema
+-- !query 217 schema
 struct<(CAST(CAST(1 AS DECIMAL(10,0)) AS DECIMAL(10,0)) IN (CAST(CAST(1 AS DECIMAL(10,0)) AS DECIMAL(10,0)), CAST(CAST(1 AS TINYINT) AS DECIMAL(10,0)))):boolean>
--- !query output
+-- !query 217 output
 true
 
 
--- !query
+-- !query 218
 SELECT cast(1 as decimal(10, 0)) in (cast(1 as decimal(10, 0)), cast(1 as smallint)) FROM t
--- !query schema
+-- !query 218 schema
 struct<(CAST(CAST(1 AS DECIMAL(10,0)) AS DECIMAL(10,0)) IN (CAST(CAST(1 AS DECIMAL(10,0)) AS DECIMAL(10,0)), CAST(CAST(1 AS SMALLINT) AS DECIMAL(10,0)))):boolean>
--- !query output
+-- !query 218 output
 true
 
 
--- !query
+-- !query 219
 SELECT cast(1 as decimal(10, 0)) in (cast(1 as decimal(10, 0)), cast(1 as int)) FROM t
--- !query schema
+-- !query 219 schema
 struct<(CAST(CAST(1 AS DECIMAL(10,0)) AS DECIMAL(10,0)) IN (CAST(CAST(1 AS DECIMAL(10,0)) AS DECIMAL(10,0)), CAST(CAST(1 AS INT) AS DECIMAL(10,0)))):boolean>
--- !query output
+-- !query 219 output
 true
 
 
--- !query
+-- !query 220
 SELECT cast(1 as decimal(10, 0)) in (cast(1 as decimal(10, 0)), cast(1 as bigint)) FROM t
--- !query schema
+-- !query 220 schema
 struct<(CAST(CAST(1 AS DECIMAL(10,0)) AS DECIMAL(20,0)) IN (CAST(CAST(1 AS DECIMAL(10,0)) AS DECIMAL(20,0)), CAST(CAST(1 AS BIGINT) AS DECIMAL(20,0)))):boolean>
--- !query output
+-- !query 220 output
 true
 
 
--- !query
+-- !query 221
 SELECT cast(1 as decimal(10, 0)) in (cast(1 as decimal(10, 0)), cast(1 as float)) FROM t
--- !query schema
+-- !query 221 schema
 struct<(CAST(CAST(1 AS DECIMAL(10,0)) AS DOUBLE) IN (CAST(CAST(1 AS DECIMAL(10,0)) AS DOUBLE), CAST(CAST(1 AS FLOAT) AS DOUBLE))):boolean>
--- !query output
+-- !query 221 output
 true
 
 
--- !query
+-- !query 222
 SELECT cast(1 as decimal(10, 0)) in (cast(1 as decimal(10, 0)), cast(1 as double)) FROM t
--- !query schema
+-- !query 222 schema
 struct<(CAST(CAST(1 AS DECIMAL(10,0)) AS DOUBLE) IN (CAST(CAST(1 AS DECIMAL(10,0)) AS DOUBLE), CAST(CAST(1 AS DOUBLE) AS DOUBLE))):boolean>
--- !query output
+-- !query 222 output
 true
 
 
--- !query
+-- !query 223
 SELECT cast(1 as decimal(10, 0)) in (cast(1 as decimal(10, 0)), cast(1 as decimal(10, 0))) FROM t
--- !query schema
+-- !query 223 schema
 struct<(CAST(1 AS DECIMAL(10,0)) IN (CAST(1 AS DECIMAL(10,0)), CAST(1 AS DECIMAL(10,0)))):boolean>
--- !query output
+-- !query 223 output
 true
 
 
--- !query
+-- !query 224
 SELECT cast(1 as decimal(10, 0)) in (cast(1 as decimal(10, 0)), cast(1 as string)) FROM t
--- !query schema
+-- !query 224 schema
 struct<(CAST(CAST(1 AS DECIMAL(10,0)) AS STRING) IN (CAST(CAST(1 AS DECIMAL(10,0)) AS STRING), CAST(CAST(1 AS STRING) AS STRING))):boolean>
--- !query output
+-- !query 224 output
 true
 
 
--- !query
+-- !query 225
 SELECT cast(1 as decimal(10, 0)) in (cast(1 as decimal(10, 0)), cast('1' as binary)) FROM t
--- !query schema
+-- !query 225 schema
 struct<>
--- !query output
+-- !query 225 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS DECIMAL(10,0)) IN (CAST(1 AS DECIMAL(10,0)), CAST('1' AS BINARY)))' due to data type mismatch: Arguments must be same type but were: decimal(10,0) != binary; line 1 pos 33
 
 
--- !query
+-- !query 226
 SELECT cast(1 as decimal(10, 0)) in (cast(1 as decimal(10, 0)), cast(1 as boolean)) FROM t
--- !query schema
+-- !query 226 schema
 struct<>
--- !query output
+-- !query 226 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS DECIMAL(10,0)) IN (CAST(1 AS DECIMAL(10,0)), CAST(1 AS BOOLEAN)))' due to data type mismatch: Arguments must be same type but were: decimal(10,0) != boolean; line 1 pos 33
 
 
--- !query
+-- !query 227
 SELECT cast(1 as decimal(10, 0)) in (cast(1 as decimal(10, 0)), cast('2017-12-11 09:30:00.0' as timestamp)) FROM t
--- !query schema
+-- !query 227 schema
 struct<>
--- !query output
+-- !query 227 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS DECIMAL(10,0)) IN (CAST(1 AS DECIMAL(10,0)), CAST('2017-12-11 09:30:00.0' AS TIMESTAMP)))' due to data type mismatch: Arguments must be same type but were: decimal(10,0) != timestamp; line 1 pos 33
 
 
--- !query
+-- !query 228
 SELECT cast(1 as decimal(10, 0)) in (cast(1 as decimal(10, 0)), cast('2017-12-11 09:30:00' as date)) FROM t
--- !query schema
+-- !query 228 schema
 struct<>
--- !query output
+-- !query 228 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS DECIMAL(10,0)) IN (CAST(1 AS DECIMAL(10,0)), CAST('2017-12-11 09:30:00' AS DATE)))' due to data type mismatch: Arguments must be same type but were: decimal(10,0) != date; line 1 pos 33
 
 
--- !query
+-- !query 229
 SELECT cast(1 as string) in (cast(1 as string), cast(1 as tinyint)) FROM t
--- !query schema
+-- !query 229 schema
 struct<(CAST(CAST(1 AS STRING) AS STRING) IN (CAST(CAST(1 AS STRING) AS STRING), CAST(CAST(1 AS TINYINT) AS STRING))):boolean>
--- !query output
+-- !query 229 output
 true
 
 
--- !query
+-- !query 230
 SELECT cast(1 as string) in (cast(1 as string), cast(1 as smallint)) FROM t
--- !query schema
+-- !query 230 schema
 struct<(CAST(CAST(1 AS STRING) AS STRING) IN (CAST(CAST(1 AS STRING) AS STRING), CAST(CAST(1 AS SMALLINT) AS STRING))):boolean>
--- !query output
+-- !query 230 output
 true
 
 
--- !query
+-- !query 231
 SELECT cast(1 as string) in (cast(1 as string), cast(1 as int)) FROM t
--- !query schema
+-- !query 231 schema
 struct<(CAST(CAST(1 AS STRING) AS STRING) IN (CAST(CAST(1 AS STRING) AS STRING), CAST(CAST(1 AS INT) AS STRING))):boolean>
--- !query output
+-- !query 231 output
 true
 
 
--- !query
+-- !query 232
 SELECT cast(1 as string) in (cast(1 as string), cast(1 as bigint)) FROM t
--- !query schema
+-- !query 232 schema
 struct<(CAST(CAST(1 AS STRING) AS STRING) IN (CAST(CAST(1 AS STRING) AS STRING), CAST(CAST(1 AS BIGINT) AS STRING))):boolean>
--- !query output
+-- !query 232 output
 true
 
 
--- !query
+-- !query 233
 SELECT cast(1 as string) in (cast(1 as string), cast(1 as float)) FROM t
--- !query schema
+-- !query 233 schema
 struct<(CAST(CAST(1 AS STRING) AS STRING) IN (CAST(CAST(1 AS STRING) AS STRING), CAST(CAST(1 AS FLOAT) AS STRING))):boolean>
--- !query output
+-- !query 233 output
 true
 
 
--- !query
+-- !query 234
 SELECT cast(1 as string) in (cast(1 as string), cast(1 as double)) FROM t
--- !query schema
+-- !query 234 schema
 struct<(CAST(CAST(1 AS STRING) AS STRING) IN (CAST(CAST(1 AS STRING) AS STRING), CAST(CAST(1 AS DOUBLE) AS STRING))):boolean>
--- !query output
+-- !query 234 output
 true
 
 
--- !query
+-- !query 235
 SELECT cast(1 as string) in (cast(1 as string), cast(1 as decimal(10, 0))) FROM t
--- !query schema
+-- !query 235 schema
 struct<(CAST(CAST(1 AS STRING) AS STRING) IN (CAST(CAST(1 AS STRING) AS STRING), CAST(CAST(1 AS DECIMAL(10,0)) AS STRING))):boolean>
--- !query output
+-- !query 235 output
 true
 
 
--- !query
+-- !query 236
 SELECT cast(1 as string) in (cast(1 as string), cast(1 as string)) FROM t
--- !query schema
+-- !query 236 schema
 struct<(CAST(1 AS STRING) IN (CAST(1 AS STRING), CAST(1 AS STRING))):boolean>
--- !query output
+-- !query 236 output
 true
 
 
--- !query
+-- !query 237
 SELECT cast(1 as string) in (cast(1 as string), cast('1' as binary)) FROM t
--- !query schema
+-- !query 237 schema
 struct<>
--- !query output
+-- !query 237 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS STRING) IN (CAST(1 AS STRING), CAST('1' AS BINARY)))' due to data type mismatch: Arguments must be same type but were: string != binary; line 1 pos 25
 
 
--- !query
+-- !query 238
 SELECT cast(1 as string) in (cast(1 as string), cast(1 as boolean)) FROM t
--- !query schema
+-- !query 238 schema
 struct<>
--- !query output
+-- !query 238 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST(1 AS STRING) IN (CAST(1 AS STRING), CAST(1 AS BOOLEAN)))' due to data type mismatch: Arguments must be same type but were: string != boolean; line 1 pos 25
 
 
--- !query
+-- !query 239
 SELECT cast(1 as string) in (cast(1 as string), cast('2017-12-11 09:30:00.0' as timestamp)) FROM t
--- !query schema
+-- !query 239 schema
 struct<(CAST(CAST(1 AS STRING) AS STRING) IN (CAST(CAST(1 AS STRING) AS STRING), CAST(CAST(2017-12-11 09:30:00.0 AS TIMESTAMP) AS STRING))):boolean>
--- !query output
+-- !query 239 output
 true
 
 
--- !query
+-- !query 240
 SELECT cast(1 as string) in (cast(1 as string), cast('2017-12-11 09:30:00' as date)) FROM t
--- !query schema
+-- !query 240 schema
 struct<(CAST(CAST(1 AS STRING) AS STRING) IN (CAST(CAST(1 AS STRING) AS STRING), CAST(CAST(2017-12-11 09:30:00 AS DATE) AS STRING))):boolean>
--- !query output
+-- !query 240 output
 true
 
 
--- !query
+-- !query 241
 SELECT cast('1' as binary) in (cast('1' as binary), cast(1 as tinyint)) FROM t
--- !query schema
+-- !query 241 schema
 struct<>
--- !query output
+-- !query 241 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('1' AS BINARY) IN (CAST('1' AS BINARY), CAST(1 AS TINYINT)))' due to data type mismatch: Arguments must be same type but were: binary != tinyint; line 1 pos 27
 
 
--- !query
+-- !query 242
 SELECT cast('1' as binary) in (cast('1' as binary), cast(1 as smallint)) FROM t
--- !query schema
+-- !query 242 schema
 struct<>
--- !query output
+-- !query 242 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('1' AS BINARY) IN (CAST('1' AS BINARY), CAST(1 AS SMALLINT)))' due to data type mismatch: Arguments must be same type but were: binary != smallint; line 1 pos 27
 
 
--- !query
+-- !query 243
 SELECT cast('1' as binary) in (cast('1' as binary), cast(1 as int)) FROM t
--- !query schema
+-- !query 243 schema
 struct<>
--- !query output
+-- !query 243 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('1' AS BINARY) IN (CAST('1' AS BINARY), CAST(1 AS INT)))' due to data type mismatch: Arguments must be same type but were: binary != int; line 1 pos 27
 
 
--- !query
+-- !query 244
 SELECT cast('1' as binary) in (cast('1' as binary), cast(1 as bigint)) FROM t
--- !query schema
+-- !query 244 schema
 struct<>
--- !query output
+-- !query 244 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('1' AS BINARY) IN (CAST('1' AS BINARY), CAST(1 AS BIGINT)))' due to data type mismatch: Arguments must be same type but were: binary != bigint; line 1 pos 27
 
 
--- !query
+-- !query 245
 SELECT cast('1' as binary) in (cast('1' as binary), cast(1 as float)) FROM t
--- !query schema
+-- !query 245 schema
 struct<>
--- !query output
+-- !query 245 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('1' AS BINARY) IN (CAST('1' AS BINARY), CAST(1 AS FLOAT)))' due to data type mismatch: Arguments must be same type but were: binary != float; line 1 pos 27
 
 
--- !query
+-- !query 246
 SELECT cast('1' as binary) in (cast('1' as binary), cast(1 as double)) FROM t
--- !query schema
+-- !query 246 schema
 struct<>
--- !query output
+-- !query 246 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('1' AS BINARY) IN (CAST('1' AS BINARY), CAST(1 AS DOUBLE)))' due to data type mismatch: Arguments must be same type but were: binary != double; line 1 pos 27
 
 
--- !query
+-- !query 247
 SELECT cast('1' as binary) in (cast('1' as binary), cast(1 as decimal(10, 0))) FROM t
--- !query schema
+-- !query 247 schema
 struct<>
--- !query output
+-- !query 247 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('1' AS BINARY) IN (CAST('1' AS BINARY), CAST(1 AS DECIMAL(10,0))))' due to data type mismatch: Arguments must be same type but were: binary != decimal(10,0); line 1 pos 27
 
 
--- !query
+-- !query 248
 SELECT cast('1' as binary) in (cast('1' as binary), cast(1 as string)) FROM t
--- !query schema
+-- !query 248 schema
 struct<>
--- !query output
+-- !query 248 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('1' AS BINARY) IN (CAST('1' AS BINARY), CAST(1 AS STRING)))' due to data type mismatch: Arguments must be same type but were: binary != string; line 1 pos 27
 
 
--- !query
+-- !query 249
 SELECT cast('1' as binary) in (cast('1' as binary), cast('1' as binary)) FROM t
--- !query schema
+-- !query 249 schema
 struct<(CAST(1 AS BINARY) IN (CAST(1 AS BINARY), CAST(1 AS BINARY))):boolean>
--- !query output
+-- !query 249 output
 true
 
 
--- !query
+-- !query 250
 SELECT cast('1' as binary) in (cast('1' as binary), cast(1 as boolean)) FROM t
--- !query schema
+-- !query 250 schema
 struct<>
--- !query output
+-- !query 250 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('1' AS BINARY) IN (CAST('1' AS BINARY), CAST(1 AS BOOLEAN)))' due to data type mismatch: Arguments must be same type but were: binary != boolean; line 1 pos 27
 
 
--- !query
+-- !query 251
 SELECT cast('1' as binary) in (cast('1' as binary), cast('2017-12-11 09:30:00.0' as timestamp)) FROM t
--- !query schema
+-- !query 251 schema
 struct<>
--- !query output
+-- !query 251 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('1' AS BINARY) IN (CAST('1' AS BINARY), CAST('2017-12-11 09:30:00.0' AS TIMESTAMP)))' due to data type mismatch: Arguments must be same type but were: binary != timestamp; line 1 pos 27
 
 
--- !query
+-- !query 252
 SELECT cast('1' as binary) in (cast('1' as binary), cast('2017-12-11 09:30:00' as date)) FROM t
--- !query schema
+-- !query 252 schema
 struct<>
--- !query output
+-- !query 252 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('1' AS BINARY) IN (CAST('1' AS BINARY), CAST('2017-12-11 09:30:00' AS DATE)))' due to data type mismatch: Arguments must be same type but were: binary != date; line 1 pos 27
 
 
--- !query
+-- !query 253
 SELECT cast('1' as boolean) in (cast('1' as boolean), cast(1 as tinyint)) FROM t
--- !query schema
+-- !query 253 schema
 struct<>
--- !query output
+-- !query 253 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('1' AS BOOLEAN) IN (CAST('1' AS BOOLEAN), CAST(1 AS TINYINT)))' due to data type mismatch: Arguments must be same type but were: boolean != tinyint; line 1 pos 28
 
 
--- !query
+-- !query 254
 SELECT cast('1' as boolean) in (cast('1' as boolean), cast(1 as smallint)) FROM t
--- !query schema
+-- !query 254 schema
 struct<>
--- !query output
+-- !query 254 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('1' AS BOOLEAN) IN (CAST('1' AS BOOLEAN), CAST(1 AS SMALLINT)))' due to data type mismatch: Arguments must be same type but were: boolean != smallint; line 1 pos 28
 
 
--- !query
+-- !query 255
 SELECT cast('1' as boolean) in (cast('1' as boolean), cast(1 as int)) FROM t
--- !query schema
+-- !query 255 schema
 struct<>
--- !query output
+-- !query 255 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('1' AS BOOLEAN) IN (CAST('1' AS BOOLEAN), CAST(1 AS INT)))' due to data type mismatch: Arguments must be same type but were: boolean != int; line 1 pos 28
 
 
--- !query
+-- !query 256
 SELECT cast('1' as boolean) in (cast('1' as boolean), cast(1 as bigint)) FROM t
--- !query schema
+-- !query 256 schema
 struct<>
--- !query output
+-- !query 256 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('1' AS BOOLEAN) IN (CAST('1' AS BOOLEAN), CAST(1 AS BIGINT)))' due to data type mismatch: Arguments must be same type but were: boolean != bigint; line 1 pos 28
 
 
--- !query
+-- !query 257
 SELECT cast('1' as boolean) in (cast('1' as boolean), cast(1 as float)) FROM t
--- !query schema
+-- !query 257 schema
 struct<>
--- !query output
+-- !query 257 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('1' AS BOOLEAN) IN (CAST('1' AS BOOLEAN), CAST(1 AS FLOAT)))' due to data type mismatch: Arguments must be same type but were: boolean != float; line 1 pos 28
 
 
--- !query
+-- !query 258
 SELECT cast('1' as boolean) in (cast('1' as boolean), cast(1 as double)) FROM t
--- !query schema
+-- !query 258 schema
 struct<>
--- !query output
+-- !query 258 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('1' AS BOOLEAN) IN (CAST('1' AS BOOLEAN), CAST(1 AS DOUBLE)))' due to data type mismatch: Arguments must be same type but were: boolean != double; line 1 pos 28
 
 
--- !query
+-- !query 259
 SELECT cast('1' as boolean) in (cast('1' as boolean), cast(1 as decimal(10, 0))) FROM t
--- !query schema
+-- !query 259 schema
 struct<>
--- !query output
+-- !query 259 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('1' AS BOOLEAN) IN (CAST('1' AS BOOLEAN), CAST(1 AS DECIMAL(10,0))))' due to data type mismatch: Arguments must be same type but were: boolean != decimal(10,0); line 1 pos 28
 
 
--- !query
+-- !query 260
 SELECT cast('1' as boolean) in (cast('1' as boolean), cast(1 as string)) FROM t
--- !query schema
+-- !query 260 schema
 struct<>
--- !query output
+-- !query 260 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('1' AS BOOLEAN) IN (CAST('1' AS BOOLEAN), CAST(1 AS STRING)))' due to data type mismatch: Arguments must be same type but were: boolean != string; line 1 pos 28
 
 
--- !query
+-- !query 261
 SELECT cast('1' as boolean) in (cast('1' as boolean), cast('1' as binary)) FROM t
--- !query schema
+-- !query 261 schema
 struct<>
--- !query output
+-- !query 261 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('1' AS BOOLEAN) IN (CAST('1' AS BOOLEAN), CAST('1' AS BINARY)))' due to data type mismatch: Arguments must be same type but were: boolean != binary; line 1 pos 28
 
 
--- !query
+-- !query 262
 SELECT cast('1' as boolean) in (cast('1' as boolean), cast(1 as boolean)) FROM t
--- !query schema
+-- !query 262 schema
 struct<(CAST(1 AS BOOLEAN) IN (CAST(1 AS BOOLEAN), CAST(1 AS BOOLEAN))):boolean>
--- !query output
+-- !query 262 output
 true
 
 
--- !query
+-- !query 263
 SELECT cast('1' as boolean) in (cast('1' as boolean), cast('2017-12-11 09:30:00.0' as timestamp)) FROM t
--- !query schema
+-- !query 263 schema
 struct<>
--- !query output
+-- !query 263 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('1' AS BOOLEAN) IN (CAST('1' AS BOOLEAN), CAST('2017-12-11 09:30:00.0' AS TIMESTAMP)))' due to data type mismatch: Arguments must be same type but were: boolean != timestamp; line 1 pos 28
 
 
--- !query
+-- !query 264
 SELECT cast('1' as boolean) in (cast('1' as boolean), cast('2017-12-11 09:30:00' as date)) FROM t
--- !query schema
+-- !query 264 schema
 struct<>
--- !query output
+-- !query 264 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('1' AS BOOLEAN) IN (CAST('1' AS BOOLEAN), CAST('2017-12-11 09:30:00' AS DATE)))' due to data type mismatch: Arguments must be same type but were: boolean != date; line 1 pos 28
 
 
--- !query
+-- !query 265
 SELECT cast('2017-12-12 09:30:00.0' as timestamp) in (cast('2017-12-12 09:30:00.0' as timestamp), cast(1 as tinyint)) FROM t
--- !query schema
+-- !query 265 schema
 struct<>
--- !query output
+-- !query 265 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('2017-12-12 09:30:00.0' AS TIMESTAMP) IN (CAST('2017-12-12 09:30:00.0' AS TIMESTAMP), CAST(1 AS TINYINT)))' due to data type mismatch: Arguments must be same type but were: timestamp != tinyint; line 1 pos 50
 
 
--- !query
+-- !query 266
 SELECT cast('2017-12-12 09:30:00.0' as timestamp) in (cast('2017-12-12 09:30:00.0' as timestamp), cast(1 as smallint)) FROM t
--- !query schema
+-- !query 266 schema
 struct<>
--- !query output
+-- !query 266 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('2017-12-12 09:30:00.0' AS TIMESTAMP) IN (CAST('2017-12-12 09:30:00.0' AS TIMESTAMP), CAST(1 AS SMALLINT)))' due to data type mismatch: Arguments must be same type but were: timestamp != smallint; line 1 pos 50
 
 
--- !query
+-- !query 267
 SELECT cast('2017-12-12 09:30:00.0' as timestamp) in (cast('2017-12-12 09:30:00.0' as timestamp), cast(1 as int)) FROM t
--- !query schema
+-- !query 267 schema
 struct<>
--- !query output
+-- !query 267 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('2017-12-12 09:30:00.0' AS TIMESTAMP) IN (CAST('2017-12-12 09:30:00.0' AS TIMESTAMP), CAST(1 AS INT)))' due to data type mismatch: Arguments must be same type but were: timestamp != int; line 1 pos 50
 
 
--- !query
+-- !query 268
 SELECT cast('2017-12-12 09:30:00.0' as timestamp) in (cast('2017-12-12 09:30:00.0' as timestamp), cast(1 as bigint)) FROM t
--- !query schema
+-- !query 268 schema
 struct<>
--- !query output
+-- !query 268 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('2017-12-12 09:30:00.0' AS TIMESTAMP) IN (CAST('2017-12-12 09:30:00.0' AS TIMESTAMP), CAST(1 AS BIGINT)))' due to data type mismatch: Arguments must be same type but were: timestamp != bigint; line 1 pos 50
 
 
--- !query
+-- !query 269
 SELECT cast('2017-12-12 09:30:00.0' as timestamp) in (cast('2017-12-12 09:30:00.0' as timestamp), cast(1 as float)) FROM t
--- !query schema
+-- !query 269 schema
 struct<>
--- !query output
+-- !query 269 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('2017-12-12 09:30:00.0' AS TIMESTAMP) IN (CAST('2017-12-12 09:30:00.0' AS TIMESTAMP), CAST(1 AS FLOAT)))' due to data type mismatch: Arguments must be same type but were: timestamp != float; line 1 pos 50
 
 
--- !query
+-- !query 270
 SELECT cast('2017-12-12 09:30:00.0' as timestamp) in (cast('2017-12-12 09:30:00.0' as timestamp), cast(1 as double)) FROM t
--- !query schema
+-- !query 270 schema
 struct<>
--- !query output
+-- !query 270 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('2017-12-12 09:30:00.0' AS TIMESTAMP) IN (CAST('2017-12-12 09:30:00.0' AS TIMESTAMP), CAST(1 AS DOUBLE)))' due to data type mismatch: Arguments must be same type but were: timestamp != double; line 1 pos 50
 
 
--- !query
+-- !query 271
 SELECT cast('2017-12-12 09:30:00.0' as timestamp) in (cast('2017-12-12 09:30:00.0' as timestamp), cast(1 as decimal(10, 0))) FROM t
--- !query schema
+-- !query 271 schema
 struct<>
--- !query output
+-- !query 271 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('2017-12-12 09:30:00.0' AS TIMESTAMP) IN (CAST('2017-12-12 09:30:00.0' AS TIMESTAMP), CAST(1 AS DECIMAL(10,0))))' due to data type mismatch: Arguments must be same type but were: timestamp != decimal(10,0); line 1 pos 50
 
 
--- !query
+-- !query 272
 SELECT cast('2017-12-12 09:30:00.0' as timestamp) in (cast('2017-12-12 09:30:00.0' as timestamp), cast(1 as string)) FROM t
--- !query schema
+-- !query 272 schema
 struct<(CAST(CAST(2017-12-12 09:30:00.0 AS TIMESTAMP) AS STRING) IN (CAST(CAST(2017-12-12 09:30:00.0 AS TIMESTAMP) AS STRING), CAST(CAST(1 AS STRING) AS STRING))):boolean>
--- !query output
+-- !query 272 output
 true
 
 
--- !query
+-- !query 273
 SELECT cast('2017-12-12 09:30:00.0' as timestamp) in (cast('2017-12-12 09:30:00.0' as timestamp), cast('1' as binary)) FROM t
--- !query schema
+-- !query 273 schema
 struct<>
--- !query output
+-- !query 273 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('2017-12-12 09:30:00.0' AS TIMESTAMP) IN (CAST('2017-12-12 09:30:00.0' AS TIMESTAMP), CAST('1' AS BINARY)))' due to data type mismatch: Arguments must be same type but were: timestamp != binary; line 1 pos 50
 
 
--- !query
+-- !query 274
 SELECT cast('2017-12-12 09:30:00.0' as timestamp) in (cast('2017-12-12 09:30:00.0' as timestamp), cast(1 as boolean)) FROM t
--- !query schema
+-- !query 274 schema
 struct<>
--- !query output
+-- !query 274 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('2017-12-12 09:30:00.0' AS TIMESTAMP) IN (CAST('2017-12-12 09:30:00.0' AS TIMESTAMP), CAST(1 AS BOOLEAN)))' due to data type mismatch: Arguments must be same type but were: timestamp != boolean; line 1 pos 50
 
 
--- !query
+-- !query 275
 SELECT cast('2017-12-12 09:30:00.0' as timestamp) in (cast('2017-12-12 09:30:00.0' as timestamp), cast('2017-12-11 09:30:00.0' as timestamp)) FROM t
--- !query schema
+-- !query 275 schema
 struct<(CAST(2017-12-12 09:30:00.0 AS TIMESTAMP) IN (CAST(2017-12-12 09:30:00.0 AS TIMESTAMP), CAST(2017-12-11 09:30:00.0 AS TIMESTAMP))):boolean>
--- !query output
+-- !query 275 output
 true
 
 
--- !query
+-- !query 276
 SELECT cast('2017-12-12 09:30:00.0' as timestamp) in (cast('2017-12-12 09:30:00.0' as timestamp), cast('2017-12-11 09:30:00' as date)) FROM t
--- !query schema
+-- !query 276 schema
 struct<(CAST(CAST(2017-12-12 09:30:00.0 AS TIMESTAMP) AS TIMESTAMP) IN (CAST(CAST(2017-12-12 09:30:00.0 AS TIMESTAMP) AS TIMESTAMP), CAST(CAST(2017-12-11 09:30:00 AS DATE) AS TIMESTAMP))):boolean>
--- !query output
+-- !query 276 output
 true
 
 
--- !query
+-- !query 277
 SELECT cast('2017-12-12 09:30:00' as date) in (cast('2017-12-12 09:30:00' as date), cast(1 as tinyint)) FROM t
--- !query schema
+-- !query 277 schema
 struct<>
--- !query output
+-- !query 277 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('2017-12-12 09:30:00' AS DATE) IN (CAST('2017-12-12 09:30:00' AS DATE), CAST(1 AS TINYINT)))' due to data type mismatch: Arguments must be same type but were: date != tinyint; line 1 pos 43
 
 
--- !query
+-- !query 278
 SELECT cast('2017-12-12 09:30:00' as date) in (cast('2017-12-12 09:30:00' as date), cast(1 as smallint)) FROM t
--- !query schema
+-- !query 278 schema
 struct<>
--- !query output
+-- !query 278 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('2017-12-12 09:30:00' AS DATE) IN (CAST('2017-12-12 09:30:00' AS DATE), CAST(1 AS SMALLINT)))' due to data type mismatch: Arguments must be same type but were: date != smallint; line 1 pos 43
 
 
--- !query
+-- !query 279
 SELECT cast('2017-12-12 09:30:00' as date) in (cast('2017-12-12 09:30:00' as date), cast(1 as int)) FROM t
--- !query schema
+-- !query 279 schema
 struct<>
--- !query output
+-- !query 279 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('2017-12-12 09:30:00' AS DATE) IN (CAST('2017-12-12 09:30:00' AS DATE), CAST(1 AS INT)))' due to data type mismatch: Arguments must be same type but were: date != int; line 1 pos 43
 
 
--- !query
+-- !query 280
 SELECT cast('2017-12-12 09:30:00' as date) in (cast('2017-12-12 09:30:00' as date), cast(1 as bigint)) FROM t
--- !query schema
+-- !query 280 schema
 struct<>
--- !query output
+-- !query 280 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('2017-12-12 09:30:00' AS DATE) IN (CAST('2017-12-12 09:30:00' AS DATE), CAST(1 AS BIGINT)))' due to data type mismatch: Arguments must be same type but were: date != bigint; line 1 pos 43
 
 
--- !query
+-- !query 281
 SELECT cast('2017-12-12 09:30:00' as date) in (cast('2017-12-12 09:30:00' as date), cast(1 as float)) FROM t
--- !query schema
+-- !query 281 schema
 struct<>
--- !query output
+-- !query 281 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('2017-12-12 09:30:00' AS DATE) IN (CAST('2017-12-12 09:30:00' AS DATE), CAST(1 AS FLOAT)))' due to data type mismatch: Arguments must be same type but were: date != float; line 1 pos 43
 
 
--- !query
+-- !query 282
 SELECT cast('2017-12-12 09:30:00' as date) in (cast('2017-12-12 09:30:00' as date), cast(1 as double)) FROM t
--- !query schema
+-- !query 282 schema
 struct<>
--- !query output
+-- !query 282 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('2017-12-12 09:30:00' AS DATE) IN (CAST('2017-12-12 09:30:00' AS DATE), CAST(1 AS DOUBLE)))' due to data type mismatch: Arguments must be same type but were: date != double; line 1 pos 43
 
 
--- !query
+-- !query 283
 SELECT cast('2017-12-12 09:30:00' as date) in (cast('2017-12-12 09:30:00' as date), cast(1 as decimal(10, 0))) FROM t
--- !query schema
+-- !query 283 schema
 struct<>
--- !query output
+-- !query 283 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('2017-12-12 09:30:00' AS DATE) IN (CAST('2017-12-12 09:30:00' AS DATE), CAST(1 AS DECIMAL(10,0))))' due to data type mismatch: Arguments must be same type but were: date != decimal(10,0); line 1 pos 43
 
 
--- !query
+-- !query 284
 SELECT cast('2017-12-12 09:30:00' as date) in (cast('2017-12-12 09:30:00' as date), cast(1 as string)) FROM t
--- !query schema
+-- !query 284 schema
 struct<(CAST(CAST(2017-12-12 09:30:00 AS DATE) AS STRING) IN (CAST(CAST(2017-12-12 09:30:00 AS DATE) AS STRING), CAST(CAST(1 AS STRING) AS STRING))):boolean>
--- !query output
+-- !query 284 output
 true
 
 
--- !query
+-- !query 285
 SELECT cast('2017-12-12 09:30:00' as date) in (cast('2017-12-12 09:30:00' as date), cast('1' as binary)) FROM t
--- !query schema
+-- !query 285 schema
 struct<>
--- !query output
+-- !query 285 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('2017-12-12 09:30:00' AS DATE) IN (CAST('2017-12-12 09:30:00' AS DATE), CAST('1' AS BINARY)))' due to data type mismatch: Arguments must be same type but were: date != binary; line 1 pos 43
 
 
--- !query
+-- !query 286
 SELECT cast('2017-12-12 09:30:00' as date) in (cast('2017-12-12 09:30:00' as date), cast(1 as boolean)) FROM t
--- !query schema
+-- !query 286 schema
 struct<>
--- !query output
+-- !query 286 output
 org.apache.spark.sql.AnalysisException
 cannot resolve '(CAST('2017-12-12 09:30:00' AS DATE) IN (CAST('2017-12-12 09:30:00' AS DATE), CAST(1 AS BOOLEAN)))' due to data type mismatch: Arguments must be same type but were: date != boolean; line 1 pos 43
 
 
--- !query
+-- !query 287
 SELECT cast('2017-12-12 09:30:00' as date) in (cast('2017-12-12 09:30:00' as date), cast('2017-12-11 09:30:00.0' as timestamp)) FROM t
--- !query schema
+-- !query 287 schema
 struct<(CAST(CAST(2017-12-12 09:30:00 AS DATE) AS TIMESTAMP) IN (CAST(CAST(2017-12-12 09:30:00 AS DATE) AS TIMESTAMP), CAST(CAST(2017-12-11 09:30:00.0 AS TIMESTAMP) AS TIMESTAMP))):boolean>
--- !query output
+-- !query 287 output
 true
 
 
--- !query
+-- !query 288
 SELECT cast('2017-12-12 09:30:00' as date) in (cast('2017-12-12 09:30:00' as date), cast('2017-12-11 09:30:00' as date)) FROM t
--- !query schema
+-- !query 288 schema
 struct<(CAST(2017-12-12 09:30:00 AS DATE) IN (CAST(2017-12-12 09:30:00 AS DATE), CAST(2017-12-11 09:30:00 AS DATE))):boolean>
--- !query output
+-- !query 288 output
 true
