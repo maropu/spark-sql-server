@@ -111,20 +111,6 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
     }
   }
 
-  def assertTable(tableName: String, expectedSchema: Set[(String, String)], m: DatabaseMetaData)
-    : Unit = {
-    val mdTable = m.getTables(null, null, tableName, scala.Array("TABLE"))
-    assert(mdTable.next())
-    assert(tableName === mdTable.getString("TABLE_NAME"))
-    assert(!mdTable.next())
-    val schema = new Iterator[(String, String)] {
-      val schemaInfo = m.getColumns (null, null, tableName, "%")
-      def hasNext = schemaInfo.next()
-      def next() = (schemaInfo.getString("COLUMN_NAME"), schemaInfo.getString("TYPE_NAME"))
-    }
-    assert(expectedSchema === schema.toSet)
-  }
-
   test("DatabaseMetaData tests") {
     withJdbcStatement { statement =>
       val databaseMetaData = statement.getConnection.getMetaData
@@ -212,16 +198,10 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
         assert(statement.execute(sqlText.stripMargin))
       }
 
-      assertTable(
-        "test1",
-        Set(("key", "varchar"), ("value", "float8")),
-        databaseMetaData
-      )
-      assertTable(
-        "test2",
-        Set(("id", "int4"), ("name", "varchar"), ("address", "varchar"), ("salary", "float4")),
-        databaseMetaData
-      )
+      // Checks if `getTables` return an empty result set
+      val mdTable = databaseMetaData.getTables(null, null, "t", scala.Array("TABLE"))
+      assert(!mdTable.next())
+      mdTable.close()
     }
   }
 
@@ -396,10 +376,11 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
   test("unsupported nested array types") {
     withJdbcStatement { statement =>
       statement.execute("DROP TABLE IF EXISTS test")
+      statement.execute("CREATE TABLE test(col ARRAY<ARRAY<INT>>)")
       val e = intercept[SQLException] {
-        statement.execute("CREATE TABLE test(col ARRAY<ARRAY<INT>>)")
+        statement.execute("SELECT * FROM test")
       }
-      assert(e.getMessage.contains("Unsupported type found in the given schema"))
+      assert(e.getMessage.contains("Unsupported array type"))
     }
   }
 
@@ -1124,38 +1105,6 @@ abstract class PgJdbcSuite(pgVersion: String, queryMode: String, executionMode: 
       } finally {
         assert(statement.execute("DROP TEMPORARY FUNCTION IF EXISTS udtf_count2"))
       }
-    }
-  }
-
-  test("CREATE/DROP tables between connections") {
-    withJdbcStatement { statement =>
-      Seq(
-        "DROP TABLE IF EXISTS test1",
-        "DROP TABLE IF EXISTS test2",
-        "CREATE TABLE test1(a INT)",
-        "CREATE TABLE test2(key STRING, value DOUBLE)"
-      ).foreach { sqlText =>
-        assert(statement.execute(sqlText))
-      }
-
-      val dbMeta = statement.getConnection.getMetaData
-      assertTable("test1", Set(("a", "int4")), dbMeta)
-      assertTable("test2", Set(("key", "varchar"), ("value", "float8")), dbMeta)
-    }
-
-    withJdbcStatement { statement =>
-      val dbMeta = statement.getConnection.getMetaData
-      assertTable("test1", Set(("a", "int4")), dbMeta)
-      assertTable("test2", Set(("key", "varchar"), ("value", "float8")), dbMeta)
-      statement.execute("DROP TABLE test1")
-      assertTable("test2", Set(("key", "varchar"), ("value", "float8")), dbMeta)
-      assert(!dbMeta.getTables(null, null, "test1", scala.Array("TABLE")).next())
-    }
-
-    withJdbcStatement { statement =>
-      val dbMeta = statement.getConnection.getMetaData
-      assertTable("test2", Set(("key", "varchar"), ("value", "float8")), dbMeta)
-      assert(!dbMeta.getTables(null, null, "test1", scala.Array("TABLE")).next())
     }
   }
 

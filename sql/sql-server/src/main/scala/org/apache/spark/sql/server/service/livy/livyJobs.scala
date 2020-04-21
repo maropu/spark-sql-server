@@ -30,7 +30,7 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.SQLServerEnv
 import org.apache.spark.sql.server.service.{NOP, Operation, SessionContext, SessionState, SQLContextHolder}
-import org.apache.spark.sql.server.service.postgresql.{PgCatalogInitializer, PgCatalogUpdater, PgSessionInitializer, PgUtils}
+import org.apache.spark.sql.server.service.postgresql.{PgCatalogInitializer, PgSessionInitializer, PgUtils}
 import org.apache.spark.sql.types.StructType
 
 // Messages between a SQL server and a Livy job
@@ -67,9 +67,7 @@ private object LivySessionState {
 private class ExecutorEndpoint(override val rpcEnv: RpcEnv, sessionState: LivySessionState)
     extends RpcEndpoint {
 
-  private val executorImpl = {
-    new LivyExecutorImpl(PgCatalogUpdater.apply _)
-  }
+  private val executorImpl = new LivyExecutorImpl()
 
   private val sqlContext = sessionState._context match {
     case SQLContextHolder(ctx) => ctx

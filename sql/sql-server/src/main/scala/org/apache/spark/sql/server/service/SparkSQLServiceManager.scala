@@ -31,7 +31,7 @@ import org.apache.spark.sql.server.SQLServerConf._
 import org.apache.spark.sql.server.SQLServerEnv
 import org.apache.spark.sql.server.SQLServerListener
 import org.apache.spark.sql.server.service.livy.{LivyProxyContext, LivyProxyExecutor, LivyServerService}
-import org.apache.spark.sql.server.service.postgresql.{PgCatalogInitializer, PgCatalogUpdater, PgProtocolService, PgSessionInitializer}
+import org.apache.spark.sql.server.service.postgresql.{PgCatalogInitializer, PgProtocolService, PgSessionInitializer}
 import org.apache.spark.sql.server.ui.SQLServerTab
 import org.apache.spark.sql.server.util.RecurringTimer
 import org.apache.spark.util.SystemClock
@@ -264,10 +264,8 @@ private[server] class SparkSQLServiceManager extends CompositeService with Sessi
     })
 
   private val executorImpl = SQLServerEnv.sqlConf.sqlServerExecutionMode match {
-    case "single-session" | "multi-session" =>
-      new ExecutorImpl(PgCatalogUpdater.apply _)
-    case "multi-context" =>
-      new LivyProxyExecutor()
+    case "single-session" | "multi-session" => new ExecutorImpl()
+    case "multi-context" => new LivyProxyExecutor()
   }
 
   // We must start `PgProtocolService` in the end of services

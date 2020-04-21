@@ -80,14 +80,13 @@ class SQLServerQueryTestSuite extends SQLQueryTestSuite with SQLServerTest with 
         |CREATE TABLE testdata AS
         |SELECT id AS key, CAST(id AS string) AS value FROM range(1, 101)
       """.stripMargin)
-    // TODO: Currently, we don't support nested arrays, e.g., ArrayType(ArrayType(IntegerType))
-    // statement.execute(
-    //   """
-    //     |CREATE TABLE arraydata AS
-    //     |SELECT * FROM VALUES
-    //     |(ARRAY(1, 2, 3), ARRAY(ARRAY(1, 2, 3))),
-    //     |(ARRAY(2, 3, 4), ARRAY(ARRAY(2, 3, 4))) AS v(arraycol, nestedarraycol)
-    //   """.stripMargin)
+    statement.execute(
+      """
+        |CREATE TABLE arraydata AS
+        |SELECT * FROM VALUES
+        |(ARRAY(1, 2, 3), ARRAY(ARRAY(1, 2, 3))),
+        |(ARRAY(2, 3, 4), ARRAY(ARRAY(2, 3, 4))) AS v(arraycol, nestedarraycol)
+      """.stripMargin)
     statement.execute(
       """
         |CREATE TABLE mapdata AS
@@ -367,7 +366,6 @@ class SQLServerQueryTestSuite extends SQLQueryTestSuite with SQLServerTest with 
       ignore(testCase.name) { /* Do nothing */ }
     } else {
       // Create a test case to run this case.
-      // ignore(s"skipped - ${testCase.name}") {
       test(testCase.name) {
         runTest(testCase)
       }

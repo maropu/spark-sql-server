@@ -17,44 +17,12 @@
 
 package org.apache.spark.sql.server
 
-import org.scalatest.BeforeAndAfterAll
-
 /**
- * A test suite for psql commands.
+ * This test suite just checks if psql commands can be accepted and return an empty result set.
  * See an URL below for detailed options;
  *  https://www.postgresql.org/docs/current/static/app-psql.html
  */
-class PsqlCommandsV10Suite extends PgJdbcTest(pgVersion = "10") with BeforeAndAfterAll {
-
-  override def beforeAll() : Unit = {
-    super.beforeAll()
-
-    withJdbcStatement { statement =>
-      Seq(
-        "CREATE DATABASE d1",
-        "CREATE TABLE t1(a INT, b STRING, c DOUBLE)",
-        "CREATE TABLE t2(key STRING, value DOUBLE)"
-      ).foreach { sqlText =>
-        assert(statement.execute(sqlText))
-      }
-    }
-  }
-
-  override def afterAll() : Unit = {
-    try {
-      withJdbcStatement { statement =>
-        Seq(
-          "DROP TABLE IF EXISTS t1",
-          "DROP TABLE IF EXISTS t2",
-          "DROP DATABASE IF EXISTS d1"
-        ).foreach { sqlText =>
-          assert(statement.execute(sqlText))
-        }
-      }
-    } finally {
-      super.afterAll()
-    }
-  }
+class PsqlCommandsV10Suite extends PgJdbcTest(pgVersion = "10") {
 
   test("""\l""") {
     withJdbcStatement { statement =>
@@ -73,13 +41,6 @@ class PsqlCommandsV10Suite extends PgJdbcTest(pgVersion = "10") with BeforeAndAf
           |  1
          """.stripMargin
       )
-
-      assert(rs.next())
-      assert("d1" === rs.getString(1))
-      assert(rs.next())
-      assert("default" === rs.getString(1))
-      assert(rs.next())
-      assert("pg_catalog" === rs.getString(1))
       assert(!rs.next())
       rs.close()
     }
@@ -119,17 +80,6 @@ class PsqlCommandsV10Suite extends PgJdbcTest(pgVersion = "10") with BeforeAndAf
           |  1,2
          """.stripMargin
       )
-
-      assert(rs.next())
-      assert("spark" === rs.getString(1))
-      assert("t1" === rs.getString(2))
-      assert("table" === rs.getString(3))
-      assert("" === rs.getString(4))
-      assert(rs.next())
-      assert("spark" === rs.getString(1))
-      assert("t2" === rs.getString(2))
-      assert("table" === rs.getString(3))
-      assert("" === rs.getString(4))
       assert(!rs.next())
       rs.close()
     }
@@ -137,7 +87,7 @@ class PsqlCommandsV10Suite extends PgJdbcTest(pgVersion = "10") with BeforeAndAf
 
   test("""\d <table name>""") {
     withJdbcStatement { statement =>
-      val rs1 = statement.executeQuery(
+      val rs = statement.executeQuery(
         """
           |SELECT
           |  c.oid, n.nspname, c.relname
@@ -152,194 +102,13 @@ class PsqlCommandsV10Suite extends PgJdbcTest(pgVersion = "10") with BeforeAndAf
           |  2, 3
         """.stripMargin
       )
-
-      assert(rs1.next())
-      assert("spark" === rs1.getString(2))
-      assert("t1" === rs1.getString(3))
-
-      // Get an OID number for a table `t1`
-      val relOid = rs1.getInt(1)
-
-      assert(!rs1.next())
-      rs1.close()
-
-      val rs2 = statement.executeQuery(
-        s"""
-          |SELECT
-          |  c.relchecks,
-          |  c.relkind,
-          |  c.relhasindex,
-          |  c.relhasrules,
-          |  c.relhastriggers,
-          |  c.relrowsecurity,
-          |  c.relforcerowsecurity,
-          |  c.relhasoids,
-          |  '',
-          |  c.reltablespace,
-          |  CASE
-          |    WHEN c.reloftype = 0 THEN ''
-          |    ELSE c.reloftype::pg_catalog.regtype::pg_catalog.text
-          |  END,
-          |  c.relpersistence,
-          |  c.relreplident
-          |FROM
-          |  pg_catalog.pg_class c
-          |LEFT JOIN
-          |  pg_catalog.pg_class tc ON (c.reltoastrelid = tc.oid)
-          |WHERE
-          |  c.oid = '$relOid'
-        """.stripMargin
-      )
-
-      assert(rs2.next())
-      assert(0 === rs2.getInt(1))
-      assert("r" === rs2.getString(2))
-      assert(!rs2.getBoolean(3))
-      assert(!rs2.getBoolean(4))
-      assert(!rs2.getBoolean(5))
-      assert(!rs2.getBoolean(6))
-      assert(!rs2.getBoolean(7))
-      assert(!rs2.getBoolean(8))
-      assert("" === rs2.getString(9))
-      assert(0 === rs2.getInt(10))
-      assert(!rs2.next())
-      rs2.close()
-
-      val rs3 = statement.executeQuery(
-        s"""
-          |SELECT
-          |  a.attname,
-          |  pg_catalog.format_type(a.atttypid, a.atttypmod),
-          |  (
-          |    SELECT
-          |      substring(pg_catalog.pg_get_expr(d.adbin, d.adrelid) for 128)
-          |    FROM
-          |      pg_catalog.pg_attrdef d
-          |    WHERE
-          |      d.adrelid = a.attrelid
-          |        AND d.adnum = a.attnum
-          |        AND a.atthasdef
-          |  ),
-          |  a.attnotnull,
-          |  a.attnum,
-          |  (
-          |    SELECT
-          |      c.collname
-          |    FROM
-          |      pg_catalog.pg_collation c,
-          |      pg_catalog.pg_type t
-          |    WHERE
-          |      c.oid = a.attcollation
-          |        AND t.oid = a.atttypid
-          |        AND a.attcollation <> t.typcollation
-          |  ) AS attcollation,
-          |  a.attidentity,
-          |  NULL AS indexdef,
-          |  NULL AS attfdwoptions
-          |FROM
-          |  pg_catalog.pg_attribute a
-          |WHERE
-          |  a.attrelid = '$relOid'
-          |    AND a.attnum > 0
-          |    AND NOT a.attisdropped
-          |ORDER BY
-          |  a.attnum
-        """.stripMargin
-      )
-
-      assert(rs3.next())
-      assert("a" === rs3.getString(1))
-      assert("int4" === rs3.getString(2))
-      assert(false === rs3.getBoolean(4))
-      assert(1 === rs3.getInt(5))
-      assert(rs3.next())
-      assert("b" === rs3.getString(1))
-      assert("varchar" === rs3.getString(2))
-      assert(false === rs3.getBoolean(4))
-      assert(2 === rs3.getInt(5))
-      assert(rs3.next())
-      assert("c" === rs3.getString(1))
-      assert("float8" === rs3.getString(2))
-      assert(false === rs3.getBoolean(4))
-      assert(3 === rs3.getInt(5))
-      assert(!rs3.next())
-      rs3.close()
-
-      val rs4 = statement.executeQuery(
-        s"""
-          |SELECT
-          |  inhparent::pg_catalog.regclass,
-          |  pg_catalog.pg_get_expr(c.relpartbound, inhrelid)
-          |FROM
-          |  pg_catalog.pg_class c
-          |JOIN
-          |  pg_catalog.pg_inherits i ON c.oid = inhrelid
-          |WHERE
-          |  c.oid = '$relOid'
-          |    AND c.relispartition
-        """.stripMargin
-      )
-
-      assert(!rs4.next())
-
-      // In PostgreSQL, `ARRAY` is not a function but a syntax defined in parser definition
-      // (https://github.com/postgres/postgres/blob/master/src/backend/parser/gram.y#L13166).
-      // So, Spark-2.3 can't handle a query below:
-      //
-      // val rs5 = statement.executeQuery(
-      //   s"""
-      //     |SELECT
-      //     |  pol.polname,
-      //     |  pol.polpermissive,
-      //     |  CASE
-      //     |    WHEN pol.polroles = '{0}' THEN NULL
-      //     |    ELSE
-      //     |      pg_catalog.array_to_string(
-      //     |        array(
-      //     |          select
-      //     |            rolname
-      //     |          from
-      //     |            pg_catalog.pg_roles
-      //     |          where
-      //     |            oid = any (pol.polroles)
-      //     |          order by 1
-      //     |        ),
-      //     |      ',')
-      //     |  END,
-      //     |  pg_catalog.pg_get_expr(pol.polqual, pol.polrelid),
-      //     |  pg_catalog.pg_get_expr(pol.polwithcheck, pol.polrelid),
-      //     |  CASE pol.polcmd
-      //     |    WHEN 'r' THEN 'SELECT'
-      //     |    WHEN 'a' THEN 'INSERT'
-      //     |    WHEN 'w' THEN 'UPDATE'
-      //     |    WHEN 'd' THEN 'DELETE'
-      //     |    END AS cmd
-      //     |FROM
-      //     |  pg_catalog.pg_policy pol
-      //     |WHERE
-      //     |  pol.polrelid = '$relOid'
-      //     |ORDER BY
-      //     |  1
-      //   """.stripMargin
-      // )
-      //
-      // assert(!rs5.next())
+      assert(!rs.next())
+      rs.close()
     }
   }
 
   test("""\df""") {
     withJdbcStatement { statement =>
-      // Define a temporary function
-      val jarPath = "src/test/resources/TestUDTF.jar"
-      val jarURL = s"file://${System.getProperty("user.dir")}/$jarPath"
-      Seq(
-        s"ADD JAR $jarURL",
-        "DROP TEMPORARY FUNCTION IF EXISTS udtf",
-        "CREATE TEMPORARY FUNCTION udtf AS 'org.apache.spark.sql.hive.execution.GenericUDTFCount2'"
-      ).foreach { sqlText =>
-        assert(statement.execute(sqlText))
-      }
-
       val rs = statement.executeQuery(
         """
           |SELECT
@@ -365,46 +134,13 @@ class PsqlCommandsV10Suite extends PgJdbcTest(pgVersion = "10") with BeforeAndAf
           |  1, 2, 4
         """.stripMargin
       )
-
-      assert(rs.next())
-      assert("udtf" === rs.getString(2))
       assert(!rs.next())
       rs.close()
     }
   }
 }
 
-class PsqlCommandsV9_6Suite extends PgJdbcTest(pgVersion = "9.6") with BeforeAndAfterAll {
-
-  override def beforeAll() : Unit = {
-    super.beforeAll()
-
-    withJdbcStatement { statement =>
-      Seq(
-        "CREATE DATABASE d1",
-        "CREATE TABLE t1(a INT, b STRING, c DOUBLE)",
-        "CREATE TABLE t2(key STRING, value DOUBLE)"
-      ).foreach { sqlText =>
-        assert(statement.execute(sqlText))
-      }
-    }
-  }
-
-  override def afterAll() : Unit = {
-    try {
-      withJdbcStatement { statement =>
-        Seq(
-          "DROP TABLE IF EXISTS t1",
-          "DROP TABLE IF EXISTS t2",
-          "DROP DATABASE IF EXISTS d1"
-        ).foreach { sqlText =>
-          assert(statement.execute(sqlText))
-        }
-      }
-    } finally {
-      super.afterAll()
-    }
-  }
+class PsqlCommandsV9_6Suite extends PgJdbcTest(pgVersion = "9.6") {
 
   test("""\d""") {
     withJdbcStatement { statement =>
@@ -439,17 +175,6 @@ class PsqlCommandsV9_6Suite extends PgJdbcTest(pgVersion = "9.6") with BeforeAnd
           |  1,2
          """.stripMargin
       )
-
-      assert(rs.next())
-      assert("spark" === rs.getString(1))
-      assert("t1" === rs.getString(2))
-      assert("table" === rs.getString(3))
-      assert("" === rs.getString(4))
-      assert(rs.next())
-      assert("spark" === rs.getString(1))
-      assert("t2" === rs.getString(2))
-      assert("table" === rs.getString(3))
-      assert("" === rs.getString(4))
       assert(!rs.next())
       rs.close()
     }
@@ -457,7 +182,7 @@ class PsqlCommandsV9_6Suite extends PgJdbcTest(pgVersion = "9.6") with BeforeAnd
 
   test("""\d <table name>""") {
     withJdbcStatement { statement =>
-      val rs1 = statement.executeQuery(
+      val rs = statement.executeQuery(
         """
           |SELECT
           |  c.oid, n.nspname, c.relname
@@ -472,195 +197,13 @@ class PsqlCommandsV9_6Suite extends PgJdbcTest(pgVersion = "9.6") with BeforeAnd
           |  2, 3
         """.stripMargin
       )
-
-      assert(rs1.next())
-      assert("spark" === rs1.getString(2))
-      assert("t1" === rs1.getString(3))
-
-      // Get an OID number for a table `t1`
-      val relOid = rs1.getInt(1)
-
-      assert(!rs1.next())
-      rs1.close()
-
-      val rs2 = statement.executeQuery(
-        s"""
-          |SELECT
-          |  c.relchecks,
-          |  c.relkind,
-          |  c.relhasindex,
-          |  c.relhasrules,
-          |  c.relhastriggers,
-          |  c.relrowsecurity,
-          |  c.relforcerowsecurity,
-          |  c.relhasoids,
-          |  '',
-          |  c.reltablespace,
-          |  CASE
-          |    WHEN c.reloftype = 0 THEN ''
-          |    ELSE c.reloftype::pg_catalog.regtype::pg_catalog.text
-          |  END,
-          |  c.relpersistence,
-          |  c.relreplident
-          |FROM
-          |  pg_catalog.pg_class c
-          |LEFT JOIN
-          |  pg_catalog.pg_class tc ON (c.reltoastrelid = tc.oid)
-          |WHERE
-          |  c.oid = '$relOid'
-        """.stripMargin
-      )
-
-      assert(rs2.next())
-      assert(0 === rs2.getInt(1))
-      assert("r" === rs2.getString(2))
-      assert(!rs2.getBoolean(3))
-      assert(!rs2.getBoolean(4))
-      assert(!rs2.getBoolean(5))
-      assert(!rs2.getBoolean(6))
-      assert(!rs2.getBoolean(7))
-      assert(!rs2.getBoolean(8))
-      assert("" === rs2.getString(9))
-      assert(0 === rs2.getInt(10))
-      assert(!rs2.next())
-      rs2.close()
-
-      val rs3 = statement.executeQuery(
-        s"""
-          |SELECT
-          |  a.attname,
-          |  pg_catalog.format_type(a.atttypid, a.atttypmod),
-          |  (
-          |    SELECT
-          |      substring(pg_catalog.pg_get_expr(d.adbin, d.adrelid) for 128)
-          |    FROM
-          |      pg_catalog.pg_attrdef d
-          |    WHERE
-          |      d.adrelid = a.attrelid
-          |        AND d.adnum = a.attnum
-          |        AND a.atthasdef
-          |  ),
-          |  a.attnotnull,
-          |  a.attnum,
-          |  (
-          |    SELECT
-          |      c.collname
-          |    FROM
-          |      pg_catalog.pg_collation c, pg_catalog.pg_type t
-          |    WHERE
-          |      c.oid = a.attcollation
-          |        AND t.oid = a.atttypid
-          |        AND a.attcollation <> t.typcollation
-          |  ) AS attcollation,
-          |  NULL AS indexdef,
-          |  NULL AS attfdwoptions
-          |FROM
-          |  pg_catalog.pg_attribute a
-          |WHERE
-          |  a.attrelid = '$relOid'
-          |    AND a.attnum > 0
-          |    AND NOT a.attisdropped
-          |ORDER BY
-          |  a.attnum
-        """.stripMargin
-      )
-
-      assert(rs3.next())
-      assert("a" === rs3.getString(1))
-      assert("int4" === rs3.getString(2))
-      assert(false === rs3.getBoolean(4))
-      assert(1 === rs3.getInt(5))
-      assert(rs3.next())
-      assert("b" === rs3.getString(1))
-      assert("varchar" === rs3.getString(2))
-      assert(false === rs3.getBoolean(4))
-      assert(2 === rs3.getInt(5))
-      assert(rs3.next())
-      assert("c" === rs3.getString(1))
-      assert("float8" === rs3.getString(2))
-      assert(false === rs3.getBoolean(4))
-      assert(3 === rs3.getInt(5))
-      assert(!rs3.next())
-      rs3.close()
-
-      // In PostgreSQL, `ARRAY` is not a function but a syntax defined in parser definition
-      // (https://github.com/postgres/postgres/blob/master/src/backend/parser/gram.y#L13166).
-      // So, Spark-2.3 can't handle a query below:
-      //
-      // val rs4 = statement.executeQuery(
-      //   s"""
-      //     |SELECT
-      //     |  pol.polname,
-      //     |  CASE
-      //     |    WHEN pol.polroles = '{0}' THEN NULL
-      //     |    ELSE
-      //     |      array_to_string(
-      //     |        array(
-      //     |          select
-      //     |            rolname
-      //     |          from
-      //     |            pg_roles
-      //     |          where
-      //     |            oid = any (pol.polroles)
-      //     |          order by
-      //     |            1
-      //     |        ),
-      //     |      ',')
-      //     |  END,
-      //     |  pg_catalog.pg_get_expr(pol.polqual, pol.polrelid),
-      //     |  pg_catalog.pg_get_expr(pol.polwithcheck, pol.polrelid),
-      //     |  CASE pol.polcmd
-      //     |    WHEN 'r' THEN 'SELECT'
-      //     |    WHEN 'a' THEN 'INSERT'
-      //     |    WHEN 'w' THEN 'UPDATE'
-      //     |    WHEN 'd' THEN 'DELETE'
-      //     |    WHEN '*' THEN 'ALL'
-      //     |  END AS cmd
-      //     |FROM
-      //     |  pg_catalog.pg_policy pol
-      //     |WHERE
-      //     |  pol.polrelid = '$relOid'
-      //     |ORDER BY
-      //     |  1
-      //     """.stripMargin)
-      //
-      // assert(!rs4.next())
-      // rs4.close()
+      assert(!rs.next())
+      rs.close()
     }
   }
 }
 
-class PsqlCommandsV8_4Suite extends PgJdbcTest(pgVersion = "8.4") with BeforeAndAfterAll {
-
-  override def beforeAll() : Unit = {
-    super.beforeAll()
-
-    withJdbcStatement { statement =>
-      Seq(
-        "CREATE DATABASE d1",
-        "CREATE TABLE t1(a INT, b STRING, c DOUBLE)",
-        "CREATE TABLE t2(key STRING, value DOUBLE)"
-      ).foreach { sqlText =>
-        assert(statement.execute(sqlText))
-      }
-    }
-  }
-
-  override def afterAll() : Unit = {
-    try {
-      withJdbcStatement { statement =>
-        Seq(
-          "DROP TABLE IF EXISTS t1",
-          "DROP TABLE IF EXISTS t2",
-          "DROP DATABASE IF EXISTS d1"
-        ).foreach { sqlText =>
-          assert(statement.execute(sqlText))
-        }
-      }
-    } finally {
-      super.afterAll()
-    }
-  }
+class PsqlCommandsV8_4Suite extends PgJdbcTest(pgVersion = "8.4") {
 
   test("""\l""") {
     withJdbcStatement { statement =>
@@ -677,13 +220,6 @@ class PsqlCommandsV8_4Suite extends PgJdbcTest(pgVersion = "8.4") with BeforeAnd
           |  1
          """.stripMargin
       )
-
-      assert(rs.next())
-      assert("d1" === rs.getString(1))
-      assert(rs.next())
-      assert("default" === rs.getString(1))
-      assert(rs.next())
-      assert("pg_catalog" === rs.getString(1))
       assert(!rs.next())
       rs.close()
     }
@@ -722,17 +258,6 @@ class PsqlCommandsV8_4Suite extends PgJdbcTest(pgVersion = "8.4") with BeforeAnd
           |  1,2
          """.stripMargin
       )
-
-      assert(rs.next())
-      assert("spark" === rs.getString(1))
-      assert("t1" === rs.getString(2))
-      assert("table" === rs.getString(3))
-      assert("" === rs.getString(4))
-      assert(rs.next())
-      assert("spark" === rs.getString(1))
-      assert("t2" === rs.getString(2))
-      assert("table" === rs.getString(3))
-      assert("" === rs.getString(4))
       assert(!rs.next())
       rs.close()
     }
@@ -740,7 +265,7 @@ class PsqlCommandsV8_4Suite extends PgJdbcTest(pgVersion = "8.4") with BeforeAnd
 
   test("""\d <table name>""") {
     withJdbcStatement { statement =>
-      val rs1 = statement.executeQuery(
+      val rs = statement.executeQuery(
         """
           |SELECT
           |  c.oid, n.nspname, c.relname
@@ -755,135 +280,13 @@ class PsqlCommandsV8_4Suite extends PgJdbcTest(pgVersion = "8.4") with BeforeAnd
           |  2, 3
         """.stripMargin
       )
-
-      assert(rs1.next())
-      assert("spark" === rs1.getString(2))
-      assert("t1" === rs1.getString(3))
-
-      // Get an OID number for a table `t1`
-      val relOid = rs1.getInt(1)
-
-      assert(!rs1.next())
-      rs1.close()
-
-      val rs2 = statement.executeQuery(
-        s"""
-          |SELECT
-          |  relchecks, relkind, relhasindex, relhasrules, reltriggers <> 0, false, false,
-          |  relhasoids, '', reltablespace
-          |FROM
-          |  pg_catalog.pg_class
-          |WHERE
-          |  oid = '$relOid'
-        """.stripMargin
-      )
-
-      assert(rs2.next())
-      assert(0 === rs2.getInt(1))
-      assert("r" === rs2.getString(2))
-      assert(!rs2.getBoolean(3))
-      assert(!rs2.getBoolean(4))
-      assert(!rs2.getBoolean(5))
-      assert(!rs2.getBoolean(6))
-      assert(!rs2.getBoolean(7))
-      assert(!rs2.getBoolean(8))
-      assert("" === rs2.getString(9))
-      assert(0 === rs2.getInt(10))
-      assert(!rs2.next())
-      rs2.close()
-
-      val rs3 = statement.executeQuery(
-        s"""
-          |SELECT
-          |  a.attname,
-          |  pg_catalog.format_type(a.atttypid, a.atttypmod),
-          |  (
-          |    SELECT
-          |      substring(pg_catalog.pg_get_expr(d.adbin, d.adrelid) for 128)
-          |    FROM
-          |      pg_catalog.pg_attrdef d
-          |    WHERE
-          |      d.adrelid = a.attrelid AND d.adnum = a.attnum AND a.atthasdef
-          |  ),
-          |  a.attnotnull,
-          |  a.attnum,
-          |  NULL AS attcollation,
-          |  NULL AS indexdef,
-          |  NULL AS attfdwoptions
-          |FROM
-          |  pg_catalog.pg_attribute a
-          |WHERE
-          |  a.attrelid = '$relOid' AND a.attnum > 0 AND NOT a.attisdropped
-          |ORDER BY
-          |  a.attnum
-        """.stripMargin
-      )
-
-      assert(rs3.next())
-      assert("a" === rs3.getString(1))
-      assert("int4" === rs3.getString(2))
-      assert(false === rs3.getBoolean(4))
-      assert(1 === rs3.getInt(5))
-      assert(rs3.next())
-      assert("b" === rs3.getString(1))
-      assert("varchar" === rs3.getString(2))
-      assert(false === rs3.getBoolean(4))
-      assert(2 === rs3.getInt(5))
-      assert(rs3.next())
-      assert("c" === rs3.getString(1))
-      assert("float8" === rs3.getString(2))
-      assert(false === rs3.getBoolean(4))
-      assert(3 === rs3.getInt(5))
-      assert(!rs3.next())
-      rs3.close()
-
-      val rs4 = statement.executeQuery(
-        s"""
-          |SELECT
-          |  c.oid::pg_catalog.regclass
-          |FROM
-          |  pg_catalog.pg_class c, pg_catalog.pg_inherits i
-          |WHERE
-          |  c.oid=i.inhparent AND i.inhrelid = '$relOid'
-          |ORDER BY
-          |  inhseqno
-         """.stripMargin
-      )
-
-      assert(!rs4.next())
-      rs4.close()
-
-      val rs5 = statement.executeQuery(
-        s"""
-          |SELECT
-          |  c.oid::pg_catalog.regclass
-          |FROM
-          |  pg_catalog.pg_class c, pg_catalog.pg_inherits i
-          |WHERE
-          |  c.oid=i.inhrelid AND i.inhparent = '6217'
-          |ORDER BY
-          |  c.relname
-         """.stripMargin
-      )
-
-      assert(!rs5.next())
-      rs5.close()
+      assert(!rs.next())
+      rs.close()
     }
   }
 
   test("""\df""") {
     withJdbcStatement { statement =>
-      // Define a temporary function
-      val jarPath = "src/test/resources/TestUDTF.jar"
-      val jarURL = s"file://${System.getProperty("user.dir")}/$jarPath"
-      Seq(
-        s"ADD JAR $jarURL",
-        "DROP TEMPORARY FUNCTION IF EXISTS udtf",
-        "CREATE TEMPORARY FUNCTION udtf AS 'org.apache.spark.sql.hive.execution.GenericUDTFCount2'"
-      ).foreach { sqlText =>
-        assert(statement.execute(sqlText))
-      }
-
       val rs = statement.executeQuery(
         """
           |SELECT n.nspname as "Schema",
@@ -906,46 +309,13 @@ class PsqlCommandsV8_4Suite extends PgJdbcTest(pgVersion = "8.4") with BeforeAnd
           |ORDER BY 1, 2, 4
         """.stripMargin
       )
-
-      assert(rs.next())
-      assert("udtf" === rs.getString(2))
       assert(!rs.next())
       rs.close()
     }
   }
 }
 
-class PsqlCommandsV7_4Suite extends PgJdbcTest(pgVersion = "7.4") with BeforeAndAfterAll {
-
-  override def beforeAll() : Unit = {
-    super.beforeAll()
-
-    withJdbcStatement { statement =>
-      Seq(
-        "CREATE DATABASE d1",
-        "CREATE TABLE t1(a INT, b STRING, c DOUBLE)",
-        "CREATE TABLE t2(key STRING, value DOUBLE)"
-      ).foreach { sqlText =>
-        assert(statement.execute(sqlText))
-      }
-    }
-  }
-
-  override def afterAll() : Unit = {
-    try {
-      withJdbcStatement { statement =>
-        Seq(
-          "DROP TABLE IF EXISTS t1",
-          "DROP TABLE IF EXISTS t2",
-          "DROP DATABASE IF EXISTS d1"
-        ).foreach { sqlText =>
-          assert(statement.execute(sqlText))
-        }
-      }
-    } finally {
-      super.afterAll()
-    }
-  }
+class PsqlCommandsV7_4Suite extends PgJdbcTest(pgVersion = "7.4") {
 
   test("""\l""") {
     withJdbcStatement { statement =>
@@ -962,13 +332,6 @@ class PsqlCommandsV7_4Suite extends PgJdbcTest(pgVersion = "7.4") with BeforeAnd
           |  1
          """.stripMargin
       )
-
-      assert(rs.next())
-      assert("d1" === rs.getString(1))
-      assert(rs.next())
-      assert("default" === rs.getString(1))
-      assert(rs.next())
-      assert("pg_catalog" === rs.getString(1))
       assert(!rs.next())
       rs.close()
     }
@@ -1007,17 +370,6 @@ class PsqlCommandsV7_4Suite extends PgJdbcTest(pgVersion = "7.4") with BeforeAnd
           |  1,2
          """.stripMargin
       )
-
-      assert(rs.next())
-      assert("spark" === rs.getString(1))
-      assert("t1" === rs.getString(2))
-      assert("table" === rs.getString(3))
-      assert("" === rs.getString(4))
-      assert(rs.next())
-      assert("spark" === rs.getString(1))
-      assert("t2" === rs.getString(2))
-      assert("table" === rs.getString(3))
-      assert("" === rs.getString(4))
       assert(!rs.next())
       rs.close()
     }
@@ -1025,7 +377,7 @@ class PsqlCommandsV7_4Suite extends PgJdbcTest(pgVersion = "7.4") with BeforeAnd
 
   test("""\d <table name>""") {
     withJdbcStatement { statement =>
-      val rs1 = statement.executeQuery(
+      val rs = statement.executeQuery(
         """
           |SELECT
           |  c.oid, n.nspname, c.relname
@@ -1040,119 +392,13 @@ class PsqlCommandsV7_4Suite extends PgJdbcTest(pgVersion = "7.4") with BeforeAnd
           |  2, 3
         """.stripMargin
       )
-
-      assert(rs1.next())
-      assert("spark" === rs1.getString(2))
-      assert("t1" === rs1.getString(3))
-
-      // Get an OID number for a table `t1`
-      val relOid = rs1.getInt(1)
-
-      assert(!rs1.next())
-      rs1.close()
-
-      val rs2 = statement.executeQuery(
-        s"""
-          |SELECT
-          |  relchecks, relkind, relhasindex, relhasrules, reltriggers <> 0, false, false,
-          |  relhasoids, '', ''
-          |FROM
-          |  pg_catalog.pg_class
-          |WHERE
-          |  oid = '$relOid'
-        """.stripMargin
-      )
-
-      assert(rs2.next())
-      assert(0 === rs2.getInt(1))
-      assert("r" === rs2.getString(2))
-      assert(!rs2.getBoolean(3))
-      assert(!rs2.getBoolean(4))
-      assert(!rs2.getBoolean(5))
-      assert(!rs2.getBoolean(6))
-      assert(!rs2.getBoolean(7))
-      assert(!rs2.getBoolean(8))
-      assert("" === rs2.getString(9))
-      assert("" === rs2.getString(10))
-      assert(!rs2.next())
-      rs2.close()
-
-      val rs3 = statement.executeQuery(
-        s"""
-          |SELECT
-          |  a.attname,
-          |  pg_catalog.format_type(a.atttypid, a.atttypmod),
-          |  (
-          |    SELECT
-          |      substring(pg_catalog.pg_get_expr(d.adbin, d.adrelid) for 128)
-          |    FROM
-          |      pg_catalog.pg_attrdef d
-          |    WHERE
-          |      d.adrelid = a.attrelid AND d.adnum = a.attnum AND a.atthasdef
-          |  ),
-          |  a.attnotnull,
-          |  a.attnum,
-          |  NULL AS attcollation,
-          |  NULL AS indexdef,
-          |  NULL AS attfdwoptions
-          |FROM
-          |  pg_catalog.pg_attribute a
-          |WHERE
-          |  a.attrelid = '$relOid' AND a.attnum > 0 AND NOT a.attisdropped
-          |ORDER BY
-          |  a.attnum
-        """.stripMargin
-      )
-
-      assert(rs3.next())
-      assert("a" === rs3.getString(1))
-      assert("int4" === rs3.getString(2))
-      assert(false === rs3.getBoolean(4))
-      assert(1 === rs3.getInt(5))
-      assert(rs3.next())
-      assert("b" === rs3.getString(1))
-      assert("varchar" === rs3.getString(2))
-      assert(false === rs3.getBoolean(4))
-      assert(2 === rs3.getInt(5))
-      assert(rs3.next())
-      assert("c" === rs3.getString(1))
-      assert("float8" === rs3.getString(2))
-      assert(false === rs3.getBoolean(4))
-      assert(3 === rs3.getInt(5))
-      assert(!rs3.next())
-      rs3.close()
-
-      val rs4 = statement.executeQuery(
-        s"""
-          |SELECT
-          |  c.oid::pg_catalog.regclass
-          |FROM
-          |  pg_catalog.pg_class c, pg_catalog.pg_inherits i
-          |WHERE
-          |  c.oid=i.inhparent AND i.inhrelid = '$relOid'
-          |ORDER BY
-          |  inhseqno
-         """.stripMargin
-      )
-
-      assert(!rs4.next())
-      rs4.close()
+      assert(!rs.next())
+      rs.close()
     }
   }
 
   test("""\df""") {
     withJdbcStatement { statement =>
-      // Define a temporary function
-      val jarPath = "src/test/resources/TestUDTF.jar"
-      val jarURL = s"file://${System.getProperty("user.dir")}/$jarPath"
-      Seq(
-        s"ADD JAR $jarURL",
-        "DROP TEMPORARY FUNCTION IF EXISTS udtf",
-        "CREATE TEMPORARY FUNCTION udtf AS 'org.apache.spark.sql.hive.execution.GenericUDTFCount2'"
-      ).foreach { sqlText =>
-        assert(statement.execute(sqlText))
-      }
-
       val rs = statement.executeQuery(
         """
           |SELECT n.nspname as "Schema",
@@ -1175,9 +421,6 @@ class PsqlCommandsV7_4Suite extends PgJdbcTest(pgVersion = "7.4") with BeforeAnd
           |ORDER BY 1, 2, 4
         """.stripMargin
       )
-
-      assert(rs.next())
-      assert("udtf" === rs.getString(2))
       assert(!rs.next())
       rs.close()
     }

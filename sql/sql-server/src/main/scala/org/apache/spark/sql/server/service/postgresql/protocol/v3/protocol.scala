@@ -73,9 +73,9 @@ case class PgWireProtocol(bufferSizeInBytes: Int) {
       val messageLen = f(messageWriter)
       messageBuffer.slice(0, messageLen)
     } catch {
-      case NonFatal(e) =>
+      case _: ArrayIndexOutOfBoundsException =>
         throw new SQLException(
-          "Cannot generate a V3 protocol message because buffer is not enough for the message. " +
+          s"Cannot generate a V3 protocol message because buffer is not enough for the message. " +
             s"To avoid this exception, you might set higher value at " +
             s"'${SQLServerConf.SQLSERVER_MESSAGE_BUFFER_SIZE_IN_BYTES.key}'")
     } finally {
