@@ -193,7 +193,7 @@ class PgRowConvertersSuite extends SparkFunSuite {
 
     // Check the result with binary mode
     assert(byteBuffer.getInt === 8)
-    assert(byteBuffer.getLong === 523585033000000L)
+    assert(byteBuffer.getLong === 523581433000000L)
   }
 
   test("interval") {

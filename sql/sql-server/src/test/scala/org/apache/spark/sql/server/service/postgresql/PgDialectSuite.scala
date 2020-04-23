@@ -109,8 +109,9 @@ class PgDialectSuite extends SparkFunSuite with BeforeAndAfterAll {
     }.toSet
     val expectedTypeNames = Set(
       "name", "float4", "bool", "int4", "_date", "_float8", "date", "varchar", "byte", "_int8",
-      "_int4", "_timestamp", "_float4", "_numeric", "tid", "numeric", "float8", "int8", "timestamp",
-      "_bool", "char", "map", "bytea", "int2", "struct", "_int2", "_varchar")
+      "_int4", "_timestamp", "_interval", "_float4", "_numeric", "tid", "numeric", "float8",
+      "int8", "timestamp", "interval", "_bool", "char", "map", "bytea", "int2", "struct",
+      "_int2", "_varchar")
     assert(typeNames === expectedTypeNames)
 
     assert(sqlContext.sql("SELECT pg_catalog.format_type(-895032, '')").collect ===
