@@ -21,6 +21,7 @@ import java.io.File
 import java.nio.file.Paths
 import java.sql.{SQLException, Statement, Timestamp}
 import java.util.{Locale, MissingFormatArgumentException}
+import java.util.regex.Pattern
 
 import scala.util.control.NonFatal
 
@@ -156,48 +157,79 @@ class SQLServerQueryTestSuite extends SQLQueryTestSuite with SQLServerTest with 
     "subquery/in-subquery/in-order-by.sql",
     "subquery/in-subquery/in-set-operations.sql",
 
-    // TODO: Needs to check the failure causes
+    // TODO: Needs to check the failure causes below
+    // unsupported nested arrays
     "array.sql",
+    // analysis failure: Table or view not found: pg_namespace
     "columnresolution.sql",
+    // exception happened in `StructColumnTextWriter`
     "csv-functions.sql",
+    // output mismatch, e.g., `207[8] hours 48 minutes 47...` and `207[7] hours 48 minutes 47...`
     "datetime.sql",
+    // analysis failure: java.lang.ClassNotFoundException: Failed to find data source:
+    // org.apache.spark.sql.sources.DDLScanSource
     "describe.sql",
-    "explain.sql",
+    // analysis failure
     "group-by.sql",
+    // unsupported nested arrays
     "higher-order-functions.sql",
+    // output mismatch, e.g., `[0, 1]` and `{0, 1}`
     "inline-table.sql",
+    // output mismatch
     "intersect-all.sql",
+    // interval parser failure
     "interval-display-iso_8601.sql",
     "interval-display-sql_standard.sql",
     "interval-display.sql",
     "interval.sql",
+    // exception happened in `StructColumnTextWriter`
     "json-functions.sql",
+    // unsupported nested arrays
     "limit.sql",
+    // interval parser failure
     "misc-functions.sql",
+    // output mismatch, e.g., `[0, 1]` and `{0, 1}`
     "pivot.sql",
+    // analysis failure
     "query_regex_column.sql",
+    // exception happened in `StructColumnTextWriter`
     "string-functions.sql",
+    // output mismatch
     "struct.sql",
+    // analysis failure: Can not load class 'test.org.apache.spark.sql.MyDoubleAvg'
     "udaf.sql",
+    // exception happened in `StructColumnTextWriter`
     "union.sql",
+    // output mismatch
     "window.sql",
+    // output mismatch
     "postgreSQL/aggregates_part1.sql",
+    // parser failure
     "postgreSQL/int8.sql",
-    "postgreSQL/join.sql",
+    // analysis exception
     "postgreSQL/text.sql",
+    // output mismatch
     "postgreSQL/timestamp.sql",
+    // output mismatch
     "postgreSQL/window_part2.sql",
+    // runtime failure
     "typeCoercion/native/booleanEquality.sql",
     "typeCoercion/native/caseWhenCoercion.sql",
+    // unsupported nested arrays
     "typeCoercion/native/concat.sql",
+    // runtime failure
     "typeCoercion/native/decimalPrecision.sql",
+    // analysis failure
     "typeCoercion/native/division.sql",
+    // runtime failure
     "typeCoercion/native/ifCoercion.sql",
     "typeCoercion/native/inConversion.sql",
     "typeCoercion/native/mapZipWith.sql",
     "typeCoercion/native/mapconcat.sql",
     "typeCoercion/native/promoteStrings.sql",
+    // exception happened in `StructColumnTextWriter`
     "typeCoercion/native/stringCastAndExpressions.sql",
+    // runtime failure
     "typeCoercion/native/widenSetOperationTypes.sql",
     "typeCoercion/native/windowFrameCoercion.sql"
   )
@@ -319,6 +351,25 @@ class SQLServerQueryTestSuite extends SQLQueryTestSuite with SQLServerTest with 
             assert(expected.output.contains("Exception"),
               s"Exception did not match for query #$i\n${expected.sql}, " +
                 s"expected: ${expected.output}, but got: ${output.output}")
+
+          // TODO: Needs to check why `super.replaceNotIncludedMsg` cannot correctly
+          // handle the cases below.
+          case _ if testCase.name == "explain.sql" =>
+            assertResult(expected.output, s"Result did not match for query #$i\n${expected.sql}") {
+              output.output.replaceAll(
+                s"Location.*/spark-warehouse/",
+                s"Location [not included in comparison]/{warehouse_dir}/")
+            }
+
+          // TODO: Numbers after a floating point between expected and query output are different,
+          // e.g., 0.272380105814572[9] and 0.272380105814572[67]
+          case _ if testCase.name == "group-by.sql" =>
+            val p = Pattern.compile("""([0-9]+\.[0-9]{14})([0-9]+)""")
+            val normalize = (s: String) => p.matcher(s).replaceAll("$1")
+            assertResult(normalize(expected.output),
+                s"Result did not match for query #$i\n${expected.sql}") {
+              normalize(output.output)
+            }
 
           case _ =>
             assertResult(expected.output, s"Result did not match for query #$i\n${expected.sql}") {
